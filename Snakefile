@@ -8,7 +8,7 @@ from shutil import copyfile, move
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
 HTTP = HTTPRemoteProvider()
 
-configfile: "config_beta40.yaml" # select config file; grid expansion: "config.yaml", pathway: "config_linear.yaml", "config_exponential.yaml", "config_beta.yaml"
+configfile: "config_exponential.yaml" # select config file; grid expansion: "config.yaml", pathway: "config_linear.yaml", "config_exponential.yaml", "config_beta.yaml"
 
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 
@@ -58,6 +58,18 @@ if config["foresight"] == "myopic":
                 config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
                 **config["scenario"]
             )
+
+    rule plot_all:
+        input:
+            expand(
+                config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf',
+                **config["scenario"]
+            ),
+        #     expand(
+        #         config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
+        #         **config["scenario"]
+        #     ),
+
 
 rule build_p_nom:
     output:

@@ -193,6 +193,7 @@ def prepare_network(config):
     edges = pd.read_csv("data/edges.txt", sep=",", header=None)
     edges_current = pd.read_csv("data/edges_current.csv", header=None)
     edges_current_FCG = pd.read_csv("data/edges_current_FCG.csv", header=None)
+    edges_current_neighbor = pd.read_csv("data/edges_current_neighbor.csv", header=None)
 
     #set times
     planning_horizons = snakemake.wildcards['planning_horizons']
@@ -919,6 +920,27 @@ def prepare_network(config):
                      p_min_pu=-1,
                      p_nom=edges_current_FCG[2].values,
                      p_nom_min=edges_current_FCG[2].values,
+                     length=lengths,
+                     capital_cost=cc)
+
+        if config['scenario']['topology'] == 'current+Neighbor':
+            lengths = 1.25 * np.array([haversine([network.buses.at[name0,"x"],network.buses.at[name0,"y"]],
+                                      [network.buses.at[name1,"x"],network.buses.at[name1,"y"]]) for name0,name1 in edges_current_neighbor[[0,1]].values])
+
+            # if config['line_volume_limit_max'] is not None:
+            #     cc = Nyears * 0.01  # Set line costs to ~zero because we already restrict the line volume
+            # else:
+            cc = (config['line_cost_factor'] * lengths * [HVAC_cost_curve(l) for l in
+                                                              lengths]) * 1.5 * 1.02 * Nyears * annuity(40.,config['costs']['discountrate'])
+
+            network.madd("Link",
+                     edges_current_neighbor[0] + '-' + edges_current_neighbor[1],
+                     bus0=edges_current_neighbor[0].values,
+                     bus1=edges_current_neighbor[1].values,
+                     p_nom_extendable=True,
+                     p_min_pu=-1,
+                     p_nom=edges_current_neighbor[2].values,
+                     p_nom_min=edges_current_neighbor[2].values,
                      length=lengths,
                      capital_cost=cc)
 
