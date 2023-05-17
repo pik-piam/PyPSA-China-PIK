@@ -332,7 +332,7 @@ if config["foresight"] == "myopic":
         log:
             solver = normpath("logs/solve_operations_network/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log")
         threads: 4
-        resources: mem_mb = 35000
+        resources: mem_mb = 60000
         script: "scripts/solve_network_myopic.py"
 
     rule plot_network:
