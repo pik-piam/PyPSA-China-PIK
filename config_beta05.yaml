@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-version: 0512.175.1
+version: 0518.175.1
 logging_level: INFO
 foresight: "myopic"
 
@@ -12,7 +12,7 @@ summary_dir: 'summary/'
 scenario:
   line_limits: [ 'opt' ]
   pathway: ['beta05175']
-  topology: "current+FCG" # "current" or "FCG" or "current+FCG"
+  topology: "current" # "current" or "FCG" or "current+FCG"
   co2_reduction:
     '2020': 0.
     '2025': 0.41489656
@@ -38,14 +38,14 @@ scenario:
 
 heating_demand:
   '2020': 1.0
-  '2025': 1.0
-  '2030': 1.0
-  '2035': 1.0
-  '2040': 1.0
-  '2045': 1.0
-  '2050': 1.0
-  '2055': 1.0
-  '2060': 1.0
+  '2025': 1.26
+  '2030': 1.50
+  '2035': 1.73
+  '2040': 1.93
+  '2045': 2.08
+  '2050': 2.17
+  '2055': 2.18
+  '2060': 2.13
 
 tmin: '-01-01 00:00'
 tmax: '-12-31 23:00'
