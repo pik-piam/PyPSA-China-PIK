@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: : 2023 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: CC0-1.0
-
+.idea
+.git
 logs
 results
 cutouts

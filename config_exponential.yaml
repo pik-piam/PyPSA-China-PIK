@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-version: 0518.175.1
+version: 0515.175.1
 logging_level: INFO
 foresight: "myopic"
 
@@ -12,7 +12,7 @@ summary_dir: 'summary/'
 scenario:
   line_limits: [ 'opt' ]
   pathway: ['exponential175']
-  topology: "current" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
+  topology: "current+Neighbor" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   co2_reduction:
     '2020': 0.
     '2025': 0.22623418

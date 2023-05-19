@@ -69,7 +69,8 @@ def plot_opt_map(n, opts, ax=None, attribute='p_nom'):
     tech_colors = opts['tech_colors']
 
     if attribute == 'p_nom':
-        bus_sizes = pd.concat((n.generators.query('carrier != "solar thermal"' and 'carrier != "hydro_inflow"').groupby(['bus', 'carrier']).p_nom_opt.sum(),
+        bus_sizes = pd.concat((n.generators[n.generators.lifetime!=np.inf].query('carrier ==["onwind","offwind","solar","coal"]').groupby(['bus', 'carrier']).p_nom_opt.sum(),
+                               n.generators.query('carrier ==["uranium"]').groupby(['bus', 'carrier']).p_nom_opt.sum(),
                                n.links.query('carrier == ["gas-AC","coal-AC","stations-AC"]').groupby(['bus1', 'carrier']).p_nom_opt.sum()))
         bus_sizes = bus_sizes.groupby(['bus','carrier']).sum()
         line_widths_exp = n.lines.s_nom_opt
@@ -87,8 +88,8 @@ def plot_opt_map(n, opts, ax=None, attribute='p_nom'):
          .map({True: line_colors['cur'], False: to_rgba(line_colors['cur'], 0.)}))
 
     ## FORMAT
-    linewidth_factor = opts['map'][attribute]['linewidth_factor']
-    bus_size_factor = opts['map'][attribute]['bus_size_factor']
+    linewidth_factor = n.links.query('carrier == ["AC-AC"]').p_nom_min.sum()*0.02
+    bus_size_factor = bus_sizes.sum()*0.02
 
     ## PLOT
     n.plot(line_widths=line_widths_exp / linewidth_factor,
@@ -119,7 +120,7 @@ def plot_opt_map(n, opts, ax=None, attribute='p_nom'):
     handles = []
     labels = []
 
-    for s in (50, 10):
+    for s in (50, 30, 10):
         handles.append(plt.Line2D([0], [0], color=line_colors['exp'],
                                   linewidth=s * 1e3 / linewidth_factor))
         labels.append("{} GW".format(s))
@@ -127,12 +128,12 @@ def plot_opt_map(n, opts, ax=None, attribute='p_nom'):
                      loc="upper left", bbox_to_anchor=(0.24, 1.01),
                      frameon=False,
                      labelspacing=0.8, handletextpad=1.5,
-                     title='Transmission Exist./Exp.             ')
+                     title='Transmission Exp./Exist.             ')
     ax.add_artist(l1_1)
 
     handles = []
     labels = []
-    for s in (50, 10):
+    for s in (50, 30, 10):
         handles.append(plt.Line2D([0], [0], color=line_colors['cur'],
                                   linewidth=s * 1e3 / linewidth_factor))
         labels.append("/")
@@ -189,7 +190,7 @@ def plot_total_energy_pie(n, opts, ax=None):
 def plot_total_cost_bar(n, opts, ax=None):
     if ax is None: ax = plt.gca()
 
-    total_load = (n.snapshot_weightings.generators * n.loads_t.p.sum(axis=1)).sum()
+    total_load = (n.snapshot_weightings.generators * (n.loads_t.p.sum(axis=1) - n.loads_t.p.filter(like='heat').sum(axis=1))).sum()
     tech_colors = opts['tech_colors']
 
     def split_costs(n):
@@ -231,8 +232,9 @@ def plot_total_cost_bar(n, opts, ax=None):
         text = ax.text(1.1, (bottom - 0.5 * data)[-1] - 3, opts['nice_names'].get(ind, ind))
         texts.append(text)
 
+    ylim = (1.2*costs_graph.sum()/total_load).values
     ax.set_ylabel("Average system cost [Eur/MWh]")
-    ax.set_ylim([0, opts.get('costs_avg', 80)])
+    ax.set_ylim([0, ylim])
     ax.set_xlim([0, 1])
     ax.set_xticklabels([])
     ax.grid(True, axis="y", color='k', linestyle='dotted')

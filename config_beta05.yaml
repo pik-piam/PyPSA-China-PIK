@@ -12,7 +12,7 @@ summary_dir: 'summary/'
 scenario:
   line_limits: [ 'opt' ]
   pathway: ['beta05175']
-  topology: "current" # "current" or "FCG" or "current+FCG"
+  topology: "current+Neighbor" # "current" or "FCG" or "current+FCG"
   co2_reduction:
     '2020': 0.
     '2025': 0.41489656
