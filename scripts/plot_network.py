@@ -69,6 +69,7 @@ def plot_opt_map(n, opts, ax=None, attribute='p_nom'):
     tech_colors = opts['tech_colors']
 
     if attribute == 'p_nom':
+        # bus_sizes = n.generators_t.p.sum().loc[n.generators.carrier == "load"].groupby(n.generators.bus).sum()
         bus_sizes = pd.concat((n.generators[n.generators.lifetime!=np.inf].query('carrier ==["onwind","offwind","solar","coal"]').groupby(['bus', 'carrier']).p_nom_opt.sum(),
                                n.generators.query('carrier ==["uranium"]').groupby(['bus', 'carrier']).p_nom_opt.sum(),
                                n.links.query('carrier == ["gas-AC","coal-AC","stations-AC"]').groupby(['bus1', 'carrier']).p_nom_opt.sum()))
@@ -88,8 +89,8 @@ def plot_opt_map(n, opts, ax=None, attribute='p_nom'):
          .map({True: line_colors['cur'], False: to_rgba(line_colors['cur'], 0.)}))
 
     ## FORMAT
-    linewidth_factor = n.links.query('carrier == ["AC-AC"]').p_nom_min.sum()*0.02
-    bus_size_factor = bus_sizes.sum()*0.02
+    linewidth_factor = opts['map'][attribute]['linewidth_factor']
+    bus_size_factor = opts['map'][attribute]['bus_size_factor']
 
     ## PLOT
     n.plot(line_widths=line_widths_exp / linewidth_factor,
@@ -107,7 +108,7 @@ def plot_opt_map(n, opts, ax=None, attribute='p_nom'):
            link_colors=link_colors_with_alpha,
            bus_sizes=0,
            boundaries=map_boundaries,
-           color_geomap=True, geomap=False,
+           color_geomap=True, geomap=True,
            ax=ax)
     ax.set_aspect('equal')
     ax.axis('off')
@@ -128,7 +129,7 @@ def plot_opt_map(n, opts, ax=None, attribute='p_nom'):
                      loc="upper left", bbox_to_anchor=(0.24, 1.01),
                      frameon=False,
                      labelspacing=0.8, handletextpad=1.5,
-                     title='Transmission Exp./Exist.             ')
+                     title='Transmission Exist./Exp.             ')
     ax.add_artist(l1_1)
 
     handles = []
@@ -144,8 +145,8 @@ def plot_opt_map(n, opts, ax=None, attribute='p_nom'):
                      title=' ')
     ax.add_artist(l1_2)
 
-    handles = make_legend_circles_for([10e4, 5e4, 1e4], scale=bus_size_factor, facecolor="w")
-    labels = ["{} GW".format(s) for s in (100, 50, 10)]
+    handles = make_legend_circles_for([5e4, 3e4, 1e4], scale=bus_size_factor, facecolor="w")
+    labels = ["{} GW".format(s) for s in (50, 30, 10)]
     l2 = ax.legend(handles, labels,
                    loc="upper left", bbox_to_anchor=(0.01, 1.01),
                    frameon=False, labelspacing=1.0,
@@ -249,6 +250,11 @@ def plot_cost_map(n, opts, ax=None, attribute='p_nom'):
                    'exp': mpl.colors.rgb2hex(to_rgba("red", 0.7), True)}
     tech_colors = opts['tech_colors']
 
+    bus_name_replacement = {}
+
+    for province_name in pro_names:
+        bus_name_replacement[province_name + r".*"] = province_name
+
     if attribute == 'p_nom':
 
         for c in n.iterate_components({'Generator', 'Link', 'Store'}):
@@ -256,31 +262,50 @@ def plot_cost_map(n, opts, ax=None, attribute='p_nom'):
                 generator_capital_costs = c.df.query('carrier != "hydro_inflow"').capital_cost * \
                                           c.df.query('carrier != "hydro_inflow"')[
                                               opt_name.get(c.name, "p") + "_nom_opt"]
-                generator_capital_costs_grouped = generator_capital_costs.groupby([c.df.bus, c.df.carrier]).sum()
+                generator_capital_costs_grouped = generator_capital_costs.groupby(
+                    [c.df['bus'].replace(bus_name_replacement, regex=True), c.df.carrier]).sum()
                 p = c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0).sum()
                 generator_marginal_costs = p * c.df.marginal_cost
                 generator_marginal_costs_grouped = generator_marginal_costs.groupby(
-                    [c.df.bus, c.df.query('carrier != "hydro_inflow"').carrier]).sum()
+                    [c.df['bus'].replace(bus_name_replacement, regex=True),
+                     c.df.query('carrier != "hydro_inflow"').carrier]).sum()
             elif c.name == "Link":
-                link_capital_costs = c.df.query('carrier == ["gas-AC","coal-AC"]').capital_cost * \
-                                     c.df.query('carrier == ["gas-AC","coal-AC"]')[
+                link_capital_costs = c.df.query(
+                    'carrier != ["stations-stations","battery-AC","water tanks-heat","heat-water tanks","AC-AC"]').capital_cost * \
+                                     c.df.query(
+                                         'carrier != ["stations-stations","battery-AC","water tanks-heat","heat-water tanks","AC-AC"]')[
                                          opt_name.get(c.name, "p") + "_nom_opt"]
-                link_capital_costs_grouped = link_capital_costs.groupby([c.df.bus1, c.df.carrier]).sum()
+                link_capital_costs_grouped = link_capital_costs.groupby(
+                    [c.df['bus1'].replace(bus_name_replacement, regex=True), c.df.carrier]).sum()
+                AC = c.df.query('carrier==["AC-AC"]').capital_cost * c.df.query('carrier==["AC-AC"]')[
+                    opt_name.get(c.name, "p") + "_nom_opt"]
+                AC_bus0 = (AC * 0.5).groupby(
+                    [c.df['bus0'].replace(bus_name_replacement, regex=True), c.df.carrier]).sum()
+                AC_bus0.index.names = ['bus1', 'carrier']
+                AC_bus1 = (AC * 0.5).groupby(
+                    [c.df['bus1'].replace(bus_name_replacement, regex=True), c.df.carrier]).sum()
+                link_capital_costs_grouped = link_capital_costs_grouped.append(AC_bus0).append(AC_bus1).groupby(
+                    ['bus1', 'carrier']).sum()
                 p = c.pnl.p0.multiply(n.snapshot_weightings.generators, axis=0).sum()
                 link_marginal_costs = p * c.df.marginal_cost
                 link_marginal_costs_grouped = link_marginal_costs.groupby(
-                    [c.df.bus1, c.df.query('carrier == ["gas-AC","coal-AC"]').carrier]).sum()
+                    [c.df['bus1'].replace(bus_name_replacement, regex=True), c.df.query(
+                        'carrier != ["stations-stations","battery-AC","water tanks-heat","heat-water tanks"]').carrier]).sum()
             else:
+                store_capital_costs = c.df.query('carrier != ["stations"]').capital_cost * \
+                                      c.df.query('carrier != ["stations"]')[
+                                          opt_name.get(c.name, "p") + "_nom_opt"]
+                store_capital_costs_grouped = store_capital_costs.groupby(
+                    [c.df['bus'].replace(bus_name_replacement, regex=True), c.df.carrier]).sum()
                 p = c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0).sum()
                 store_marginal_costs = p * c.df.marginal_cost
                 store_marginal_costs_grouped = store_marginal_costs.groupby(
-                    [c.df.bus, c.df.query('carrier == ["gas","coal"]').carrier]).sum()
-
-        carrier = ['coal', 'gas']
-        store_marginal_costs_grouped.index = pd.MultiIndex.from_product([pro_names, carrier], names=["bus", "carrier"])
+                    [c.df['bus'].replace(bus_name_replacement, regex=True),
+                     c.df.query('carrier != ["stations"]').carrier]).sum()
 
         bus_sizes = pd.concat(
-            [generator_capital_costs_grouped, link_capital_costs_grouped, generator_marginal_costs_grouped,
+            [generator_capital_costs_grouped, link_capital_costs_grouped, store_capital_costs_grouped,
+             generator_marginal_costs_grouped,
              link_marginal_costs_grouped, store_marginal_costs_grouped]).groupby(['bus', 'carrier']).sum()
         line_widths_exp = n.lines.s_nom_opt
         line_widths_cur = n.lines.s_nom_min
@@ -317,7 +342,7 @@ def plot_cost_map(n, opts, ax=None, attribute='p_nom'):
            link_colors=link_colors_with_alpha,
            bus_sizes=0,
            boundaries=map_boundaries,
-           color_geomap=True, geomap=False,
+           color_geomap=True, geomap=True,
            ax=ax)
     ax.set_aspect('equal')
     ax.axis('off')

@@ -211,7 +211,7 @@ plotting:
     figsize: [8, 8]
     boundaries: [60, 135., 15, 60.]
     p_nom:
-      bus_size_factor: 5.e+4
+      bus_size_factor: 1.e+5
       cost_size_factor: 5.e+9
       linewidth_factor: 1.e+4
       bus_size_factor_demand: 2.e+7
@@ -274,6 +274,7 @@ plotting:
     "uranium" : "#ff9000"
     "coal" : "#707070"
     "coal-AC" : "#262626"
+    "coal-heat": "#707070"
     "CHP coal" : "#262626"
     "CHP gas" : "#ea048a"
     "lignite" : "#9e5a01"
@@ -300,6 +301,11 @@ plotting:
     "DC-DC" : "#8a1caf"
     "DC link" : "#8a1caf"
   nice_names:
+    AC-AC: "Electric grid"
+    H2-AC: "H2 Fuel Cell"
+    AC-H2: "H2 Electrolysis"
+    H2-gas: "Sabatier + DAC"
+    AC-battery: "Battery Charger"
     CHP: "Combined Heat and Power"
     OCGT: "Open-Cycle Gas"
     CCGT: "Combined-Cycle Gas"
@@ -308,6 +314,7 @@ plotting:
     solar: "Solar"
     coal: "Coal Power Plant"
     coal-AC: "Combined Heat and Power"
+    coal-heat: "Coal Boiler"
     gas-AC: "Open-Cycle Gas"
     PHS: "Pumped Hydro Storage"
     stations-AC: "Reservoir & Dam"

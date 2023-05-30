@@ -16,6 +16,4 @@ notebooks
 doc
 cutouts
 benchmarks
-*.nc
 configs
-results

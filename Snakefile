@@ -65,10 +65,10 @@ if config["foresight"] == "myopic":
                 config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf',
                 **config["scenario"]
             ),
-        #     expand(
-        #         config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
-        #         **config["scenario"]
-        #     ),
+            expand(
+                config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
+                **config["scenario"]
+            ),
 
 
 rule build_p_nom:

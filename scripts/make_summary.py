@@ -50,7 +50,7 @@ def assign_carriers(n):
 def calculate_costs(n, label, costs):
 
     for c in n.iterate_components(n.branch_components|n.controllable_one_port_components^{"Load"}):
-        capital_costs = c.df.capital_cost*(c.df[opt_name.get(c.name,"p") + "_nom_opt"] - c.df[opt_name.get(c.name,"p") + "_nom"])
+        capital_costs = c.df.capital_cost*c.df[opt_name.get(c.name,"p") + "_nom_opt"]
         capital_costs_grouped = capital_costs.groupby(c.df.carrier).sum()
 
         # Index tuple(s) indicating the newly to-be-added row(s)
@@ -67,8 +67,10 @@ def calculate_costs(n, label, costs):
             p_all = c.pnl.p.multiply(n.snapshot_weightings.generators,axis=0)
             p_all[p_all < 0.] = 0.
             p = p_all.sum()
-        else:
+        elif c.name == "Generator":
             p = c.pnl.p.multiply(n.snapshot_weightings.generators,axis=0).sum()
+        else:
+            p = 0
 
         marginal_costs = p*c.df.marginal_cost
 
