@@ -794,30 +794,28 @@ def prepare_network(config):
         if config["add_boilers"]:
             if config['add_resistive_heater']or (heat_demand.sum().sum()*config['frequency']/0.97*0.2)>=co2_limit:
                 network.add("Carrier", "resistive heater")
-                if planning_horizons != '2020':
-                    for cat in [" decentral ", " central "]:
-                        network.madd("Link",
-                                     nodes + cat + "resistive heater",
-                                     bus0=nodes,
-                                     bus1=nodes + cat + "heat",
-                                     carrier="resistive heater",
-                                     efficiency=costs.at[cat.lstrip()+'resistive heater','efficiency'],
-                                     capital_cost=costs.at[cat.lstrip()+'resistive heater','efficiency']*costs.at[cat.lstrip()+'resistive heater','capital_cost'],
-                                     p_nom_extendable=True,
-                                     lifetime=costs.at[cat.lstrip()+'resistive heater','lifetime'])
+                for cat in [" decentral ", " central "]:
+                    network.madd("Link",
+                                 nodes + cat + "resistive heater",
+                                 bus0=nodes,
+                                 bus1=nodes + cat + "heat",
+                                 carrier="resistive heater",
+                                 efficiency=costs.at[cat.lstrip()+'resistive heater','efficiency'],
+                                 capital_cost=costs.at[cat.lstrip()+'resistive heater','efficiency']*costs.at[cat.lstrip()+'resistive heater','capital_cost'],
+                                 p_nom_extendable=True,
+                                 lifetime=costs.at[cat.lstrip()+'resistive heater','lifetime'])
 
             if config['add_coal']:
-                if planning_horizons != '2020':
-                    for cat in [" decentral ", " central "]:
-                        network.madd("Link",
-                                     nodes + cat + "coal boiler",
-                                     p_nom_extendable=True,
-                                     bus0=nodes + " coal",
-                                     bus1=nodes + cat + "heat",
-                                     efficiency=costs.at[cat.lstrip()+'gas boiler','efficiency'],
-                                     marginal_cost=costs.at[cat.lstrip() + 'gas boiler', 'VOM'],
-                                     capital_cost=costs.at[cat.lstrip()+'gas boiler','efficiency']*costs.at[cat.lstrip()+'gas boiler','capital_cost'],
-                                     lifetime=costs.at[cat.lstrip()+'gas boiler','lifetime'])
+                for cat in [" decentral ", " central "]:
+                    network.madd("Link",
+                                 nodes + cat + "coal boiler",
+                                 p_nom_extendable=True,
+                                 bus0=nodes + " coal",
+                                 bus1=nodes + cat + "heat",
+                                 efficiency=costs.at[cat.lstrip()+'gas boiler','efficiency'],
+                                 marginal_cost=costs.at[cat.lstrip() + 'gas boiler', 'VOM'],
+                                 capital_cost=costs.at[cat.lstrip()+'gas boiler','efficiency']*costs.at[cat.lstrip()+'gas boiler','capital_cost'],
+                                 lifetime=costs.at[cat.lstrip()+'gas boiler','lifetime'])
 
             if config['add_gas']:
                 if planning_horizons != '2020':
@@ -850,7 +848,7 @@ def prepare_network(config):
             for cat in [" decentral ", " central "]:
                 network.madd("Generator",
                              nodes,
-                             suffix=cat + "solar thermal collector",
+                             suffix=cat + "solar thermal",
                              bus=nodes + cat + "heat",
                              carrier="solar thermal",
                              p_nom_extendable=True,

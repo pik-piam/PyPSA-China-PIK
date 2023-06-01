@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-version: 0518.175.1
+version: 0601.175.1
 logging_level: INFO
 foresight: "myopic"
 
@@ -80,7 +80,7 @@ Technique:
   onwind: true
   offwind: true
 
-existing_infrastructure: ['coal','CHP', 'OCGT','solar', 'onwind', 'offwind','coal boiler','resistive heater']
+existing_infrastructure: ['coal','CHP', 'OCGT','solar', 'onwind', 'offwind','coal boiler','resistive heater','solar thermal']
 
 
 ## add components
@@ -339,7 +339,7 @@ solving:
   options:
     formulation: kirchhoff
     load_shedding: false
-    noisy_costs: true
+    noisy_costs: false
     min_iterations: 4
     max_iterations: 6
     clip_p_max_pu: 0.01

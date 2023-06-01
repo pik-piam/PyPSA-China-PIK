@@ -30,8 +30,9 @@ def add_build_year_to_new_assets(n, baseyear):
 
     # Give assets with lifetimes and no build year the build year baseyear
     for c in n.iterate_components(["Link", "Generator", "Store"]):
+        attr = "e" if c.name == "Store" else "p"
 
-        assets = c.df.index[(c.df.lifetime!=np.inf) & (c.df.build_year==0)]
+        assets = c.df.index[(c.df.lifetime!=np.inf) & (c.df.build_year==0) & (c.df[attr + "_nom_extendable"]==True)]
         c.df.loc[assets, "build_year"] = baseyear
 
         # add -baseyear to name
@@ -59,9 +60,10 @@ def add_existing_capacities(df_agg):
         "offwind": "offwind",
         "coal boiler": "coal",
         "gas boiler": "gas",
-        "resistive heater": "AC"}
+        "resistive heater": "AC",
+        "solar thermal": "solar thermal"}
 
-    for tech in ['coal','CHP', 'OCGT','solar', 'onwind', 'offwind','coal boiler','resistive heater']:
+    for tech in ['coal','CHP', 'OCGT','solar', 'onwind', 'offwind','coal boiler','resistive heater','solar thermal']:
 
         df = pd.read_csv(snakemake.input[f"existing_{tech}"], index_col=0).fillna(0.)
         df.columns = df.columns.astype(int)
@@ -118,154 +120,169 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
         capacity = capacity[~capacity.isna()]
         capacity = capacity[capacity > config['existing_capacities']['threshold_capacity']]
 
-        if generator in ['coal', 'solar', 'onwind', 'offwind']:
+        if generator in ['solar', 'onwind', 'offwind']:
+            p_max_pu = n.generators_t.p_max_pu[capacity.index + " " + generator]
+            n.madd("Generator",
+                   capacity.index,
+                   suffix=' ' + generator + "-" + str(grouping_year),
+                   bus=capacity.index,
+                   carrier=generator,
+                   p_nom=capacity,
+                   p_nom_min=capacity,
+                   p_nom_extendable=False,
+                   marginal_cost=costs.at[generator, 'marginal_cost'],
+                   capital_cost=costs.at[generator, 'capital_cost'],
+                   efficiency=costs.at[generator, 'efficiency'],
+                   p_max_pu=p_max_pu.rename(columns=n.generators.bus),
+                   build_year=grouping_year,
+                   lifetime=costs.at[generator, 'lifetime']
+                   )
 
-            # to consider electricity grid connection costs or a split between
-            # solar utility and rooftop as well, rather take cost assumptions
-            # from existing network than from the cost database
+        if generator == "coal":
+            n.madd("Generator",
+                   capacity.index,
+                   suffix=' ' + generator + "-" + str(grouping_year),
+                   bus=capacity.index,
+                   carrier=generator,
+                   p_nom=capacity,
+                   p_nom_min=capacity,
+                   p_nom_extendable=False,
+                   marginal_cost=costs.at[generator, 'efficiency'] * costs.at[generator, 'marginal_cost'],
+                   capital_cost=costs.at[generator, 'efficiency'] * costs.at[generator, 'capital_cost'],
+                   efficiency=costs.at[generator, 'efficiency'],
+                   build_year=grouping_year,
+                   lifetime=costs.at[generator, 'lifetime']
+                   )
 
-            if generator in ['solar', 'onwind', 'offwind']:
-                p_max_pu = n.generators_t.p_max_pu[capacity.index + " " + generator]
+        if generator == "solar thermal":
+            decentral_percentage = pd.read_csv('data/existing_infrastructure/decentral solar thermal percentrage.csv',index_col=0)
+            decentral_percentage = decentral_percentage.squeeze()
+            for cat in [" central "]:
+                p_max_pu = n.generators_t.p_max_pu[capacity.index + cat + generator]
+                p_max_pu.columns = capacity.index
                 n.madd("Generator",
                        capacity.index,
-                       suffix=' ' + generator + "-" + str(grouping_year),
-                       bus=capacity.index,
+                       suffix=cat + generator + "-" + str(grouping_year),
+                       bus=capacity.index + cat + "heat",
                        carrier=generator,
-                       p_nom=capacity,
-                       p_nom_min=capacity,
+                       p_nom=capacity*(1-decentral_percentage ),
+                       p_nom_min=capacity*(1-decentral_percentage ),
                        p_nom_extendable=False,
-                       marginal_cost=costs.at[generator, 'marginal_cost'],
-                       capital_cost=costs.at[generator, 'capital_cost'],
-                       efficiency=costs.at[generator, 'efficiency'],
-                       p_max_pu=p_max_pu.rename(columns=n.generators.bus),
+                       marginal_cost=costs.at["central "+ generator, 'marginal_cost'],
+                       capital_cost=costs.at["central " + generator, 'capital_cost'],
+                       p_max_pu=p_max_pu,
                        build_year=grouping_year,
-                       lifetime=costs.at[generator, 'lifetime']
+                       lifetime=costs.at["central " + generator, 'lifetime']
                        )
-            else:
+            for cat in [" decentral "]:
+                p_max_pu = n.generators_t.p_max_pu[capacity.index + cat + generator]
+                p_max_pu.columns = capacity.index
                 n.madd("Generator",
                        capacity.index,
-                       suffix=' ' + generator + "-" + str(grouping_year),
-                       bus=capacity.index,
+                       suffix=cat + generator + "-" + str(grouping_year),
+                       bus=capacity.index + cat + "heat",
+                       carrier=generator,
+                       p_nom=capacity*decentral_percentage,
+                       p_nom_min=capacity*decentral_percentage,
+                       p_nom_extendable=False,
+                       marginal_cost=costs.at["decentral " + generator, 'marginal_cost'],
+                       capital_cost=costs.at["decentral " + generator, 'capital_cost'],
+                       p_max_pu=p_max_pu,
+                       build_year=grouping_year,
+                       lifetime=costs.at["decentral " + generator, 'lifetime']
+                       )
+
+        if generator == "CHP":
+            bus0 = capacity.index + " coal"
+            n.madd("Link",
+                   capacity.index,
+                   suffix=" " + generator + "-" + str(grouping_year),
+                   bus0=bus0,
+                   bus1=capacity.index,
+                   bus2=capacity.index + " central heat",
+                   carrier=generator,
+                   marginal_cost=costs.at['central coal CHP', 'efficiency'] * costs.at['central coal CHP', 'VOM'],  # NB: VOM is per MWel
+                   capital_cost=costs.at['central coal CHP', 'efficiency'] * costs.at['central coal CHP', 'capital_cost'],  # NB: fixed cost is per MWel,
+                   p_nom=capacity,
+                   p_nom_min=capacity,
+                   p_nom_extendable=False,
+                   efficiency=config['chp_parameters']['eff_el'],
+                   efficiency2=config['chp_parameters']['eff_th'],
+                   build_year=grouping_year,
+                   lifetime=costs.at["central coal CHP", 'lifetime']
+                   )
+
+        if generator == "OCGT":
+            bus0 = capacity.index + " gas"
+            n.madd("Link",
+                   capacity.index,
+                   suffix=" " + generator + "-" + str(grouping_year),
+                   bus0=bus0,
+                   bus1=capacity.index,
+                   marginal_cost=costs.at[generator, 'efficiency'] * costs.at[generator, 'VOM'],  # NB: VOM is per MWel
+                   capital_cost=costs.at[generator,'efficiency'] * costs.at[generator, 'capital_cost'],
+                   # NB: fixed cost is per MWel
+                   p_nom=capacity,
+                   p_nom_min=capacity,
+                   p_nom_extendable=False,
+                   efficiency=costs.at[generator, 'efficiency'],
+                   build_year=grouping_year,
+                   lifetime=costs.at[generator,'lifetime']
+                   )
+
+        if generator == "coal boiler":
+            bus0 = capacity.index + " coal"
+            decentral_percentage = pd.read_csv('data/existing_infrastructure/decentral coal boiler percentrage.csv',index_col=0)
+            decentral_percentage = decentral_percentage.squeeze()
+            for cat in [" central "]:
+                n.madd("Link",
+                       capacity.index,
+                       suffix="" + cat + generator + "-" + str(grouping_year),
+                       bus0=bus0,
+                       bus1=capacity.index + cat + "heat",
+                       marginal_cost=costs.at[cat.lstrip() + generator, 'VOM'],
+                       capital_cost=costs.at[cat.lstrip() + generator, 'efficiency'] * costs.at[
+                           cat.lstrip() + generator, 'capital_cost'],
+                       p_nom=capacity*(1-decentral_percentage ),
+                       p_nom_min=capacity*(1-decentral_percentage ),
+                       p_nom_extendable=False,
+                       efficiency=costs.at[cat.lstrip() + generator, 'efficiency'],
+                       build_year=grouping_year,
+                       lifetime=costs.at[cat.lstrip() + generator, 'lifetime']
+                       )
+            for cat in [" decentral "]:
+                n.madd("Link",
+                       capacity.index,
+                       suffix="" + cat + generator + "-" + str(grouping_year),
+                       bus0=bus0,
+                       bus1=capacity.index + cat + "heat",
+                       marginal_cost=costs.at[cat.lstrip() + generator, 'VOM'],
+                       capital_cost=costs.at[cat.lstrip() + generator, 'efficiency'] * costs.at[
+                           cat.lstrip() + generator, 'capital_cost'],
+                       p_nom=capacity*decentral_percentage,
+                       p_nom_min=capacity*decentral_percentage,
+                       p_nom_extendable=False,
+                       efficiency=costs.at[cat.lstrip() + generator, 'efficiency'],
+                       build_year=grouping_year,
+                       lifetime=costs.at[cat.lstrip() + generator, 'lifetime']
+                       )
+
+        if generator == "resistive heater":
+            for cat in [" decentral "]:
+                n.madd("Link",
+                       capacity.index,
+                       suffix=' ' + cat + generator + "-" + str(grouping_year),
+                       bus0=capacity.index,
+                       bus1=capacity.index + cat + "heat",
                        carrier=generator,
                        p_nom=capacity,
                        p_nom_min=capacity,
                        p_nom_extendable=False,
-                       marginal_cost=costs.at[generator, 'efficiency'] * costs.at[generator, 'marginal_cost'],
-                       capital_cost=costs.at[generator, 'efficiency'] * costs.at[generator, 'capital_cost'],
-                       efficiency=costs.at[generator, 'efficiency'],
+                       capital_cost=costs.at[cat.lstrip() + generator, 'efficiency'] * costs.at[cat.lstrip() + generator, 'capital_cost'],
+                       efficiency=costs.at[cat.lstrip() + generator, 'efficiency'],
                        build_year=grouping_year,
-                       lifetime=costs.at[generator, 'lifetime']
+                       lifetime=costs.at[cat.lstrip() + generator, 'lifetime']
                        )
-        elif generator in ['CHP','OCGT'] :
-            if generator == 'CHP':
-                bus0 = capacity.index + " coal"
-
-                n.madd("Link",
-                       capacity.index,
-                       suffix=" " + generator + "-" + str(grouping_year),
-                       bus0=bus0,
-                       bus1=capacity.index,
-                       bus2=capacity.index + " central heat",
-                       carrier=generator,
-                       marginal_cost=costs.at['central coal CHP', 'efficiency'] * costs.at['central coal CHP', 'VOM'],  # NB: VOM is per MWel
-                       capital_cost=costs.at['central coal CHP', 'efficiency'] * costs.at['central coal CHP', 'capital_cost'],  # NB: fixed cost is per MWel,
-                       p_nom=capacity,
-                       p_nom_min=capacity,
-                       p_nom_extendable=False,
-                       efficiency=config['chp_parameters']['eff_el'],
-                       efficiency2=config['chp_parameters']['eff_th'],
-                       build_year=grouping_year,
-                       lifetime=costs.at["central coal CHP", 'lifetime']
-                       )
-            else:
-                bus0 = capacity.index + " gas"
-                n.madd("Link",
-                       capacity.index,
-                       suffix=" " + generator + "-" + str(grouping_year),
-                       bus0=bus0,
-                       bus1=capacity.index,
-                       marginal_cost=costs.at[generator, 'efficiency'] * costs.at[generator, 'VOM'],  # NB: VOM is per MWel
-                       capital_cost=costs.at[generator,'efficiency'] * costs.at[generator, 'capital_cost'],
-                       # NB: fixed cost is per MWel
-                       p_nom=capacity,
-                       p_nom_min=capacity,
-                       p_nom_extendable=False,
-                       efficiency=costs.at[generator, 'efficiency'],
-                       build_year=grouping_year,
-                       lifetime=costs.at[generator,'lifetime']
-                       )
-        else:
-            if generator == "gas boiler":
-                bus0 = capacity.index + " gas"
-                for cat in [" central "]:
-                    n.madd("Link",
-                           capacity.index,
-                           suffix="" + cat + generator + "-" + str(grouping_year),
-                           bus0=bus0,
-                           bus1=capacity.index + cat + "heat",
-                           marginal_cost=costs.at[cat.lstrip() + generator, 'VOM'],
-                           capital_cost=costs.at[cat.lstrip()+generator,'efficiency']*costs.at[cat.lstrip()+generator,'capital_cost'],
-                           p_nom=capacity,
-                           p_nom_min=capacity,
-                           p_nom_extendable=False,
-                           efficiency=costs.at[cat.lstrip() + generator, 'efficiency'],
-                           build_year=grouping_year,
-                           lifetime=costs.at[cat.lstrip()+generator,'lifetime']
-                           )
-            elif generator == 'coal boiler':
-                bus0 = capacity.index + " coal"
-                decentral_percentage = pd.read_csv('data/existing_infrastructure/decentral coal boiler percentrage.csv',index_col=0)
-                decentral_percentage = decentral_percentage.squeeze()
-                for cat in [" central "]:
-                    n.madd("Link",
-                           capacity.index,
-                           suffix="" + cat + generator + "-" + str(grouping_year),
-                           bus0=bus0,
-                           bus1=capacity.index + cat + "heat",
-                           marginal_cost=costs.at[cat.lstrip() + generator, 'VOM'],
-                           capital_cost=costs.at[cat.lstrip() + generator, 'efficiency'] * costs.at[
-                               cat.lstrip() + generator, 'capital_cost'],
-                           p_nom=capacity*(1-decentral_percentage ),
-                           p_nom_min=capacity*(1-decentral_percentage ),
-                           p_nom_extendable=False,
-                           efficiency=costs.at[cat.lstrip() + generator, 'efficiency'],
-                           build_year=grouping_year,
-                           lifetime=costs.at[cat.lstrip() + generator, 'lifetime']
-                           )
-                for cat in [" decentral "]:
-                    n.madd("Link",
-                           capacity.index,
-                           suffix="" + cat + generator + "-" + str(grouping_year),
-                           bus0=bus0,
-                           bus1=capacity.index + cat + "heat",
-                           marginal_cost=costs.at[cat.lstrip() + generator, 'VOM'],
-                           capital_cost=costs.at[cat.lstrip() + generator, 'efficiency'] * costs.at[
-                               cat.lstrip() + generator, 'capital_cost'],
-                           p_nom=capacity*decentral_percentage,
-                           p_nom_min=capacity*decentral_percentage,
-                           p_nom_extendable=False,
-                           efficiency=costs.at[cat.lstrip() + generator, 'efficiency'],
-                           build_year=grouping_year,
-                           lifetime=costs.at[cat.lstrip() + generator, 'lifetime']
-                           )
-            else:
-                for cat in [" decentral "]:
-                    n.madd("Link",
-                           capacity.index,
-                           suffix=' ' + cat + generator + "-" + str(grouping_year),
-                           bus0=capacity.index,
-                           bus1=capacity.index + cat + "heat",
-                           carrier=generator,
-                           p_nom=capacity,
-                           p_nom_min=capacity,
-                           p_nom_extendable=False,
-                           capital_cost=costs.at[cat.lstrip() + generator, 'efficiency'] * costs.at[cat.lstrip() + generator, 'capital_cost'],
-                           efficiency=costs.at[cat.lstrip() + generator, 'efficiency'],
-                           build_year=grouping_year,
-                           lifetime=costs.at[cat.lstrip() + generator, 'lifetime']
-                           )
-
-
 
 
 if __name__ == "__main__":

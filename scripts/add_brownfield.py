@@ -41,10 +41,8 @@ def add_brownfield(n, n_p, year):
     n.links.p_nom.loc[n.links.length>0] = n_p.links.p_nom_opt.loc[(n_p.links.carrier=='AC') & (n_p.links.build_year==0)]
     n.links.p_nom_min.loc[n.links.length>0] = n_p.links.p_nom_opt.loc[(n_p.links.carrier=='AC') & (n_p.links.build_year==0)]
 
-    # if year == 2025:
-    #     n_p.mremove('Generator',n_p.generators.index[n_p.generators.p_nom_opt<1])
-    #     n_p.mremove('Link',n_p.links.index[n_p.links.p_nom_opt<1])
-    #     add_build_year_to_new_assets(n_p, 2020)
+    if year == 2025:
+        add_build_year_to_new_assets(n_p, 2020)
 
     for c in n_p.iterate_components(["Link", "Generator", "Store"]):
 
