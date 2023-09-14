@@ -100,7 +100,7 @@ rule build_population:
 
 if config['enable'].get('retrieve_cutout', True):
     rule retrieve_cutout:
-        input: HTTP.remote("zenodo.org/record/6510859/files/China-2020.nc", keep_local=True, static=True)
+        input: HTTP.remote("zenodo.org/record/8343761/files/China-2020.nc", keep_local=True, static=True)
         output: "cutouts/{cutout}.nc"
         run: move(input[0], output[0])
 
