@@ -17,3 +17,5 @@ doc
 cutouts
 benchmarks
 configs
+data
+logs

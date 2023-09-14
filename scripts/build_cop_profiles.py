@@ -9,23 +9,23 @@ logger = logging.getLogger(__name__)
 
 def build_cop_profiles():
 
-    with pd.HDFStore(snakemake.input.infile, mode='r') as store:
+    with pd.HDFStore(snakemake.input.population_map, mode='r') as store:
         pop_map = store['population_gridcell_map']
 
     #this one includes soil temperature
-    cutout = atlite.Cutout('cutouts/China-2020.nc')
-
-    #list of grid cells
-    grid_cells = cutout.grid_cells()
+    cutout = atlite.Cutout(snakemake.input.cutout)
 
     pop_matrix = sp.sparse.csr_matrix(pop_map.T)
     index = pop_map.columns
     index.name = "provinces"
 
-    temp = cutout.temperature(matrix=pop_matrix,index=index)
     soil_temp = cutout.soil_temperature(matrix=pop_matrix,index=index)
+    soil_temp['time'] = soil_temp['time'].values + pd.Timedelta(8, unit="h")  # UTC-8 instead of UTC
 
-    source_T = temp.to_pandas().divide(pop_map.sum())
+    with pd.HDFStore(snakemake.input.temp, mode='r') as store:
+        temp = store['temperature']
+
+    source_T = temp
     source_soil_T = soil_temp.to_pandas().divide(pop_map.sum())
 
     #quadratic regression based on Staffell et al. (2012)

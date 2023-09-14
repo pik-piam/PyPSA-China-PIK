@@ -16,7 +16,7 @@ def csv_to_df(csv_name=None):
 
 def build_population():
 
-    population = 1.e3 * csv_to_df(csv_name='data/population/population_from_National_Data_2020.csv')
+    population = 1.e3 * csv_to_df(csv_name=snakemake.input.population)
 
     population.name = "population"
 

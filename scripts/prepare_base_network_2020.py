@@ -135,7 +135,7 @@ def prepare_network(config):
             # 60% CHP efficiency 0.468 40% coal boiler efficiency 0.97
             # (((791+286) * 0.6 /0.468) + ((791+286) * 0.4 /0.97))  * 0.34 * 1e6 = 0.62 * 1e9
 
-            co2_limit = (5.288987673 + 0.628275682)*1e9  * (1 - config['scenario']['co2_reduction'][pathway][planning_horizons]) # Chinese 2020 CO2 emissions of electric and heating sector
+            co2_limit = (5.288987673 + 0.628275682)*1e9 * (1 - config['scenario']['co2_reduction'][pathway][planning_horizons]) # Chinese 2020 CO2 emissions of electric and heating sector
 
             network.add("GlobalConstraint",
                         "co2_limit",
@@ -249,7 +249,7 @@ def prepare_network(config):
                     bus1=dams['Province'],
                     carrier="hydroelectricity",
                     p_nom=10 * dams['installed_capacity_10MW'],
-                    capital_cost=costs.at['hydro', 'capital_cost'],
+                    capital_cost=costs.at['hydro','capital_cost'],
                     efficiency= 1)
 
 
@@ -320,8 +320,11 @@ def prepare_network(config):
                     bus=nodes,
                     carrier="hydroelectricity",
                     p_nom=hydro_p_nom,
+                    p_nom_min=hydro_p_nom,
+                    p_nom_extendable=False,
                     capital_cost=costs.at['hydro','capital_cost'],
                     p_max_pu=hydro_p_max_pu)
+
 
     if config['add_H2']:
 
@@ -360,7 +363,7 @@ def prepare_network(config):
                      p_nom_extendable=True,
                      carrier="H2",
                      efficiency1=costs.at["central hydrogen CHP","efficiency"],
-                     efficiency2=costs.at["central hydrogen CHP","efficiency"]/costs.at["central hydrogen CHP","c_b"],
+                     efficiency2=costs.at["central hydrogen CHP","efficiency"]*costs.at["central hydrogen CHP","c_b"],
                      capital_cost=costs.at["central hydrogen CHP","efficiency"]*costs.at["central hydrogen CHP","capital_cost"],
                      lifetime=costs.at["central hydrogen CHP","lifetime"]
                      )
@@ -402,7 +405,7 @@ def prepare_network(config):
                  suffix=' onwind',
                  bus=nodes,
                  carrier="onwind",
-                 p_nom_extendable=True,
+                 p_nom_extendable=False,
                  p_nom_max=ds_onwind['p_nom_max'].to_pandas(),
                  capital_cost = costs.at['onwind','capital_cost'],
                  marginal_cost=costs.at['onwind','marginal_cost'],
@@ -415,7 +418,7 @@ def prepare_network(config):
                  suffix=' offwind',
                  bus=offwind_nodes,
                  carrier="offwind",
-                 p_nom_extendable=True,
+                 p_nom_extendable=False,
                  p_nom_max=ds_offwind['p_nom_max'].to_pandas(),
                  capital_cost = costs.at['offwind','capital_cost'],
                  marginal_cost=costs.at['offwind','marginal_cost'],
@@ -427,7 +430,7 @@ def prepare_network(config):
                  suffix=' solar',
                  bus=nodes,
                  carrier="solar",
-                 p_nom_extendable=True,
+                 p_nom_extendable=False,
                  p_nom_max=ds_solar['p_nom_max'].to_pandas(),
                  capital_cost = costs.at['solar','capital_cost'],
                  marginal_cost=costs.at['solar','marginal_cost'],
@@ -445,47 +448,8 @@ def prepare_network(config):
                      bus=nodes,
                      carrier="nuclear",
                      efficiency=costs.at['nuclear','efficiency'],
-                     capital_cost = costs.at['nuclear','capital_cost'], #NB: capital cost is per MWel
-                     marginal_cost= costs.at['nuclear','efficiency'] * costs.at['nuclear','marginal_cost'])
-
-    if "heat pump" in config["Techs"]["vre_techs"]:
-
-        date_range = pd.date_range('2025-01-01 00:00', '2025-12-31 23:00', freq=config['freq'], tz='Asia/shanghai')
-        date_range = date_range.map(lambda t: t.replace(year=2020))
-
-        with pd.HDFStore(snakemake.input.cop_name, mode='r') as store:
-            ashp_cop = store['ashp_cop_profiles']
-            ashp_cop.index = ashp_cop.index.tz_localize('Asia/shanghai')
-            ashp_cop = ashp_cop.loc[date_range].set_index(network.snapshots)
-            gshp_cop = store['gshp_cop_profiles']
-            gshp_cop.index = gshp_cop.index.tz_localize('Asia/shanghai')
-            gshp_cop = gshp_cop.loc[date_range].set_index(network.snapshots)
-
-        for cat in [' decentral ', ' central ']:
-            network.madd("Link",
-                         nodes,
-                         suffix=cat + "heat pump",
-                         bus0=nodes,
-                         bus1=nodes + cat + "heat",
-                         carrier='heat pump',
-                         efficiency=ashp_cop[nodes] if config["time_dep_hp_cop"] else costs.at[cat.lstrip()+"air-sourced heat pump",'efficiency'],
-                         capital_cost=costs.at[cat.lstrip()+'air-sourced heat pump','efficiency'] * costs.at[cat.lstrip()+'air-sourced heat pump','capital_cost'],
-                         marginal_cost=costs.at[cat.lstrip()+'air-sourced heat pump','efficiency'] * costs.at[cat.lstrip()+'air-sourced heat pump','marginal_cost'],
-                         p_nom_extendable=True,
-                         lifetime=costs.at[cat.lstrip()+'air-sourced heat pump','lifetime'])
-
-        network.madd("Link",
-                     nodes,
-                     suffix=" ground heat pump",
-                     bus0=nodes,
-                     bus1=nodes + " decentral heat",
-                     carrier='heat pump',
-                     efficiency=gshp_cop[nodes] if config["time_dep_hp_cop"] else costs.at['decentral ground-sourced heat pump','efficiency'],
-                     capital_cost=costs.at[cat.lstrip()+'ground-sourced heat pump','efficiency'] * costs.at['decentral ground-sourced heat pump','capital_cost'],
-                     marginal_cost=costs.at[cat.lstrip() + 'ground-sourced heat pump', 'efficiency'] * costs.at[
-                         cat.lstrip() + 'ground-sourced heat pump', 'marginal_cost'],
-                     p_nom_extendable=True,
-                     lifetime=costs.at['decentral ground-sourced heat pump','lifetime'])
+                     capital_cost=costs.at['nuclear','capital_cost'],
+                     marginal_cost=costs.at['nuclear','efficiency'] * costs.at['nuclear','marginal_cost'])
 
     if "resistive heater" in config["Techs"]["vre_techs"]:
         for cat in [" decentral ", " central "]:
@@ -513,123 +477,29 @@ def prepare_network(config):
         solar_thermal.index = solar_thermal.index.tz_localize('Asia/shanghai')
         solar_thermal = solar_thermal.loc[date_range].set_index(network.snapshots)
 
-        for cat in [" decentral ", " central "]:
+        for cat in [" central "]:
             network.madd("Generator",
                          nodes,
                          suffix=cat + "solar thermal",
                          bus=nodes + cat + "heat",
                          carrier="solar thermal",
-                         p_nom_extendable=True,
+                         p_nom_extendable=False,
                          capital_cost=costs.at[cat.lstrip()+'solar thermal','capital_cost'],
                          p_max_pu=solar_thermal[nodes].clip(1.e-4),
                          lifetime=costs.at[cat.lstrip()+'solar thermal','lifetime'])
 
     if "coal boiler" in config["Techs"]["conv_techs"]:
-        for cat in [" decentral ", " central "]:
+        for cat in [" decentral "]:
             network.madd("Link",
                          nodes + cat + "coal boiler",
                          p_nom_extendable=True,
                          bus0=nodes + " coal",
                          bus1=nodes + cat + "heat",
                          carrier="coal boiler",
-                         efficiency=costs.at[cat.lstrip()+'gas boiler','efficiency'],
-                         marginal_cost=costs.at[cat.lstrip()+'gas boiler','efficiency']*costs.at[cat.lstrip() + 'gas boiler', 'VOM'],
-                         capital_cost=costs.at[cat.lstrip()+'gas boiler','efficiency']*costs.at[cat.lstrip()+'gas boiler','capital_cost'],
-                         lifetime=costs.at[cat.lstrip()+'gas boiler','lifetime'])
-
-    if "gas boiler" in config["Techs"]["conv_techs"]:
-        for cat in [" decentral ", " central "]:
-            network.madd("Link",
-                         nodes + cat + "gas boiler",
-                         p_nom_extendable=True,
-                         bus0=nodes + " gas",
-                         bus1=nodes + cat + "heat",
-                         carrier="gas boiler",
-                         efficiency=costs.at[cat.lstrip()+'gas boiler','efficiency'],
-                         marginal_cost=costs.at[cat.lstrip()+'gas boiler','efficiency']*costs.at[cat.lstrip() + 'gas boiler', 'VOM'],
-                         capital_cost=costs.at[cat.lstrip()+'gas boiler','efficiency']*costs.at[cat.lstrip()+'gas boiler','capital_cost'],
-                         lifetime=costs.at[cat.lstrip()+'gas boiler','lifetime'])
-
-    if "OCGT gas" in config["Techs"]["conv_techs"]:
-        network.madd("Link",
-                     nodes,
-                     suffix=" OCGT",
-                     bus0=nodes + " gas",
-                     bus1=nodes,
-                     carrier="OCGT gas",
-                     marginal_cost=costs.at["OCGT",'efficiency'] * costs.at["OCGT", 'VOM'], #NB: VOM is per MWel
-                     capital_cost=costs.at["OCGT",'efficiency'] * costs.at["OCGT", 'capital_cost'], #NB: capital cost is per MWel
-                     p_nom_extendable=True,
-                     efficiency=costs.at["OCGT", 'efficiency'],
-                     lifetime=costs.at["OCGT", 'lifetime'])
-
-    if "CHP gas" in config["Techs"]["conv_techs"]:
-        network.madd("Link",
-                     nodes,
-                     suffix=" central CHP gas generator",
-                     bus0=nodes + " gas",
-                     bus1=nodes,
-                     carrier="CHP gas",
-                     p_nom_extendable=True,
-                     marginal_cost=costs.at['central gas CHP', 'efficiency'] * costs.at[
-                         'central gas CHP', 'VOM'],  # NB: VOM is per MWel
-                     capital_cost=costs.at['central gas CHP', 'efficiency'] * costs.at[
-                         'central gas CHP', 'capital_cost'],  # NB: capital cost is per MWel
-                     efficiency=costs.at['central gas CHP', 'efficiency'],
-                     p_nom_ratio=1.0,
-                     c_b=costs.at['central gas CHP', 'c_b'],
-                     lifetime=costs.at['central gas CHP', 'lifetime'])
-
-        network.madd("Link",
-                     nodes,
-                     suffix=" central CHP gas boiler",
-                     bus0=nodes + " gas",
-                     bus1=nodes + " central heat",
-                     carrier="CHP gas",
-                     p_nom_extendable=True,
-                     marginal_cost=costs.at['central gas CHP', 'efficiency'] * costs.at[
-                         'central gas CHP', 'VOM'],  # NB: VOM is per MWel
-                     efficiency=costs.at['central gas CHP', 'efficiency']/costs.at['central gas CHP', 'c_v'],
-                     lifetime=costs.at['central gas CHP', 'lifetime'])
-
-    if "coal power plant" in config["Techs"]["conv_techs"]:
-        network.madd("Generator",
-                    nodes,
-                    suffix=' coal',
-                    bus=nodes,
-                    carrier="coal power plant",
-                    p_nom_extendable=True,
-                    efficiency=costs.at['coal', 'efficiency'],
-                    marginal_cost=costs.at['coal', 'efficiency'] * costs.at['coal', 'marginal_cost'],
-                    capital_cost=costs.at['coal', 'capital_cost'], #NB: capital cost is per MWel
-                    lifetime=costs.at['coal', 'lifetime'])
-
-    if "CHP coal" in config["Techs"]["conv_techs"]:
-        network.madd("Link",
-                 nodes,
-                 suffix=" central CHP coal generator",
-                 bus0=nodes + " coal",
-                 bus1=nodes,
-                 carrier="CHP coal",
-                 p_nom_extendable=True,
-                 marginal_cost=costs.at['central coal CHP', 'efficiency'] * costs.at['central coal CHP', 'VOM'],#NB: VOM is per MWel
-                 capital_cost=costs.at['central coal CHP', 'efficiency'] * costs.at['central coal CHP', 'capital_cost'],#NB: capital cost is per MWel
-                 efficiency=costs.at['central coal CHP', 'efficiency'],
-                 p_nom_ratio=1.0,
-                 c_b=costs.at['central coal CHP', 'c_b'],
-                 lifetime=costs.at['central coal CHP', 'lifetime'])
-
-        network.madd("Link",
-                   nodes,
-                   suffix=" central CHP coal boiler",
-                   bus0=nodes + " coal",
-                   bus1=nodes + " central heat",
-                   carrier="CHP coal",
-                   p_nom_extendable=True,
-                   marginal_cost=costs.at['central coal CHP', 'efficiency'] * costs.at[
-                       'central coal CHP', 'VOM'],  # NB: VOM is per MWel
-                   efficiency=costs.at['central coal CHP', 'efficiency']/costs.at['central coal CHP', 'c_v'],
-                   lifetime=costs.at['central coal CHP', 'lifetime'])
+                         efficiency=costs.at[cat.lstrip()+'coal boiler','efficiency'],
+                         marginal_cost=costs.at[cat.lstrip() + 'coal boiler', 'VOM'],
+                         capital_cost=costs.at[cat.lstrip()+'coal boiler','efficiency']*costs.at[cat.lstrip()+'coal boiler','capital_cost'],
+                         lifetime=costs.at[cat.lstrip()+'coal boiler','lifetime'])
 
     if "water tanks" in config["Techs"]["store_techs"]:
         for cat in [' decentral ', ' central ']:
@@ -662,7 +532,7 @@ def prepare_network(config):
                          carrier="water tanks",
                          e_cyclic=True,
                          e_nom_extendable=True,
-                         standing_loss=1-np.exp(-1/(24.* (config["tes_tau"] if cat==' decentral ' else 180.))),  # [HP] 180 day time constant for centralised, 3 day for decentralised
+                         standing_loss=1-np.exp(-1/(24.* (config["tes_tau"] if cat==' decentral ' else 180.))),  # [HP] 180 day time constant for centralised
                          capital_cost=costs.at[cat.lstrip()+'water tank storage','capital_cost'],
                          lifetime=costs.at[cat.lstrip()+'water tank storage','lifetime'])
 
@@ -753,11 +623,11 @@ if __name__ == '__main__':
     # Detect running outside of snakemake and mock snakemake for testing
     if 'snakemake' not in globals():
         from _helpers import mock_snakemake
-        snakemake = mock_snakemake('prepare_base_networks',
+        snakemake = mock_snakemake('prepare_base_networks_2020',
                                    opts='ll',
                                    topology='current+Neighbor',
                                    pathway='exponential175',
-                                   planning_horizons="2025")
+                                   planning_horizons="2020")
     configure_logging(snakemake)
 
     network = prepare_network(snakemake.config)

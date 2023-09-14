@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 
 def build_heat_demand_profiles():
 
-    with pd.HDFStore(snakemake.input.infile, mode='r') as store:
+    with pd.HDFStore(snakemake.input.population_map, mode='r') as store:
         pop_map = store['population_gridcell_map']
 
 
-    cutout = atlite.Cutout(snakemake.input['cutout'])
+    cutout = atlite.Cutout(snakemake.input.cutout)
 
     pop_matrix = sp.sparse.csr_matrix(pop_map.T)
     index = pop_map.columns

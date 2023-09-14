@@ -17,7 +17,9 @@ if __name__ == "__main__":
     configure_logging(snakemake)
 
     cutout_params = snakemake.config['atlite']['cutouts'][snakemake.wildcards.cutout]
-    snapshots = pd.date_range(freq='h', **snakemake.config['snapshots'])
+    snapshots = pd.date_range(freq='h', tz='Asia/shanghai', **snakemake.config['snapshots'])
+    snapshots = snapshots.tz_convert('UTC')
+    snapshots = snapshots.tz_localize(None)
     time = [snapshots[0], snapshots[-1]]
     cutout_params['time'] = slice(*cutout_params.get('time', time))
     

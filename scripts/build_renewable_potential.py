@@ -10,15 +10,10 @@ import functools
 import atlite
 import xarray as xr
 import geopandas as gpd
-from atlite.gis import shape_availability, ExclusionContainer
+from atlite.gis import ExclusionContainer
 import numpy as np
-import pandas as pd
-import rasterio as rio
-from shapely import ops,affinity
-from pypsa.geo import haversine
-from shapely.geometry import LineString
-from shapely.geometry import Point, MultiPoint
 import time
+import pandas as pd
 
 from functions import pro_names
 
@@ -34,9 +29,9 @@ if __name__ == "__main__":
     nprocesses = int(snakemake.threads) #?
     noprogress = not snakemake.config['atlite'].get('show_progress', True)
 
-    cutout = atlite.Cutout(snakemake.input['cutout'])
+    cutout = atlite.Cutout(snakemake.input.cutout)
     cutout.prepare()
-    provinces_shp = gpd.read_file(snakemake.input['provinces_shp'])[['NAME_1', 'geometry']]
+    provinces_shp = gpd.read_file(snakemake.input.provinces_shp)[['NAME_1', 'geometry']]
     provinces_shp.replace(to_replace={'Nei Mongol': 'InnerMongolia',
                                       'Xinjiang Uygur': 'Xinjiang',
                                       'Ningxia Hui': 'Ningxia',
@@ -46,9 +41,9 @@ if __name__ == "__main__":
 
     buses = provinces_shp.index
 
-    Grass = snakemake.input['Grass_raster']
-    Bare= snakemake.input['Bare_raster']
-    Shrubland = snakemake.input['Shrubland_raster']
+    Grass = snakemake.input.Grass_raster
+    Bare= snakemake.input.Bare_raster
+    Shrubland = snakemake.input.Shrubland_raster
 
     area = cutout.grid.to_crs(3035).area / 1e6
     area = xr.DataArray(area.values.reshape(cutout.shape),
@@ -111,6 +106,8 @@ if __name__ == "__main__":
             min_p_max_pu = solar_config['clip_p_max_pu']
             solar_ds['profile'] = solar_ds['profile'].where(solar_ds['profile'] >= min_p_max_pu, 0)
 
+        solar_ds['time'] = solar_ds['time'].values + pd.Timedelta(8, unit="h")  # UTC-8 instead of UTC
+
         solar_ds.to_netcdf(snakemake.output.solar_profile)
 
     if snakemake.config['Technique']['onwind']:
@@ -163,6 +160,7 @@ if __name__ == "__main__":
             min_p_max_pu = onwind_config['clip_p_max_pu']
             onwind_ds['profile'] = onwind_ds['profile'].where(onwind_ds['profile'] >= min_p_max_pu, 0)
 
+        onwind_ds['time'] = onwind_ds['time'].values + pd.Timedelta(8, unit="h")  # UTC-8 instead of UTC
         onwind_ds.to_netcdf(snakemake.output.onwind_profile)
 
     if snakemake.config['Technique']['offwind']:
@@ -190,8 +188,8 @@ if __name__ == "__main__":
             Protected_shp = gpd.read_file(snakemake.input['natura1'])
             Protected_shp1 = gpd.read_file(snakemake.input['natura2'])
             Protected_shp2 = gpd.read_file(snakemake.input['natura3'])
-            Protected_shp = Protected_shp.append(Protected_shp1)
-            Protected_shp = Protected_shp.append(Protected_shp2)
+            Protected_shp = pd.concat([Protected_shp,Protected_shp1], ignore_index=True)
+            Protected_shp = pd.concat([Protected_shp,Protected_shp2], ignore_index=True)
             Protected_shp = Protected_shp.geometry
             Protected_shp = gpd.GeoDataFrame(Protected_shp)
             Protected_Marine_shp = gpd.tools.overlay(Protected_shp, EEZ_shp, how='intersection')
@@ -233,6 +231,7 @@ if __name__ == "__main__":
             min_p_max_pu = offwind_config['clip_p_max_pu']
             offwind_ds['profile'] = offwind_ds['profile'].where(offwind_ds['profile'] >= min_p_max_pu, 0)
 
+        offwind_ds['time'] = offwind_ds['time'].values + pd.Timedelta(8, unit="h")  # UTC-8 instead of UTC
         offwind_ds.to_netcdf(snakemake.output.offwind_profile)
 
 

@@ -71,6 +71,7 @@ def plot_opt_map(n, opts, ax=None, attribute='p_nom'):
     if attribute == 'p_nom':
         bus_sizes = pd.concat((n.generators.query('carrier != "solar thermal"' and 'carrier != "hydro_inflow"').groupby(['bus', 'carrier']).p_nom_opt.sum(),
                                n.links.query('carrier == ["gas-AC","coal-AC","stations-AC"]').groupby(['bus1', 'carrier']).p_nom_opt.sum()))
+        bus_sizes.index.names = ['bus', 'carrier']
         bus_sizes = bus_sizes.groupby(['bus','carrier']).sum()
         line_widths_exp = n.lines.s_nom_opt
         line_widths_cur = n.lines.s_nom_min
@@ -252,7 +253,9 @@ if __name__ == "__main__":
     map_figsize = config["plotting"]['map']['figsize']
     map_boundaries = config["plotting"]['map']['boundaries']
 
-    n = load_network_for_plots(snakemake.input.network, snakemake.input.tech_costs, config)
+    cost_year = snakemake.wildcards.planning_horizons
+
+    n = load_network_for_plots(snakemake.input.network, snakemake.input.tech_costs, config, cost_year)
 
     scenario_opts = wildcards.opts.split('-')
 
