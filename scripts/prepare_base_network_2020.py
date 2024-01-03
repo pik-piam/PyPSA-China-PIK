@@ -69,7 +69,6 @@ def prepare_network(config):
 
     #load graph
     nodes = pd.Index(pro_names)
-    edges = pd.read_csv(snakemake.input.edges, header=None)
     pathway = snakemake.wildcards['pathway']
 
     tech_costs = snakemake.input.tech_costs
@@ -93,9 +92,22 @@ def prepare_network(config):
     offwind_p_max_pu.index = offwind_p_max_pu.index.tz_localize('Asia/shanghai')
     offwind_p_max_pu = offwind_p_max_pu.loc[date_range].set_index(network.snapshots)
 
+    def rename_province(label):
+        rename = {
+            "Nei Mongol": "InnerMongolia",
+            "Ningxia Hui": "Ningxia",
+            "Xinjiang Uygur": "Xinjiang",
+            "Xizang": "Tibet"
+        }
+
+        for old, new in rename.items():
+            if old == label:
+                label = new
+        return label
+
     pro_shapes = gpd.GeoDataFrame.from_file(snakemake.input.province_shape)
     pro_shapes = pro_shapes.to_crs(4326)
-    pro_shapes.index = pro_names
+    pro_shapes.index = pro_shapes.NAME_1.map(rename_province)
     pro_centroid_x = pro_shapes.to_crs('+proj=cea').centroid.to_crs(pro_shapes.crs).x
     pro_centroid_y = pro_shapes.to_crs('+proj=cea').centroid.to_crs(pro_shapes.crs).y
 
@@ -183,11 +195,12 @@ def prepare_network(config):
                      p_nom_extendable=True,
                      marginal_cost=costs.at['OCGT', 'fuel'])
 
+        network.add("Carrier", "biogas")
         network.madd("Store",
                      nodes + " gas Store",
                      bus=nodes + " gas",
                      e_nom_extendable=True,
-                     carrier="gas")
+                     carrier="biogas")
 
     if config["add_coal"]:
         network.madd("Generator",
@@ -325,80 +338,6 @@ def prepare_network(config):
                     capital_cost=costs.at['hydro','capital_cost'],
                     p_max_pu=hydro_p_max_pu)
 
-
-    if config['add_H2']:
-
-        network.madd("Bus",
-                     nodes,
-                     suffix=" H2",
-                     x=pro_centroid_x,
-                     y=pro_centroid_y,
-                     carrier="H2")
-
-        network.madd("Link",
-                    nodes + " H2 Electrolysis",
-                    bus0=nodes,
-                    bus1=nodes + " H2",
-                    p_nom_extendable=True,
-                    carrier="H2",
-                    efficiency=costs.at["electrolysis","efficiency"],
-                    capital_cost=costs.at["electrolysis","capital_cost"],
-                    lifetime=costs.at["electrolysis","lifetime"])
-
-        network.madd("Link",
-                     nodes + " H2 Fuel Cell",
-                     bus0=nodes + " H2",
-                     bus1=nodes,
-                     p_nom_extendable=True,
-                     carrier="H2",
-                     efficiency=costs.at["fuel cell","efficiency"],
-                     capital_cost=costs.at["fuel cell","efficiency"] * costs.at["fuel cell","capital_cost"],
-                     lifetime=costs.at["fuel cell","lifetime"])
-
-        network.madd("Link",
-                     nodes + " central H2 CHP",
-                     bus0=nodes + " H2",
-                     bus1=nodes,
-                     bus2=nodes + " central heat",
-                     p_nom_extendable=True,
-                     carrier="H2",
-                     efficiency1=costs.at["central hydrogen CHP","efficiency"],
-                     efficiency2=costs.at["central hydrogen CHP","efficiency"]*costs.at["central hydrogen CHP","c_b"],
-                     capital_cost=costs.at["central hydrogen CHP","efficiency"]*costs.at["central hydrogen CHP","capital_cost"],
-                     lifetime=costs.at["central hydrogen CHP","lifetime"]
-                     )
-
-        H2_under_nodes = pd.Index(['Sichuan','Chongqing','Hubei','Jiangxi','Anhui','Jiangsu','Shandong','Guangdong'])
-        H2_type1_nodes = nodes.difference(H2_under_nodes)
-
-        network.madd("Store",
-                     H2_under_nodes + " H2 Store",
-                     bus=H2_under_nodes + " H2",
-                     e_nom_extendable=True,
-                     e_cyclic=True,
-                     capital_cost=costs.at["hydrogen storage underground","capital_cost"],
-                     lifetime=costs.at["hydrogen storage underground","lifetime"])
-
-        network.madd("Store",
-                     H2_type1_nodes + " H2 Store",
-                     bus=H2_type1_nodes + " H2",
-                     e_nom_extendable=True,
-                     e_cyclic=True,
-                     capital_cost=costs.at["hydrogen storage tank type 1 including compressor","capital_cost"],
-                     lifetime=costs.at["hydrogen storage tank type 1 including compressor","lifetime"])
-
-    if config['add_methanation']:
-        network.madd("Link",
-                     nodes + " Sabatier",
-                     bus0=nodes+" H2",
-                     bus1=nodes+" gas",
-                     p_nom_extendable=True,
-                     carrier="Sabatier",
-                     efficiency=costs.at["methanation","efficiency"],
-                     capital_cost=costs.at["methanation","efficiency"] * costs.at["methanation","capital_cost"] + costs.at["direct air capture","capital_cost"]*costs.at['gas', 'co2_emissions']*costs.at["methanation","efficiency"],
-                     lifetime=costs.at["methanation","lifetime"])
-
-
     # add components
     network.madd("Generator",
                  nodes,
@@ -436,20 +375,6 @@ def prepare_network(config):
                  marginal_cost=costs.at['solar','marginal_cost'],
                  p_max_pu=solar_p_max_pu,
                  lifetime=costs.at['solar', 'lifetime'])
-
-    if "nuclear" in config["Techs"]["vre_techs"]:
-        nuclear_p_nom = pd.read_hdf('data/p_nom/nuclear_p_nom.h5')
-        network.madd("Generator",
-                     nodes,
-                     suffix=' nuclear',
-                     p_nom_extendable=False,
-                     p_nom=nuclear_p_nom,
-                     p_nom_min=nuclear_p_nom,
-                     bus=nodes,
-                     carrier="nuclear",
-                     efficiency=costs.at['nuclear','efficiency'],
-                     capital_cost=costs.at['nuclear','capital_cost'],
-                     marginal_cost=costs.at['nuclear','efficiency'] * costs.at['nuclear','marginal_cost'])
 
     if "resistive heater" in config["Techs"]["vre_techs"]:
         for cat in [" decentral ", " central "]:
@@ -598,6 +523,47 @@ def prepare_network(config):
     #add lines
 
     if not config['no_lines']:
+        "Split bidirectional links into two unidirectional links to include transmission losses."
+
+        edges_ext = pd.read_csv(snakemake.input.edges_ext, header=None)
+
+        lengths = 1.25 * np.array([haversine([network.buses.at[name0,"x"],network.buses.at[name0,"y"]],
+                                  [network.buses.at[name1,"x"],network.buses.at[name1,"y"]]) for name0,name1 in edges_ext[[0,1]].values])
+
+        cc = (config['line_cost_factor'] * lengths * [HVAC_cost_curve(l) for l in
+                                                          lengths]) * 1.5 * 1.02 * Nyears * annuity(40.,config['costs']['discountrate'])
+
+        network.madd("Link",
+                     edges_ext[0] + '-' + edges_ext[1],
+                     bus0=edges_ext[0].values,
+                     bus1=edges_ext[1].values,
+                     suffix =" ext positive",
+                     p_nom_extendable=False,
+                     p_nom=edges_ext[2].values,
+                     p_nom_min=edges_ext[2].values,
+                     p_min_pu=0,
+                     efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]* config["transmission_efficiency"]["DC"]["efficiency_per_1000km"]**(lengths/1000),
+                     length=lengths,
+                     build_year=2020,
+                     lifetime=70,
+                     capital_cost=cc)
+
+        network.madd("Link",
+                     edges_ext[1] + '-' + edges_ext[0],
+                     bus0=edges_ext[1].values,
+                     bus1=edges_ext[0].values,
+                     suffix=" ext reversed",
+                     p_nom_extendable=False,
+                     p_nom=edges_ext[2].values,
+                     p_nom_min=edges_ext[2].values,
+                     p_min_pu=0,
+                     efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]* config["transmission_efficiency"]["DC"]["efficiency_per_1000km"]**(lengths/1000),
+                     length=lengths,
+                     lifetime=70,
+                     build_year=2020,
+                     capital_cost=0)
+
+        edges = pd.read_csv(snakemake.input.edges, header=None)
 
         lengths = 1.25 * np.array([haversine([network.buses.at[name0,"x"],network.buses.at[name0,"y"]],
                                   [network.buses.at[name1,"x"],network.buses.at[name1,"y"]]) for name0,name1 in edges[[0,1]].values])
@@ -609,12 +575,23 @@ def prepare_network(config):
                      edges[0] + '-' + edges[1],
                      bus0=edges[0].values,
                      bus1=edges[1].values,
+                     suffix =" positive",
                      p_nom_extendable=True,
-                     p_nom=edges[2].values,
-                     p_nom_min=edges[2].values,
-                     p_min_pu=-1,
+                     p_min_pu=0,
+                     efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]* config["transmission_efficiency"]["DC"]["efficiency_per_1000km"]**(lengths/1000),
                      length=lengths,
                      capital_cost=cc)
+
+        network.madd("Link",
+                     edges[1] + '-' + edges[0],
+                     bus0=edges[1].values,
+                     bus1=edges[0].values,
+                     suffix=" reversed",
+                     p_nom_extendable=True,
+                     p_min_pu=0,
+                     efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]* config["transmission_efficiency"]["DC"]["efficiency_per_1000km"]**(lengths/1000),
+                     length=lengths,
+                     capital_cost=0)
 
     return network
 

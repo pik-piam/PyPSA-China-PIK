@@ -79,8 +79,7 @@ if __name__ == "__main__":
             solar_matrix = cutout.availabilitymatrix(provinces_shp, excluder_solar, **kwargs)
             buildup_matrix = cutout.availabilitymatrix(provinces_shp, excluder_build_up, **kwargs)
 
-        solar_potential = solar_capacity_per_sqkm * 0.7 * solar_matrix.sum(
-            'bus') * area + solar_capacity_per_sqkm * 0.3 * buildup_matrix.sum('bus') * area
+        solar_potential = solar_capacity_per_sqkm * solar_matrix.sum('bus') * area + solar_capacity_per_sqkm * buildup_matrix.sum('bus') * area
 
         solar_func = getattr(cutout, solar_resource.pop('method'))
         solar_resource['dask_kwargs'] = {'num_workers': nprocesses} #?

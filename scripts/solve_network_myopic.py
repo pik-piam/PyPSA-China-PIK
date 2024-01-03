@@ -149,6 +149,44 @@ def add_chp_constraints(n):
         )
         n.model.add_constraints(lhs <= 0, name="chplink-backpressure")
 
+def add_transimission_constraints(n):
+    """
+    Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
+    p_nom positive = p_nom negative
+    """
+    if not n.links.p_nom_extendable.any():
+        return
+
+    positive_bool = n.links.index.str.contains("positive")
+    negative_bool = n.links.index.str.contains("reversed")
+
+    positive_ext = n.links[positive_bool].query("p_nom_extendable").index
+    negative_ext = n.links[negative_bool].query("p_nom_extendable").index
+
+    lhs = (
+        n.model["Link-p_nom"].loc[positive_ext]
+        - n.model["Link-p_nom"].loc[negative_ext]
+    )
+
+    n.model.add_constraints(lhs == 0, name="Link-transimission")
+
+def add_retrofit_constraints(n):
+    p_nom_max = pd.read_csv("data/p_nom/p_nom_max_cc.csv",index_col=0)
+    planning_horizon = snakemake.wildcards.planning_horizons
+    for year in range(int(planning_horizon) - 40, 2021, 5):
+        coal = n.generators[(n.generators.carrier=="coal power plant") & (n.generators.build_year==year)].query("p_nom_extendable").index
+        Bus = n.generators[(n.generators.carrier == "coal power plant") & (n.generators.build_year == year)].query(
+            "p_nom_extendable").bus.values
+        coal_retrofit = n.generators[n.generators.index.str.contains("retrofit")& (n.generators.build_year==year) & n.generators.bus.isin(Bus)].query("p_nom_extendable").index
+        coal_retrofitted = n.generators[n.generators.index.str.contains("retrofit") & (n.generators.build_year==year) & n.generators.bus.isin(Bus)].query("~p_nom_extendable").groupby("bus").sum().p_nom_opt
+
+        lhs  = (
+            n.model["Generator-p_nom"].loc[coal]
+            + n.model["Generator-p_nom"].loc[coal_retrofit]
+            - (p_nom_max[str(year)].loc[Bus] - coal_retrofitted.reindex(p_nom_max[str(year)].loc[Bus].index,fill_value=0)).values
+        )
+
+        n.model.add_constraints(lhs == 0, name="Generator-coal-retrofit-" + str(year))
 
 def extra_functionality(n, snapshots):
     """
@@ -160,6 +198,9 @@ def extra_functionality(n, snapshots):
     config = n.config
     add_chp_constraints(n)
     add_battery_constraints(n)
+    add_transimission_constraints(n)
+    if snakemake.wildcards.planning_horizons != "2020":
+        add_retrofit_constraints(n)
 
 
 def solve_network(n, config, solving, opts="", **kwargs):

@@ -655,11 +655,12 @@ if __name__ == "__main__":
 
     networks_dict = {(pathway, planning_horizons): "results/version-"
                                                    + config["version"]
-                                                   + f"/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc"
+                                                   + f"/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc"
                      for opts in expand_from_wildcard("opts", config)
                      for planning_horizons in expand_from_wildcard("planning_horizons", config)
                      for pathway in expand_from_wildcard("pathway", config)
-                     for topology in expand_from_wildcard("topology", config)}
+                     for topology in expand_from_wildcard("topology", config)
+                     for heating_demand in expand_from_wildcard("heating_demand", config)}
 
     df = make_summaries(networks_dict)
     df["metrics"].loc["total costs"] = df["costs"].sum()

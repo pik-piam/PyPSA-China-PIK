@@ -32,66 +32,48 @@ logger = logging.getLogger(__name__)
 # consolidate and rename
 def rename_techs(label):
     prefix_to_remove = [
-        "residential ",
-        "services ",
-        "urban ",
-        "rural ",
         "central ",
         "decentral ",
     ]
 
-    rename_if_contains = [
-        "gas boiler",
-        "biogas",
-        "solar thermal",
-        "air heat pump",
-        "ground heat pump",
-        "resistive heater",
-        "Fischer-Tropsch",
-    ]
-
     rename_if_contains_dict = {
         "water tanks": "hot water storage",
-        "retrofitting": "building retrofitting",
-        "H2 Electrolysis": "hydrogen storage",
-        "H2 Fuel Cell": "hydrogen storage",
-        "H2 pipeline": "hydrogen storage",
-        "battery": "battery storage",
-        # "CC": "CC"
+        "H2": "H2",
+        "coal cc": "CC"
     }
+
+    rename_if_contains = [
+        "gas",
+        "coal"
+    ]
 
     rename = {
         "solar": "solar PV",
         "Sabatier": "methanation",
         "offwind": "offshore wind",
-        "offwind-ac": "offshore wind (AC)",
-        "offwind-dc": "offshore wind (DC)",
         "onwind": "onshore wind",
         "ror": "hydroelectricity",
         "hydro": "hydroelectricity",
         "PHS": "hydroelectricity",
         "hydro_inflow": "hydroelectricity",
         "stations": "hydroelectricity",
-        "NH3": "ammonia",
-        "co2 Store": "DAC",
-        "co2 stored": "CO2 sequestration",
         "AC": "transmission lines",
-        "DC": "transmission lines",
-        "B2B": "transmission lines",
-        "OCGT gas": "OCGT",
+        "CO2 capture": "biomass carbon capture",
+        "CC": "coal carbon capture",
+        "battery": "battery"
     }
 
     for ptr in prefix_to_remove:
         if label[: len(ptr)] == ptr:
             label = label[len(ptr) :]
 
-    for rif in rename_if_contains:
-        if rif in label:
-            label = rif
-
     for old, new in rename_if_contains_dict.items():
         if old in label:
             label = new
+
+    for rif in rename_if_contains:
+        if rif in label:
+            label = rif
 
     for old, new in rename.items():
         if old == label:
@@ -103,41 +85,33 @@ preferred_order = pd.Index(
     [
         "transmission lines",
         "hydroelectricity",
-        "hydro reservoir",
-        "run of river",
-        "pumped hydro storage",
-        "solid biomass",
-        "biogas",
-        "onshore wind",
-        "offshore wind",
-        "offshore wind (AC)",
-        "offshore wind (DC)",
-        "solar PV",
-        "solar thermal",
-        "solar rooftop",
-        "solar",
-        "building retrofitting",
-        "ground heat pump",
-        "air heat pump",
-        "heat pump",
-        "resistive heater",
-        "power-to-heat",
-        "gas-to-power/heat",
+        "nuclear",
+        "coal",
+        "coal carbon capture",
+        "coal power plant",
+        "coal power plant retrofit",
+        "coal boiler",
         "CHP coal",
-        "CHP gas",
+        "gas",
         "OCGT",
         "gas boiler",
-        "gas",
-        "natural gas",
-        "helmeth",
+        "CHP gas",
+        "biomass",
+        # "biomass carbon capture",
+        "onshore wind",
+        "offshore wind",
+        "solar PV",
+        "solar thermal",
+        "heat pump",
+        "resistive heater",
         "methanation",
-        "ammonia",
-        "hydrogen storage",
-        "power-to-gas",
-        "power-to-liquid",
+        "H2",
+        "H2 fuel cell",
+        "H2 CHP",
+        "battery",
         "battery storage",
         "hot water storage",
-        "CO2 sequestration",
+        "hydrogen storage",
     ]
 )
 

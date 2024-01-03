@@ -21,16 +21,6 @@ def basename(x):
 
 def add_brownfield(n, n_p, year):
 
-    # first year
-    # if year == 2025:
-    #         n_update = n_p.generators[(n_p.generators.build_year == 0) &
-    #                                   (n_p.generators.p_nom_opt >= 10) &
-    #                                   (n_p.generators.lifetime != np.inf)]
-    #         baseyear = 2020
-    #         rename = pd.Series(n_update.index, n_update.index)
-    #         rename += "-" + str(baseyear)
-    #         n_update.rename(index=rename, inplace=True)
-
     print("adding brownfield")
 
     # electric transmission grid set optimised capacities of previous as minimum
@@ -38,8 +28,8 @@ def add_brownfield(n, n_p, year):
     # dc_i = n.links[n.links.carrier=="DC"].index
     # n.links.loc[dc_i, "p_nom_min"] = n_p.links.loc[dc_i, "p_nom_opt"]
     # update links
-    n.links.p_nom.loc[n.links.length>0] = n_p.links.p_nom_opt.loc[(n_p.links.carrier=='AC') & (n_p.links.build_year==0)]
-    n.links.p_nom_min.loc[n.links.length>0] = n_p.links.p_nom_opt.loc[(n_p.links.carrier=='AC') & (n_p.links.build_year==0)]
+    n.links.loc[(n.links.length>0) & (n.links.lifetime==np.inf),"p_nom"] = n_p.links.loc[(n_p.links.carrier=='AC') & (n_p.links.build_year==0),"p_nom_opt"]
+    n.links.loc[(n.links.length>0) & (n.links.lifetime==np.inf),"p_nom_min"] = n_p.links.loc[(n_p.links.carrier=='AC') & (n_p.links.build_year==0),"p_nom_opt"]
 
     if year == 2025:
         add_build_year_to_new_assets(n_p, 2020)
@@ -96,30 +86,6 @@ def add_brownfield(n, n_p, year):
         for tattr in n.component_attrs[c.name].index[selection]:
             n.import_series_from_dataframe(c.pnl[tattr].set_index(n.snapshots), c.name, tattr)
 
-        # deal with gas network
-        # pipe_carrier = ['gas pipeline']
-        # if snakemake.config["sector"]['H2_retrofit']:
-        #     # drop capacities of previous year to avoid duplicating
-        #     to_drop = n.links.carrier.isin(pipe_carrier) & (n.links.build_year!=year)
-        #     n.mremove("Link", n.links.loc[to_drop].index)
-        #
-        #     # subtract the already retrofitted from today's gas grid capacity
-        #     h2_retrofitted_fixed_i = n.links[(n.links.carrier=='H2 pipeline retrofitted') & (n.links.build_year!=year)].index
-        #     gas_pipes_i =  n.links[n.links.carrier.isin(pipe_carrier)].index
-        #     CH4_per_H2 = 1 / snakemake.config["sector"]["H2_retrofit_capacity_per_CH4"]
-        #     fr = "H2 pipeline retrofitted"
-        #     to = "gas pipeline"
-        #     # today's pipe capacity
-        #     pipe_capacity = n.links.loc[gas_pipes_i, 'p_nom']
-        #     # already retrofitted capacity from gas -> H2
-        #     already_retrofitted = (n.links.loc[h2_retrofitted_fixed_i, 'p_nom']
-        #                            .rename(lambda x: basename(x).replace(fr, to)).groupby(level=0).sum())
-        #     remaining_capacity = pipe_capacity - CH4_per_H2 * already_retrofitted.reindex(index=pipe_capacity.index).fillna(0)
-        #     n.links.loc[gas_pipes_i, "p_nom"] = remaining_capacity
-        # else:
-        #     new_pipes = n.links.carrier.isin(pipe_carrier) & (n.links.build_year==year)
-        #     n.links.loc[new_pipes, "p_nom"] = 0.
-        #     n.links.loc[new_pipes, "p_nom_min"] = 0.
 
     for tech in ['onwind', 'offwind', 'solar']:
         ds_tech = xr.open_dataset(snakemake.input['profile_' + tech])
@@ -127,18 +93,21 @@ def add_brownfield(n, n_p, year):
 
         if tech == 'offwind':
             for node in offwind_nodes:
-                n.generators.p_nom_max.loc[(n.generators.bus == node) & (n.generators.carrier == tech) & (n.generators.build_year == year)] = \
+                n.generators.loc[(n.generators.bus == node) & (n.generators.carrier == tech) & (n.generators.build_year == year),"p_nom_max"] = \
                 p_nom_max_initial[node] - n_p.generators[(n_p.generators.bus == node) & (n_p.generators.carrier == tech)].p_nom_opt.sum()
         else:
             for node in pro_names:
-                n.generators.p_nom_max.loc[(n.generators.bus == node) & (n.generators.carrier == tech) & (n.generators.build_year == year)] = \
+                n.generators.loc[(n.generators.bus == node) & (n.generators.carrier == tech) & (n.generators.build_year == year),"p_nom_max"] = \
                 p_nom_max_initial[node] - n_p.generators[(n_p.generators.bus == node) & (n_p.generators.carrier == tech)].p_nom_opt.sum()
 
-    n.generators.p_nom_max[n.generators.p_nom_max < 0] = 0
+    n.generators.loc[(n.generators.p_nom_max < 0), "p_nom_max"] = 0
 
-    # if year == 2025:
-    #     for i in n_update.index:
-    #         n.generators.loc[i, 'p_nom'] = n_update.loc[i].p_nom_opt + n.generators.loc[i, 'p_nom']
+    ## retrofit coal power plant with carbon capture
+    n.generators.loc[n.generators.carrier == 'coal power plant', 'p_nom_extendable'] = True
+    n.generators.loc[n.generators.index.str.contains("retrofit") & ~n.generators.index.str.contains(
+        str(year)), "p_nom_extendable"] = False
+
+
 
 #%%
 

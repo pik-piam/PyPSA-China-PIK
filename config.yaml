@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-version: 0829.175.1H
+version: 0102.175.73H
 logging_level: INFO
 foresight: "myopic"
 
@@ -11,7 +11,7 @@ summary_dir: 'summary/'
 
 scenario:
   line_limits: [ 'opt' ]
-  pathway: ['mean175']
+  pathway: ['exponential175','beta25175']
   topology: "current+Neighbor" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   co2_reduction:
     exponential175:
@@ -44,13 +44,13 @@ scenario:
       '2050': 0.77403968
       '2055': 0.84573191
       '2060': 1.0
-    beta40175:
+    beta25175:
       '2020': 0.0 #0.
-      '2025': 0.01763260173754 #0.06949544
-      '2030': 0.17329675354366714 #0.27330722
+      '2025': 0.05096974 #0.06949544
+      '2030': 0.23251132 #0.27330722
       '2035': 0.5 #0.52741596
-      '2040': 0.8267032464563329 #0.75163934
-      '2045': 0.98236739826246 #0.90276156
+      '2040': 0.76748868 #0.75163934
+      '2045': 0.94903026 #0.90276156
       '2050': 1.0 #0.97687314
       '2055': 1.0 #0.99829624
       '2060': 1.0 #1.0
@@ -76,6 +76,7 @@ scenario:
     - 2050
     - 2055
     - 2060
+  heating_demand: ['positive']
 
 snapshots:
   start: "2020-01-01"
@@ -84,8 +85,8 @@ snapshots:
 
 tmin: '-01-01 00:00'
 tmax: '-12-31 23:00'
-freq: '1H'
-frequency: 1.
+freq: '73H'
+frequency: 73.
 
 logging:
   level: INFO
@@ -112,7 +113,10 @@ Technique:
   onwind: true
   offwind: true
 
-existing_infrastructure: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler']
+coal_cc: true
+hydrogen_lines: ture
+
+existing_infrastructure: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
 bus_suffix: [""," central heat"," decentral heat"," gas"," coal"]
 bus_carrier: {
@@ -125,7 +129,7 @@ bus_carrier: {
 
 Techs:
   ## for add carriers
-  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","heat pump","resistive heater","Sabatier"]
+  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","heat pump","resistive heater","Sabatier","H2 CHP"]
   conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
 
@@ -134,9 +138,19 @@ Techs:
 heat_coupling: True
 add_gas: True
 add_coal: True
+add_biomass: True
 add_hydro: True
 add_H2: True
 add_methanation: True
+
+transmission_efficiency:
+  DC:
+    efficiency_static: 0.98
+    efficiency_per_1000km: 0.977
+  H2 pipeline:
+    efficiency_static: 1
+    efficiency_per_1000km: 0.979
+    compression_per_1000km: 0.019
 
 chp_parameters:
   eff_el: 0.3978
@@ -145,7 +159,6 @@ chp_parameters:
 solar_cf_correction: 0.85
 time_dep_hp_cop: True
 tes_tau: 3.
-
 
 renewable:
   onwind:
@@ -178,7 +191,7 @@ renewable:
       orientation:
         slope: 35.
         azimuth: 180.
-    capacity_per_sqkm: 5.1 # ScholzPhd Tab 4.3.1: 170 MW/km^2
+    capacity_per_sqkm: 5.1 # ScholzPhd Tab 4.3.1: 170 MW/km^2 3%
     potential: simple # or conservative
     correction_factor: 0.85
     natura: false
@@ -345,6 +358,7 @@ plotting:
     # biomass
     biogas: '#e3d37d'
     biomass: '#baa741'
+    biomass CHP: '#baa741'
     solid biomass: '#baa741'
     solid biomass transport: '#baa741'
     solid biomass for industry: '#7a6d26'
@@ -353,6 +367,8 @@ plotting:
     solid biomass for industry co2 to stored: '#47411c'
     urban central solid biomass CHP: '#9d9042'
     urban central solid biomass CHP CC: '#6c5d28'
+    biomass CHP CC: '#6c5d28'
+    biomass carbon capture: '#6c5d28'
     biomass boiler: '#8A9A5B'
     residential rural biomass boiler: '#a1a066'
     residential urban decentral biomass boiler: '#b0b87b'
@@ -366,7 +382,7 @@ plotting:
     electricity distribution grid: '#97ad8c'
     low voltage: '#97ad8c'
     # electricity demand
-    Electric load: '#110d63'
+    electric load: '#110d63'
     electric demand: '#110d63'
     electricity: '#110d63'
     industry electricity: '#2d2a66'
@@ -406,7 +422,7 @@ plotting:
     services rural water tanks discharger: '#bbc2b8'
     services urban decentral water tanks discharger: '#bdd8d3'
     # heat demand
-    Heat load: '#cc1f1f'
+    heat load: '#cc1f1f'
     heat: '#cc1f1f'
     heat demand: '#cc1f1f'
     rural heat: '#ff5c5c'
@@ -451,6 +467,8 @@ plotting:
     services urban decentral resistive heater: '#98e991'
     urban central resistive heater: '#8cdf85'
     retrofitting: '#8487e8'
+    coal carbon capture: '#8487e8'
+    coal power plant retrofit: '#8487e8'
     building retrofitting: '#8487e8'
     # hydrogen
     H2 for industry: "#f073da"
@@ -468,6 +486,7 @@ plotting:
     H2 pipeline retrofitted: '#ba99b5'
     H2 Fuel Cell: '#c251ae'
     H2 fuel cell: '#c251ae'
+    H2 CHP: '#c251ae'
     H2 turbine: '#991f83'
     H2 Electrolysis: '#ff29d9'
     H2 electrolysis: '#ff29d9'
@@ -601,7 +620,7 @@ solving:
       parallel: "on"
       random_seed: 123
     gurobi-default:
-      threads: 4
+      threads: 8
       method: 2 # barrier
       crossover: 0
       BarConvTol: 1.e-5
@@ -650,7 +669,7 @@ solving:
     cbc-default: {} # Used in CI
     glpk-default: {} # Used in CI
 
-  mem: 30000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
+  mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
 
 no_lines: False
 line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max

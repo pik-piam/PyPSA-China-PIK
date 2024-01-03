@@ -29,13 +29,15 @@ def add_build_year_to_new_assets(n, baseyear):
     for c in n.iterate_components(["Link", "Generator", "Store"]):
         attr = "e" if c.name == "Store" else "p"
 
-        assets = c.df.index[(c.df.lifetime!=np.inf) & (c.df.build_year==0) & (c.df[attr + "_nom_extendable"]==True)]
-        c.df.loc[assets, "build_year"] = baseyear
+        assets = c.df.index[(c.df.lifetime!=np.inf) & (c.df[attr + "_nom_extendable"]==True)]
 
         # add -baseyear to name
         rename = pd.Series(c.df.index, c.df.index)
         rename[assets] += "-" + str(baseyear)
         c.df.rename(index=rename, inplace=True)
+
+        assets = c.df.index[(c.df.lifetime != np.inf) & (c.df[attr + "_nom_extendable"] == True) & (c.df.build_year==0)]
+        c.df.loc[assets, "build_year"] = baseyear
 
         # rename time-dependent
         selection = (
@@ -58,9 +60,11 @@ def add_existing_capacities(df_agg):
         "onwind": "onwind",
         "offwind": "offwind",
         "coal boiler": "coal boiler",
+        "ground heat pump": "heat pump",
+        "nuclear": "nuclear"
     }
 
-    for tech in ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler']:
+    for tech in ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']:
 
         df = pd.read_csv(snakemake.input[f"existing_{tech}"], index_col=0).fillna(0.)
         df.columns = df.columns.astype(int)
@@ -120,6 +124,8 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
         "onwind": "onwind",
         "offwind": "offwind",
         "coal boiler": "coal boiler",
+        "ground heat pump": "heat pump",
+        "nuclear": "nuclear"
     }
 
     for grouping_year, generator in df.index:
@@ -154,9 +160,25 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                    bus=capacity.index,
                    carrier=carrier[generator],
                    p_nom=capacity,
+                   p_nom_extendable=False,
+                   marginal_cost=costs.at[generator, 'marginal_cost'],
+                   capital_cost=costs.at[generator, 'capital_cost'],
+                   efficiency=costs.at[generator, 'efficiency'],
+                   build_year=grouping_year,
+                   lifetime=costs.at[generator, 'lifetime']
+                   )
+
+        if generator == "nuclear":
+            n.madd("Generator",
+                   capacity.index,
+                   suffix=' ' + generator + "-" + str(grouping_year),
+                   bus=capacity.index,
+                   carrier=carrier[generator],
+                   p_nom=capacity,
                    p_nom_min=capacity,
                    p_nom_extendable=False,
-                   marginal_cost=costs.at[generator, 'efficiency'] * costs.at[generator, 'marginal_cost'],
+                   p_min_pu=0.7,
+                   marginal_cost=costs.at[generator, 'marginal_cost'],
                    capital_cost=costs.at[generator, 'capital_cost'],
                    efficiency=costs.at[generator, 'efficiency'],
                    build_year=grouping_year,
@@ -287,6 +309,33 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                        build_year=grouping_year,
                        lifetime=costs.at[cat.lstrip() + generator, 'lifetime']
                        )
+
+        if generator == "ground heat pump":
+            date_range = pd.date_range('2025-01-01 00:00', '2025-12-31 23:00', freq=config['freq'], tz='Asia/shanghai')
+            date_range = date_range.map(lambda t: t.replace(year=2020))
+
+            with pd.HDFStore(snakemake.input.cop_name, mode='r') as store:
+                gshp_cop = store['gshp_cop_profiles']
+                gshp_cop.index = gshp_cop.index.tz_localize('Asia/shanghai')
+                gshp_cop = gshp_cop.loc[date_range].set_index(n.snapshots)
+
+            n.madd("Link",
+                 capacity.index,
+                 suffix=" " + generator + "-" + str(grouping_year),
+                 bus0=capacity.index,
+                 bus1=capacity.index + " central heat",
+                 carrier='heat pump',
+                 efficiency=gshp_cop[capacity.index] if config["time_dep_hp_cop"] else costs.at[
+                     'decentral ground-sourced heat pump', 'efficiency'],
+                 capital_cost=costs.at['decentral ground-sourced heat pump', 'efficiency'] * costs.at[
+                     'decentral ground-sourced heat pump', 'capital_cost'],
+                 marginal_cost=costs.at['decentral ground-sourced heat pump', 'efficiency'] * costs.at[
+                     'decentral ground-sourced heat pump', 'marginal_cost'],
+                 p_nom=capacity / costs.at['decentral ground-sourced heat pump', 'efficiency'],
+                 p_nom_min=capacity / costs.at['decentral ground-sourced heat pump', 'efficiency'],
+                 p_nom_extendable=False,
+                 build_year=grouping_year,
+                 lifetime=costs.at['decentral ground-sourced heat pump', 'lifetime'])
 
 
 if __name__ == "__main__":

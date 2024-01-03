@@ -62,20 +62,34 @@ def build_hot_water_per_day(planning_horizons):
     unit_hot_water_2020 = 0.366008
 
     # We can consider that, on average,
-    # the annual domestic hot water consumption in developed countries is around 1000 kWh per person
+    # the 52 M in developed countries is around 1000 kWh per person
     # http://www.estif.org/fileadmin/estif/content/publications/downloads/UNEP_2015/factsheet_single_family_houses_v05.pdf
     unit_hot_water_2060 = 1.0
 
-    def func(x, a, b):
-        return a*x +b
+    if snakemake.wildcards.heating_demand == 'positive':
+        def func(x, a, b):
+            return a * x + b
 
-    x = np.array([2020,2060])
-    y = np.array([unit_hot_water_2020,unit_hot_water_2060])
-    popt, pcov = curve_fit(func, x, y)
+        x = np.array([2020, 2060])
+        y = np.array([unit_hot_water_2020, unit_hot_water_2060])
+        popt, pcov = curve_fit(func, x, y)
 
-    unit_hot_water = func(int(planning_horizons), *popt)
+        unit_hot_water = func(int(planning_horizons), *popt)
 
-    # MWh per day
+    if snakemake.wildcards.heating_demand == 'constant':
+        unit_hot_water = unit_hot_water_2020
+
+    if snakemake.wildcards.heating_demand == 'mean':
+        def func(x, a, b):
+            return a * x + b
+
+        x = np.array([2020, 2060])
+        y = np.array([unit_hot_water_2020, unit_hot_water_2060])
+        popt, pcov = curve_fit(func, x, y)
+
+        unit_hot_water = (func(int(planning_horizons), *popt) + unit_hot_water_2020)/2
+
+        # MWh per day
     hot_water_per_day = unit_hot_water * population_count / 365.
 
     return hot_water_per_day
@@ -97,17 +111,34 @@ def build_heat_demand_profile(daily_hd,hot_water_per_day,date_range,planning_hor
     space_heat_demand_total = space_heat_demand_total * 1e6
     space_heat_demand_total = space_heat_demand_total.squeeze()
 
-    def func(x, a, b, c, d):
-        return a * x ** 3 + b * x ** 2 + c * x + d
+    if snakemake.wildcards.heating_demand == 'positive':
+        def func(x, a, b, c, d):
+            return a * x ** 3 + b * x ** 2 + c * x + d
 
-    # heated area in China
-    # 2060: 6.02 * 36.52 * 1e4 north population * floor_space_per_capita in city
-    x = np.array([1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2060])
-    y = np.array([2742, 21263, 64645, 110766, 252056, 435668, 672205, 988209, 2198504]) # 10000 m2
+        # heated area in China
+        # 2060: 6.02 * 36.52 * 1e4 north population * floor_space_per_capita in city
+        x = np.array([1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2060])
+        y = np.array([2742, 21263, 64645, 110766, 252056, 435668, 672205, 988209, 2198504]) # 10000 m2
 
-    # Perform curve fitting
-    popt, pcov = curve_fit(func, x, y)
-    factor = func(int(planning_horizons), *popt)/func(2020, *popt)
+        # Perform curve fitting
+        popt, pcov = curve_fit(func, x, y)
+        factor = func(int(planning_horizons), *popt)/func(2020, *popt)
+
+    if snakemake.wildcards.heating_demand == 'constant':
+        factor = 1.0
+
+    if snakemake.wildcards.heating_demand == 'mean':
+        def func(x, a, b, c, d):
+            return a * x ** 3 + b * x ** 2 + c * x + d
+
+        # heated area in China
+        # 2060: 6.02 * 36.52 * 1e4 north population * floor_space_per_capita in city
+        x = np.array([1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2060])
+        y = np.array([2742, 21263, 64645, 110766, 252056, 435668, 672205, 988209, 2198504]) # 10000 m2
+
+        # Perform curve fitting
+        popt, pcov = curve_fit(func, x, y)
+        factor = (func(int(planning_horizons), *popt)/func(2020, *popt) + 1.0)/2
 
     space_heating_per_hdd = (space_heat_demand_total * factor)  / (heat_demand_hdh.sum() * snakemake.config['frequency'])
 
@@ -123,6 +154,7 @@ if __name__ == '__main__':
     if 'snakemake' not in globals():
         from _helpers import mock_snakemake
         snakemake = mock_snakemake('build_load_profiles',
+                                   heating_demand='positive',
                                    planning_horizons="2020")
     configure_logging(snakemake)
 
