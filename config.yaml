@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-version: 0102.175.73H
+version: 0412.175.1H
 logging_level: INFO
 foresight: "myopic"
 
@@ -85,8 +85,8 @@ snapshots:
 
 tmin: '-01-01 00:00'
 tmax: '-12-31 23:00'
-freq: '73H'
-frequency: 73.
+freq: '1H'
+frequency: 1.
 
 logging:
   level: INFO
@@ -114,7 +114,7 @@ Technique:
   offwind: true
 
 coal_cc: true
-hydrogen_lines: ture
+hydrogen_lines: false
 
 existing_infrastructure: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
@@ -232,7 +232,7 @@ costs:
   year: 2030
   lifetime: 25
   discountrate: 0.02 # social discountrate
-  USD2013_to_EUR2013: 0.7532 # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
+  USD2013_to_EUR2013: 0.9189 # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
   marginal_cost: # EUR/MWh
     solar: 0.01
     onwind: 0.015
@@ -251,10 +251,10 @@ plot: True
 plotting:
   map:
     figsize: [14, 8]
-    boundaries: [71, 135., 17, 56.]
+    boundaries: [71, 135., 0, 56.]
     cost_size_factor: 1.5e+10
     bus_size_factor: 1.e+5
-    linewidth_factor: 4.e+3
+    linewidth_factor: 6.e+3
     bus_size_factor_demand: 2.e+7
     bus_size_factor_heat: 5.e+4
     linewidth_factor_heat: 5.e+4
@@ -273,6 +273,7 @@ plotting:
   storage_techs: [ "hydro+PHS", "battery", "AC-battery", "H2", "AC-H2" , "AC-heat"]
 
   tech_colors:
+    blank: "white"
     # wind
     wind: "#235ebc"
     onwind: "#235ebc"
