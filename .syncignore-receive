@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: : 2023 The PyPSA-China Authors
+#
+# SPDX-License-Identifier: CC0-1.0
+
+.snakemake
+.git
+.pytest_cache
+.ipynb_checkpoints
+.vscode
+.DS_Store
+__pycache__
+*.pyc
+*.pyo
+*.ipynb
+notebooks
+doc
+cutouts
+benchmarks
+configs
+data
+logs
