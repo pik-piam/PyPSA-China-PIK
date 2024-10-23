@@ -2,24 +2,21 @@ import logging
 from _helpers import configure_logging
 
 import pandas as pd
-from functions import pro_names
+from functions 
+from constants import PROV_NAMES
 
 logger = logging.getLogger(__name__)
 
 def csv_to_df(csv_name=None):
-    
-    df = pd.read_csv(csv_name, index_col=0, header=0)
-    
-    df = df.apply(pd.to_numeric)
 
-    return df['2020'].reindex(pro_names)
+    df = pd.read_csv(csv_name, index_col=0, header=0)
+    df = df.apply(pd.to_numeric)
+    return df['2020'].reindex(PROV_NAMES)
 
 def build_population():
 
     population = 1.e3 * csv_to_df(csv_name=snakemake.input.population)
-
     population.name = "population"
-
     population.to_hdf(snakemake.output.population, key=population.name)
 
 

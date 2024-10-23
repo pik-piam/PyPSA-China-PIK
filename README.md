@@ -4,3 +4,8 @@ An exploratory version for the REMIND-PyPSA PANDA coupling based on the version 
 
 Adapted by Ivan Ramirez
 
+## Installation
+
+### Getting the data
+- some of the data is downloaded by the snakemake workflow (e.g. cutouts). Just make sure te relevant config options are set to true if it is your first run
+- the shapely files can be generated with the build_province_shapes script

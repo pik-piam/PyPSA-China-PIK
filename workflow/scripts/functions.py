@@ -17,6 +17,10 @@ offwind_nodes = np.array(['Fujian', 'Guangdong', 'Guangxi', 'Hainan', 'Hebei', '
        'Liaoning', 'Shandong', 'Shanghai', 'Tianjin', 'Zhejiang'],
       dtype=str)
 
+# polynomial centroid for plotting
+get_poly_center = lambda poly: (poly.centroid.xy[0][0],poly.centroid.xy[1][0])
+
+
 def HVAC_cost_curve(distance):
 
   d = np.array([608, 656, 730, 780, 903, 920, 1300])

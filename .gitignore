@@ -6,7 +6,9 @@ __pycache__
 .DS_Store
 .idea/
 
-/resources
+/resources/cutouts
+/resources/data/province_shapes
+/resources/data/*.nc
 /results
 /cutouts
 /logs
