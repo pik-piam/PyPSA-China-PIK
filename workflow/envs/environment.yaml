@@ -15,8 +15,8 @@ dependencies:
   - dask
   - snakemake
   - snakemake-storage-plugin-http
-  - pyasyncore
-  - pyasynchat
+  # - pyasyncore
+  # - pyasynchat
 
   # Dependencies of the workflow itself
   - xlrd
