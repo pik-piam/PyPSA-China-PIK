@@ -31,12 +31,12 @@ if __name__ == "__main__":
 
     cutout = atlite.Cutout(snakemake.input.cutout)
     cutout.prepare()
-    provinces_shp = gpd.read_file(snakemake.input.provinces_shp)[['NAME_1', 'geometry']]
+    provinces_shp = gpd.read_file(snakemake.input.provinces_shp)[['province', 'geometry']]
     provinces_shp.replace(to_replace={'Nei Mongol': 'InnerMongolia',
                                       'Xinjiang Uygur': 'Xinjiang',
                                       'Ningxia Hui': 'Ningxia',
                                       'Xizang': 'Tibet'}, inplace=True)
-    provinces_shp.set_index('NAME_1', inplace=True)
+    provinces_shp.set_index('province', inplace=True)
     provinces_shp = provinces_shp.reindex(pro_names).rename_axis('bus')
 
     buses = provinces_shp.index

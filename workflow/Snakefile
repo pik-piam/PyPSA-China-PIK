@@ -117,8 +117,8 @@ if config['enable'].get('retrieve_cutout', True):
 if config['enable'].get('build_cutout', False):
     rule build_cutout:
         input:
-            regions_onshore="resources/data/resources/regions_onshore.geojson",
-            regions_offshore="resources/data/resources/regions_offshore.geojson"
+            regions_onshore="resources/data/rc/regions_onshore.geojson",
+            regions_offshore="resources/data/rc/regions_offshore.geojson"
         output: "cutouts/{cutout}.nc"
         log: "logs/build_cutout/{cutout}.log"
         benchmark: "benchmarks/build_cutout_{cutout}"
@@ -174,19 +174,19 @@ rule build_cop_profiles:
 if config['enable'].get('retrieve_raster', True):
     rule retrieve_build_up_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_BuiltUp-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/resources/Build_up.tif"
+        output: "resources/data/rc/Build_up.tif"
         run: move(input[0], output[0])
     rule retrieve_Grass_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Grass-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/resources/Grass.tif"
+        output: "resources/data/rc/Grass.tif"
         run: move(input[0], output[0])
     rule retrieve_Bare_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Bare-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/resources/Bare.tif"
+        output: "resources/data/rc/Bare.tif"
         run: move(input[0], output[0])
     rule retrieve_Shrubland_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Shrub-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/resources/Shrubland.tif"
+        output: "resources/data/rc/Shrubland.tif"
         run: move(input[0], output[0])
 
 rule build_renewable_potential:
@@ -200,8 +200,8 @@ rule build_renewable_potential:
         natura3='resources/data/landuse_availability/WDPA_WDOECM_Mar2022_Public_CHN_shp/WDPA_WDOECM_Mar2022_Public_CHN_shp_2/WDPA_WDOECM_Mar2022_Public_CHN_shp-polygons.shp',
         gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2021.tif",
         provinces_shp="resources/data/province_shapes/CHN_adm1.shp",
-        offshore_province_shapes="resources/data/resources/regions_offshore_province.geojson",
-        offshore_shapes="resources/data/resources/regions_offshore.geojson",
+        offshore_province_shapes="resources/data/rc/regions_offshore_province.geojson",
+        offshore_shapes="resources/data/rc/regions_offshore.geojson",
         cutout= "cutouts/China-2020.nc"
     output:
         solar_profile="resources/profile_solar.nc",

@@ -3,15 +3,15 @@ import cartopy.io.shapereader as shpreader
 import geopandas as gpd
 import os.path
 
-from constants import PROV_NAMES
+from constants import PROV_NAMES, CRS
 
 # TODO integrate constants with repo/config files/snakefile
 NATURAL_EARTH_RESOLUTION = '10m'  # 1:10m scale
 # first administration level
 NATURAL_EARTH_DATA_SET = 'admin_1_states_provinces'
-CRS = 4326  # WGS84
+
 # TODO fix this messy path
-DEFAULT_SHAPE_OUTPATH = "../../resources/data/province_shapes/CHN_adm1.shp"
+DEFAULT_SHAPE_OUTPATH = "resources/data/province_shapes/CHN_adm1.shp"
 
 
 def fetch_natural_earth_records(country_iso2_code = 'CN')->object:
@@ -65,7 +65,7 @@ def records_to_data_frame(records:object)->gpd.GeoDataFrame:
     """    
 
     records[0].attributes["name"]
-    d = {"province": [r.attributes['name'] for r in records]}
+    d = {"province": [r.attributes['name_en'] for r in records]}
     geo = [r.geometry for r in records]
     gdf = gpd.GeoDataFrame(d, geometry= geo)
     gdf.sort_values(by = "province", inplace=True)
