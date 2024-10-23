@@ -12,11 +12,9 @@ configfile: "config.yaml"
 
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 
-storage:
+storage http:
     provider="http",
 
-
-    
 if config["foresight"] == "non-pathway":
     rule prepare_all_networks:
         input:
@@ -110,7 +108,8 @@ rule build_population:
 
 if config['enable'].get('retrieve_cutout', True):
     rule retrieve_cutout:
-        input: HTTP.remote("zenodo.org/record/8343761/files/China-2020.nc", keep_local=True, static=True)
+        input: storage.http("https://zenodo.org/record/8343761/files/China-2020.nc")
+        # input: storage.http("https://zenodo.org/record/8343761/files/China-2020.nc")
         output: "cutouts/{cutout}.nc"
         run: move(input[0], output[0])
 
@@ -172,19 +171,19 @@ rule build_cop_profiles:
 
 if config['enable'].get('retrieve_raster', True):
     rule retrieve_build_up_raster:
-        input: HTTP.remote("zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_BuiltUp-CoverFraction-layer_EPSG-4326.tif", keep_local=True, static=True)
+        input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_BuiltUp-CoverFraction-layer_EPSG-4326.tif")
         output: "data/resources/Build_up.tif"
         run: move(input[0], output[0])
     rule retrieve_Grass_raster:
-        input: HTTP.remote("zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Grass-CoverFraction-layer_EPSG-4326.tif", keep_local=True, static=True)
+        input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Grass-CoverFraction-layer_EPSG-4326.tif")
         output: "data/resources/Grass.tif"
         run: move(input[0], output[0])
     rule retrieve_Bare_raster:
-        input: HTTP.remote("zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Bare-CoverFraction-layer_EPSG-4326.tif", keep_local=True, static=True)
+        input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Bare-CoverFraction-layer_EPSG-4326.tif")
         output: "data/resources/Bare.tif"
         run: move(input[0], output[0])
     rule retrieve_Shrubland_raster:
-        input: HTTP.remote("zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Shrub-CoverFraction-layer_EPSG-4326.tif", keep_local=True, static=True)
+        input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Shrub-CoverFraction-layer_EPSG-4326.tif")
         output: "data/resources/Shrubland.tif"
         run: move(input[0], output[0])
 
