@@ -13,6 +13,10 @@ dependencies:
   - pypsa>=0.18.1
   - atlite>=0.2.6
   - dask
+  - snakemake
+  - snakemake-storage-plugin-http
+  - pyasyncore
+  - pyasynchat
 
   # Dependencies of the workflow itself
   - xlrd

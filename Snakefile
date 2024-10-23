@@ -5,14 +5,15 @@
 from os.path import normpath
 from shutil import move
 
-from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
-HTTP = HTTPRemoteProvider()
-
 configfile: "config.yaml"
 
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 
+storage:
+    provider="http",
 
+
+    
 if config["foresight"] == "non-pathway":
     rule prepare_all_networks:
         input:
