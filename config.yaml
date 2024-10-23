@@ -94,8 +94,8 @@ logging:
   
 enable:
   build_cutout: false
-  retrieve_cutout: false
-  retrieve_raster: false
+  retrieve_cutout: true
+  retrieve_raster: true
   
 atlite:
   nprocesses: 4
