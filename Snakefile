@@ -4,6 +4,9 @@
 
 from os.path import normpath
 from shutil import move
+from snakemake.utils import min_version
+
+min_version("8.11")
 
 configfile: "config.yaml"
 
