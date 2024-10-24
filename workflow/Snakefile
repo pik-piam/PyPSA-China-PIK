@@ -99,7 +99,8 @@ if config["foresight"] == "myopic":
 
 rule build_population:
     input:
-        population="resources/data/population/population_from_national_Data_2020.csv"
+        # https://www.stats.gov.cn/sj/ndsj/2023/indexeh.htm
+        population="resources/data/population/population_from_national_data.csv"
     output:
         population="resources/data/population/population.h5"
     threads: 1
@@ -109,7 +110,6 @@ rule build_population:
 if config['enable'].get('retrieve_cutout', True):
     rule retrieve_cutout:
         input: storage.http("https://zenodo.org/record/8343761/files/China-2020.nc")
-        # input: storage.http("https://zenodo.org/record/8343761/files/China-2020.nc")
         output: "cutouts/{cutout}.nc"
         run: move(input[0], output[0])
 
