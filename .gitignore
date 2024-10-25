@@ -8,7 +8,10 @@ __pycache__
 
 /resources/cutouts
 /resources/data/province_shapes
-/resources/data/*.nc
+/resources/data/*/*.nc
+/resources/data/*/*.tif
+/resources/data/*.h5
+/resources/derived_data/
 /results
 /cutouts
 /logs
