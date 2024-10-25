@@ -159,6 +159,7 @@ def build_heat_demand_profile(
     space_heat_demand_total = space_heat_demand_total * 1e6
     space_heat_demand_total = space_heat_demand_total.squeeze()
 
+    # TODO isolate and clarify the values
     if snakemake.wildcards.heating_demand == "positive":
 
         def func(x, a, b, c, d):

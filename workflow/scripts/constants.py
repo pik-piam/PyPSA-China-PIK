@@ -1,9 +1,11 @@
 import numpy as np
 
+SNAKEFILE_CHOICES = ["Snakefile", "snakefile"]
 # data inputs
 CRS = 4326  # WGS84
 YEARBOOK_DATA2POP = 1e4
-POP_YEAR = 2020
+POP_YEAR = "2020"
+
 
 # TIME RANGE
 START_YEAR = 2020
