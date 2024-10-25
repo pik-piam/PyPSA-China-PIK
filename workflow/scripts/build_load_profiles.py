@@ -4,11 +4,23 @@ from _helpers import configure_logging
 import atlite
 import pytz
 
-from constants import PROV_NAMES, FREQ
 import pandas as pd
 import scipy as sp
 import numpy as np
 from scipy.optimize import curve_fit
+
+from constants import (
+    PROV_NAMES,
+    FREQ,
+    HEATING_START_TEMP,
+    HEATING_HOUR_SHIFT,
+    HEATING_LIN_SLOPE,
+    HEATING_OFFET,
+    UNIT_HOT_WATER_START_YEAR,
+    UNIT_HOT_WATER_END_YEAR,
+    START_YEAR,
+    END_YEAR,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +50,13 @@ def generate_periodic_profiles(
     return week_df
 
 
-def build_daily_heat_demand_profiles():
+# TODO REMIND
+def build_daily_heat_demand_profiles() -> pd.DataFrame:
+    """build the heat demand profile according to forecast demans
+
+    Returns:
+        pd.DataFrame: daily heating demand with April to Sept forced to 0
+    """
     with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
         pop_map = store["population_gridcell_map"]
 
@@ -49,7 +67,12 @@ def build_daily_heat_demand_profiles():
     index.name = "provinces"
 
     hd = cutout.heat_demand(
-        matrix=pop_matrix, index=index, threshold=15.0, a=1.0, constant=0.0, hour_shift=8.0
+        matrix=pop_matrix,
+        index=index,
+        threshold=HEATING_START_TEMP,
+        a=HEATING_LIN_SLOPE,
+        constant=HEATING_OFFET,
+        hour_shift=HEATING_HOUR_SHIFT,
     )
 
     daily_hd = hd.to_pandas().divide(pop_map.sum())
@@ -58,43 +81,39 @@ def build_daily_heat_demand_profiles():
     return daily_hd
 
 
+# TODO separate the two functions (day and yearly)
 def build_hot_water_per_day(planning_horizons):
+
     with pd.HDFStore(snakemake.input.population, mode="r") as store:
         population_count = store["population"]
 
-    # In 2008 China 228.4 Twh for urban residential DHW
-    # MWh/capita/year = 228.4 * 1e6 / 62403/1e4 = 0.366008
-    unit_hot_water_2020 = 0.366008
-
-    # We can consider that, on average,
-    # the 52 M in developed countries is around 1000 kWh per person
-    # http://www.estif.org/fileadmin/estif/content/publications/downloads/UNEP_2015/factsheet_single_family_houses_v05.pdf
-    unit_hot_water_2060 = 1.0
+    unit_hot_water_start_yr = UNIT_HOT_WATER_START_YEAR
+    unit_hot_water_end_yr = UNIT_HOT_WATER_END_YEAR
 
     if snakemake.wildcards.heating_demand == "positive":
 
         def func(x, a, b):
             return a * x + b
 
-        x = np.array([2020, 2060])
-        y = np.array([unit_hot_water_2020, unit_hot_water_2060])
+        x = np.array([START_YEAR, END_YEAR])
+        y = np.array([unit_hot_water_start_yr, unit_hot_water_end_yr])
         popt, pcov = curve_fit(func, x, y)
 
         unit_hot_water = func(int(planning_horizons), *popt)
 
     if snakemake.wildcards.heating_demand == "constant":
-        unit_hot_water = unit_hot_water_2020
+        unit_hot_water = unit_hot_water_start_yr
 
     if snakemake.wildcards.heating_demand == "mean":
 
         def func(x, a, b):
             return a * x + b
 
-        x = np.array([2020, 2060])
-        y = np.array([unit_hot_water_2020, unit_hot_water_2060])
+        x = np.array([START_YEAR, END_YEAR])
+        y = np.array([unit_hot_water_start_yr, unit_hot_water_end_yr])
         popt, pcov = curve_fit(func, x, y)
 
-        unit_hot_water = (func(int(planning_horizons), *popt) + unit_hot_water_2020) / 2
+        unit_hot_water = (func(int(planning_horizons), *popt) + UNIT_HOT_WATER_START_YEAR) / 2
 
         # MWh per day
     hot_water_per_day = unit_hot_water * population_count / 365.0
@@ -102,7 +121,22 @@ def build_hot_water_per_day(planning_horizons):
     return hot_water_per_day
 
 
-def build_heat_demand_profile(daily_hd, hot_water_per_day, date_range, planning_horizons):
+# TODO make indep of model years
+def build_heat_demand_profile(
+    daily_hd: pd.DataFrame, hot_water_per_day: pd.DataFrame, date_range, planning_horizons
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """_summary_
+
+    Args:
+        daily_hd (DataFrame): _description_
+        hot_water_per_day (DataFrame): _description_
+        date_range (_type_): _description_
+        planning_horizons (_type_): _description_
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: heat, space_heat and water_heat demands
+    """
+
     h = daily_hd
     h_n = h[~h.index.duplicated(keep="first")].iloc[:-1, :]
     h_n.index = h_n.index.tz_localize("Asia/shanghai")
@@ -187,6 +221,7 @@ if __name__ == "__main__":
     planning_horizons = snakemake.wildcards["planning_horizons"]
     hot_water_per_day = build_hot_water_per_day(planning_horizons)
 
+    # why?
     date_range = pd.date_range(
         "2025-01-01 00:00", "2025-12-31 23:00", freq=FREQ, tz="Asia/shanghai"
     )
