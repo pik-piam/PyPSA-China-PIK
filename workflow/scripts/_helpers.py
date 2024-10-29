@@ -1,13 +1,15 @@
-
 # SPDX-FileCopyrightText: : 2022 The PyPSA-Eur Authors
-#
 # SPDX-License-Identifier: MIT
 import os
 import pandas as pd
 from pathlib import Path
 from types import SimpleNamespace
-from pypsa.descriptors import Dict
+from constants import SNAKEFILE_CHOICES
+
+# from pypsa.descriptors import Dict
+import pypsa
 from pypsa.components import components, component_attrs
+
 
 def override_component_attrs(directory):
     """Tell PyPSA that links can have multiple outputs by
@@ -24,7 +26,7 @@ def override_component_attrs(directory):
     Dictionary of overriden component attributes.
     """
 
-    attrs = Dict({k : v.copy() for k,v in component_attrs.items()})
+    attrs = {k: v.copy() for k, v in component_attrs.items()}
 
     for component, list_name in components.list_name.items():
         fn = f"{directory}/{list_name}.csv"
@@ -33,6 +35,7 @@ def override_component_attrs(directory):
             attrs[component] = overrides.combine_first(attrs[component])
 
     return attrs
+
 
 def configure_logging(snakemake, skip_handlers=False):
     """
@@ -52,24 +55,29 @@ def configure_logging(snakemake, skip_handlers=False):
 
     import logging
 
-    kwargs = snakemake.config.get('logging', dict())
+    if "snakemake" not in globals():
+        return
+
+    kwargs = snakemake.config.get("logging", dict())
     kwargs.setdefault("level", "INFO")
 
     if skip_handlers is False:
-        fallback_path = Path(__file__).parent.joinpath('..', 'logs', f"{snakemake.rule}.log")
-        logfile = snakemake.log.get('python', snakemake.log[0] if snakemake.log
-                                    else fallback_path)
+        fallback_path = Path(__file__).parent.joinpath("..", "logs", f"{snakemake.rule}.log")
+        logfile = snakemake.log.get("python", snakemake.log[0] if snakemake.log else fallback_path)
         kwargs.update(
-            {'handlers': [
-                # Prefer the 'python' log, otherwise take the first log for each
-                # Snakemake rule
-                logging.FileHandler(logfile),
-                logging.StreamHandler()
+            {
+                "handlers": [
+                    # Prefer the 'python' log, otherwise take the first log for each
+                    # Snakemake rule
+                    logging.FileHandler(logfile),
+                    logging.StreamHandler(),
                 ]
-            })
+            }
+        )
     logging.basicConfig(**kwargs)
-    
-def mock_snakemake(rulename, **wildcards):
+
+
+def mock_snakemake(rule_name, snakefile=None, **wildcards):
     """
     This function is expected to be executed from the 'scripts'-directory of '
     the snakemake project. It returns a snakemake.script.Snakemake object,
@@ -77,50 +85,74 @@ def mock_snakemake(rulename, **wildcards):
     If a rule has wildcards, you have to specify them in **wildcards.
     Parameters
     ----------
-    rulename: str
+    rule_name: str
         name of the rule for which the snakemake object should be generated
     **wildcards:
         keyword arguments fixing the wildcards. Only necessary if wildcards are
         needed.
     """
-    import snakemake as sm
+    from pathlib import Path
     import os
-    from pypsa.descriptors import Dict
+    import snakemake
     from snakemake.script import Snakemake
+    import snakemake.api as sm_api
 
-    script_dir = Path(__file__).parent.resolve()
-    assert Path.cwd().resolve() == script_dir, \
-      f'mock_snakemake has to be run from the repository scripts directory {script_dir}'
-    os.chdir(script_dir.parent)
-    for p in sm.SNAKEFILE_CHOICES:
-        if os.path.exists(p):
-            snakefile = p
-            break
-    workflow = sm.Workflow(snakefile, overwrite_configfiles=[])
-    workflow.include(snakefile)
-    workflow.global_resources = {}
-    rule = workflow.get_rule(rulename)
-    dag = sm.dag.DAG(workflow, rules=[rule])
-    wc = Dict(wildcards)
-    job = sm.jobs.Job(rule, dag, wc)
+    # dumb search
+    if snakefile is None:
+        project = Path(__file__).parent.parent
+        snakes = list(project.rglob("Snakefile"))
+        snakes += list(project.rglob("snakefile"))
+        snakefile = snakes[0]
 
-    def make_accessable(*ios):
-        for io in ios:
-            for i in range(len(io)):
-                io[i] = os.path.abspath(io[i])
+    # Load the config files
+    configfiles = list(snakefile.parent.parent.joinpath("config").rglob("*.yaml"))
 
-    make_accessable(job.input, job.output, job.log)
-    snakemake = Snakemake(job.input, job.output, job.params, job.wildcards,
-                          job.threads, job.resources, job.log,
-                          job.dag.workflow.config, job.rule.name, None,)
-    # create log and output dir if not existent
-    for path in list(snakemake.log) + list(snakemake.output):
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with sm_api.SnakemakeApi(
+        sm_api.OutputSettings(
+            verbose=False,
+            show_failed_logs=True,
+        )
+    ) as api:
+        config_settings = sm_api.ConfigSettings(configfiles=configfiles)
+        workflow = api.workflow(
+            snakefile=snakefile,
+            config_settings=config_settings,
+            resource_settings=sm_api.ResourceSettings(),
+            storage_settings=sm_api.StorageSettings(),
+        )
+        workflow.global_resources = {}
+        api.setup_logger()
+        rule = workflow._workflow.get_rule(rule_name)
+        wc = dict(wildcards)
 
-    os.chdir(script_dir)
-    return snakemake
+        def make_accessible(*ios):
+            for io in ios:
+                for i in range(len(io)):
+                    for i in range(len(io)):
+                        io[i] = os.path.abspath(io[i])
 
-def load_network_for_plots(fn, tech_costs, config,cost_year, combine_hydro_ps=True):
+        make_accessible(rule.input, rule.output, rule.log)
+
+        snakemake = Snakemake(
+            rule.input,
+            rule.output,
+            rule.params,
+            wildcards,
+            None,
+            rule.resources,
+            rule.log,
+            workflow.config_settings,
+            rule.name,
+            None,
+        )
+        # create log and output dir if not existent
+        for path in list(snakemake.log) + list(snakemake.output):
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+
+        return snakemake
+
+
+def load_network_for_plots(fn, tech_costs, config, cost_year, combine_hydro_ps=True):
     import pypsa
     from add_electricity import update_transmission_costs, load_costs
 
@@ -129,7 +161,7 @@ def load_network_for_plots(fn, tech_costs, config,cost_year, combine_hydro_ps=Tr
     n.loads["carrier"] = n.loads.bus.map(n.buses.carrier) + " load"
     n.stores["carrier"] = n.stores.bus.map(n.buses.carrier)
 
-    n.links["carrier"] = (n.links.bus0.map(n.buses.carrier) + "-" + n.links.bus1.map(n.buses.carrier))
+    n.links["carrier"] = n.links.bus0.map(n.buses.carrier) + "-" + n.links.bus1.map(n.buses.carrier)
     n.lines["carrier"] = "AC line"
     n.transformers["carrier"] = "AC transformer"
 
@@ -137,58 +169,66 @@ def load_network_for_plots(fn, tech_costs, config,cost_year, combine_hydro_ps=Tr
     # n.links['p_nom'] = n.links['p_nom_min']
 
     if combine_hydro_ps:
-        n.storage_units.loc[n.storage_units.carrier.isin({'PHS', 'hydro'}), 'carrier'] = 'hydro+PHS'
+        n.storage_units.loc[n.storage_units.carrier.isin({"PHS", "hydro"}), "carrier"] = "hydro+PHS"
 
     # if the carrier was not set on the heat storage units
     # bus_carrier = n.storage_units.bus.map(n.buses.carrier)
     # n.storage_units.loc[bus_carrier == "heat","carrier"] = "water tanks"
 
-    Nyears = n.snapshot_weightings.objective.sum() / 8760.
-    costs = load_costs(tech_costs, config['costs'], config['electricity'], cost_year, Nyears)
+    Nyears = n.snapshot_weightings.objective.sum() / 8760.0
+    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, Nyears)
     update_transmission_costs(n, costs)
 
     return n
 
+
 def aggregate_p(n):
-    return pd.concat([
-        n.generators_t.p.sum().groupby(n.generators.carrier).sum(),
-        n.storage_units_t.p.sum().groupby(n.storage_units.carrier).sum(),
-        n.stores_t.p.sum().groupby(n.stores.carrier).sum(),
-        -n.loads_t.p.sum().groupby(n.loads.carrier).sum()
-    ])
+    return pd.concat(
+        [
+            n.generators_t.p.sum().groupby(n.generators.carrier).sum(),
+            n.storage_units_t.p.sum().groupby(n.storage_units.carrier).sum(),
+            n.stores_t.p.sum().groupby(n.stores.carrier).sum(),
+            -n.loads_t.p.sum().groupby(n.loads.carrier).sum(),
+        ]
+    )
+
 
 def aggregate_costs(n, flatten=False, opts=None, existing_only=False):
 
-    components = dict(Link=("p_nom", "p0"),
-                      Generator=("p_nom", "p"),
-                      StorageUnit=("p_nom", "p"),
-                      Store=("e_nom", "p"),
-                      Line=("s_nom", None),
-                      Transformer=("s_nom", None))
+    components = dict(
+        Link=("p_nom", "p0"),
+        Generator=("p_nom", "p"),
+        StorageUnit=("p_nom", "p"),
+        Store=("e_nom", "p"),
+        Line=("s_nom", None),
+        Transformer=("s_nom", None),
+    )
 
     costs = {}
     for c, (p_nom, p_attr) in zip(
-        n.iterate_components(components.keys(), skip_empty=False),
-        components.values()
+        n.iterate_components(components.keys(), skip_empty=False), components.values()
     ):
-        if c.df.empty: continue
-        if not existing_only: p_nom += "_opt"
-        costs[(c.list_name, 'capital')] = (c.df[p_nom] * c.df.capital_cost).groupby(c.df.carrier).sum()
+        if c.df.empty:
+            continue
+        if not existing_only:
+            p_nom += "_opt"
+        costs[(c.list_name, "capital")] = (
+            (c.df[p_nom] * c.df.capital_cost).groupby(c.df.carrier).sum()
+        )
         if p_attr is not None:
             p = c.pnl[p_attr].sum()
-            if c.name == 'StorageUnit':
+            if c.name == "StorageUnit":
                 p = p.loc[p > 0]
-            costs[(c.list_name, 'marginal')] = (p*c.df.marginal_cost).groupby(c.df.carrier).sum()
+            costs[(c.list_name, "marginal")] = (p * c.df.marginal_cost).groupby(c.df.carrier).sum()
     costs = pd.concat(costs)
 
     if flatten:
         assert opts is not None
-        conv_techs = opts['conv_techs']
+        conv_techs = opts["conv_techs"]
 
         costs = costs.reset_index(level=0, drop=True)
-        costs = costs['capital'].add(
-            costs['marginal'].rename({t: t + ' marginal' for t in conv_techs}),
-            fill_value=0.
+        costs = costs["capital"].add(
+            costs["marginal"].rename({t: t + " marginal" for t in conv_techs}), fill_value=0.0
         )
 
     return costs
@@ -200,7 +240,8 @@ def update_p_nom_max(n):
     # the installed capacity might exceed the expansion limit.
     # Hence, we update the assumptions.
 
-    n.generators.p_nom_max = n.generators[['p_nom_min', 'p_nom_max']].max(1)
+    n.generators.p_nom_max = n.generators[["p_nom_min", "p_nom_max"]].max(1)
+
 
 def define_spatial(nodes, options):
     """
@@ -289,3 +330,10 @@ def define_spatial(nodes, options):
 
     return spatial
 
+
+if __name__ == "__main__":
+
+    mock_snakemake(
+        "build_population",
+    )
+    print("DONE")
