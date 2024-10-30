@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+from os import PathLike
 
 idx = pd.IndexSlice
 logger = logging.getLogger(__name__)
@@ -17,9 +18,10 @@ def calculate_annuity(n, r):
         return 1 / n
 
 
-def load_costs(tech_costs, config, elec_config, cost_year, Nyears):
+def load_costs(tech_costs: PathLike, config: dict, elec_config, cost_year: int, Nyears):
 
     # set all asset costs and other parameters
+    # tech_costs = tech_costs.replace("{planning_horizons}", str(cost_year))
     costs = pd.read_csv(tech_costs, index_col=list(range(3))).sort_index()
 
     # correct units to MW and EUR

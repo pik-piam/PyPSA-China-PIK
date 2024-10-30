@@ -20,6 +20,11 @@ from _helpers import configure_logging, override_component_attrs
 from functions import haversine
 from prepare_base_network import add_buses
 
+from logging import getLogger, INFO, DEBUG
+
+logger = getLogger(__name__)
+logger.setLevel(DEBUG)
+
 
 def prepare_network(config):
 
@@ -153,6 +158,7 @@ def prepare_network(config):
     with pd.HDFStore(snakemake.input.elec_load, mode="r") as store:
         load = 1e6 * store["load"]
         load.index = load.index.tz_localize("Asia/shanghai")
+        load.index = load.index.tz_convert(None)
         load = load.loc[network.snapshots]
 
     load.columns = PROV_NAMES
@@ -711,7 +717,7 @@ if __name__ == "__main__":
             pathway="exponential175",
             planning_horizons="2020",
         )
-    configure_logging(snakemake)
+    configure_logging(snakemake, level="DEBUG")
 
     network = prepare_network(snakemake.config)
 
