@@ -331,10 +331,3 @@ def define_spatial(nodes, options):
     spatial.lignite.locations = ["China"]
 
     return spatial
-
-
-if __name__ == "__main__":
-    if not "snakemake" in globals():
-        mock_snakemake(
-            "build_population",
-        )
