@@ -130,7 +130,7 @@ if config['enable'].get('build_cutout', False):
 rule build_population_gridcell_map:
     input:
         cutout="resources/cutouts/China-2020.nc",
-        population="resources/derived_data/population/population.h5",
+        province_populations="resources/derived_data/population/population.h5",
         # 
         population_density_grid="resources/data/population/CFSR_grid.nc",
         # admin 1 level = first administrative level within country

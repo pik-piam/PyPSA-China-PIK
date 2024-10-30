@@ -1,13 +1,14 @@
 import logging
-from _helpers import configure_logging, mock_snakemake
-from readers import read_pop_density
-
-import pandas as pd
-import geopandas as gpd
 import atlite
 import xarray as xr
+import pandas as pd
+import geopandas as gpd
+
 from constants import PROV_NAMES, CRS
 from os import PathLike
+
+from _helpers import configure_logging, mock_snakemake
+from readers import read_pop_density
 
 logger = logging.getLogger(__name__)
 
@@ -129,22 +130,38 @@ def build_gridded_population(
         store["population_gridcell_map"] = points_in_provinces
 
 
-def build_population_map():
+def build_population_map(
+    prov_pop_path: PathLike,
+    pop_density_raster_path: PathLike,
+    cutout_path: PathLike,
+    province_shape_path: PathLike,
+    gridded_pop_out: PathLike,
+):
+    """Build a gridded population DataFrame by matching population density to the cutout grid cells.
+    This DataFrame is a sparse matrix of the population and shape BusesxCutout_gridcells where buses are the provinces
+
+    Args:
+        prov_pop_path (PathLike): Path to the province population count file (hdf5).
+        pop_density_raster_path (PathLike): Path to the population density raster file.
+        cutout_path (PathLike): Path to the cutout file containing the grid.
+        province_shape_path (PathLike): Path to the province shape file.
+        grid_pop_out (PathLike): output file path.
+    """
 
     # =============== load data ===================
-    with pd.HDFStore(snakemake.input.population, mode="r") as store:
+    with pd.HDFStore(prov_pop_path, mode="r") as store:
         pop_province_count = store["population"]
 
     # CFSR points and Provinces
-    pop_ww = load_cfrs_data(snakemake.input.population_density)
+    pop_ww = load_cfrs_data(pop_density_raster_path)
 
-    prov_poly = gpd.read_file(snakemake.input.province_shape)[["province", "geometry"]]
+    prov_poly = gpd.read_file(province_shape_path)[["province", "geometry"]]
     prov_poly.set_index("province", inplace=True)
     prov_poly = prov_poly.reindex(PROV_NAMES)
     prov_poly.reset_index(inplace=True)
 
     # load renewable profiles & grid & extract gridpoints
-    cutout = atlite.Cutout(snakemake.input.cutout)
+    cutout = atlite.Cutout(cutout_path)
     grid_points = cutout.grid
     grid_points.to_crs(3857, inplace=True)
     grid_points["geometry"] = grid_points.centroid
@@ -181,7 +198,7 @@ def build_population_map():
 
     # go from normalised distribution to head count
     points_in_provinces *= pop_province_count
-    with pd.HDFStore(snakemake.output.population_map, mode="w", complevel=4) as store:
+    with pd.HDFStore(gridded_pop_out, mode="w", complevel=4) as store:
         store["population_gridcell_map"] = points_in_provinces
 
 
@@ -189,20 +206,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         from types import SimpleNamespace
 
-        # snakemake_new = mock_snakemake("build_population_gridcell_map")
-        snakemake = SimpleNamespace(
-            input=SimpleNamespace(
-                population_density_nasa="/home/ivanra/documents/Documents/PyPSA-China-main/resources/data/population/gpw_v4_population_density_rev11_2020_2pt5_min.tif",
-                population_density="/home/ivanra/documents/Documents/PyPSA-China-main/resources/data/population/CFSR_grid.nc",
-                population="/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population.h5",
-                cutout="/home/ivanra/documents/Documents/PyPSA-China-main/resources/cutouts/China-2020.nc",
-                province_population="/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population.h5",
-                province_shape="/home/ivanra/documents/Documents/PyPSA-China-main/resources/data/province_shapes/CHN_adm1.shp",
-            ),
-            output=SimpleNamespace(
-                population_map="/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population_gridcell_map.h5"
-            ),
-        )
+        snakemake = mock_snakemake("build_population_gridcell_map")
 
         for k, v in snakemake.input.__dict__.items():
             import os.path
@@ -211,18 +215,18 @@ if __name__ == "__main__":
 
     configure_logging(snakemake)
 
-    import time
-
-    start_time = time.time()
-    build_population_map()
-    print(f"build_population_map took {time.time() - start_time:.2f} seconds")
-
-    start_time = time.time()
-    build_gridded_population(
-        snakemake.input.province_population,
-        snakemake.input.population_density_nasa,
-        snakemake.input.cutout,
-        snakemake.input.province_shape,
-        "/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population_gridcell_map_2.h5",
+    build_population_map(
+        prov_pop_path=snakemake.input.province_populations,
+        pop_density_raster_path=snakemake.input.population_density_grid,
+        cutout_path=snakemake.input.cutout,
+        province_shape_path=snakemake.input.province_shape,
+        gridded_pop_out=snakemake.output.population_map,
     )
-    print(f"build_gridded_population took {time.time() - start_time:.2f} seconds")
+
+    # build_gridded_population(
+    #     snakemake.input.province_population,
+    #     snakemake.input.population_density_nasa,
+    #     snakemake.input.cutout,
+    #     snakemake.input.province_shape,
+    #     "/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population_gridcell_map_2.h5",
+    # )
