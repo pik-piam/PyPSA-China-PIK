@@ -119,7 +119,7 @@ def make_onshore_wind_profile(onwind_config: dict, cutout: atlite.Cutout, outp_p
     """_summary_
 
     Args:
-        onwind_config (dict): the onshore wind configuration (from the yaml config read by snakemake)
+        onwind_config (dict): the onshore wind config (from the yaml config read by snakemake)
         cutout (atlite.Cutout): the atlite cutout
         outp_path (PathLike): the output path for the raster data
     """
