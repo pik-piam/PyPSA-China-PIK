@@ -47,9 +47,9 @@ if __name__ == "__main__":
 
     buses = provinces_shp.index
 
-    Grass = snakemake.input.Grass_raster
-    Bare = snakemake.input.Bare_raster
-    Shrubland = snakemake.input.Shrubland_raster
+    grass = snakemake.input.Grass_raster
+    bare = snakemake.input.Bare_raster
+    shrubland = snakemake.input.Shrubland_raster
 
     area = cutout.grid.to_crs(3035).area / 1e6
     area = xr.DataArray(area.values.reshape(cutout.shape), [cutout.coords["y"], cutout.coords["x"]])
@@ -68,9 +68,9 @@ if __name__ == "__main__":
         Build_up = snakemake.input["Build_up_raster"]
 
         excluder_build_up.add_raster(Build_up, invert=True, crs=CRS)
-        excluder_solar.add_raster(Grass, invert=True, crs=CRS)
-        excluder_solar.add_raster(Bare, invert=True, crs=CRS)
-        excluder_solar.add_raster(Shrubland, invert=True, crs=CRS)
+        excluder_solar.add_raster(grass, invert=True, crs=CRS)
+        excluder_solar.add_raster(bare, invert=True, crs=CRS)
+        excluder_solar.add_raster(shrubland, invert=True, crs=CRS)
 
         kwargs = dict(nprocesses=nprocesses, disable_progressbar=noprogress)
         if noprogress:
@@ -104,7 +104,7 @@ if __name__ == "__main__":
             **solar_resource,
         )
 
-        logger.info(f"Calculating solar maximal capacity per bus (method 'simple')")
+        logger.info("Calculating solar maximal capacity per bus (method 'simple')")
 
         solar_p_nom_max = solar_capacity_per_sqkm * solar_matrix @ area
 
@@ -144,9 +144,9 @@ if __name__ == "__main__":
 
         excluder_onwind = ExclusionContainer(crs=3035, res=500)
 
-        excluder_onwind.add_raster(Grass, invert=True, crs=4326)
-        excluder_onwind.add_raster(Bare, invert=True, crs=4326)
-        excluder_onwind.add_raster(Shrubland, invert=True, crs=4326)
+        excluder_onwind.add_raster(grass, invert=True, crs=4326)
+        excluder_onwind.add_raster(bare, invert=True, crs=4326)
+        excluder_onwind.add_raster(shrubland, invert=True, crs=4326)
 
         kwargs = dict(nprocesses=nprocesses, disable_progressbar=noprogress)
         if noprogress:
@@ -175,7 +175,7 @@ if __name__ == "__main__":
             **onwind_resource,
         )
 
-        logger.info(f"Calculating onwind maximal capacity per bus (method 'simple')")
+        logger.info("Calculating onwind maximal capacity per bus (method 'simple')")
 
         onwind_p_nom_max = onwind_capacity_per_sqkm * onwind_matrix @ area
 
@@ -267,7 +267,7 @@ if __name__ == "__main__":
             **offwind_resource,
         )
 
-        logger.info(f"Calculating offwind maximal capacity per bus (method 'simple')")
+        logger.info("Calculating offwind maximal capacity per bus (method 'simple')")
 
         offwind_p_nom_max = offwind_capacity_per_sqkm * offwind_matrix @ area
 

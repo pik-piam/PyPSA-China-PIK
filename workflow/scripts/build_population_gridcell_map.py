@@ -1,24 +1,25 @@
 import logging
-from _helpers import configure_logging
+from _helpers import configure_logging, mock_snakemake
+from readers import read_pop_density
 
 import pandas as pd
 import geopandas as gpd
-from shapely.geometry import Point
 import atlite
 import xarray as xr
 from constants import PROV_NAMES, CRS
+from os import PathLike
 
 logger = logging.getLogger(__name__)
 
 
 def xarr_to_gdf(
-    xarr: xr.DataArray, var_name="__xarray_dataarray_variable__", x_var="x", y_var="y", crs=CRS
+    xarr: xr.DataArray, var_name: str, x_var="x", y_var="y", crs=CRS
 ) -> gpd.GeoDataFrame:
     """convert an xarray to GDF
 
     Args:
         xarr (xr.DataArray): the input array
-        var_name (str, optional): the array variable to be converted . Defaults to "__xarray_dataarray_variable__".
+        var_name (str): the array variable to be converted.
         x_var (str, optional): the x dimension. Defaults to "x".
         y_var (str, optional): the y dimension. Defaults to "y".
         crs (_type_, optional): the crs. Defaults to CRS.
@@ -33,16 +34,110 @@ def xarr_to_gdf(
     )
 
 
+def load_cfrs_data(target: PathLike) -> gpd.GeoDataFrame:
+    """load  CFRS_grid.nc type files into a geodatafram
+
+    Args:
+        target (PathLike): the abs path
+
+    Returns:
+        gpd.GeoDataFrame: the data in gdf
+    """
+    pop_density = xr.open_dataarray(target).to_dataset(name="pop_density")
+    pop_ww = xarr_to_gdf(pop_density, var_name="pop_density")  # TODO is the CRS correct?
+
+    return pop_ww
+
+
+def build_gridded_population(
+    prov_pop_path: PathLike,
+    pop_density_raster_path: PathLike,
+    cutout_path: PathLike,
+    province_shape_path: PathLike,
+    gridded_pop_out: PathLike,
+):
+    """Build a gridded population DataFrame by matching population density to the cutout grid cells.
+    This DataFrame is a sparse matrix of the population and shape BusesxCutout_gridcells where buses are the provinces
+
+    Args:
+        prov_pop_path (PathLike): Path to the province population count file (hdf5).
+        pop_density_raster_path (PathLike): Path to the population density raster file.
+        cutout_path (PathLike): Path to the cutout file containing the grid.
+        province_shape_path (PathLike): Path to the province shape file.
+        grid_pop_out (PathLike): output file path.
+    """
+
+    with pd.HDFStore(prov_pop_path, mode="r") as store:
+        pop_province = store["population"]
+
+    prov_poly = gpd.read_file(province_shape_path)[["province", "geometry"]]
+    prov_poly.set_index("province", inplace=True)
+    prov_poly = prov_poly.reindex(PROV_NAMES)
+    prov_poly.reset_index(inplace=True)
+
+    pop_density = read_pop_density(pop_density_raster_path, prov_poly, crs=CRS)
+
+    cutout = atlite.Cutout(cutout_path)
+    grid_points = cutout.grid
+    # this is in polygons but need points for sjoin with pop dnesity to work
+    grid_points.to_crs(3857, inplace=True)
+    grid_points["geometry"] = grid_points.centroid
+    grid_points.to_crs(CRS, inplace=True)
+
+    # match cutout grid to province
+    # cutout_pts_in_prov = gpd.tools.sjoin(grid_points, prov_poly, how="left", predicate="intersects")
+    # TODO: do you want to dropna here?
+    cutout_pts_in_prov = gpd.tools.sjoin(
+        grid_points, prov_poly, how="left", predicate="intersects"
+    )  # .dropna()
+    cutout_pts_in_prov.rename(
+        columns={"index_right": "province_index", "province": "province_name"}, inplace=True
+    )
+
+    # match cutout grid to province
+    cutout_pts_in_prov = gpd.tools.sjoin(grid_points, prov_poly, how="left", predicate="intersects")
+    cutout_pts_in_prov.rename(
+        columns={"index_right": "province_index", "province": "province_name"}, inplace=True
+    )
+    # cutout_pts_in_prov.dropna(inplace=True)
+
+    # TODO CRS, think about whether this makes sense or need grid interp
+    merged = gpd.tools.sjoin_nearest(
+        cutout_pts_in_prov.to_crs(3857), pop_density.to_crs(3857), how="inner"
+    )
+    merged = merged.to_crs(CRS)
+    # points outside china are NaN, need to rename to keep the index cutout after agg
+    # otherwise the spare matrix will not match the cutoutpoints (smarter would be to change the cutout)
+    merged.fillna({"province_name": "OutsideChina"}, inplace=True)
+
+    points_in_provinces = pd.DataFrame(index=cutout_pts_in_prov.index)
+    # normalise pop per province and make a loc_id/province table
+    points_in_provinces = (
+        merged.groupby("province_name")["pop_density"]
+        .apply(lambda x: x / x.sum())
+        .unstack(fill_value=0.0)
+        .T
+    )
+    # now get rid of the outside china "province"
+    points_in_provinces.drop(columns="OutsideChina", inplace=True)
+    points_in_provinces.index.name = ""
+    points_in_provinces.fillna(0.0, inplace=True)
+
+    points_in_provinces *= pop_province
+
+    with pd.HDFStore(gridded_pop_out, mode="w", complevel=4) as store:
+        store["population_gridcell_map"] = points_in_provinces
+
+
 def build_population_map():
 
     # =============== load data ===================
     with pd.HDFStore(snakemake.input.population, mode="r") as store:
         pop_province_count = store["population"]
 
-    da = xr.open_dataset(snakemake.input.population_density_grid)
-    pop_ww = xarr_to_gdf(da)  # TODO is the CRS correct?
-
     # CFSR points and Provinces
+    pop_ww = load_cfrs_data(snakemake.input.population_density)
+
     prov_poly = gpd.read_file(snakemake.input.province_shape)[["province", "geometry"]]
     prov_poly.set_index("province", inplace=True)
     prov_poly = prov_poly.reindex(PROV_NAMES)
@@ -50,13 +145,10 @@ def build_population_map():
 
     # load renewable profiles & grid & extract gridpoints
     cutout = atlite.Cutout(snakemake.input.cutout)
-    cutout.grid
-    # TODO check this is exact replica of previous code
-    c_grid_points = cutout.coords
-    grid_points = xarr_to_gdf(c_grid_points.to_dataset())
-    # df = pd.DataFrame({"Coordinates": tuple(map(tuple, c_grid_points))})
-    # df["Coordinates"] = df["Coordinates"].apply(Point)
-    # grid_points = gpd.GeoDataFrame(df, geometry="Coordinates", crs=CRS)
+    grid_points = cutout.grid
+    grid_points.to_crs(3857, inplace=True)
+    grid_points["geometry"] = grid_points.centroid
+    grid_points.to_crs(CRS, inplace=True)
 
     # match cutout grid to province
     cutout_pts_in_prov = gpd.tools.sjoin(grid_points, prov_poly, how="left", predicate="intersects")
@@ -64,7 +156,7 @@ def build_population_map():
         columns={"index_right": "province_index", "province": "province_name"}, inplace=True
     )
 
-    #### Province masks merged with population density
+    # Province masks merged with population density
     # TODO: THIS REQUIRES EXPLANATION - can't just use random crs :||
     cutout_pts_in_prov = cutout_pts_in_prov.to_crs(3857)
     pop_ww = pop_ww.to_crs(3857)
@@ -72,31 +164,65 @@ def build_population_map():
     merged = gpd.tools.sjoin_nearest(cutout_pts_in_prov, pop_ww, how="inner")
     merged = merged.to_crs(CRS)
 
-    #### save in the right format
-
+    # normalised pop distribution per province
+    # need an extra province for points not in the province, otherwise lose cutout grid index
+    merged.fillna({"province_name": "OutsideChina"}, inplace=True)
     points_in_provinces = pd.DataFrame(index=cutout_pts_in_prov.index)
-
-    # TODO switch to native pandas with groupbyapply
-    # normalise pop per province
-    for province in PROV_NAMES:
-        pop_pro = merged[merged.province_name == province].Population_density
-        points_in_provinces[province] = pop_pro / pop_pro.sum()
-
+    points_in_provinces = (
+        merged.groupby("province_name")["pop_density"]
+        .apply(lambda x: x / x.sum())
+        .unstack(fill_value=0.0)
+        .T
+    )
+    # Cleanup the matrix: get rid of the outside china "province" et
+    points_in_provinces.drop(columns="OutsideChina", inplace=True)
     points_in_provinces.index.name = ""
     points_in_provinces.fillna(0.0, inplace=True)
-    # re multiply by province
-    points_in_provinces *= pop_province_count
 
+    # go from normalised distribution to head count
+    points_in_provinces *= pop_province_count
     with pd.HDFStore(snakemake.output.population_map, mode="w", complevel=4) as store:
         store["population_gridcell_map"] = points_in_provinces
 
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
+        from types import SimpleNamespace
 
-        snakemake = mock_snakemake("build_population_gridcell_map")
+        # snakemake_new = mock_snakemake("build_population_gridcell_map")
+        snakemake = SimpleNamespace(
+            input=SimpleNamespace(
+                population_density_nasa="/home/ivanra/documents/Documents/PyPSA-China-main/resources/data/population/gpw_v4_population_density_rev11_2020_2pt5_min.tif",
+                population_density="/home/ivanra/documents/Documents/PyPSA-China-main/resources/data/population/CFSR_grid.nc",
+                population="/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population.h5",
+                cutout="/home/ivanra/documents/Documents/PyPSA-China-main/resources/cutouts/China-2020.nc",
+                province_population="/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population.h5",
+                province_shape="/home/ivanra/documents/Documents/PyPSA-China-main/resources/data/province_shapes/CHN_adm1.shp",
+            ),
+            output=SimpleNamespace(
+                population_map="/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population_gridcell_map.h5"
+            ),
+        )
+
+        for k, v in snakemake.input.__dict__.items():
+            import os.path
+
+            print(k, os.path.exists(v))
 
     configure_logging(snakemake)
 
+    import time
+
+    start_time = time.time()
     build_population_map()
+    print(f"build_population_map took {time.time() - start_time:.2f} seconds")
+
+    start_time = time.time()
+    build_gridded_population(
+        snakemake.input.province_population,
+        snakemake.input.population_density_nasa,
+        snakemake.input.cutout,
+        snakemake.input.province_shape,
+        "/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population_gridcell_map_2.h5",
+    )
+    print(f"build_gridded_population took {time.time() - start_time:.2f} seconds")
