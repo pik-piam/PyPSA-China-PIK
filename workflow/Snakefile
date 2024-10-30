@@ -137,6 +137,7 @@ rule build_population_gridcell_map:
         province_shape="resources/data/province_shapes/CHN_adm1.shp"
     output:
         population_map="resources/derived_data/population/population_gridcell_map.h5"
+    log: "logs/build_population_gridcell_map.log"
     threads: 1
     resources: mem_mb=35000
     script: "scripts/build_population_gridcell_map.py"
@@ -147,6 +148,7 @@ rule build_solar_thermal_profiles:
         population_map="resources/derived_data/population/population_gridcell_map.h5"
     output:
         profile_solar_thermal = f"resources/derived_data/heating/solar_thermal-{config['solar_thermal_angle']}.h5"
+    log: "logs/build_solar_thermal_profiles.log"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_solar_thermal_profiles.py"
@@ -157,6 +159,7 @@ rule build_temp_profiles:
         cutout="resources/cutouts/China-2020.nc"
     output:
         temp="resources/derived_data/heating/temp.h5"
+    log: "logs/build_temp_profiles.log"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_temp_profiles.py"

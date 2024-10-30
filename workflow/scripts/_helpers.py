@@ -1,5 +1,8 @@
 # SPDX-FileCopyrightText: : 2022 The PyPSA-Eur Authors
 # SPDX-License-Identifier: MIT
+
+# DO NOT IMPORT SNAKEMAKE pure
+
 import os
 import pandas as pd
 from pathlib import Path
@@ -93,7 +96,6 @@ def mock_snakemake(rule_name, snakefile=None, **wildcards):
     """
     from pathlib import Path
     import os
-    import snakemake
     from snakemake.script import Snakemake
     import snakemake.api as sm_api
 
@@ -138,10 +140,10 @@ def mock_snakemake(rule_name, snakefile=None, **wildcards):
             rule.output,
             rule.params,
             wildcards,
-            None,
+            1,  # threads
             rule.resources,
             rule.log,
-            workflow.config_settings,
+            workflow._workflow.config,
             rule.name,
             None,
         )
@@ -332,8 +334,7 @@ def define_spatial(nodes, options):
 
 
 if __name__ == "__main__":
-
-    mock_snakemake(
-        "build_population",
-    )
-    print("DONE")
+    if not "snakemake" in globals():
+        mock_snakemake(
+            "build_population",
+        )
