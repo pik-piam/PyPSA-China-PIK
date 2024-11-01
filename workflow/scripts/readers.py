@@ -1,10 +1,8 @@
 import rioxarray
-import rasterio
 import geopandas as gpd
 import os.path
 
-from xarray import DataArray, Dataset
-from constants import CRS
+from constants import CRS, PROV_NAMES
 
 
 def read_raster(
@@ -66,3 +64,23 @@ def read_pop_density(
 
     # Convert the DataFrame to a GeoDataFrame
     return gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.x, df.y), crs=crs)
+
+
+def read_province_shapes(shape_file: os.PathLike) -> gpd.GeoDataFrame:
+    """read the province shape files
+
+    Args:
+        shape_file (os.PathLike): the path to the .shp file & co
+
+    Returns:
+        gpd.GeoDataFrame: the province shapes as a GeoDataFrame
+    """
+
+    prov_shapes = gpd.GeoDataFrame.from_file(shape_file)
+    prov_shapes = prov_shapes.to_crs(CRS)
+    prov_shapes.set_index("province", inplace=True)
+    # TODO: does this make sense? reindex after?
+    if not (prov_shapes.index == PROV_NAMES).all():
+        raise ValueError(f"Province names do not match expected names: {PROV_NAMES}")
+
+    return prov_shapes

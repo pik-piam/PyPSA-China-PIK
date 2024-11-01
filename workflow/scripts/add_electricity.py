@@ -18,7 +18,22 @@ def calculate_annuity(n, r):
         return 1 / n
 
 
-def load_costs(tech_costs: PathLike, config: dict, elec_config, cost_year: int, Nyears):
+# TODO fix docstring and change file + IO
+def load_costs(
+    tech_costs: PathLike, config: dict, elec_config, cost_year: int, n_years: int
+) -> pd.DataFrame:
+    """_summary_
+
+    Args:
+        tech_costs (PathLike): _description_
+        config (dict): _description_
+        elec_config (_type_): _description_
+        cost_year (int): _description_
+        n_years:int (int): _description_
+
+    Returns:
+        pd.DataFrame: _description_
+    """
 
     # set all asset costs and other parameters
     # tech_costs = tech_costs.replace("{planning_horizons}", str(cost_year))
@@ -52,7 +67,7 @@ def load_costs(tech_costs: PathLike, config: dict, elec_config, cost_year: int, 
     costs["capital_cost"] = (
         (calculate_annuity(costs["lifetime"], costs["discount rate"]) + costs["FOM"] / 100.0)
         * costs["investment"]
-        * Nyears
+        * n_years
     )
 
     costs.at["OCGT", "fuel"] = costs.at["gas", "fuel"]

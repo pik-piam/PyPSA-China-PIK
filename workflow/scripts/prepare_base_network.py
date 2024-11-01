@@ -8,17 +8,32 @@ import pypsa
 import geopandas as gpd
 import pandas as pd
 import numpy as np
+from pathlib import Path
+from os.path import abspath
 
 import xarray as xr
 
 from vresutils.costdata import annuity
 from shapely.geometry import Point
+from logging import getLogger
 
-from constants import PROV_NAMES, CRS
+from constants import (
+    PROV_NAMES,
+    CRS,
+    TIMEZONE,
+    LOAD_CONVERSION_FACTOR,
+    YEAR_HRS,
+    CO2_EL_2020,
+    CO2_HEATING_2020,
+)
 from functions import HVAC_cost_curve
-from _helpers import configure_logging, override_component_attrs
+from _helpers import configure_logging, override_component_attrs, mock_snakemake, is_leap_year
 from add_electricity import load_costs
 from functions import haversine
+from readers import read_province_shapes
+
+logger = getLogger(__name__)
+logger.setLevel("INFO")
 
 
 def add_buses(
@@ -29,7 +44,7 @@ def add_buses(
     prov_centroids: gpd.GeoSeries,
 ):
 
-    network.madd(
+    network.add(
         "Bus",
         nodes,
         suffix=suffix,
@@ -39,70 +54,14 @@ def add_buses(
     )
 
 
-def prepare_network(config: dict):
+def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
+    """ad the various carriers to the network based on the config file
 
-    if "overrides" in snakemake.input.keys():
-        overrides = override_component_attrs(snakemake.input.overrides)
-        network = pypsa.Network(override_component_attrs=overrides)
-    else:
-        network = pypsa.Network()
-
-    # set times
-    planning_horizons = snakemake.wildcards["planning_horizons"]
-    if int(planning_horizons) % 4 != 0:
-        snapshots = pd.date_range(
-            str(planning_horizons) + "-01-01 00:00",
-            str(planning_horizons) + "-12-31 23:00",
-            freq=config["freq"],
-            tz="Asia/shanghai",
-        )
-    else:
-        snapshots = pd.date_range(
-            "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz="Asia/shanghai"
-        )
-        snapshots = snapshots.map(lambda t: t.replace(year=int(planning_horizons)))
-
-    network.set_snapshots(snapshots.values)
-    network.snapshot_weightings[:] = config["frequency"]
-    represented_hours = network.snapshot_weightings.sum()[0]
-    Nyears = represented_hours / 8760.0
-
-    # load graph
-    nodes = pd.Index(PROV_NAMES)
-    pathway = snakemake.wildcards["pathway"]
-
-    date_range = pd.date_range(
-        "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz="Asia/shanghai"
-    )
-    date_range = date_range.map(lambda t: t.replace(year=2020))
-
-    ds_solar = xr.open_dataset(snakemake.input.profile_solar)
-    ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)
-    ds_offwind = xr.open_dataset(snakemake.input.profile_offwind)
-
-    solar_p_max_pu = ds_solar["profile"].transpose("time", "bus").to_pandas()
-    solar_p_max_pu.index = solar_p_max_pu.index.tz_localize("Asia/shanghai")
-    solar_p_max_pu = solar_p_max_pu.loc[date_range].set_index(network.snapshots)
-    onwind_p_max_pu = ds_onwind["profile"].transpose("time", "bus").to_pandas()
-    onwind_p_max_pu.index = onwind_p_max_pu.index.tz_localize("Asia/shanghai")
-    onwind_p_max_pu = onwind_p_max_pu.loc[date_range].set_index(network.snapshots)
-    offwind_p_max_pu = ds_offwind["profile"].transpose("time", "bus").to_pandas()
-    offwind_p_max_pu.index = offwind_p_max_pu.index.tz_localize("Asia/shanghai")
-    offwind_p_max_pu = offwind_p_max_pu.loc[date_range].set_index(network.snapshots)
-
-    tech_costs = snakemake.input.tech_costs
-    cost_year = snakemake.wildcards["planning_horizons"]
-    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, Nyears)
-
-    prov_shapes = gpd.GeoDataFrame.from_file(snakemake.input.province_shape)
-    prov_shapes = prov_shapes.to_crs(CRS)
-    prov_shapes.set_index("province", inplace=True)
-    prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
-
-    # add buses
-    for suffix in config["bus_suffix"]:
-        carrier = config["bus_carrier"][suffix]
-        add_buses(network, nodes, suffix, carrier, prov_centroids)
+    Args:
+        network (pypsa.Network): the pypsa network
+        config (dict): the config file
+        costs (pd.DataFrame): the costs dataframe
+    """
 
     # add carriers
     if config["heat_coupling"]:
@@ -129,15 +88,104 @@ def prepare_network(config: dict):
     if config["add_coal"]:
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
 
+
+# TODO move to helpers?
+def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -> pd.DataFrame:
+    """Shift the profile to the planning year
+    Args:
+        data (pd.DataFrame): profile data, for 1 year
+        planning_yr (int): planning year
+    Returns:
+        pd.DataFrame: shifted profile data
+    Raises:
+        ValueError: if the profile data crosses years
+    """
+    years = data.index.year.unique()
+    if not len(years) == 1:
+        raise ValueError(f"Data should be for one year only but got {years}")
+
+    ref_year = years[0]
+    if is_leap_year(ref_year) and not is_leap_year(planning_yr):
+        data = data.loc[~((data.index.month == 2) & (data.index.day == 29))]
+    elif is_leap_year(planning_yr) and not is_leap_year(ref_year):
+        logger.warning(
+            f"The reference profile year is not a leap year but the planning year is {planning_yr} - day missed"
+        )
+
+    data.index = data.index.map(lambda t: t.replace(year=int(planning_yr)))
+
+    return data
+
+
+def prepare_network(config: dict):
+
+    if "overrides" in snakemake.input.keys():
+        overrides = override_component_attrs(snakemake.input.overrides)
+        network = pypsa.Network(override_component_attrs=overrides)
+    else:
+        network = pypsa.Network()
+
+    # set times
+    planning_horizons = snakemake.wildcards["planning_horizons"]
+    snapshots = pd.date_range(
+        f"{int(planning_horizons)}-01-01 00:00",
+        f"{int(planning_horizons)}-12-31 23:00",
+        freq=config["freq"],
+        # tz=TIMEZONE,
+    )
+
+    network.set_snapshots(snapshots.values)
+    network.snapshot_weightings[:] = config["frequency"]
+    represented_hours = network.snapshot_weightings.sum()[0]
+    # TODO: what about leap years?
+    n_years = represented_hours / YEAR_HRS
+
+    # load graph
+    nodes = pd.Index(PROV_NAMES)
+    pathway = snakemake.wildcards["pathway"]
+
+    # load data sets
+    ds_solar = xr.open_dataset(snakemake.input.profile_solar)
+    ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)
+    ds_offwind = xr.open_dataset(snakemake.input.profile_offwind)
+
+    # == shift datasets  from reference to planning year, sort columns to match network bus order ==
+    solar_p_max_pu = ds_solar["profile"].transpose("time", "bus").to_pandas()
+    solar_p_max_pu = shift_profile_to_planning_year(solar_p_max_pu, planning_horizons)
+    solar_p_max_pu = solar_p_max_pu.loc[snapshots]
+    solar_p_max_pu.sort_index(axis=1, inplace=True)
+
+    onwind_p_max_pu = ds_onwind["profile"].transpose("time", "bus").to_pandas()
+    onwind_p_max_pu = shift_profile_to_planning_year(onwind_p_max_pu, planning_horizons)
+    onwind_p_max_pu = onwind_p_max_pu.loc[snapshots]
+    onwind_p_max_pu.sort_index(axis=1, inplace=True)
+
+    offwind_p_max_pu = ds_offwind["profile"].transpose("time", "bus").to_pandas()
+    offwind_p_max_pu = shift_profile_to_planning_year(offwind_p_max_pu, planning_horizons)
+    offwind_p_max_pu = solar_p_max_pu.loc[snapshots]
+    offwind_p_max_pu.sort_index(axis=1, inplace=True)
+
+    tech_costs = snakemake.input.tech_costs
+    cost_year = snakemake.wildcards["planning_horizons"]
+    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
+
+    prov_shapes = read_province_shapes(snakemake.input.province_shape)
+    prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
+
+    # add buses
+    for suffix in config["bus_suffix"]:
+        carrier = config["bus_carrier"][suffix]
+        add_buses(network, nodes, suffix, carrier, prov_centroids)
+
+    add_carriers(network, config, costs)
+
     # add global constraint
     if not isinstance(config["scenario"]["co2_reduction"], tuple):
 
         if config["scenario"]["co2_reduction"] is not None:
-
-            co2_limit = (
-                (5.288987673 + 0.628275682)
-                * 1e9
-                * (1 - config["scenario"]["co2_reduction"][pathway][planning_horizons])
+            #
+            co2_limit = (CO2_HEATING_2020 + CO2_EL_2020) * (
+                1 - config["scenario"]["co2_reduction"][pathway][planning_horizons]
             )  # Chinese 2020 CO2 emissions of electric and heating sector
 
             network.add(
@@ -150,23 +198,25 @@ def prepare_network(config: dict):
             )
 
     # load demand data
-    with pd.HDFStore(snakemake.input.elec_load, mode="r") as store:
-        load = 1e6 * store["load"]
-        load.index = load.index.tz_localize("Asia/shanghai")
+    demand_path = snakemake.input.elec_load.replace("{planning_horizons}", cost_year)
+    with pd.HDFStore(demand_path, mode="r") as store:
+        load = LOAD_CONVERSION_FACTOR * store["load"]  # TODO add unit
         load = load.loc[network.snapshots]
 
     load.columns = PROV_NAMES
 
-    network.madd("Load", nodes, bus=nodes, p_set=load[nodes])
+    network.add("Load", nodes, bus=nodes, p_set=load[nodes])
 
     if config["heat_coupling"]:
 
         central_fraction = pd.read_hdf(snakemake.input.central_fraction)
         with pd.HDFStore(snakemake.input.heat_demand_profile, mode="r") as store:
             heat_demand = store["heat_demand_profiles"]
+            # TODO fix this not working
+            heat_demand.index = heat_demand.index.tz_localize(None)
             heat_demand = heat_demand.loc[network.snapshots]
 
-        network.madd(
+        network.add(
             "Load",
             nodes,
             suffix=" decentral heat",
@@ -174,7 +224,7 @@ def prepare_network(config: dict):
             p_set=heat_demand[nodes].multiply(1 - central_fraction),
         )
 
-        network.madd(
+        network.add(
             "Load",
             nodes,
             suffix=" central heat",
@@ -184,7 +234,7 @@ def prepare_network(config: dict):
 
     if config["add_gas"]:
         # add converter from fuel source
-        network.madd(
+        network.add(
             "Generator",
             nodes,
             suffix=" gas fuel",
@@ -195,7 +245,7 @@ def prepare_network(config: dict):
             marginal_cost=costs.at["OCGT", "fuel"],
         )
 
-        network.madd(
+        network.add(
             "Store",
             nodes + " gas Store",
             bus=nodes + " gas",
@@ -206,7 +256,7 @@ def prepare_network(config: dict):
         )
 
     if config["add_coal"]:
-        network.madd(
+        network.add(
             "Generator",
             nodes + " coal fuel",
             bus=nodes + " coal",
@@ -217,7 +267,7 @@ def prepare_network(config: dict):
         )
 
     if config["add_biomass"]:
-        network.madd(
+        network.add(
             "Bus",
             nodes,
             suffix=" biomass",
@@ -227,7 +277,7 @@ def prepare_network(config: dict):
         )
 
         biomass_potential = pd.read_hdf(snakemake.input.biomass_potental)
-        network.madd(
+        network.add(
             "Store",
             nodes + " biomass",
             bus=nodes + " biomass",
@@ -238,7 +288,7 @@ def prepare_network(config: dict):
         )
 
         network.add("Carrier", "CO2", co2_emissions=0)
-        network.madd(
+        network.add(
             "Bus",
             nodes,
             suffix=" CO2",
@@ -247,10 +297,10 @@ def prepare_network(config: dict):
             carrier="CO2",
         )
 
-        network.madd("Store", nodes + " CO2", bus=nodes + " CO2", carrier="CO2")
+        network.add("Store", nodes + " CO2", bus=nodes + " CO2", carrier="CO2")
 
         network.add("Carrier", "CO2 capture", co2_emissions=1)
-        network.madd(
+        network.add(
             "Bus",
             nodes,
             suffix=" CO2 capture",
@@ -259,7 +309,7 @@ def prepare_network(config: dict):
             carrier="CO2 capture",
         )
 
-        network.madd(
+        network.add(
             "Store",
             nodes + " CO2 capture",
             bus=nodes + " CO2 capture",
@@ -267,7 +317,7 @@ def prepare_network(config: dict):
             carrier="CO2 capture",
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes + " central biomass CHP capture",
             bus0=nodes + " CO2",
@@ -284,7 +334,7 @@ def prepare_network(config: dict):
             lifetime=costs.at["biomass CHP capture", "lifetime"],
         )
         # TODO rmemoe hard coded
-        network.madd(
+        network.add(
             "Link",
             nodes + " central biomass CHP",
             bus0=nodes + " biomass",
@@ -296,6 +346,7 @@ def prepare_network(config: dict):
             efficiency=costs.at["biomass CHP", "efficiency"],
             efficiency2=costs.at["biomass CHP", "efficiency-heat"],
             # 4187.0095385594495TWh equates to 0.79*(5.24/3.04) Gt CO2  # tCO2/MWh
+            # TODO centralise
             efficiency3=0.32522269504651985,
             capital_cost=costs.at["biomass CHP", "efficiency"]
             * costs.at["biomass CHP", "capital_cost"],
@@ -305,7 +356,7 @@ def prepare_network(config: dict):
             lifetime=costs.at["biomass CHP", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes + " decentral biomass boiler",
             bus0=nodes + " biomass",
@@ -324,14 +375,16 @@ def prepare_network(config: dict):
 
     if config["add_hydro"]:
 
-        ###
-        df = pd.read_csv("data/hydro/dams_large.csv", index_col=0)
+        # TODO remove hard coded paths
+        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
         points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
         dams = gpd.GeoDataFrame(df, geometry=points, crs=CRS)
 
-        hourly_rng = pd.date_range("1979-01-01", "2017-01-01", freq="1H", inclusive="left")
+        hourly_rng = pd.date_range(
+            "1979-01-01", "2017-01-01", freq=config["freq"], inclusive="left"
+        )
         inflow = pd.read_pickle(
-            "data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
+            "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
         ).reindex(hourly_rng, fill_value=0)
         inflow.columns = dams.index
 
@@ -341,7 +394,7 @@ def prepare_network(config: dict):
 
         ###
         # # Add hydro stations as buses
-        network.madd(
+        network.add(
             "Bus",
             dams.index,
             suffix=" station",
@@ -354,14 +407,16 @@ def prepare_network(config: dict):
 
         # # add hydro reservoirs as stores
 
-        initial_capacity = pd.read_pickle("data/hydro/reservoir_initial_capacity.pickle")
-        effective_capacity = pd.read_pickle("data/hydro/reservoir_effective_capacity.pickle")
+        initial_capacity = pd.read_pickle("resources/data/hydro/reservoir_initial_capacity.pickle")
+        effective_capacity = pd.read_pickle(
+            "resources/data/hydro/reservoir_effective_capacity.pickle"
+        )
         initial_capacity.index = dams.index
         effective_capacity.index = dams.index
         initial_capacity = initial_capacity / water_consumption_factor
         effective_capacity = effective_capacity / water_consumption_factor
 
-        network.madd(
+        network.add(
             "Store",
             dams.index,
             suffix=" reservoir",
@@ -373,7 +428,7 @@ def prepare_network(config: dict):
         )
 
         # add hydro turbines to link stations to provinces
-        network.madd(
+        network.add(
             "Link",
             dams.index,
             suffix=" turbines",
@@ -385,6 +440,7 @@ def prepare_network(config: dict):
             efficiency=1,
         )
 
+        # TODO decide whether hardcoded
         # add rivers to link station to station
         bus0s = [0, 21, 11, 19, 22, 29, 8, 40, 25, 1, 7, 4, 10, 15, 12, 20, 26, 6, 3, 39]
         bus1s = [5, 11, 19, 22, 32, 8, 40, 25, 35, 2, 4, 10, 9, 12, 20, 23, 6, 17, 14, 16]
@@ -453,18 +509,20 @@ def prepare_network(config: dict):
 
             # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
-        # ====== add otehr existing hydro power =======
-        hydro_p_nom = pd.read_hdf("data/p_nom/hydro_p_nom.h5")
-        hydro_p_max_pu = pd.read_hdf("data/p_nom/hydro_p_max_pu.h5", key="hydro_p_max_pu")
+        # ====== add other existing hydro power =======
+        hydro_p_nom = pd.read_hdf("resources/data/p_nom/hydro_p_nom.h5")
+        hydro_p_max_pu = pd.read_hdf(
+            "resources/data/p_nom/hydro_p_max_pu.h5", key="hydro_p_max_pu"
+        ).tz_localize(None)
 
-        date_range = pd.date_range(
-            "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz="Asia/shanghai"
-        )
-        date_range = date_range.map(lambda t: t.replace(year=2020))
-        hydro_p_max_pu = hydro_p_max_pu.loc[date_range]
+        hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
+        # sort buses (columns) otherwise stuff will break
+        hydro_p_max_pu.sort_index(axis=1, inplace=True)
+        # TODO check this respects hours/is still needed
+        hydro_p_max_pu = hydro_p_max_pu.loc[snapshots]
         hydro_p_max_pu.index = network.snapshots
 
-        network.madd(
+        network.add(
             "Generator",
             nodes,
             suffix=" hydroelectricity",
@@ -477,11 +535,11 @@ def prepare_network(config: dict):
 
     if config["add_H2"]:
 
-        network.madd(
+        network.add(
             "Bus", nodes, suffix=" H2", x=prov_centroids.x, y=prov_centroids.y, carrier="H2"
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes + " H2 Electrolysis",
             bus0=nodes,
@@ -495,7 +553,7 @@ def prepare_network(config: dict):
             lifetime=costs.at["electrolysis", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes + " central H2 CHP",
             bus0=nodes + " H2",
@@ -525,7 +583,7 @@ def prepare_network(config: dict):
         )
         H2_type1_nodes = nodes.difference(H2_under_nodes)
 
-        network.madd(
+        network.add(
             "Store",
             H2_under_nodes + " H2 Store",
             bus=H2_under_nodes + " H2",
@@ -535,7 +593,7 @@ def prepare_network(config: dict):
             lifetime=costs.at["hydrogen storage underground", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Store",
             H2_type1_nodes + " H2 Store",
             bus=H2_type1_nodes + " H2",
@@ -548,7 +606,7 @@ def prepare_network(config: dict):
         )
 
     if config["add_methanation"]:
-        network.madd(
+        network.add(
             "Link",
             nodes + " Sabatier",
             bus0=nodes + " H2",
@@ -568,7 +626,7 @@ def prepare_network(config: dict):
         )
 
     # add components
-    network.madd(
+    network.add(
         "Generator",
         nodes,
         suffix=" onwind",
@@ -583,21 +641,21 @@ def prepare_network(config: dict):
     )
 
     offwind_nodes = ds_offwind["bus"].to_pandas().index
-    network.madd(
+    network.add(
         "Generator",
         offwind_nodes,
         suffix=" offwind",
         bus=offwind_nodes,
         carrier="offwind",
         p_nom_extendable=True,
-        p_nom_max=ds_offwind["p_nom_max"].to_pandas(),
+        p_nom_max=ds_offwind["p_nom_max"].to_pandas()[offwind_nodes],
         capital_cost=costs.at["offwind", "capital_cost"],
         marginal_cost=costs.at["offwind", "marginal_cost"],
-        p_max_pu=offwind_p_max_pu,
+        offwind_nodes=offwind_p_max_pu[offwind_nodes],
         lifetime=costs.at["offwind", "lifetime"],
     )
 
-    network.madd(
+    network.add(
         "Generator",
         nodes,
         suffix=" solar",
@@ -623,7 +681,7 @@ def prepare_network(config: dict):
             "Guangxi",
         ]
         nuclear_nodes = pd.Index(nuclear_extendable)
-        network.madd(
+        network.add(
             "Generator",
             nuclear_nodes,
             suffix=" nuclear",
@@ -640,20 +698,20 @@ def prepare_network(config: dict):
     if "heat pump" in config["Techs"]["vre_techs"]:
 
         date_range = pd.date_range(
-            "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz="Asia/shanghai"
+            "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz=TIMEZONE
         )
         date_range = date_range.map(lambda t: t.replace(year=2020))
 
         with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
             ashp_cop = store["ashp_cop_profiles"]
-            ashp_cop.index = ashp_cop.index.tz_localize("Asia/shanghai")
+            ashp_cop.index = ashp_cop.index.tz_localize(TIMEZONE)
             ashp_cop = ashp_cop.loc[date_range].set_index(network.snapshots)
             gshp_cop = store["gshp_cop_profiles"]
-            gshp_cop.index = gshp_cop.index.tz_localize("Asia/shanghai")
+            gshp_cop.index = gshp_cop.index.tz_localize(TIMEZONE)
             gshp_cop = gshp_cop.loc[date_range].set_index(network.snapshots)
 
         for cat in [" decentral ", " central "]:
-            network.madd(
+            network.add(
                 "Link",
                 nodes,
                 suffix=cat + "heat pump",
@@ -673,7 +731,7 @@ def prepare_network(config: dict):
                 lifetime=costs.at[cat.lstrip() + "air-sourced heat pump", "lifetime"],
             )
 
-            network.madd(
+            network.add(
                 "Link",
                 nodes,
                 suffix=cat + " ground heat pump",
@@ -695,7 +753,7 @@ def prepare_network(config: dict):
 
     if "resistive heater" in config["Techs"]["vre_techs"]:
         for cat in [" decentral ", " central "]:
-            network.madd(
+            network.add(
                 "Link",
                 nodes + cat + "resistive heater",
                 bus0=nodes,
@@ -718,15 +776,15 @@ def prepare_network(config: dict):
             solar_thermal = config["solar_cf_correction"] * store["solar_thermal_profiles"] / 1e3
 
         date_range = pd.date_range(
-            "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz="Asia/shanghai"
+            "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz=TIMEZONE
         )
         date_range = date_range.map(lambda t: t.replace(year=2020))
 
-        solar_thermal.index = solar_thermal.index.tz_localize("Asia/shanghai")
+        solar_thermal.index = solar_thermal.index.tz_localize(TIMEZONE)
         solar_thermal = solar_thermal.loc[date_range].set_index(network.snapshots)
 
         for cat in [" decentral ", " central "]:
-            network.madd(
+            network.add(
                 "Generator",
                 nodes,
                 suffix=cat + "solar thermal",
@@ -740,7 +798,7 @@ def prepare_network(config: dict):
 
     if "coal boiler" in config["Techs"]["conv_techs"]:
         for cat in [" decentral ", " central "]:
-            network.madd(
+            network.add(
                 "Link",
                 nodes + cat + "coal boiler",
                 p_nom_extendable=True,
@@ -757,7 +815,7 @@ def prepare_network(config: dict):
 
     if "gas boiler" in config["Techs"]["conv_techs"]:
         for cat in [" decentral "]:
-            network.madd(
+            network.add(
                 "Link",
                 nodes + cat + "gas boiler",
                 p_nom_extendable=True,
@@ -773,7 +831,7 @@ def prepare_network(config: dict):
             )
 
     if "OCGT gas" in config["Techs"]["conv_techs"]:
-        network.madd(
+        network.add(
             "Link",
             nodes,
             suffix=" OCGT",
@@ -790,7 +848,7 @@ def prepare_network(config: dict):
         )
 
     if "CHP gas" in config["Techs"]["conv_techs"]:
-        network.madd(
+        network.add(
             "Link",
             nodes,
             suffix=" central CHP gas generator",
@@ -808,7 +866,7 @@ def prepare_network(config: dict):
             lifetime=costs.at["central gas CHP", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes,
             suffix=" central CHP gas boiler",
@@ -825,7 +883,7 @@ def prepare_network(config: dict):
 
     if "coal power plant" in config["Techs"]["conv_techs"]:
         network.add("Carrier", "coal cc", co2_emissions=0.034)
-        network.madd(
+        network.add(
             "Generator",
             nodes,
             suffix=" coal cc",
@@ -840,7 +898,7 @@ def prepare_network(config: dict):
         )
 
         for year in range(int(planning_horizons) - 25, 2021, 5):
-            network.madd(
+            network.add(
                 "Generator",
                 nodes,
                 suffix=" coal-" + str(year) + "-retrofit",
@@ -858,7 +916,7 @@ def prepare_network(config: dict):
             )
 
     if "CHP coal" in config["Techs"]["conv_techs"]:
-        network.madd(
+        network.add(
             "Link",
             nodes,
             suffix=" central CHP coal generator",
@@ -876,7 +934,7 @@ def prepare_network(config: dict):
             lifetime=costs.at["central coal CHP", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes,
             suffix=" central CHP coal boiler",
@@ -893,7 +951,7 @@ def prepare_network(config: dict):
 
     if "water tanks" in config["Techs"]["store_techs"]:
         for cat in [" decentral ", " central "]:
-            network.madd(
+            network.add(
                 "Bus",
                 nodes,
                 suffix=cat + "water tanks",
@@ -902,7 +960,7 @@ def prepare_network(config: dict):
                 carrier="water tanks",
             )
 
-            network.madd(
+            network.add(
                 "Link",
                 nodes + cat + "water tanks charger",
                 bus0=nodes + cat + "heat",
@@ -912,7 +970,7 @@ def prepare_network(config: dict):
                 p_nom_extendable=True,
             )
 
-            network.madd(
+            network.add(
                 "Link",
                 nodes + cat + "water tanks discharger",
                 bus0=nodes + cat + "water tanks",
@@ -922,7 +980,7 @@ def prepare_network(config: dict):
                 p_nom_extendable=True,
             )
 
-            network.madd(
+            network.add(
                 "Store",
                 nodes + cat + "water tank",
                 bus=nodes + cat + "water tanks",
@@ -938,7 +996,7 @@ def prepare_network(config: dict):
             )
 
     if "battery" in config["Techs"]["store_techs"]:
-        network.madd(
+        network.add(
             "Bus",
             nodes,
             suffix=" battery",
@@ -947,7 +1005,7 @@ def prepare_network(config: dict):
             carrier="battery",
         )
 
-        network.madd(
+        network.add(
             "Store",
             nodes + " battery",
             bus=nodes + " battery",
@@ -957,7 +1015,7 @@ def prepare_network(config: dict):
             lifetime=costs.at["battery storage", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes + " battery charger",
             bus0=nodes,
@@ -969,7 +1027,7 @@ def prepare_network(config: dict):
             lifetime=costs.at["battery inverter", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes + " battery discharger",
             bus0=nodes + " battery",
@@ -982,14 +1040,14 @@ def prepare_network(config: dict):
 
     if "PHS" in config["Techs"]["store_techs"]:
         # pure pumped hydro storage, fixed, 6h energy by default, no inflow
-        hydrocapa_df = pd.read_csv("data/hydro/PHS_p_nom.csv", index_col=0)
+        hydrocapa_df = pd.read_csv("resources/data/hydro/PHS_p_nom.csv", index_col=0)
         phss = hydrocapa_df.index[hydrocapa_df["MW"] > 0].intersection(nodes)
         if config["hydro"]["hydro_capital_cost"]:
             cc = costs.at["PHS", "capital_cost"]
         else:
             cc = 0.0
 
-        network.madd(
+        network.add(
             "StorageUnit",
             phss,
             suffix=" PHS",
@@ -1025,11 +1083,11 @@ def prepare_network(config: dict):
             (config["line_cost_factor"] * lengths * [HVAC_cost_curve(l) for l in lengths])
             * 1.5
             * 1.02
-            * Nyears
+            * n_years
             * annuity(40.0, config["costs"]["discountrate"])
         )
 
-        network.madd(
+        network.add(
             "Link",
             edges[0] + "-" + edges[1],
             bus0=edges[0].values,
@@ -1043,7 +1101,7 @@ def prepare_network(config: dict):
             capital_cost=cc,
         )
 
-        network.madd(
+        network.add(
             "Link",
             edges[1] + "-" + edges[0],
             bus0=edges[1].values,
@@ -1071,7 +1129,7 @@ def prepare_network(config: dict):
 
         cc = costs.at["H2 (g) pipeline", "capital_cost"] * lengths
 
-        network.madd(
+        network.add(
             "Link",
             edges[0] + "-" + edges[1] + " H2 pipeline",
             suffix=" positive",
@@ -1093,7 +1151,7 @@ def prepare_network(config: dict):
             capital_cost=cc,
         )
 
-        network.madd(
+        network.add(
             "Link",
             edges[1] + "-" + edges[0] + " H2 pipeline",
             suffix=" reversed",
@@ -1121,14 +1179,14 @@ if __name__ == "__main__":
 
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
-
+        snkfile = Path(abspath("workflow/DebugSnakefile"))
         snakemake = mock_snakemake(
             "prepare_base_networks",
+            snakefile=snkfile,
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
-            planning_horizons="2025",
+            planning_horizons="2030",
         )
     configure_logging(snakemake)
 

@@ -8,7 +8,7 @@ from constants import PROV_NAMES, CRS
 from os import PathLike
 
 from _helpers import configure_logging, mock_snakemake
-from readers import read_pop_density
+from readers import read_pop_density, read_province_shapes
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,8 @@ def build_gridded_population(
     gridded_pop_out: PathLike,
 ):
     """Build a gridded population DataFrame by matching population density to the cutout grid cells.
-    This DataFrame is a sparse matrix of the population and shape BusesxCutout_gridcells where buses are the provinces
+    This DataFrame is a sparse matrix of the population and shape BusesxCutout_gridcells
+      where buses are the provinces
 
     Args:
         prov_pop_path (PathLike): Path to the province population count file (hdf5).
@@ -71,11 +72,7 @@ def build_gridded_population(
     with pd.HDFStore(prov_pop_path, mode="r") as store:
         pop_province = store["population"]
 
-    prov_poly = gpd.read_file(province_shape_path)[["province", "geometry"]]
-    prov_poly.set_index("province", inplace=True)
-    prov_poly = prov_poly.reindex(PROV_NAMES)
-    prov_poly.reset_index(inplace=True)
-
+    prov_poly = read_province_shapes(province_shape_path)
     pop_density = read_pop_density(pop_density_raster_path, prov_poly, crs=CRS)
 
     cutout = atlite.Cutout(cutout_path)
@@ -86,7 +83,8 @@ def build_gridded_population(
     grid_points.to_crs(CRS, inplace=True)
 
     # match cutout grid to province
-    # cutout_pts_in_prov = gpd.tools.sjoin(grid_points, prov_poly, how="left", predicate="intersects")
+    # cutout_pts_in_prov = gpd.tools.sjoin(grid_points, prov_poly,
+    # how="left", predicate="intersects")
     # TODO: do you want to dropna here?
     cutout_pts_in_prov = gpd.tools.sjoin(
         grid_points, prov_poly, how="left", predicate="intersects"
@@ -108,7 +106,8 @@ def build_gridded_population(
     )
     merged = merged.to_crs(CRS)
     # points outside china are NaN, need to rename to keep the index cutout after agg
-    # otherwise the spare matrix will not match the cutoutpoints (smarter would be to change the cutout)
+    # otherwise the spare matrix will not match the cutoutpoints
+    #  (smarter would be to change the cutout)
     merged.fillna({"province_name": "OutsideChina"}, inplace=True)
 
     points_in_provinces = pd.DataFrame(index=cutout_pts_in_prov.index)
@@ -138,7 +137,8 @@ def build_population_map(
     gridded_pop_out: PathLike,
 ):
     """Build a gridded population DataFrame by matching population density to the cutout grid cells.
-    This DataFrame is a sparse matrix of the population and shape BusesxCutout_gridcells where buses are the provinces
+    This DataFrame is a sparse matrix of the population and shape BusesxCutout_gridcells
+      where buses are the provinces
 
     Args:
         prov_pop_path (PathLike): Path to the province population count file (hdf5).
@@ -204,14 +204,7 @@ def build_population_map(
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from types import SimpleNamespace
-
         snakemake = mock_snakemake("build_population_gridcell_map")
-
-        for k, v in snakemake.input.__dict__.items():
-            import os.path
-
-            print(k, os.path.exists(v))
 
     configure_logging(snakemake)
 

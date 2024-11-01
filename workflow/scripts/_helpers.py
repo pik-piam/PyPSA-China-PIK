@@ -40,7 +40,7 @@ def override_component_attrs(directory):
     return attrs
 
 
-def configure_logging(snakemake, skip_handlers=False):
+def configure_logging(snakemake, skip_handlers=False, level="DEBUG"):
     """
     Configure the basic behaviour for the logging module.
     Note: Must only be called once from the __main__ section of a script.
@@ -62,7 +62,7 @@ def configure_logging(snakemake, skip_handlers=False):
         return
 
     kwargs = snakemake.config.get("logging", dict())
-    kwargs.setdefault("level", "INFO")
+    kwargs.setdefault("level", level)
 
     if skip_handlers is False:
         fallback_path = Path(__file__).parent.joinpath("..", "logs", f"{snakemake.rule}.log")
@@ -78,6 +78,12 @@ def configure_logging(snakemake, skip_handlers=False):
             }
         )
     logging.basicConfig(**kwargs)
+
+
+def is_leap_year(year: int) -> bool:
+    """Determine whether a year is a leap year."""
+    year = int(year)
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
 
 def mock_snakemake(rule_name, snakefile=None, **wildcards):
@@ -155,7 +161,6 @@ def mock_snakemake(rule_name, snakefile=None, **wildcards):
 
 
 def load_network_for_plots(fn, tech_costs, config, cost_year, combine_hydro_ps=True):
-    import pypsa
     from add_electricity import update_transmission_costs, load_costs
 
     n = pypsa.Network(fn)

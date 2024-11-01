@@ -1,5 +1,5 @@
 import logging
-from _helpers import configure_logging
+from _helpers import configure_logging, is_leap_year
 
 import atlite
 import pytz
@@ -11,7 +11,7 @@ from scipy.optimize import curve_fit
 
 from constants import (
     PROV_NAMES,
-    FREQ,
+    TIMEZONE,
     HEATING_START_TEMP,
     HEATING_HOUR_SHIFT,
     HEATING_LIN_SLOPE,
@@ -20,6 +20,7 @@ from constants import (
     UNIT_HOT_WATER_END_YEAR,
     START_YEAR,
     END_YEAR,
+    REF_YEAR,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ def build_daily_heat_demand_profiles() -> pd.DataFrame:
     """build the heat demand profile according to forecast demans
 
     Returns:
-        pd.DataFrame: daily heating demand with April to Sept forced to 0
+        pd.DataFrame: daily heating demand with Alpri to Sept forced to 0
     """
     with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
         pop_map = store["population_gridcell_map"]
@@ -76,7 +77,7 @@ def build_daily_heat_demand_profiles() -> pd.DataFrame:
     )
 
     daily_hd = hd.to_pandas().divide(pop_map.sum())
-    daily_hd.loc["2020-04-01":"2020-09-30"] = 0
+    daily_hd.loc[f"{REF_YEAR}-04-01":f"{REF_YEAR}-09-30"] = 0
 
     return daily_hd
 
@@ -90,7 +91,7 @@ def build_hot_water_per_day(planning_horizons):
     unit_hot_water_start_yr = UNIT_HOT_WATER_START_YEAR
     unit_hot_water_end_yr = UNIT_HOT_WATER_END_YEAR
 
-    if snakemake.wildcards.heating_demand == "positive":
+    if snakemake.wildcards["heating_demand"] == "positive":
 
         def func(x, a, b):
             return a * x + b
@@ -101,10 +102,10 @@ def build_hot_water_per_day(planning_horizons):
 
         unit_hot_water = func(int(planning_horizons), *popt)
 
-    if snakemake.wildcards.heating_demand == "constant":
+    if snakemake.wildcards["heating_demand"] == "constant":
         unit_hot_water = unit_hot_water_start_yr
 
-    if snakemake.wildcards.heating_demand == "mean":
+    if snakemake.wildcards["heating_demand"] == "mean":
 
         def func(x, a, b):
             return a * x + b
@@ -139,12 +140,21 @@ def build_heat_demand_profile(
 
     h = daily_hd
     h_n = h[~h.index.duplicated(keep="first")].iloc[:-1, :]
-    h_n.index = h_n.index.tz_localize("Asia/shanghai")
-    date_range_2020 = pd.date_range(
-        "2025-01-01 00:00", "2025-12-31 23:00", freq=FREQ, tz="Asia/shanghai"
+    h_n.index = h_n.index.tz_localize(TIMEZONE)
+
+    date_range_ref_yr = pd.date_range(
+        f"{REF_YEAR}-01-01 00:00", f"{REF_YEAR}-12-31 23:00", freq=date_range.freq, tz=TIMEZONE
     )
-    date_range_2020 = date_range_2020.map(lambda t: t.replace(year=int(2020)))
-    heat_demand_hdh = h_n.reindex(index=date_range_2020, method="ffill")
+
+    heat_demand_hdh = h_n.reindex(index=date_range_ref_yr, method="ffill")
+    planning_year = date_range.year[0]
+    if not is_leap_year(int(planning_year)):
+        heat_demand_hdh = heat_demand_hdh.loc[
+            ~((heat_demand_hdh.index.month == 2) & (heat_demand_hdh.index.day == 29))
+        ]
+    elif is_leap_year(int(planning_year)) and not is_leap_year(REF_YEAR):
+        logger.warning("Leap year detected in planning year, but not in reference year")
+
     heat_demand_hdh.index = date_range
 
     intraday_profiles = pd.read_csv(snakemake.input.intraday_profiles, index_col=0)
@@ -160,7 +170,7 @@ def build_heat_demand_profile(
     space_heat_demand_total = space_heat_demand_total.squeeze()
 
     # TODO isolate and clarify the values
-    if snakemake.wildcards.heating_demand == "positive":
+    if snakemake.wildcards["heating_demand"] == "positive":
 
         def func(x, a, b, c, d):
             return a * x**3 + b * x**2 + c * x + d
@@ -176,10 +186,10 @@ def build_heat_demand_profile(
         popt, pcov = curve_fit(func, x, y)
         factor = func(int(planning_horizons), *popt) / func(2020, *popt)
 
-    if snakemake.wildcards.heating_demand == "constant":
+    if snakemake.wildcards["heating_demand"] == "constant":
         factor = 1.0
 
-    if snakemake.wildcards.heating_demand == "mean":
+    if snakemake.wildcards["heating_demand"] == "mean":
 
         def func(x, a, b, c, d):
             return a * x**3 + b * x**2 + c * x + d
@@ -214,6 +224,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "build_load_profiles", heating_demand="positive", planning_horizons="2020"
         )
+
     configure_logging(snakemake)
 
     daily_hd = build_daily_heat_demand_profiles()
@@ -224,9 +235,11 @@ if __name__ == "__main__":
 
     # why?
     date_range = pd.date_range(
-        "2025-01-01 00:00", "2025-12-31 23:00", freq=FREQ, tz="Asia/shanghai"
+        f"{planning_horizons}-01-01 00:00",
+        f"{planning_horizons}-12-31 23:00",
+        freq=snakemake.config["freq"],
+        tz=TIMEZONE,
     )
-    date_range = date_range.map(lambda t: t.replace(year=int(planning_horizons)))
 
     heat_demand, space_heat_demand, water_heat_demand = build_heat_demand_profile(
         daily_hd,
