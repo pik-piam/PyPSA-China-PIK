@@ -4,7 +4,7 @@
 
 version: 0412.175.1H
 logging_level: INFO
-foresight: "myopic"
+foresight: "myopic" # "non-pathway"
 
 results_dir: 'results/'
 summary_dir: 'summary/'
@@ -85,7 +85,7 @@ snapshots:
 
 tmin: '-01-01 00:00'
 tmax: '-12-31 23:00'
-freq: '1H'
+freq: '1h'
 frequency: 1.
 
 logging:

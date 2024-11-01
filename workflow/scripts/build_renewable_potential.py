@@ -17,6 +17,7 @@ from atlite.gis import ExclusionContainer
 from os import PathLike
 
 from _helpers import mock_snakemake
+from readers import read_province_shapes
 from constants import PROV_NAMES, CRS, OFFSHORE_WIND_NODES, DEFAULT_OFFSHORE_WIND_CORR_FACTOR
 
 logger = logging.getLogger(__name__)
@@ -309,20 +310,9 @@ if __name__ == "__main__":
 
     cutout = atlite.Cutout(snakemake.input.cutout)
     cutout.prepare()
-    provinces_shp = gpd.read_file(snakemake.input.provinces_shp)[["province", "geometry"]]
-    provinces_shp.replace(
-        to_replace={
-            "Nei Mongol": "InnerMongolia",
-            "Xinjiang Uygur": "Xinjiang",
-            "Ningxia Hui": "Ningxia",
-            "Xizang": "Tibet",
-        },
-        inplace=True,
-    )
-
-    provinces_shp.set_index("province", inplace=True)
+    provinces_shp = read_province_shapes(snakemake.input.provinces_shp)
+    provinces_shp = gpd.read_file()[["province", "geometry"]]
     provinces_shp = provinces_shp.reindex(PROV_NAMES).rename_axis("bus")
-
     buses = provinces_shp.index
 
     grass = snakemake.input.Grass_raster

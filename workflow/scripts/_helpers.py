@@ -14,7 +14,7 @@ import pypsa
 from pypsa.components import components, component_attrs
 
 
-def override_component_attrs(directory):
+def override_component_attrs(directory: os.PathLike) -> dict:
     """Tell PyPSA that links can have multiple outputs by
     overriding the component_attrs. This can be done for
     as many buses as you need with format busi for i = 2,3,4,5,....

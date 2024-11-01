@@ -25,6 +25,7 @@ from constants import (
     YEAR_HRS,
     CO2_EL_2020,
     CO2_HEATING_2020,
+    INFLOW_DATA_YR,
 )
 from functions import HVAC_cost_curve
 from _helpers import configure_logging, override_component_attrs, mock_snakemake, is_leap_year
@@ -105,12 +106,9 @@ def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -
         raise ValueError(f"Data should be for one year only but got {years}")
 
     ref_year = years[0]
-    if is_leap_year(ref_year) and not is_leap_year(planning_yr):
+    # remove all planning year leap days
+    if is_leap_year(ref_year):  # and not is_leap_year(planning_yr):
         data = data.loc[~((data.index.month == 2) & (data.index.day == 29))]
-    elif is_leap_year(planning_yr) and not is_leap_year(ref_year):
-        logger.warning(
-            f"The reference profile year is not a leap year but the planning year is {planning_yr} - day missed"
-        )
 
     data.index = data.index.map(lambda t: t.replace(year=int(planning_yr)))
 
@@ -133,6 +131,8 @@ def prepare_network(config: dict):
         freq=config["freq"],
         # tz=TIMEZONE,
     )
+    if is_leap_year(int(planning_horizons)):
+        snapshots = snapshots[~((snapshots.month == 2) & (snapshots.day == 29))]
 
     network.set_snapshots(snapshots.values)
     network.snapshot_weightings[:] = config["frequency"]
@@ -387,6 +387,9 @@ def prepare_network(config: dict):
             "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
         ).reindex(hourly_rng, fill_value=0)
         inflow.columns = dams.index
+        # remove leap year by abusing shift_profile_to_planning_year
+        inflow = inflow.loc[str(INFLOW_DATA_YR)]
+        inflow = shift_profile_to_planning_year(inflow, INFLOW_DATA_YR)
 
         water_consumption_factor = (
             dams.loc[:, "Water_consumption_factor_avg"] * 1e3
@@ -487,15 +490,8 @@ def prepare_network(config: dict):
 
             # p_nom = 1 and p_max_pu & p_min_pu = p_pu, compulsory inflow
 
-            date_range = pd.date_range("2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"])
-            date_range = date_range.map(lambda t: t.replace(year=2016))
-
-            p_nom = (
-                (inflow.loc[date_range] / water_consumption_factor).iloc[:, inflow_station].max()
-            )
-            p_pu = (inflow.loc[date_range] / water_consumption_factor).iloc[
-                :, inflow_station
-            ] / p_nom
+            p_nom = (inflow / water_consumption_factor).iloc[:, inflow_station].max()
+            p_pu = (inflow / water_consumption_factor).iloc[:, inflow_station] / p_nom
             p_pu.index = network.snapshots
             network.add(
                 "Generator",
@@ -697,18 +693,13 @@ def prepare_network(config: dict):
 
     if "heat pump" in config["Techs"]["vre_techs"]:
 
-        date_range = pd.date_range(
-            "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz=TIMEZONE
-        )
-        date_range = date_range.map(lambda t: t.replace(year=2020))
-
         with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
             ashp_cop = store["ashp_cop_profiles"]
-            ashp_cop.index = ashp_cop.index.tz_localize(TIMEZONE)
-            ashp_cop = ashp_cop.loc[date_range].set_index(network.snapshots)
+            ashp_cop.index = ashp_cop.index.tz_localize(None)
+            ashp_cop = shift_profile_to_planning_year(ashp_cop, planning_horizons)
             gshp_cop = store["gshp_cop_profiles"]
-            gshp_cop.index = gshp_cop.index.tz_localize(TIMEZONE)
-            gshp_cop = gshp_cop.loc[date_range].set_index(network.snapshots)
+            gshp_cop.index = gshp_cop.index.tz_localize(None)
+            gshp_cop = shift_profile_to_planning_year(gshp_cop, planning_horizons)
 
         for cat in [" decentral ", " central "]:
             network.add(
@@ -775,13 +766,8 @@ def prepare_network(config: dict):
             # 1e3 converts from W/m^2 to MW/(1000m^2) = kW/m^2
             solar_thermal = config["solar_cf_correction"] * store["solar_thermal_profiles"] / 1e3
 
-        date_range = pd.date_range(
-            "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz=TIMEZONE
-        )
-        date_range = date_range.map(lambda t: t.replace(year=2020))
-
-        solar_thermal.index = solar_thermal.index.tz_localize(TIMEZONE)
-        solar_thermal = solar_thermal.loc[date_range].set_index(network.snapshots)
+        solar_thermal.index = solar_thermal.index.tz_localize(None)
+        solar_thermal = shift_profile_to_planning_year(solar_thermal, planning_horizons)
 
         for cat in [" decentral ", " central "]:
             network.add(
@@ -1186,7 +1172,7 @@ if __name__ == "__main__":
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
-            planning_horizons="2030",
+            planning_horizons="2040",
         )
     configure_logging(snakemake)
 
