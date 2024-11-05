@@ -1,4 +1,6 @@
-# coding: utf-8
+# SPDX-FileCopyrightText: : 2024 The PyPSA-China Authors
+#
+# SPDX-License-Identifier: MIT
 
 import logging
 logger = logging.getLogger(__name__)
@@ -7,7 +9,6 @@ import pandas as pd
 idx = pd.IndexSlice
 
 import pypsa
-import yaml
 import numpy as np
 import xarray as xr
 

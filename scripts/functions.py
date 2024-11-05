@@ -1,6 +1,6 @@
-# SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
+# SPDX-FileCopyrightText: : 2024 The PyPSA-China Authors
 #
-# SPDX-License-Identifier: CC0-1.0
+# SPDX-License-Identifier: MIT
 
 import numpy as np
 from scipy import interpolate

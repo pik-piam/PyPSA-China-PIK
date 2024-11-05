@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: : 2024 The PyPSA-China Authors
+#
+# SPDX-License-Identifier: MIT
 from _helpers import configure_logging
 import seaborn as sns
 import pandas as pd

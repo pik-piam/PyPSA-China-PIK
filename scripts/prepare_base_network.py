@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
+# SPDX-FileCopyrightText: : 2024 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
 
@@ -12,9 +12,6 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 from math import radians, cos, sin, asin, sqrt
-from functools import partial
-import pyproj
-from shapely.ops import transform
 import xarray as xr
 from functions import pro_names, HVAC_cost_curve
 from add_electricity import load_costs

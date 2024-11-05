@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
+# SPDX-FileCopyrightText: : 2024 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
 

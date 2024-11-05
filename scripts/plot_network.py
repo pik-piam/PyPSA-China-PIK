@@ -1,13 +1,14 @@
+# SPDX-FileCopyrightText: : 2024 The PyPSA-China Authors
+#
+# SPDX-License-Identifier: MIT
 import logging
 
 logger = logging.getLogger(__name__)
 
 import cartopy.crs as ccrs
-import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
 import pypsa
-from make_summary import assign_carriers
 from plot_summary import preferred_order, rename_techs
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 

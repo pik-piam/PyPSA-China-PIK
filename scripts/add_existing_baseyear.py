@@ -1,4 +1,6 @@
-# coding: utf-8
+# SPDX-FileCopyrightText: : 2024 The PyPSA-China Authors
+#
+# SPDX-License-Identifier: MIT
 
 import logging
 logger = logging.getLogger(__name__)

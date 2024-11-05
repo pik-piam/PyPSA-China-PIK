@@ -1,6 +1,8 @@
+# SPDX-FileCopyrightText: : 2024 The PyPSA-China Authors
+#
+# SPDX-License-Identifier: MIT
 import logging
 from _helpers import (load_network_for_plots, aggregate_p, aggregate_costs, configure_logging)
-from functions import pro_names
 
 import pandas as pd
 import numpy as np

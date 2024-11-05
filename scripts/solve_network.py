@@ -1,16 +1,11 @@
-# SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
+# SPDX-FileCopyrightText: : 2024 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
 
-# coding: utf-8
-
 import logging
-import re
 
 import numpy as np
-import pandas as pd
 import pypsa
-import xarray as xr
 from _helpers import (
     configure_logging,
     override_component_attrs,
@@ -18,7 +13,6 @@ from _helpers import (
 
 logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
-from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 logger = logging.getLogger(__name__)
 

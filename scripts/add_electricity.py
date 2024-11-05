@@ -1,13 +1,9 @@
+# SPDX-FileCopyrightText: : 2024 The PyPSA-China Authors
+#
+# SPDX-License-Identifier: MIT
+
 import logging
-from _helpers import configure_logging, update_p_nom_max
-
-import pypsa
 import pandas as pd
-import numpy as np
-import xarray as xr
-import geopandas as gpd
-
-from vresutils import transfer as vtransfer
 
 idx = pd.IndexSlice
 
