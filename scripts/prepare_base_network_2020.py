@@ -91,7 +91,6 @@ def prepare_network(config):
     offwind_p_max_pu = ds_offwind['profile'].transpose('time', 'bus').to_pandas()
     offwind_p_max_pu.index = offwind_p_max_pu.index.tz_localize('Asia/shanghai')
     offwind_p_max_pu = offwind_p_max_pu.loc[date_range].set_index(network.snapshots)
-
     def rename_province(label):
         rename = {
             "Nei Mongol": "InnerMongolia",
@@ -110,6 +109,7 @@ def prepare_network(config):
     pro_shapes.index = pro_shapes.NAME_1.map(rename_province)
     pro_centroid_x = pro_shapes.to_crs('+proj=cea').centroid.to_crs(pro_shapes.crs).x
     pro_centroid_y = pro_shapes.to_crs('+proj=cea').centroid.to_crs(pro_shapes.crs).y
+
 
     # add buses
     for suffix in config["bus_suffix"]:

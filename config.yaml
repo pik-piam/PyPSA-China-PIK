@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-version: 0412.175.1H
+version: 0325.175.1H
 logging_level: INFO
 foresight: "myopic"
 
@@ -114,7 +114,7 @@ Technique:
   offwind: true
 
 coal_cc: true
-hydrogen_lines: false
+hydrogen_lines: true
 
 existing_infrastructure: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
