@@ -13,6 +13,10 @@ configfile: "config/default_config.yaml"
 
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 
+storage:
+    provider="http",
+
+
 storage http:
     provider="http",
 

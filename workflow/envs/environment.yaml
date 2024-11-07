@@ -23,7 +23,7 @@ dependencies:
   - openpyxl
   - pycountry
   - seaborn
-  - snakemake-minimal
+  - snakemake-minimal>=8.0
   - memory_profiler
   - yaml
   - pytables
