@@ -5,13 +5,10 @@ An exploratory version for the REMIND-PyPSA PANDA coupling based on the version 
 Adapted by Ivan Ramirez
 
 ## Changelog
-- move hardcoded to centralised store constants.py
+- restructure project to match snakemake8 guidelines & update to snakemake8
+- move hardcoded to centralised store constants.py (file paths still partially hardcoded)
 - start adding typing
 - add scripts to pull data
-- update some data (GEBCO, Natura2000, population from yearbool)
-- start adding sources to all dat
-- restructure to match snakemake8 guidelines
-- update to snakemake8
 - add derived_data/ folder and change target of data cleaning/prep steps for clarity
 
 ## TODOs:
