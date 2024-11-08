@@ -4,6 +4,7 @@
 # DO NOT IMPORT SNAKEMAKE pure
 
 import os
+import sys
 import pandas as pd
 from pathlib import Path
 from types import SimpleNamespace
@@ -79,6 +80,13 @@ def configure_logging(snakemake, skip_handlers=False, level="DEBUG"):
         )
     logging.basicConfig(**kwargs)
 
+    def handle_exception(exc_type, exc_value, exc_traceback):
+        # Log the exception
+        logger = logging.getLogger()
+        logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+    sys.excepthook = handle_exception
+
 
 def is_leap_year(year: int) -> bool:
     """Determine whether a year is a leap year."""
@@ -86,78 +94,97 @@ def is_leap_year(year: int) -> bool:
     return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
 
-def mock_snakemake(rule_name, snakefile=None, **wildcards):
+def mock_snakemake(
+    rulename: str,
+    configfiles: list | str = None,
+    **wildcards,
+):
+    """A function to enable scripts to run as standalone, giving them access tot he snakefile rule input, outputs etc
+
+    Args:
+        rulename (str): the name of the rule
+        configfiles (list or str, optional): the config file or config file list. Defaults to None.
+        wildcards (optional):  keyword arguments fixing the wildcards (if any needed)
+
+    Raises:
+
+        FileNotFoundError: Config file not found
+
+    Returns:
+        snakemake.script.Snakemake: an object storing all the rule inputs/outputs etc
     """
-    This function is expected to be executed from the 'scripts'-directory of '
-    the snakemake project. It returns a snakemake.script.Snakemake object,
-    based on the Snakefile.
-    If a rule has wildcards, you have to specify them in **wildcards.
-    Parameters
-    ----------
-    rule_name: str
-        name of the rule for which the snakemake object should be generated
-    **wildcards:
-        keyword arguments fixing the wildcards. Only necessary if wildcards are
-        needed.
-    """
-    from pathlib import Path
-    import os
+
+    import snakemake as sm
+    from snakemake.api import Workflow
+    from snakemake.common import SNAKEFILE_CHOICES
     from snakemake.script import Snakemake
-    import snakemake.api as sm_api
+    from snakemake.settings.types import (
+        ConfigSettings,
+        DAGSettings,
+        ResourceSettings,
+        StorageSettings,
+        WorkflowSettings,
+    )
 
-    # dumb search
-    if snakefile is None:
-        project = Path(__file__).parent.parent
-        snakes = list(project.rglob("Snakefile"))
-        snakes += list(project.rglob("snakefile"))
-        snakefile = snakes[0]
+    for p in SNAKEFILE_CHOICES:
+        if os.path.exists(p):
+            snakefile = p
+            break
+    if configfiles is None:
+        configfiles = []
+    elif isinstance(configfiles, str):
+        configfiles = [configfiles]
 
-    # Load the config files
-    configfiles = list(snakefile.parent.parent.joinpath("config").rglob("*.yaml"))
+    resource_settings = ResourceSettings()
+    config_settings = ConfigSettings(configfiles=map(Path, configfiles))
+    workflow_settings = WorkflowSettings()
+    storage_settings = StorageSettings()
+    dag_settings = DAGSettings(rerun_triggers=[])
+    workflow = Workflow(
+        config_settings,
+        resource_settings,
+        workflow_settings,
+        storage_settings,
+        dag_settings,
+        storage_provider_settings=dict(),
+    )
+    workflow.include(snakefile)
 
-    with sm_api.SnakemakeApi(
-        sm_api.OutputSettings(
-            verbose=False,
-            show_failed_logs=True,
-        )
-    ) as api:
-        config_settings = sm_api.ConfigSettings(configfiles=configfiles)
-        workflow = api.workflow(
-            snakefile=snakefile,
-            config_settings=config_settings,
-            resource_settings=sm_api.ResourceSettings(),
-            storage_settings=sm_api.StorageSettings(),
-        )
-        workflow.global_resources = {}
-        api.setup_logger()
-        rule = workflow._workflow.get_rule(rule_name)
-        wc = dict(wildcards)
+    if configfiles:
+        for f in configfiles:
+            if not os.path.exists(f):
+                raise FileNotFoundError(f"Config file {f} does not exist.")
+            workflow.configfile(f)
 
-        def make_accessible(*ios):
-            for io in ios:
-                for i in range(len(io)):
-                    for i in range(len(io)):
-                        io[i] = os.path.abspath(io[i])
+    workflow.global_resources = {}
+    rule = workflow.get_rule(rulename)
+    dag = sm.dag.DAG(workflow, rules=[rule])
+    wc = wildcards
+    job = sm.jobs.Job(rule, dag, wc)
 
-        make_accessible(rule.input, rule.output, rule.log)
+    def make_accessable(*ios):
+        for io in ios:
+            for i, _ in enumerate(io):
+                io[i] = os.path.abspath(io[i])
 
-        snakemake = Snakemake(
-            rule.input,
-            rule.output,
-            rule.params,
-            wildcards,
-            1,  # threads
-            rule.resources,
-            rule.log,
-            workflow._workflow.config,
-            rule.name,
-            None,
-        )
-        # create log and output dir if not existent
-        for path in list(snakemake.log) + list(snakemake.output):
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
+    make_accessable(job.input, job.output, job.log)
+    snakemake = Snakemake(
+        job.input,
+        job.output,
+        job.params,
+        job.wildcards,
+        job.threads,
+        job.resources,
+        job.log,
+        job.dag.workflow.config,
+        job.rule.name,
+        None,
+    )
+    # create log and output dir if not existent
+    for path in list(snakemake.log) + list(snakemake.output):
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
 
-        return snakemake
+    return snakemake
 
 
 def load_network_for_plots(fn, tech_costs, config, cost_year, combine_hydro_ps=True):

@@ -6,10 +6,9 @@ __pycache__
 .DS_Store
 .idea/
 
-/resources/**/*.nc
-/resources/**/*.tif
-/resources/**/*.h5
-/resources/**/*.pdf
+/resources/**/*
+!/resources/data/shapefiles/
+!/resources/**/*.csv
 /resources/derived_data/
 /resources/data/province_shapes
 /resources/data/landuse_availability/World_EEZ/*eez*

@@ -381,12 +381,9 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
-        snkfile = Path(abspath("workflow/DebugSnakefile"))
         snakemake = mock_snakemake(
             "add_existing_baseyear",
             opts="ll",
-            snakefile=snkfile,
             topology="current+Neighbor",
             pathway="exponential175",
             planning_horizons="2020",

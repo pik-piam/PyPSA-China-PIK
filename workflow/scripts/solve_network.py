@@ -22,44 +22,49 @@ from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 logger = logging.getLogger(__name__)
 
+
 def prepare_network(n, solve_opts):
 
-    if 'clip_p_max_pu' in solve_opts:
+    if "clip_p_max_pu" in solve_opts:
         for df in (n.generators_t.p_max_pu, n.storage_units_t.inflow):
-            df.where(df>solve_opts['clip_p_max_pu'], other=0., inplace=True)
+            df.where(df > solve_opts["clip_p_max_pu"], other=0.0, inplace=True)
 
-    if solve_opts.get('load_shedding'):
+    if solve_opts.get("load_shedding"):
         n.add("Carrier", "Load")
         buses_i = n.buses.query("carrier == 'AC'").index
-        n.madd("Generator", buses_i, " load",
-               bus=buses_i,
-               carrier='load',
-               sign=1e-3, # Adjust sign to measure p and p_nom in kW instead of MW
-               marginal_cost=1e2, # Eur/kWh
-               # intersect between macroeconomic and surveybased
-               # willingness to pay
-               # http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full
-               p_nom=1e9 # kW
-               )
+        n.madd(
+            "Generator",
+            buses_i,
+            " load",
+            bus=buses_i,
+            carrier="load",
+            sign=1e-3,  # Adjust sign to measure p and p_nom in kW instead of MW
+            marginal_cost=1e2,  # Eur/kWh
+            # intersect between macroeconomic and surveybased
+            # willingness to pay
+            # http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full
+            p_nom=1e9,  # kW
+        )
 
-    if solve_opts.get('noisy_costs'):
+    if solve_opts.get("noisy_costs"):
         for t in n.iterate_components(n.one_port_components):
-            #if 'capital_cost' in t.df:
+            # if 'capital_cost' in t.df:
             #    t.df['capital_cost'] += 1e1 + 2.*(np.random.random(len(t.df)) - 0.5)
-            if 'marginal_cost' in t.df:
-                t.df['marginal_cost'] += (1e-2 + 2e-3 *
-                                          (np.random.random(len(t.df)) - 0.5))
+            if "marginal_cost" in t.df:
+                t.df["marginal_cost"] += 1e-2 + 2e-3 * (np.random.random(len(t.df)) - 0.5)
 
-        for t in n.iterate_components(['Line', 'Link']):
-            t.df['capital_cost'] += (1e-1 +
-                2e-2*(np.random.random(len(t.df)) - 0.5)) * t.df['length']
+        for t in n.iterate_components(["Line", "Link"]):
+            t.df["capital_cost"] += (1e-1 + 2e-2 * (np.random.random(len(t.df)) - 0.5)) * t.df[
+                "length"
+            ]
 
-    if solve_opts.get('nhours'):
-        nhours = solve_opts['nhours']
+    if solve_opts.get("nhours"):
+        nhours = solve_opts["nhours"]
         n.set_snapshots(n.snapshots[:nhours])
-        n.snapshot_weightings[:] = 8760. / nhours
+        n.snapshot_weightings[:] = 8760.0 / nhours
 
     return n
+
 
 def add_battery_constraints(n):
     """
@@ -76,22 +81,14 @@ def add_battery_constraints(n):
     chargers_ext = n.links[charger_bool].query("p_nom_extendable").index
 
     eff = n.links.efficiency[dischargers_ext].values
-    lhs = (
-        n.model["Link-p_nom"].loc[chargers_ext]
-        - n.model["Link-p_nom"].loc[dischargers_ext] * eff
-    )
+    lhs = n.model["Link-p_nom"].loc[chargers_ext] - n.model["Link-p_nom"].loc[dischargers_ext] * eff
 
     n.model.add_constraints(lhs == 0, name="Link-charger_ratio")
 
+
 def add_chp_constraints(n):
-    electric = (
-        n.links.index.str.contains("CHP")
-        & n.links.index.str.contains("generator")
-    )
-    heat = (
-        n.links.index.str.contains("CHP")
-        & n.links.index.str.contains("boiler")
-    )
+    electric = n.links.index.str.contains("CHP") & n.links.index.str.contains("generator")
+    heat = n.links.index.str.contains("CHP") & n.links.index.str.contains("boiler")
 
     electric_ext = n.links[electric].query("p_nom_extendable").index
     heat_ext = n.links[heat].query("p_nom_extendable").index
@@ -113,11 +110,7 @@ def add_chp_constraints(n):
         n.model.add_constraints(lhs == 0, name="chplink-fix_p_nom_ratio")
 
         rename = {"Link-ext": "Link"}
-        lhs = (
-            p.loc[:, electric_ext]
-            + p.loc[:, heat_ext]
-            - p_nom.rename(rename).loc[electric_ext]
-        )
+        lhs = p.loc[:, electric_ext] + p.loc[:, heat_ext] - p_nom.rename(rename).loc[electric_ext]
         n.model.add_constraints(lhs <= 0, name="chplink-top_iso_fuel_line_ext")
 
     # top_iso_fuel_line for fixed
@@ -145,6 +138,7 @@ def extra_functionality(n, snapshots):
     config = n.config
     add_battery_constraints(n)
     add_chp_constraints(n)
+
 
 def solve_network(n, config, solving, opts="", **kwargs):
     set_of_options = solving["solver"]["options"]
@@ -186,21 +180,20 @@ def solve_network(n, config, solving, opts="", **kwargs):
         )
 
     if status != "ok":
-        logger.warning(
-            f"Solving status '{status}' with termination condition '{condition}'"
-        )
+        logger.warning(f"Solving status '{status}' with termination condition '{condition}'")
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
 
     return n
 
-if __name__ == '__main__':
-    if 'snakemake' not in globals():
+
+if __name__ == "__main__":
+    if "snakemake" not in globals():
         from _helpers import mock_snakemake
-        snakemake = mock_snakemake('solve_network_myopic',
-                                    co2_reduction='0.0',
-                                    opts='ll',
-                                    planning_horizons=2020)
+
+        snakemake = mock_snakemake(
+            "solve_network_myopic", co2_reduction="0.0", opts="ll", planning_horizons=2020
+        )
     configure_logging(snakemake)
 
     opts = snakemake.wildcards.opts
@@ -215,10 +208,7 @@ if __name__ == '__main__':
     else:
         n = pypsa.Network(snakemake.input.network)
 
-    n = prepare_network(
-        n,
-        solve_opts
-    )
+    n = prepare_network(n, solve_opts)
 
     n = solve_network(
         n,
@@ -231,4 +221,3 @@ if __name__ == '__main__':
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
     n.export_to_netcdf(snakemake.output[0])
-

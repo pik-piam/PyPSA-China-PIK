@@ -1165,14 +1165,15 @@ if __name__ == "__main__":
 
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
-        snkfile = Path(abspath("workflow/DebugSnakefile"))
+        # snkfile = Path(abspath("workflow/DebugSnakefile"))
         snakemake = mock_snakemake(
             "prepare_base_networks",
-            snakefile=snkfile,
+            # snakefile=snkfile,
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
             planning_horizons="2040",
+            heating_demand="positive",
         )
     configure_logging(snakemake)
 
