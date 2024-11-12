@@ -16,7 +16,6 @@ ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 storage:
     provider="http",
 
-
 storage http:
     provider="http",
 
@@ -122,8 +121,8 @@ if config['enable'].get('retrieve_cutout', True):
 if config['enable'].get('build_cutout', False):
     rule build_cutout:
         input:
-            regions_onshore="resources/data/rc/regions_onshore.geojson",
-            regions_offshore="resources/data/rc/regions_offshore.geojson"
+            regions_onshore="resources/data/regions/regions_onshore.geojson",
+            regions_offshore="resources/data/regions/regions_offshore.geojson"
         output: "cutouts/{cutout}.nc"
         log: "logs/build_cutout/{cutout}.log"
         benchmark: "benchmarks/build_cutout_{cutout}"
@@ -182,19 +181,19 @@ rule build_cop_profiles:
 if config['enable'].get('retrieve_raster', True):
     rule retrieve_build_up_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_BuiltUp-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/rc/Build_up.tif"
+        output: "resources/data/regions/Build_up.tif"
         run: move(input[0], output[0])
     rule retrieve_Grass_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Grass-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/rc/Grass.tif"
+        output: "resources/data/regions/Grass.tif"
         run: move(input[0], output[0])
     rule retrieve_Bare_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Bare-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/rc/Bare.tif"
+        output: "resources/data/regions/Bare.tif"
         run: move(input[0], output[0])
     rule retrieve_Shrubland_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Shrub-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/rc/Shrubland.tif"
+        output: "resources/data/regions/Shrubland.tif"
         run: move(input[0], output[0])
 
 rule build_renewable_potential:
@@ -210,8 +209,8 @@ rule build_renewable_potential:
         # GEBCO bathymetry (water depth)
         gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2024_CN.tif",
         provinces_shp="resources/data/province_shapes/CHN_adm1.shp",
-        offshore_province_shapes="resources/data/rc/regions_offshore_province.geojson",
-        offshore_shapes="resources/data/rc/regions_offshore.geojson",
+        offshore_province_shapes="resources/data/regions/regions_offshore_province.geojson",
+        offshore_shapes="resources/data/regions/regions_offshore.geojson",
         cutout= "resources/cutouts/China-2020.nc"
     output:
         solar_profile="resources/profile_solar.nc",
@@ -312,7 +311,7 @@ elif config["foresight"] == "myopic":
             elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
             heat_demand_profile= "resources/derived_data/heating/heat_demand_profile_{heating_demand}_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
-            tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",   
             biomass_potental = "resources/derived_data/p_nom/biomass_potential.h5",
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                for tech in config['renewable']}

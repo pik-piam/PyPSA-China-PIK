@@ -5,18 +5,15 @@
 # coding: utf-8
 
 import logging
-import re
 
 import numpy as np
-import pandas as pd
 import pypsa
-import xarray as xr
+
 from _helpers import (
     configure_logging,
     override_component_attrs,
 )
 
-logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 

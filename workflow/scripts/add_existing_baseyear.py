@@ -5,9 +5,6 @@ import numpy as np
 import pandas as pd
 import pypsa
 
-from os.path import abspath
-from pathlib import Path
-
 from types import SimpleNamespace
 from constants import YEAR_HRS
 from add_electricity import load_costs
@@ -30,7 +27,7 @@ def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
     for c in n.iterate_components(["Link", "Generator", "Store"]):
         attr = "e" if c.name == "Store" else "p"
 
-        assets = c.df.index[(c.df.lifetime != np.inf) & (c.df[attr + "_nom_extendable"] == True)]
+        assets = c.df.index[(c.df.lifetime != np.inf) & (c.df[attr + "_nom_extendable"] is True)]
 
         # add -baseyear to name
         rename = pd.Series(c.df.index, c.df.index)
@@ -39,7 +36,7 @@ def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
 
         assets = c.df.index[
             (c.df.lifetime != np.inf)
-            & (c.df[attr + "_nom_extendable"] == True)
+            & (c.df[attr + "_nom_extendable"] is True)
             & (c.df.build_year == 0)
         ]
         c.df.loc[assets, "build_year"] = baseyear
@@ -413,16 +410,22 @@ if __name__ == "__main__":
     grouping_years = config["existing_capacities"]["grouping_years"]
     add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear, config)
 
-    ## update renewable potentials
+    # -====== update renewable potentials
 
-    # for tech in ['onwind', 'offwind', 'solar']:
-    #     if tech == 'offwind':
+    # for tech in ["onwind", "offwind", "solar"]:
+    #     if tech == "offwind":
     #         for node in offwind_nodes:
-    #             n.generators.p_nom_max.loc[(n.generators.bus == node) & (n.generators.carrier == tech)] -= \
-    #             n.generators[(n.generators.bus == node) & (n.generators.carrier == tech)].p_nom.sum()
+    #             n.generators.p_nom_max.loc[
+    #                 (n.generators.bus == node) & (n.generators.carrier == tech)
+    #             ] -= n.generators[
+    #                 (n.generators.bus == node) & (n.generators.carrier == tech)
+    #             ].p_nom.sum()
     #     else:
     #         for node in pro_names:
-    #             n.generators.p_nom_max.loc[(n.generators.bus == node) & (n.generators.carrier == tech)] -= \
-    #             n.generators[(n.generators.bus == node) & (n.generators.carrier == tech)].p_nom.sum()
+    #             n.generators.p_nom_max.loc[
+    #                 (n.generators.bus == node) & (n.generators.carrier == tech)
+    #             ] -= n.generators[
+    #                 (n.generators.bus == node) & (n.generators.carrier == tech)
+    #             ].p_nom.sum()
 
     n.export_to_netcdf(snakemake.output[0])

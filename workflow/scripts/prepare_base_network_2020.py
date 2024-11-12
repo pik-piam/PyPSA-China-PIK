@@ -12,8 +12,6 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 
-from os.path import abspath
-from pathlib import Path
 
 from constants import PROV_NAMES, CRS, YEAR_HRS, LOAD_CONVERSION_FACTOR, INFLOW_DATA_YR
 from functions import HVAC_cost_curve
@@ -23,7 +21,7 @@ from _helpers import configure_logging, override_component_attrs, is_leap_year, 
 from functions import haversine
 from prepare_base_network import add_buses, shift_profile_to_planning_year, add_carriers
 
-from logging import getLogger, INFO, DEBUG
+from logging import getLogger, DEBUG  # INFO
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
@@ -293,9 +291,9 @@ def prepare_network(config):
                 efficiency=0.0,
             )
 
-        ## add inflow as generators
+        # == add inflow as generators
         # only feed into hydro stations which are the first of a cascade
-        inflow_stations = [dam for dam in range(len(dams.index)) if not dam in bus1s]
+        inflow_stations = [dam for dam in range(len(dams.index)) if dam not in bus1s]
 
         for inflow_station in inflow_stations:
 
@@ -584,7 +582,7 @@ def prepare_network(config):
         )
 
         cc = (
-            (config["line_cost_factor"] * lengths * [HVAC_cost_curve(l) for l in lengths])
+            (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
             * 1.5
             * 1.02
             * n_years
@@ -640,7 +638,7 @@ def prepare_network(config):
         )
 
         cc = (
-            (config["line_cost_factor"] * lengths * [HVAC_cost_curve(l) for l in lengths])
+            (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
             * 1.5
             * 1.02
             * n_years
