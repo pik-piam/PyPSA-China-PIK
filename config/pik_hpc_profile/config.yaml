@@ -1,0 +1,56 @@
+# A cluster profile for the PIK HPC
+# Profile allows to activeate the gurobi license via an ssh tunnel and solve pypsa
+# adapted from jdblischak/smk-simple-slurm/ & jhemmp https://github.com/aodenweller/pypsa-eur/blob/remind_develop_pypsa_v0.10.0/cluster_config/config.yaml
+# PIK-2024
+
+# define the executor
+executor: cluster-generic
+jobs: 500
+
+# configure smk
+restart-times: 1
+max-jobs-per-second: 10
+max-status-checks-per-second: 1
+local-cores: 1
+latency-wait: 60
+keep-going: True
+rerun-incomplete: True
+printshellcmds: True
+scheduler: greedy
+use-conda: True
+rerun-trigger:
+- code
+- input
+- mtime
+- params
+verbose: true
+
+# define the cluster submission command (slurm wrapper)
+cluster-generic-submit-cmd:
+  mkdir -p logs_slurm/{rule} &&
+  sbatch
+    --partition={resources.partition}
+    --qos={resources.qos}
+    --cpus-per-task={threads}
+    --mem={resources.mem_mb}
+    --job-name=smk-{rule}-{wildcards}
+    --output=logs/{rule}/{rule}-{wildcards}-%j.out
+    --parsable
+    --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
+cluster-generic-cancel-cmd: scancel
+
+# now define the resources
+default-resources:
+  partition: priority
+  qos: priority
+  mem_mb: 1000
+
+set-resources:
+  io_test:
+    time: 300
+    cores: 2
+    partition: io 
+    qos: io
+
+
+
