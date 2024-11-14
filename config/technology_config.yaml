@@ -1,0 +1,103 @@
+
+transmission_efficiency:
+  DC:
+    efficiency_static: 0.98
+    efficiency_per_1000km: 0.977
+  H2 pipeline:
+    efficiency_static: 1
+    efficiency_per_1000km: 0.979
+    compression_per_1000km: 0.019
+
+chp_parameters:
+  eff_el: 0.3978
+  eff_th: 0.5304
+
+solar_cf_correction: 0.85
+time_dep_hp_cop: True
+tes_tau: 3.
+
+renewable:
+  onwind:
+    cutout: China-2020
+    resource:
+      method: wind
+      turbine: Vestas_V112_3MW
+    capacity_per_sqkm: 3 # ScholzPhd Tab 4.3.1: 10MW/km^2
+    potential: simple # or conservative
+    natura: false
+    clip_p_max_pu: 1.e-2
+    min_p_nom_max: 1.e-2
+  offwind:
+    cutout: China-2020
+    resource:
+      method: wind
+      turbine: NREL_ReferenceTurbine_5MW_offshore
+    capacity_per_sqkm: 2 # ScholzPhd Tab 4.3.1: 20MW/km^2
+    correction_factor: 0.8855
+    potential: simple # or conservative
+    natura: true
+    max_depth: 50
+    clip_p_max_pu: 1.e-2
+    min_p_nom_max: 1.e-2
+  solar:
+    cutout: China-2020
+    resource:
+      method: pv
+      panel: CSi
+      orientation:
+        slope: 35.
+        azimuth: 180.
+    capacity_per_sqkm: 5.1 # ScholzPhd Tab 4.3.1: 170 MW/km^2 3%
+    potential: simple # or conservative
+    correction_factor: 0.85
+    natura: false
+    clip_p_max_pu: 1.e-2
+    min_p_nom_max: 1.e-2
+
+electricity:
+  voltages: [220., 300., 380.]
+  co2limit: 7.75e+7 # 0.05 * 3.1e9*0.5
+  co2base: 1.487e+9
+  agg_p_nom_limits: data/agg_p_nom_minmax.csv
+
+  extendable_carriers:
+    Generator: []
+    StorageUnit: [] # battery, H2
+    Store: [battery, H2]
+    Link: []
+
+  max_hours:
+    battery: 6
+    H2: 168
+
+  powerplants_filter: false # use pandas query strings here, e.g. Country not in ['Germany']
+  custom_powerplants: false # use pandas query strings here, e.g. Country in ['Germany']
+  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
+  renewable_capacities_from_OPSD: [] # onwind, offwind, solar
+
+  # estimate_renewable_capacities_from_capacity_stats:
+  #   # Wind is the Fueltype in ppm.data.Capacity_stats, onwind, offwind-{ac,dc} the carrier in PyPSA-Eur
+  #   Wind: [onwind, offwind-ac, offwind-dc]
+  #   Solar: [solar]
+
+hydro:
+  hydro_capital_cost: True
+  PHS_max_hours: 24.
+
+costs:
+  year: 2030
+  lifetime: 25
+  discountrate: 0.02 # social discountrate
+  USD2013_to_EUR2013: 0.9189 # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
+  marginal_cost: # EUR/MWh
+    solar: 0.01
+    onwind: 0.015
+    offwind: 0.015
+    hydro: 0.
+    H2: 0.
+    electrolysis: 0.
+    fuel cell: 0.
+    battery: 0.
+    battery inverter: 0.
+  emission_prices: # in currency per tonne emission, only used with the option Ep
+    co2: 0.
