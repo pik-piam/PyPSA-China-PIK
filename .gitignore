@@ -6,9 +6,15 @@ __pycache__
 .DS_Store
 .idea/
 
-/resources
+/resources/**/*
+!/resources/data/shapefiles/
+!/resources/**/*.csv
+/resources/derived_data/
+/resources/data/province_shapes
+/resources/data/landuse_availability/World_EEZ/*eez*
 /results
+!/results/.gitkeep
 /cutouts
 /logs
-/data
 /benchmarks
+/workflow/logs/*
