@@ -1,6 +1,7 @@
 import cartopy.io.shapereader as shpreader
 import geopandas as gpd
 import os.path
+import logging
 
 from _helpers import configure_logging, mock_snakemake
 from constants import PROV_NAMES, CRS
