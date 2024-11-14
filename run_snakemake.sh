@@ -1,11 +1,11 @@
 #! /bin/bash    
 #SBATCH --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
 #SBATCH --job-name=Snakemake
-#SBATCH --output=slurmlogs/test-%j.out
-#SBATCH --error=slurmlogs/test-%j.er
+#SBATCH --output=logs_slurm/submit/test-%j.out
+#SBATCH --error=logs_slurm/submit/test-%j.er
 #SBATCH --mem=2048
 #SBATCH --qos=priority
-#SBATCH --cpus-per-task=4 
+#SBATCH --cpus-per-task=8 
 
 #set up the tunnel to the login nodes (does not work well as a subprocess, even with source)
 source activate pypsa-china
@@ -23,5 +23,6 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 export GRB_LICENSE_FILE=/p/projects/rd3mod/gurobi_rc/gurobi.lic
 export GRB_CURLVERBOSE=1
 
+echo "launching snakemake"
 # launch workflow with the PIK hpc_profile (this generates the relevant sbatch commands)
 snakemake --profile config/pik_hpc_profile/

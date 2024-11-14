@@ -3,8 +3,11 @@
 # SPDX-License-Identifier: CC0-1.0
 .snakemake*
 __pycache__
-.DS_Store
-.idea/
+
+**.log
+**.out
+**.DS_Store
+**.idea/
 
 /resources/**/*
 !/resources/data/shapefiles/
@@ -13,8 +16,8 @@ __pycache__
 /resources/data/province_shapes
 /resources/data/landuse_availability/World_EEZ/*eez*
 /results
-!/results/.gitkeep
 /cutouts
 /logs
 /benchmarks
-/workflow/logs/*
+
+!**.gitkeep

@@ -4,6 +4,9 @@
 
 version: 0412.175.1H
 
+run:
+  name: 'China-175'
+  
 foresight: "myopic" 
 # foresight: "steady-state"
 results_dir: 'results/'

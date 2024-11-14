@@ -11,13 +11,13 @@ jobs: 500
 restart-times: 1
 max-jobs-per-second: 10
 max-status-checks-per-second: 1
-local-cores: 1
+# local-cores: 1
 latency-wait: 60
 keep-going: True
 rerun-incomplete: True
 printshellcmds: True
 scheduler: greedy
-use-conda: True
+# use-conda: True
 rerun-trigger:
 - code
 - input
@@ -34,7 +34,7 @@ cluster-generic-submit-cmd:
     --cpus-per-task={threads}
     --mem={resources.mem_mb}
     --job-name=smk-{rule}-{wildcards}
-    --output=logs/{rule}/{rule}-{wildcards}-%j.out
+    --output=logs_slurm/{rule}/{rule}-{wildcards}-%j.out
     --parsable
     --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
 cluster-generic-cancel-cmd: scancel
@@ -44,13 +44,32 @@ default-resources:
   partition: priority
   qos: priority
   mem_mb: 1000
+  cores: 4
 
 set-resources:
-  io_test:
+  retrieve_build_up_raster:
     time: 300
-    cores: 2
+    cores: 1
     partition: io 
     qos: io
-
-
+  retrieve_Grass_raster:
+    time: 300
+    cores: 1
+    partition: io 
+    qos: io
+  retrieve_Bare_raster:
+    time: 300
+    cores: 1
+    partition: io 
+    qos: io
+  retrieve_Shrubland_raster:
+    time: 300
+    cores: 1
+    partition: io 
+    qos: io
+  build_cutout:
+    time: 300
+    cores: 1
+    partition: io 
+    qos: io
 
