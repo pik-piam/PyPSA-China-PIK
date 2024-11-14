@@ -23,4 +23,5 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 export GRB_LICENSE_FILE=/p/projects/rd3mod/gurobi_rc/gurobi.lic
 export GRB_CURLVERBOSE=1
 
+# launch workflow with the PIK hpc_profile (this generates the relevant sbatch commands)
 snakemake --profile config/pik_hpc_profile/
