@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake("build_cutout", cutout="China-2020")
-    configure_logging(snakemake)
+    configure_logging(snakemake, logger=logger)
 
     cutout_params = snakemake.config["atlite"]["cutouts"][snakemake.wildcards.cutout]
     snapshots = pd.date_range(freq="h", tz="Asia/shanghai", **snakemake.config["snapshots"])
@@ -36,3 +36,5 @@ if __name__ == "__main__":
     logging.info(f"Preparing cutout with parameters {cutout_params}.")
     cutout = atlite.Cutout(snakemake.output[0], **cutout_params)
     cutout.prepare()
+
+    logger.info(f"Cutout successfully built at {snakemake.output[0]}.")

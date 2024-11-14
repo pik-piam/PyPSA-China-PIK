@@ -5,9 +5,11 @@
 
 import os
 import sys
+import traceback
 import pandas as pd
 from pathlib import Path
 from types import SimpleNamespace
+import logging
 
 # from constants import SNAKEFILE_CHOICES
 
@@ -42,7 +44,7 @@ def override_component_attrs(directory: os.PathLike) -> dict:
     return attrs
 
 
-def configure_logging(snakemake, skip_handlers=False, level="INFO"):
+def configure_logging(snakemake, logger=None, skip_handlers=False, level="INFO", fname=None):
     """
     Configure the basic behaviour for the logging module.
     Note: Must only be called once from the __main__ section of a script.
@@ -58,34 +60,57 @@ def configure_logging(snakemake, skip_handlers=False, level="INFO"):
         Do (not) skip the default handlers created for redirecting output to STDERR and file.
     """
 
-    import logging
-
-    if "snakemake" not in globals():
-        return
+    if not logger:
+        logger = logging.getLogger()
+        logger.info("Configuring logging")
 
     kwargs = snakemake.config.get("logging", dict())
     kwargs.setdefault("level", level)
 
     if skip_handlers is False:
-        fallback_path = Path(__file__).parent.joinpath("..", "logs", f"{snakemake.rule}.log")
-        logfile = snakemake.log.get("python", snakemake.log[0] if snakemake.log else fallback_path)
-        kwargs.update(
-            {
-                "handlers": [
-                    # Prefer the 'python' log, otherwise take the first log for each
-                    # Snakemake rule
-                    logging.FileHandler(logfile),
-                    logging.StreamHandler(),
-                ]
-            }
-        )
-    logging.basicConfig(**kwargs)
+        fallback_path = Path(__file__).parent.joinpath("../..", "logs", f"{snakemake.rule}.log")
+        default_logfile = snakemake.log[0] if snakemake.log else fallback_path
+        logfile = snakemake.log.get("python", default_logfile)
+        logger.setLevel(kwargs["level"])
+
+        formatter = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s - %(message)s")
+
+        if not os.path.exists(logfile):
+            with open(logfile, "a"):
+                pass
+        file_handler = logging.FileHandler(logfile)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        # make running log easier to read
+        logger.info("=========== NEW RUN ===========")
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
 
     def handle_exception(exc_type, exc_value, exc_traceback):
         # Log the exception
         logger = logging.getLogger()
         logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        sys.excepthook = handle_exception
 
+    # def handle_exception(exc_type, exc_value, exc_traceback):
+    #     # do not overload if KeyboardInterrupt
+    #     if issubclass(exc_type, KeyboardInterrupt):
+    #         sys.__excepthook__(exc_type, exc_value, exc_traceback)
+    #         return
+
+    #     logger.error(
+    #         "".join(
+    #             [
+    #                 "Uncaught exception: ",
+    #                 *traceback.format_exception(exc_type, exc_value, exc_traceback),
+    #             ]
+    #         )
+    #     )
+
+    # Install exception handler
     sys.excepthook = handle_exception
 
 

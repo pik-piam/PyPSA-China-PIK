@@ -8,7 +8,7 @@ import pypsa
 from types import SimpleNamespace
 from constants import YEAR_HRS
 from add_electricity import load_costs
-from _helpers import override_component_attrs, mock_snakemake
+from _helpers import override_component_attrs, mock_snakemake, configure_logging
 
 logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
@@ -386,8 +386,7 @@ if __name__ == "__main__":
             planning_horizons="2020",
         )
 
-    logging.basicConfig(level=snakemake.config["logging"]["level"])
-
+    configure_logging(snakemake, logger=logger)
     # options = snakemake.config["sector"]
     # sector_opts = '168H-T-H-B-I-solar+p3-dist1'
     # opts = sector_opts.split('-')
@@ -429,3 +428,5 @@ if __name__ == "__main__":
     #             ].p_nom.sum()
 
     n.export_to_netcdf(snakemake.output[0])
+
+    logger.info("Existing capacities successfully added to network")

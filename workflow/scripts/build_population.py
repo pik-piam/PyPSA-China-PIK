@@ -50,5 +50,6 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake("build_population")
 
-    configure_logging(snakemake)
+    configure_logging(snakemake, logger=logger)
     build_population()
+    logger.info("Population successfully built")

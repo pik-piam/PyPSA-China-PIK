@@ -1,26 +1,36 @@
 import logging
+import pypsa
+
+import cartopy.crs as ccrs
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# from make_summary import assign_carriers
+from plot_summary import preferred_order, rename_techs
+from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
+from _helpers import configure_logging, mock_snakemake
 
 logger = logging.getLogger(__name__)
 
-import cartopy.crs as ccrs
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import pandas as pd
-import pypsa
-from make_summary import assign_carriers
-from plot_summary import preferred_order, rename_techs
-from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 
 def set_plot_style():
-    plt.style.use(['classic', 'seaborn-v0_8-white',
-                   {'axes.grid': False, 'grid.linestyle': '--', 'grid.color': u'0.6',
-                    'hatch.color': 'white',
-                    'patch.linewidth': 0.5,
-                    'font.size': 12,
-                    'legend.fontsize': 'medium',
-                    'lines.linewidth': 1.5,
-                    'pdf.fonttype': 42,
-                    }])
+    plt.style.use(
+        [
+            "classic",
+            "seaborn-v0_8-white",
+            {
+                "axes.grid": False,
+                "grid.linestyle": "--",
+                "grid.color": "0.6",
+                "hatch.color": "white",
+                "patch.linewidth": 0.5,
+                "font.size": 12,
+                "legend.fontsize": "medium",
+                "lines.linewidth": 1.5,
+                "pdf.fonttype": 42,
+            },
+        ]
+    )
 
 
 def assign_location(n):
@@ -55,7 +65,7 @@ def get_costs(costs, tech_colors):
 
 
 def get_link_widths(n, attr):
-    if attr == 'total':
+    if attr == "total":
         line_widths = n.lines.s_nom_opt
         link_widths = n.links.p_nom_opt
         title = "total grid"
@@ -68,9 +78,9 @@ def get_link_widths(n, attr):
 
 
 def plot_cost_map(
-        network,
-        opts,
-        components=["generators", "links", "stores", "storage_units"],
+    network,
+    opts,
+    components=["generators", "links", "stores", "storage_units"],
 ):
     tech_colors = opts["tech_colors"]
 
@@ -95,19 +105,19 @@ def plot_cost_map(
 
         costs_a = (
             (df_c.capital_cost * (df_c[attr] - df_c[attr2]))
-                .groupby([df_c.location, df_c.nice_group])
-                .sum()
-                .unstack()
-                .fillna(0.0)
+            .groupby([df_c.location, df_c.nice_group])
+            .sum()
+            .unstack()
+            .fillna(0.0)
         )
         costs_add = pd.concat([costs_add, costs_a], axis=1)
 
         costs_n = (
             (df_c.capital_cost * (df_c[attr]))
-                .groupby([df_c.location, df_c.nice_group])
-                .sum()
-                .unstack()
-                .fillna(0.0)
+            .groupby([df_c.location, df_c.nice_group])
+            .sum()
+            .unstack()
+            .fillna(0.0)
         )
 
         costs_nom = pd.concat([costs_nom, costs_n], axis=1)
@@ -115,9 +125,10 @@ def plot_cost_map(
     costs_add = get_costs(costs_add, tech_colors)
     costs_nom = get_costs(costs_nom, tech_colors)
 
-    n.links.drop(n.links.index[n.links.length == 0],
-                 inplace=True,
-                 )
+    n.links.drop(
+        n.links.index[n.links.length == 0],
+        inplace=True,
+    )
 
     threshold = 100e6  # 100 mEUR/a
     carriers = pd.concat([costs_add, costs_nom]).groupby(level=1).sum()
@@ -132,16 +143,14 @@ def plot_cost_map(
     added_color = "darkseagreen"
 
     df = pd.DataFrame(index=carriers, columns=["total", "added"])
-    df['total'] = costs_nom.groupby(level=1).sum()
-    df['added'] = costs_add.groupby(level=1).sum()
+    df["total"] = costs_nom.groupby(level=1).sum()
+    df["added"] = costs_add.groupby(level=1).sum()
     df = df.fillna(0)
     df = df / 1e9
     planning_horizon = int(snakemake.wildcards.planning_horizons)
     df = df / (1 + snakemake.config["costs"]["discountrate"]) ** (planning_horizon - 2020)
 
-    new_index = preferred_order.intersection(df.index).append(
-        df.index.difference(preferred_order)
-    )
+    new_index = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
     percent = round((df.sum()[1] / df.sum()[0]) * 100)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": ccrs.PlateCarree()})
@@ -166,7 +175,7 @@ def plot_cost_map(
         link_widths=link_widths / linewidth_factor,
         ax=ax1,
         color_geomap=True,
-        boundaries=opts["map"]["boundaries"]
+        boundaries=opts["map"]["boundaries"],
     )
 
     sizes = [10, 5]
@@ -183,9 +192,7 @@ def plot_cost_map(
         title=title,
     )
 
-    add_legend_lines(
-        ax1, sizes, labels, patch_kw=dict(color=total_color), legend_kw=legend_kw
-    )
+    add_legend_lines(ax1, sizes, labels, patch_kw=dict(color=total_color), legend_kw=legend_kw)
 
     line_widths, link_widths, title = get_link_widths(n, "added")
 
@@ -204,7 +211,7 @@ def plot_cost_map(
         link_widths=link_widths / linewidth_factor,
         ax=ax2,
         color_geomap=True,
-        boundaries=opts["map"]["boundaries"]
+        boundaries=opts["map"]["boundaries"],
     )
 
     sizes = [20, 10, 5]
@@ -252,9 +259,7 @@ def plot_cost_map(
         title=title,
     )
 
-    add_legend_lines(
-        ax2, sizes, labels, patch_kw=dict(color=added_color), legend_kw=legend_kw
-    )
+    add_legend_lines(ax2, sizes, labels, patch_kw=dict(color=added_color), legend_kw=legend_kw)
 
     legend_kw = dict(
         bbox_to_anchor=(1.42, 1.04),
@@ -281,24 +286,27 @@ def plot_cost_map(
     )
     ax3.legend().remove()
     ax3.set_ylabel("annualized system cost bEUR/a")
-    ax3.set_xticklabels(ax3.get_xticklabels(), rotation='horizontal')
+    ax3.set_xticklabels(ax3.get_xticklabels(), rotation="horizontal")
     ax3.grid(axis="y")
     ax3.set_ylim([0, opts["costs_max"]])
-    ax3.text(0.85, (df.sum()[1] + 15), str(percent) + "%", color='black')
+    ax3.text(0.85, (df.sum()[1] + 15), str(percent) + "%", color="black")
 
     fig.tight_layout()
 
     fig.savefig(snakemake.output.cost_map, transparent=True, bbox_inches="tight")
 
+
 if __name__ == "__main__":
-    if 'snakemake' not in globals():
-        from _helpers import mock_snakemake
-        snakemake = mock_snakemake('plot_network',
-                                   opts='ll',
-                                   topology ='current+Neighbor',
-                                   pathway ='exponential175',
-                                   planning_horizons="2020")
-    logging.basicConfig(level=snakemake.config["logging"]["level"])
+    if "snakemake" not in globals():
+        snakemake = mock_snakemake(
+            "plot_network",
+            opts="ll",
+            topology="current+Neighbor",
+            pathway="exponential175",
+            planning_horizons="2020",
+        )
+
+    logger = configure_logging(snakemake, logger=logger)
 
     set_plot_style()
 
@@ -311,3 +319,5 @@ if __name__ == "__main__":
         opts=config["plotting"],
         components=["generators", "links", "stores", "storage_units"],
     )
+
+    logger.info("Network successfully plotted")

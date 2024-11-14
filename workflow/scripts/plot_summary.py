@@ -26,9 +26,7 @@ def rename_techs(label):
     ]
 
     rename_if_contains_dict = {"water tanks": "hot water storage", "H2": "H2", "coal cc": "CC"}
-
     rename_if_contains = ["gas", "coal"]
-
     rename = {
         "solar": "solar PV",
         "Sabatier": "methanation",

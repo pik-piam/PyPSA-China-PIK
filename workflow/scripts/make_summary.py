@@ -9,19 +9,22 @@ capacity factors, curtailment, energy balances, prices and other metrics.
 
 import logging
 
-logger = logging.getLogger(__name__)
-
 import sys
 import os
 
-import numpy as np
 import pandas as pd
 import pypsa
-from add_electricity import load_costs, update_transmission_costs
 
+from _helpers import mock_snakemake, configure_logging
+
+# import numpy as np
+# from add_electricity import load_costs, update_transmission_costs
+
+logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
 
 opt_name = {"Store": "e", "Line": "s", "Transformer": "s"}
+
 
 def assign_carriers(n):
     if "carrier" not in n.lines:
@@ -40,7 +43,8 @@ def assign_locations(n):
 
 
 def calculate_nodal_cfs(n, label, nodal_cfs):
-    # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
+    # Beware this also has extraneous locations for country (e.g. biomass)
+    # or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         (n.branch_components ^ {"Line", "Transformer"})
         | n.controllable_one_port_components ^ {"Load", "StorageUnit"}
@@ -63,9 +67,7 @@ def calculate_nodal_cfs(n, label, nodal_cfs):
 
         cf_c = p_c / capacities_c
 
-        index = pd.MultiIndex.from_tuples(
-            [(c.list_name,) + t for t in cf_c.index.to_list()]
-        )
+        index = pd.MultiIndex.from_tuples([(c.list_name,) + t for t in cf_c.index.to_list()])
         nodal_cfs = nodal_cfs.reindex(index.union(nodal_cfs.index))
         nodal_cfs.loc[index, label] = cf_c.values
 
@@ -74,12 +76,9 @@ def calculate_nodal_cfs(n, label, nodal_cfs):
 
 def calculate_cfs(n, label, cfs):
     for c in n.iterate_components(
-        n.branch_components
-        | n.controllable_one_port_components ^ {"Load", "StorageUnit"}
+        n.branch_components | n.controllable_one_port_components ^ {"Load", "StorageUnit"}
     ):
-        capacities_c = (
-            c.df[opt_name.get(c.name, "p") + "_nom_opt"].groupby(c.df.carrier).sum()
-        )
+        capacities_c = c.df[opt_name.get(c.name, "p") + "_nom_opt"].groupby(c.df.carrier).sum()
 
         if c.name in ["Link", "Line", "Transformer"]:
             p = c.pnl.p0.abs().mean()
@@ -102,13 +101,12 @@ def calculate_cfs(n, label, cfs):
 
 
 def calculate_nodal_costs(n, label, nodal_costs):
-    # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
+    # Beware this also has extraneous locations for country (e.g. biomass)
+    #  or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
-        c.df["capital_costs"] = (
-            c.df.capital_cost * c.df[opt_name.get(c.name, "p") + "_nom_opt"]
-        )
+        c.df["capital_costs"] = c.df.capital_cost * c.df[opt_name.get(c.name, "p") + "_nom_opt"]
         capital_costs = c.df.groupby(["location", "carrier"])["capital_costs"].sum()
         index = pd.MultiIndex.from_tuples(
             [(c.list_name, "capital") + t for t in capital_costs.index.to_list()]
@@ -129,9 +127,7 @@ def calculate_nodal_costs(n, label, nodal_costs):
 
         # correct sequestration cost
         if c.name == "Store":
-            items = c.df.index[
-                (c.df.carrier == "co2 stored") & (c.df.marginal_cost <= -100.0)
-            ]
+            items = c.df.index[(c.df.carrier == "co2 stored") & (c.df.marginal_cost <= -100.0)]
             c.df.loc[items, "marginal_cost"] = -20.0
 
         c.df["marginal_costs"] = p * c.df.marginal_cost
@@ -172,9 +168,7 @@ def calculate_costs(n, label, costs):
 
         # correct sequestration cost
         if c.name == "Store":
-            items = c.df.index[
-                (c.df.carrier == "co2 stored") & (c.df.marginal_cost <= -100.0)
-            ]
+            items = c.df.index[(c.df.carrier == "co2 stored") & (c.df.marginal_cost <= -100.0)]
             c.df.loc[items, "marginal_cost"] = -20.0
 
         marginal_costs = p * c.df.marginal_cost
@@ -222,9 +216,7 @@ def calculate_capacities(n, label, capacities):
         )
         capacities_grouped = pd.concat([capacities_grouped], keys=[c.list_name])
 
-        capacities = capacities.reindex(
-            capacities_grouped.index.union(capacities.index)
-        )
+        capacities = capacities.reindex(capacities_grouped.index.union(capacities.index))
 
         capacities.loc[capacities_grouped.index, label] = capacities_grouped
 
@@ -258,16 +250,10 @@ def calculate_energy(n, label, energy):
         else:
             c_energies = pd.Series(0.0, c.df.carrier.unique())
             for port in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
-                totals = (
-                    c.pnl["p" + port]
-                    .multiply(n.snapshot_weightings.generators, axis=0)
-                    .sum()
-                )
+                totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
                 # remove values where bus is missing (bug in nomopyomo)
                 no_bus = c.df.index[c.df["bus" + port] == ""]
-                totals.loc[no_bus] = float(
-                    n.component_attrs[c.name].loc["p" + port, "default"]
-                )
+                totals.loc[no_bus] = float(n.component_attrs[c.name].loc["p" + port, "default"])
                 c_energies -= totals.groupby(c.df.carrier).sum()
 
         c_energies = pd.concat([c_energies], keys=[c.list_name])
@@ -375,9 +361,7 @@ def calculate_supply_energy(n, label, supply_energy):
                 s = pd.concat([s], keys=[c.list_name])
                 s = pd.concat([s], keys=[i])
 
-                supply_energy = supply_energy.reindex(
-                    s.index.union(supply_energy.index)
-                )
+                supply_energy = supply_energy.reindex(s.index.union(supply_energy.index))
 
                 supply_energy.loc[s.index, label] = s
 
@@ -405,12 +389,8 @@ def calculate_metrics(n, label, metrics):
     ].sum()
 
     if "lv_limit" in n.global_constraints.index:
-        metrics.at["line_volume_limit", label] = n.global_constraints.at[
-            "lv_limit", "constant"
-        ]
-        metrics.at["line_volume_shadow", label] = n.global_constraints.at[
-            "lv_limit", "mu"
-        ]
+        metrics.at["line_volume_limit", label] = n.global_constraints.at["lv_limit", "constant"]
+        metrics.at["line_volume_shadow", label] = n.global_constraints.at["lv_limit", "mu"]
 
     if "co2_limit" in n.global_constraints.index:
         metrics.at["co2_shadow", label] = n.global_constraints.at["co2_limit", "mu"]
@@ -472,12 +452,11 @@ def calculate_weighted_prices(n, label, weighted_prices):
         if buses.empty:
             continue
 
+        # TODO fix undefined heat_demand_df
         if carrier in ["H2", "gas"]:
             load = pd.DataFrame(index=n.snapshots, columns=buses, data=0.0)
         elif carrier[:5] == "space":
-            load = heat_demand_df[buses.str[:2]].rename(
-                columns=lambda i: str(i) + suffix
-            )
+            load = heat_demand_df[buses.str[:2]].rename(columns=lambda i: str(i) + suffix)
         else:
             load = n.loads_t.p_set[buses]
 
@@ -487,9 +466,7 @@ def calculate_weighted_prices(n, label, weighted_prices):
             if names.empty:
                 continue
 
-            load += (
-                n.links_t.p0[names].groupby(n.links.loc[names, "bus0"], axis=1).sum()
-            )
+            load += n.links_t.p0[names].groupby(n.links.loc[names, "bus0"], axis=1).sum()
 
         # Add H2 Store when charging
         # if carrier == "H2":
@@ -515,7 +492,7 @@ def calculate_market_values(n, label, market_values):
 
     buses = n.buses.index[n.buses.carrier == carrier]
 
-    ## First do market value of generators ##
+    # === First do market value of generators  ===
 
     generators = n.generators.index[n.buses.loc[n.generators.bus, "carrier"] == carrier]
 
@@ -537,7 +514,7 @@ def calculate_market_values(n, label, market_values):
 
         market_values.at[tech, label] = revenue.sum().sum() / dispatch.sum().sum()
 
-    ## Now do market value of links ##
+    # === Now do market value of links  ===
 
     for i in ["0", "1"]:
         all_links = n.links.index[n.buses.loc[n.links["bus" + i], "carrier"] == carrier]
@@ -565,9 +542,7 @@ def calculate_market_values(n, label, market_values):
 
 def calculate_price_statistics(n, label, price_statistics):
     price_statistics = price_statistics.reindex(
-        price_statistics.index.union(
-            pd.Index(["zero_hours", "mean", "standard_deviation"])
-        )
+        price_statistics.index.union(pd.Index(["zero_hours", "mean", "standard_deviation"]))
     )
 
     buses = n.buses.index[n.buses.carrier == "AC"]
@@ -578,13 +553,9 @@ def calculate_price_statistics(n, label, price_statistics):
 
     df[n.buses_t.marginal_price[buses] < threshold] = 1.0
 
-    price_statistics.at["zero_hours", label] = df.sum().sum() / (
-        df.shape[0] * df.shape[1]
-    )
+    price_statistics.at["zero_hours", label] = df.sum().sum() / (df.shape[0] * df.shape[1])
 
-    price_statistics.at["mean", label] = (
-        n.buses_t.marginal_price[buses].unstack().mean()
-    )
+    price_statistics.at["mean", label] = n.buses_t.marginal_price[buses].unstack().mean()
 
     price_statistics.at["standard_deviation", label] = (
         n.buses_t.marginal_price[buses].unstack().std()
@@ -634,42 +605,46 @@ def make_summaries(networks_dict):
 
     return df
 
-if __name__ == "__main__":
-    if 'snakemake' not in globals():
-        from _helpers import mock_snakemake
-        snakemake = mock_snakemake('make_summary',
-                                   opts='ll',
-                                   topology ='current+Neighbor',
-                                   pathway ='exponential175',
-                                   planning_horizons=["2020"])
 
-    logging.basicConfig(level=snakemake.config["logging"]["level"])
+# TODO move to helper?
+def expand_from_wildcard(key, config):
+    w = getattr(wildcards, key)
+    return config["scenario"][key] if w == "all" else [w]
+
+
+if __name__ == "__main__":
+    if "snakemake" not in globals():
+
+        snakemake = mock_snakemake(
+            "make_summary",
+            opts="ll",
+            topology="current+Neighbor",
+            pathway="exponential175",
+            planning_horizons=["2020"],
+        )
+
+    configure_logging(snakemake)
+
     config = snakemake.config
     wildcards = snakemake.wildcards
 
-
-    def expand_from_wildcard(key, config):
-        w = getattr(wildcards, key)
-        return config["scenario"][key] if w == "all" else [w]
-
-
-    networks_dict = {(pathway, planning_horizons): "results/version-"
-                                                   + config["version"]
-                                                   + f"/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc"
-                     for opts in expand_from_wildcard("opts", config)
-                     for planning_horizons in expand_from_wildcard("planning_horizons", config)
-                     for pathway in expand_from_wildcard("pathway", config)
-                     for topology in expand_from_wildcard("topology", config)
-                     for heating_demand in expand_from_wildcard("heating_demand", config)}
+    # TODO : make readable
+    networks_dict = {
+        (pathway, planning_horizons): config["base_results_dir"]
+        + f"/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc"
+        for opts in expand_from_wildcard("opts", config)
+        for planning_horizons in expand_from_wildcard("planning_horizons", config)
+        for pathway in expand_from_wildcard("pathway", config)
+        for topology in expand_from_wildcard("topology", config)
+        for heating_demand in expand_from_wildcard("heating_demand", config)
+    }
 
     df = make_summaries(networks_dict)
     df["metrics"].loc["total costs"] = df["costs"].sum()
-
 
     def to_csv(dfs, dir):
         os.makedirs(dir, exist_ok=True)
         for key, df in dfs.items():
             df.to_csv(os.path.join(dir, f"{key}.csv"))
-
 
     to_csv(df, snakemake.output[0])

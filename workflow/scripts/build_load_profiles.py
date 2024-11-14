@@ -225,7 +225,7 @@ if __name__ == "__main__":
             "build_load_profiles", heating_demand="positive", planning_horizons="2020"
         )
 
-    configure_logging(snakemake)
+    configure_logging(snakemake, logger=logger)
 
     daily_hd = build_daily_heat_demand_profiles()
 
@@ -250,3 +250,5 @@ if __name__ == "__main__":
 
     with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w", complevel=4) as store:
         store["heat_demand_profiles"] = heat_demand
+
+    logger.info("Heat demand profiles successfully built")

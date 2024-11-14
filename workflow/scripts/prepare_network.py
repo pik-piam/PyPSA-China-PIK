@@ -3,22 +3,29 @@
 # SPDX-License-Identifier: MIT
 
 # for non-pathway network
+# TODO fix timezones
 
-from vresutils.costdata import annuity
-from _helpers import configure_logging
 import pypsa
+from vresutils.costdata import annuity
 from shapely.geometry import Point
 import geopandas as gpd
 import pandas as pd
 import numpy as np
 import pytz
+import pyproj
+import xarray as xr
+import logging
+
 from math import radians, cos, sin, asin, sqrt
 from functools import partial
-import pyproj
 from shapely.ops import transform
-import xarray as xr
-from functions import pro_names, HVAC_cost_curve
+
+from constants import PROV_NAMES
+from functions import HVAC_cost_curve
+from _helpers import configure_logging, mock_snakemake
 from add_electricity import load_costs
+
+logger = logging.getLogger(__name__)
 
 
 # This function follows http://toblerity.org/shapely/manual.html
@@ -55,7 +62,7 @@ def haversine(p1, p2):
 
 def generate_periodic_profiles(
     dt_index=None,
-    col_tzs=pd.Series(index=pro_names, data=len(pro_names) * ["Shanghai"]),
+    col_tzs=pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]),
     weekly_profile=range(24 * 7),
 ):
     """Give a 24*7 long list of weekly hourly profiles, generate this
@@ -197,7 +204,7 @@ def prepare_network(config):
     network = pypsa.Network(override_component_attrs=override_component_attrs)
 
     # load graph
-    nodes = pd.Index(pro_names)
+    nodes = pd.Index(PROV_NAMES)
     edges = pd.read_csv("data/edges.txt", sep=",", header=None)
     edges_current = pd.read_csv("data/edges_current.csv", header=None)
     edges_current_FCG = pd.read_csv("data/edges_current_FCG.csv", header=None)
@@ -269,7 +276,7 @@ def prepare_network(config):
 
     pro_shapes = gpd.GeoDataFrame.from_file("data/province_shapes/CHN_adm1.shp")
     pro_shapes = pro_shapes.to_crs(4326)
-    pro_shapes.index = pro_names
+    pro_shapes.index = PROV_NAMES
 
     # add buses
     network.madd(
@@ -320,7 +327,7 @@ def prepare_network(config):
     ) as store:
         load = 1e6 * store["load"].loc[network.snapshots]
 
-    load.columns = pro_names
+    load.columns = PROV_NAMES
 
     network.madd("Load", nodes, bus=nodes, p_set=load[nodes])
 
@@ -1053,8 +1060,9 @@ def prepare_network(config):
                 ]
             )
 
+            # Set line costs to ~zero because we already restrict the line volume
             # if config['line_volume_limit_max'] is not None:
-            #     cc = Nyears * 0.01  # Set line costs to ~zero because we already restrict the line volume
+            #     cc = Nyears * 0.01
             # else:
             cc = (
                 (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
@@ -1084,8 +1092,6 @@ if __name__ == "__main__":
 
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
-
         snakemake = mock_snakemake(
             "prepare_networks",
             opts="ll",
@@ -1101,3 +1107,7 @@ if __name__ == "__main__":
     network = prepare_network(snakemake.config)
 
     network.export_to_netcdf(snakemake.output.network_name)
+
+    logger.info(
+        f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {snakemake.output.network_name}"
+    )

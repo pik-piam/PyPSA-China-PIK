@@ -6,17 +6,13 @@
 
 import logging
 
+from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 import numpy as np
 import pypsa
 
-from _helpers import (
-    configure_logging,
-    override_component_attrs,
-)
+from _helpers import configure_logging, override_component_attrs, mock_snakemake
 
 pypsa.pf.logger.setLevel(logging.WARNING)
-from pypsa.descriptors import get_switchable_as_dense as get_as_dense
-
 logger = logging.getLogger(__name__)
 
 
@@ -186,8 +182,6 @@ def solve_network(n, config, solving, opts="", **kwargs):
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
-
         snakemake = mock_snakemake(
             "solve_network_myopic", co2_reduction="0.0", opts="ll", planning_horizons=2020
         )
@@ -218,3 +212,5 @@ if __name__ == "__main__":
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
     n.export_to_netcdf(snakemake.output[0])
+
+    logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
