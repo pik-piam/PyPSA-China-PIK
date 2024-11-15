@@ -1,6 +1,6 @@
 # PyPSA-China：An Open Optimisation model of the Chinese Energy System
 
-This is the PIK implementation of the PyPSA-China power model, first published by Xiaowei Zhou et al for their  "Multi-energy system horizon planning: Early decarbonisation in China avoids stranded assets" (doi.org/10.1049/ein2.12011). It is adapted from the original by the PIK RD3 team, with the aim of coupling it to the REMIND integrated assessment model.
+This is the PIK implementation of the PyPSA-China power model, first published by Xiaowei Zhou et al for their  "Multi-energy system horizon planning: Early decarbonisation in China avoids stranded assets" (doi.org/10.1049/ein2.12011). It is adapted from the original by the PIK RD3 team, with the aim of coupling it to the [REMIND](https://www.pik-potsdam.de/en/institute/departments/transformation-pathways/models/remind) integrated assessment model.
 
 PyPSA-China should be understood as a modelling worklow, using snakemake as workflow manager, around the [PyPSA python power system analysis](https://pypsa.org/) package. The workflow collects data, builds the power system network and plots the results. It is akin to its more mature sister project, [PyPSA-EUR](https://github.com/PyPSA/pypsa-eur). 
 
