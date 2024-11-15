@@ -9,48 +9,67 @@ from snakemake.utils import min_version
 
 min_version("8.11")
 
+# NB: duplicated parameters will be overwritten by the last read cfg
 configfile: "config/default_config.yaml"
+configfile: "config/technology_config.yaml"
+configfile: "config/plot_config.yaml"
+
+# move to path_manager
+config["base_results_dir"] = config['results_dir'] + 'version-' + str(config['version'])
+
+include: "rules/postprocess.smk"
 
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 
 storage:
     provider="http",
 
-storage http:
-    provider="http",
+# The pseudo-rule that requests the output of the workflow and ensures full execution
+# by default, only the first rule is executed (unless default_target is specified)
+# the input is set to be the output of the post-process rule
+# rule all:
+#     input:
+#         expand(
+#             base_results_dir + '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf',
+#             **config["scenario"]
+#         ),
+#     default_target: True
 
-if config["foresight"] == "non-pathway":
+
+
+# snakemake will resolve the missing networls
+if config["foresight"] == "steady-state":
     rule prepare_all_networks:
         input:
             expand(
-                config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+                config["base_results_dir"]+ '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
                 **config["scenario"]
             )
 
     rule solve_all_networks:
         input:
             expand(
-                config['results_dir'] + 'version-' + str(config['version']) + '/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+                config["base_results_dir"]+ '/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
                 **config["scenario"]
             ),
 
     rule plot_all:
         input:
             expand(
-                config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf',
+                config["base_results_dir"]+ '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf',
                 **config["scenario"]
             ),
             expand(
-                config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
+                config["base_results_dir"]+ '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
                 **config["scenario"]
             ),
 
-if config["foresight"] == "myopic":
+elif config["foresight"] == "myopic":
 
     rule prepare_all_networks:
         input:
             expand(
-                config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+                config["base_results_dir"]+ '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
                 **config["scenario"]
             ),
             expand(
@@ -63,12 +82,12 @@ if config["foresight"] == "myopic":
     rule solve_all_networks:
         input:
             expand(
-                config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+                config["base_results_dir"]+ '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
                 **config["scenario"]
             ),
 
             expand(
-                config['results_dir'] + 'version-' + str(config['version']) + '/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+                config["base_results_dir"]+ '/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
                 **config["scenario"]
             ),
 
@@ -99,7 +118,8 @@ if config["foresight"] == "myopic":
             #     config['version']) + '/plots/network/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf',
             #     **config["scenario"]
             # )
-
+else:
+    raise ValueError("Invalid scenario config: {}".format(config["foresight"]))
 
 rule build_population:
     input:
@@ -239,6 +259,8 @@ rule build_biomass_potential:
     input:
         # from doi.org/10.1038/s41467-021-23282-x
         biomass_feedstocks = "resources/data/p_nom/41467_2021_23282_MOESM4_ESM.xlsx"
+    # log:
+    #     "logs/build_biomass_potential.log"
     output:
         biomass_potential = "resources/derived_data/p_nom/biomass_potential.h5"
     threads: ATLITE_NPROCESSES
@@ -246,7 +268,7 @@ rule build_biomass_potential:
     script: "scripts/build_biomass_potential.py"
 
 
-if config["foresight"] == "non-pathway":
+if config["foresight"] == "steady-state":
     rule prepare_networks:
         input:
             population_name="resources/derived_data/population/population.h5",
@@ -260,16 +282,16 @@ if config["foresight"] == "non-pathway":
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
-            network_name=config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc',
+            network_name=config["base_results_dir"]+ '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc',
         threads: 1
         resources: mem_mb=10000
         script: "scripts/prepare_network.py"
 
     rule solve_networks:
         input:
-            network_name=config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc',
+            network_name=config["base_results_dir"]+ '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc',
         output:
-            network_name=config['results_dir'] + 'version-' + str(config['version']) + '/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc'
+            network_name=config["base_results_dir"]+ '/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc'
         log:
             solver=normpath("logs/solve_operations_network/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.log")
         threads: 4
@@ -294,7 +316,7 @@ elif config["foresight"] == "myopic":
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
-            network_name=config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network_name=config["base_results_dir"]+ '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
         wildcard_constraints:
             planning_horizons=2020 #only applies to baseyear
         threads: 1
@@ -316,7 +338,7 @@ elif config["foresight"] == "myopic":
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
-            network_name=config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network_name=config["base_results_dir"]+ '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
         threads: 1
         resources: mem_mb=10000
         script: "scripts/prepare_base_network.py"
@@ -326,12 +348,12 @@ elif config["foresight"] == "myopic":
     rule add_existing_baseyear:
         input:
             overrides="resources/data/override_component_attrs",
-            network=config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network=config["base_results_dir"]+ '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
             cop_name="resources/derived_data/heating/cop.h5",
             **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
                for tech in config['existing_infrastructure']},
-        output: config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc'
+        output: config["base_results_dir"]+ '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc'
         wildcard_constraints:
             planning_horizons=config['scenario']['planning_horizons'][0] #only applies to baseyear
         threads: 1
@@ -342,18 +364,18 @@ elif config["foresight"] == "myopic":
         planning_horizons = config["scenario"]["planning_horizons"]
         i = planning_horizons.index(int(wildcards.planning_horizons))
         planning_horizon_p = str(planning_horizons[i-1])
-        return config['results_dir'] + 'version-' + str(config['version']) + "/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-" + planning_horizon_p + ".nc"
+        return config["base_results_dir"]+ "/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-" + planning_horizon_p + ".nc"
 
     rule add_brownfield:
         input:
             overrides="resources/data/override_component_attrs",
-            network=config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network=config["base_results_dir"]+ '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
             network_p=solved_previous_horizon,#solved network at previous time step
             costs="resources/data/costs/costs_{planning_horizons}.csv",
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                 for tech in config['renewable']}
         output:
-            network_name = config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network_name = config["base_results_dir"]+ '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
         threads: 4
         resources: mem_mb=10000
         script: "scripts/add_brownfield.py"
@@ -366,49 +388,32 @@ elif config["foresight"] == "myopic":
             planning_horizons=config["scenario"]["planning_horizons"]
         input:
             overrides = "resources/data/override_component_attrs",
-            network=config['results_dir'] + 'version-' + str(config['version']) + '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network=config["base_results_dir"]+ '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
             costs="resources/data/costs/costs_{planning_horizons}.csv",
             biomass_potental= "resources/derived_data/p_nom/biomass_potential.h5",
         output:
-            network_name = config['results_dir'] + 'version-' + str(config['version']) + '/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc'
+            network_name = config["base_results_dir"]+ '/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc'
         log:
             solver = normpath("logs/solve_operations_network/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log")
         threads: 4
         resources: mem_mb = 80000
         script: "scripts/solve_network_myopic.py"
 
-if config["plot"]:
 
-    include: "rules/plot.smk"
-
-
- #
-    # rule plot_network:
-    #     input:
-    #         network=config['results_dir'] + 'version-' + str(config['version']) + '/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc',
-    #         tech_costs="resources/data/costs_{planning_horizons}.csv"
-    #     output:
-    #         only_map=config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.pdf',
-    #         cost_map=config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}-cost.pdf',
-    #         ext=config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}_ext.pdf'
-    #     log: "logs/plot_network/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.log"
-    #     script: "scripts/plot_network.py"
-
-    # rule make_summary:
-    #     input:
-    #         network=config['results_dir'] + 'version-' + str(config['version']) + '/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc',
-    #         tech_costs="resources/data/costs_{planning_horizons}.csv",
-    #     output:
-    #         directory(config['results_dir'] + 'version-' + str(config['version']) + '/summary/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}'),
-    #     log: "logs/make_summary/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.log"
-    #     resources: mem_mb=5000
-    #     script: "scripts/make_summary.py"
-    #
-    # rule plot_summary:
-    #     input:
-    #         config['results_dir'] + 'version-' + str(config['version']) + '/summary/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}'
-    #     output:
-    #         energy = config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}_energy.png',
-    #         cost = config['results_dir'] + 'version-' + str(config['version']) + '/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}_costs.png'
-    #     log: "logs/plot/summary/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.log"
-    #     script: "scripts/plot_summary.py"
+# runme with snakemake -R dag
+rule dag:
+    message:
+        "Creating DAG of workflow."
+    output:
+        dot="results/dag/dag.dot",
+        pdf="results/dag/dag.pdf",
+        png="results/dag/dag.png",
+    conda:
+        "envs/environment.yaml"
+    shell:
+        # switch to all
+        r"""
+        snakemake --rulegraph plot_all | sed -n "/digraph/,\$p" > {output.dot}
+        dot -Tpdf -o {output.pdf} {output.dot}
+        dot -Tpng -o {output.png} {output.dot}
+        """

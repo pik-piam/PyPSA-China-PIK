@@ -11,7 +11,12 @@ import numpy as np
 import pandas as pd
 import pypsa
 import xarray as xr
-from _helpers import configure_logging, override_component_attrs, mock_snakemake
+from _helpers import (
+    configure_logging,
+    override_component_attrs,
+    mock_snakemake,
+    setup_gurobi_tunnel_and_env,
+)
 
 logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
@@ -279,6 +284,13 @@ if __name__ == "__main__":
         )
 
     configure_logging(snakemake)
+
+    # deal with the gurobi license activation, which requires a tunnel to the login nodes
+    solver_config = snakemake.config["solving"]["solver"]
+    gurobi_license_config = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
+    logger.info(f"Solver config {solver_config} and license cfg {gurobi_license_config}")
+    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
+        setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
 
     opts = snakemake.wildcards.opts
     if "sector_opts" in snakemake.wildcards.keys():

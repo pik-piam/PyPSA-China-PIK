@@ -44,7 +44,7 @@ default-resources:
   partition: priority
   qos: priority
   mem_mb: 1000
-  cores: 4
+  cores: 8
 
 set-resources:
   retrieve_build_up_raster:

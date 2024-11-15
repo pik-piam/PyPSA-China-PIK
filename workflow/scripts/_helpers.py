@@ -5,6 +5,7 @@
 
 import os
 import sys
+import subprocess
 import traceback
 import pandas as pd
 from pathlib import Path
@@ -16,6 +17,48 @@ import logging
 # from pypsa.descriptors import Dict
 import pypsa
 from pypsa.components import components, component_attrs
+
+# get root logger
+logger = logging.getLogger()
+DEFAULT_TUNNEL_PORT = 1080
+
+
+def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = None):
+    """A uitility function to set up the Gurobi environment variables and establish an SSH tunnel
+    Otherwise the license check will fail
+
+    Args:
+        config (dict): the snakemake pypsa-china configuration
+        logger (logging.Logger, optional): Logger. Defaults to None.
+    """
+    if tunnel_config.get("use_tunnel", False) is False:
+        return
+    logger.info("setting up tunnel")
+    user = os.getenv("USER")  # User is pulled from the environment
+    port = tunnel_config.get("port", DEFAULT_TUNNEL_PORT)
+    ssh_command = f"ssh -fN -D {port} {user}@login01"
+
+    try:
+        # Run SSH in the background to establish the tunnel
+        subprocess.Popen(ssh_command, shell=True)
+        logger.info(f"SSH tunnel established on port {port}")
+    # TODO don't handle unless neeeded
+    except Exception as e:
+        logger.error(f"Error starting SSH tunnel: {e}")
+        sys.exit(1)
+
+    os.environ["https_proxy"] = f"socks5://127.0.0.1:{port}"
+    os.environ["SSL_CERT_FILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+    os.environ["GRB_CAFILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+
+    # Set up Gurobi environment variables
+    os.environ["GUROBI_HOME"] = "/p/projects/rd3mod/gurobi1103/linux64"
+    os.environ["PATH"] += f":{os.environ['GUROBI_HOME']}/bin"
+    os.environ["LD_LIBRARY_PATH"] += f":{os.environ['GUROBI_HOME']}/lib"
+    os.environ["GRB_LICENSE_FILE"] = "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
+    os.environ["GRB_CURLVERBOSE"] = "1"
+
+    logger.info("Gurobi Environment variables & tunnel set up successfully.")
 
 
 def override_component_attrs(directory: os.PathLike) -> dict:

@@ -14,7 +14,7 @@ summary_dir: 'summary/'
 
 scenario:
   line_limits: [ 'opt' ]
-  pathway: ['exponential175','beta25175']
+  pathway: ['exponential175'] # ,'beta25175']
   topology: "current+Neighbor" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   co2_reduction:
     exponential175:
@@ -170,6 +170,9 @@ solving:
   solver:
     name: gurobi
     options: gurobi-default
+  gurobi_hpc_tunnel:
+    use_tunnel: True
+    tunnel_port: 1080
 
   solver_options:
     highs-default:
