@@ -8,8 +8,6 @@ import pypsa
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-from pathlib import Path
-from os.path import abspath
 
 import xarray as xr
 
@@ -20,7 +18,7 @@ from logging import getLogger
 from constants import (
     PROV_NAMES,
     CRS,
-    TIMEZONE,
+    # TIMEZONE,
     LOAD_CONVERSION_FACTOR,
     YEAR_HRS,
     CO2_EL_2020,
@@ -1066,7 +1064,7 @@ def prepare_network(config: dict):
         )
 
         cc = (
-            (config["line_cost_factor"] * lengths * [HVAC_cost_curve(l) for l in lengths])
+            (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
             * 1.5
             * 1.02
             * n_years

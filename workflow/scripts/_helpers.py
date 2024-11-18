@@ -8,7 +8,8 @@ import sys
 import pandas as pd
 from pathlib import Path
 from types import SimpleNamespace
-from constants import SNAKEFILE_CHOICES
+
+# from constants import SNAKEFILE_CHOICES
 
 # from pypsa.descriptors import Dict
 import pypsa
@@ -41,7 +42,7 @@ def override_component_attrs(directory: os.PathLike) -> dict:
     return attrs
 
 
-def configure_logging(snakemake, skip_handlers=False, level="DEBUG"):
+def configure_logging(snakemake, skip_handlers=False, level="INFO"):
     """
     Configure the basic behaviour for the logging module.
     Note: Must only be called once from the __main__ section of a script.
@@ -99,7 +100,8 @@ def mock_snakemake(
     configfiles: list | str = None,
     **wildcards,
 ):
-    """A function to enable scripts to run as standalone, giving them access tot he snakefile rule input, outputs etc
+    """A function to enable scripts to run as standalone, giving them access to
+     the snakefile rule input, outputs etc
 
     Args:
         rulename (str): the name of the rule

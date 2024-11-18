@@ -114,7 +114,8 @@ def prepare_data(network, date_range, planning_horizons):
     # Heating
     ##############
 
-    # copy forward the daily average heat demand into each hour, so it can be multipled by the intraday profile
+    # copy forward the daily average heat demand into each hour, so it can be multipled by the
+    # intraday profile
 
     with pd.HDFStore(snakemake.input.heat_demand_name, mode="r") as store:
         # the ffill converts daily values into hourly values
@@ -577,7 +578,7 @@ def prepare_network(config):
             marginal_cost=config["costs"]["marginal_cost"]["hydro"],
         )
 
-        ### add hydro turbines to link stations to provinces
+        # add hydro turbines to link stations to provinces
         network.madd(
             "Link",
             dams.index,
@@ -589,7 +590,8 @@ def prepare_network(config):
         )
         # p_nom * efficiency = 10 * dams['installed_capacity_10MW']
 
-        ### add rivers to link station to station
+        # TODO fix hard coded
+        # ===  add rivers to link station to station
         bus0s = [0, 21, 11, 19, 22, 29, 8, 40, 25, 1, 7, 4, 10, 15, 12, 20, 26, 6, 3, 39]
         bus1s = [5, 11, 19, 22, 32, 8, 40, 25, 35, 2, 4, 10, 9, 12, 20, 23, 6, 17, 14, 16]
 
@@ -599,7 +601,7 @@ def prepare_network(config):
             network.links.at[bus0 + " turbines", "bus2"] = bus2
             network.links.at[bus0 + " turbines", "efficiency2"] = 1.0
 
-        ### spillage
+        #  spillage
         for bus0, bus1 in list(zip(dam_buses.iloc[bus0s].index, dam_buses.iloc[bus1s].index)):
             network.add(
                 "Link",
@@ -609,11 +611,11 @@ def prepare_network(config):
                 p_nom_extendable=True,
             )
 
-        dam_ends = [
-            dam
-            for dam in range(len(dams.index))
-            if (dam in bus1s and dam not in bus0s) or (dam not in bus0s + bus1s)
-        ]
+        # dam_ends = [
+        #     dam
+        #     for dam in range(len(dams.index))
+        #     if (dam in bus1s and dam not in bus0s) or (dam not in bus0s + bus1s)
+        # ]
 
         # for bus0 in dam_buses.iloc[dam_ends].index:
         #     network.add('Link',
@@ -623,9 +625,9 @@ def prepare_network(config):
         #                 p_nom_extendable=True,
         #                 efficiency=0.0)
 
-        #### add inflow as generators
+        # add inflow as generators
         # only feed into hydro stations which are the first of a cascade
-        inflow_stations = [dam for dam in range(len(dams.index)) if not dam in bus1s]
+        inflow_stations = [dam for dam in range(len(dams.index)) if dam not in bus1s]
 
         for inflow_station in inflow_stations:
 
@@ -987,7 +989,7 @@ def prepare_network(config):
             #     cc = Nyears * 0.01  # Set line costs to ~zero because we already restrict the line volume
             # else:
             cc = (
-                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(l) for l in lengths])
+                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
                 * 1.5
                 * 1.02
                 * Nyears
@@ -1020,7 +1022,7 @@ def prepare_network(config):
             #     cc = Nyears * 0.01  # Set line costs to ~zero because we already restrict the line volume
             # else:
             cc = (
-                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(l) for l in lengths])
+                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
                 * 1.5
                 * 1.02
                 * Nyears
@@ -1055,7 +1057,7 @@ def prepare_network(config):
             #     cc = Nyears * 0.01  # Set line costs to ~zero because we already restrict the line volume
             # else:
             cc = (
-                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(l) for l in lengths])
+                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
                 * 1.5
                 * 1.02
                 * Nyears
