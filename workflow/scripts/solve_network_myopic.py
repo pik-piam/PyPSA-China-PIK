@@ -160,7 +160,7 @@ def add_transimission_constraints(n):
 
 
 def add_retrofit_constraints(n):
-    p_nom_max = pd.read_csv("data/p_nom/p_nom_max_cc.csv", index_col=0)
+    p_nom_max = pd.read_csv("resources/data/p_nom/p_nom_max_cc.csv", index_col=0)
     planning_horizon = snakemake.wildcards.planning_horizons
     for year in range(int(planning_horizon) - 40, 2021, 5):
         coal = (
