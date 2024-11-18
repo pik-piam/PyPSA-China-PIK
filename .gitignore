@@ -9,6 +9,7 @@ __pycache__
 **.er
 **.DS_Store
 **.idea/
+.vscode
 
 /resources/**/*
 !/resources/data/shapefiles/
@@ -22,3 +23,4 @@ __pycache__
 /benchmarks
 
 !**.gitkeep
+.vscode/launch.json
