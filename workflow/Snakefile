@@ -27,13 +27,19 @@ storage:
 # The pseudo-rule that requests the output of the workflow and ensures full execution
 # by default, only the first rule is executed (unless default_target is specified)
 # the input is set to be the output of the post-process rule
-# rule all:
+# TODO if config["plot"] else False
+# rule execute_workflow:
 #     input:
 #         expand(
-#             base_results_dir + '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf',
-#             **config["scenario"]
-#         ),
-#     default_target: True
+#                 config["base_results_dir"]+ '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+#                 **config["scenario"]
+#             ),
+#         expand(
+#             base_results_dir
+#                     + "/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}_ext.pdf",
+#                     **config["scenario"],
+#                     ),
+#     default_target: True 
 
 
 
@@ -94,28 +100,23 @@ elif config["foresight"] == "myopic":
     rule plot_all:
         input:
             # expand(
-            #     config['results_dir'] + 'version-' + str(
-            #     config['version']) + '/plots/heatmap/water_tank/water_tank-{opts}-{topology}-{pathway}-{planning_horizons}.png',
+            #     config["base_results_dir"]+ '/plots/heatmap/water_tank/water_tank-{opts}-{topology}-{pathway}-{planning_horizons}.png',
             #     ** config["scenario"]
             # ),
             # expand(
-            #     config['results_dir'] + 'version-' + str(
-            #     config['version']) + '/plots/heatmap/water_tank/water_store-{opts}-{topology}-{pathway}-{planning_horizons}.png',
+            #     config["base_results_dir"]+ '/plots/heatmap/water_tank/water_store-{opts}-{topology}-{pathway}-{planning_horizons}.png',
             #     ** config["scenario"]
             # ),
             expand(
-                config['results_dir'] + 'version-' + str(
-                config['version']) + '/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
+                config["base_results_dir"]+ '/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
                 **config["scenario"]
             ),
             # expand(
-            #     config['results_dir'] + 'version-' + str(
-            #     config['version']) + '/plots/network/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf',
+            #     config["base_results_dir"]+ '/plots/network/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf',
             #     **config["scenario"]
             # ),
             # expand(
-            #     config['results_dir'] + 'version-' + str(
-            #     config['version']) + '/plots/network/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf',
+            #     config["base_results_dir"]+ '/plots/network/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf',
             #     **config["scenario"]
             # )
 else:
@@ -413,7 +414,7 @@ rule dag:
     shell:
         # switch to all
         r"""
-        snakemake --rulegraph plot_all | sed -n "/digraph/,\$p" > {output.dot}
+        snakemake --rulegraph execute_workflow | sed -n "/digraph/,\$p" > {output.dot}
         dot -Tpdf -o {output.pdf} {output.dot}
         dot -Tpng -o {output.png} {output.dot}
         """

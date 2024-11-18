@@ -51,17 +51,17 @@ elif config["foresight"] == "myopic":
 rule plot_network:
     input:
         network=base_results_dir
-        + "/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc",
+        + "/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
         tech_costs="resources/data/costs_{planning_horizons}.csv",
     output:
         only_map=base_results_dir
-        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.pdf",
+        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.pdf",
         cost_map=base_results_dir
-        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}-cost.pdf",
+        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",
         ext=base_results_dir
-        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}_ext.pdf",
+        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf",
     log:
-        "logs/plot_network/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.log",
+        "logs/plot_network/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
     script:
         "../scripts/plot_network.py"
 
@@ -69,15 +69,15 @@ rule plot_network:
 rule make_summary:
     input:
         network=base_results_dir
-        + "/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc",
-        tech_costs="resources/data/costs_{planning_horizons}.csv",
+        + "/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
+        tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
     output:
         directory(
             base_results_dir
-            + "/summary/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}"
+            + "/summary/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}"
         ),
     log:
-        "logs/make_summary/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.log",
+        "logs/make_summary_postnetworks_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
     resources:
         mem_mb=5000,
     script:
@@ -87,14 +87,14 @@ rule make_summary:
 rule plot_summary:
     input:
         base_results_dir
-        + "/summary/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}",
+        + "/summary/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}",
     output:
         energy=base_results_dir
-        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}_energy.png",
-        cost=base_results_dir
-        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}_costs.png",
+        + "/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_energy.png",
+        costs=base_results_dir
+        + "/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png",
     log:
-        "logs/plot/summary/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.log",
+        "logs/plot/{heating_demand}_summary_plot_postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
     script:
         "../scripts/plot_summary.py"
 

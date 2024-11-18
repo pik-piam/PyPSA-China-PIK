@@ -208,6 +208,7 @@ if __name__ == "__main__":
             topology="current+Neighbor",
             pathway="exponential175",
             planning_horizons="2020",
+            heating_demand="positive",
         )
     configure_logging(snakemake)
 
@@ -221,5 +222,7 @@ if __name__ == "__main__":
         "energy": os.path.join(paths[0], "energy.csv"),
         "costs": os.path.join(paths[0], "costs.csv"),
     }
-    plot_costs(data_paths, config, output_paths.costs)
-    plot_energy(data_paths, config, output_paths.energy)
+    plot_costs(data_paths["costs"], config, output_paths.costs)
+    plot_energy(data_paths["energy"], config, output_paths.energy)
+
+    logger.info(f"Successfully plotted summary for {wildcards}")
