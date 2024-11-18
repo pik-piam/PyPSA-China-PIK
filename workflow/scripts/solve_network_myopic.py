@@ -20,9 +20,10 @@ logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
+
 def prepare_network(
-        n,
-        solve_opts=None,
+    n,
+    solve_opts=None,
 ):
 
     if "clip_p_max_pu" in solve_opts:
@@ -60,21 +61,20 @@ def prepare_network(
             # if 'capital_cost' in t.df:
             #    t.df['capital_cost'] += 1e1 + 2.*(np.random.random(len(t.df)) - 0.5)
             if "marginal_cost" in t.df:
-                t.df["marginal_cost"] += 1e-2 + 2e-3 * (
-                    np.random.random(len(t.df)) - 0.5
-                )
+                t.df["marginal_cost"] += 1e-2 + 2e-3 * (np.random.random(len(t.df)) - 0.5)
 
         for t in n.iterate_components(["Line", "Link"]):
-            t.df["capital_cost"] += (
-                1e-1 + 2e-2 * (np.random.random(len(t.df)) - 0.5)
-            ) * t.df["length"]
+            t.df["capital_cost"] += (1e-1 + 2e-2 * (np.random.random(len(t.df)) - 0.5)) * t.df[
+                "length"
+            ]
 
-    if solve_opts.get('nhours'):
-        nhours = solve_opts['nhours']
+    if solve_opts.get("nhours"):
+        nhours = solve_opts["nhours"]
         n.set_snapshots(n.snapshots[:nhours])
-        n.snapshot_weightings[:] = 8760. / nhours
+        n.snapshot_weightings[:] = 8760.0 / nhours
 
     return n
+
 
 def add_battery_constraints(n):
     """
@@ -91,22 +91,14 @@ def add_battery_constraints(n):
     chargers_ext = n.links[charger_bool].query("p_nom_extendable").index
 
     eff = n.links.efficiency[dischargers_ext].values
-    lhs = (
-        n.model["Link-p_nom"].loc[chargers_ext]
-        - n.model["Link-p_nom"].loc[dischargers_ext] * eff
-    )
+    lhs = n.model["Link-p_nom"].loc[chargers_ext] - n.model["Link-p_nom"].loc[dischargers_ext] * eff
 
     n.model.add_constraints(lhs == 0, name="Link-charger_ratio")
 
+
 def add_chp_constraints(n):
-    electric = (
-        n.links.index.str.contains("CHP")
-        & n.links.index.str.contains("generator")
-    )
-    heat = (
-        n.links.index.str.contains("CHP")
-        & n.links.index.str.contains("boiler")
-    )
+    electric = n.links.index.str.contains("CHP") & n.links.index.str.contains("generator")
+    heat = n.links.index.str.contains("CHP") & n.links.index.str.contains("boiler")
 
     electric_ext = n.links[electric].query("p_nom_extendable").index
     heat_ext = n.links[heat].query("p_nom_extendable").index
@@ -128,11 +120,7 @@ def add_chp_constraints(n):
         n.model.add_constraints(lhs == 0, name="chplink-fix_p_nom_ratio")
 
         rename = {"Link-ext": "Link"}
-        lhs = (
-            p.loc[:, electric_ext]
-            + p.loc[:, heat_ext]
-            - p_nom.rename(rename).loc[electric_ext]
-        )
+        lhs = p.loc[:, electric_ext] + p.loc[:, heat_ext] - p_nom.rename(rename).loc[electric_ext]
         n.model.add_constraints(lhs <= 0, name="chplink-top_iso_fuel_line_ext")
 
     # top_iso_fuel_line for fixed
@@ -149,6 +137,7 @@ def add_chp_constraints(n):
         )
         n.model.add_constraints(lhs <= 0, name="chplink-backpressure")
 
+
 def add_transimission_constraints(n):
     """
     Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
@@ -163,30 +152,61 @@ def add_transimission_constraints(n):
     positive_ext = n.links[positive_bool].query("p_nom_extendable").index
     negative_ext = n.links[negative_bool].query("p_nom_extendable").index
 
-    lhs = (
-        n.model["Link-p_nom"].loc[positive_ext]
-        - n.model["Link-p_nom"].loc[negative_ext]
-    )
+    lhs = n.model["Link-p_nom"].loc[positive_ext] - n.model["Link-p_nom"].loc[negative_ext]
 
     n.model.add_constraints(lhs == 0, name="Link-transimission")
 
+
 def add_retrofit_constraints(n):
-    p_nom_max = pd.read_csv("data/p_nom/p_nom_max_cc.csv",index_col=0)
+    p_nom_max = pd.read_csv("data/p_nom/p_nom_max_cc.csv", index_col=0)
     planning_horizon = snakemake.wildcards.planning_horizons
     for year in range(int(planning_horizon) - 40, 2021, 5):
-        coal = n.generators[(n.generators.carrier=="coal power plant") & (n.generators.build_year==year)].query("p_nom_extendable").index
-        Bus = n.generators[(n.generators.carrier == "coal power plant") & (n.generators.build_year == year)].query(
-            "p_nom_extendable").bus.values
-        coal_retrofit = n.generators[n.generators.index.str.contains("retrofit")& (n.generators.build_year==year) & n.generators.bus.isin(Bus)].query("p_nom_extendable").index
-        coal_retrofitted = n.generators[n.generators.index.str.contains("retrofit") & (n.generators.build_year==year) & n.generators.bus.isin(Bus)].query("~p_nom_extendable").groupby("bus").sum().p_nom_opt
+        coal = (
+            n.generators[
+                (n.generators.carrier == "coal power plant") & (n.generators.build_year == year)
+            ]
+            .query("p_nom_extendable")
+            .index
+        )
+        Bus = (
+            n.generators[
+                (n.generators.carrier == "coal power plant") & (n.generators.build_year == year)
+            ]
+            .query("p_nom_extendable")
+            .bus.values
+        )
+        coal_retrofit = (
+            n.generators[
+                n.generators.index.str.contains("retrofit")
+                & (n.generators.build_year == year)
+                & n.generators.bus.isin(Bus)
+            ]
+            .query("p_nom_extendable")
+            .index
+        )
+        coal_retrofitted = (
+            n.generators[
+                n.generators.index.str.contains("retrofit")
+                & (n.generators.build_year == year)
+                & n.generators.bus.isin(Bus)
+            ]
+            .query("~p_nom_extendable")
+            .groupby("bus")
+            .sum()
+            .p_nom_opt
+        )
 
-        lhs  = (
+        lhs = (
             n.model["Generator-p_nom"].loc[coal]
             + n.model["Generator-p_nom"].loc[coal_retrofit]
-            - (p_nom_max[str(year)].loc[Bus] - coal_retrofitted.reindex(p_nom_max[str(year)].loc[Bus].index,fill_value=0)).values
+            - (
+                p_nom_max[str(year)].loc[Bus]
+                - coal_retrofitted.reindex(p_nom_max[str(year)].loc[Bus].index, fill_value=0)
+            ).values
         )
 
         n.model.add_constraints(lhs == 0, name="Generator-coal-retrofit-" + str(year))
+
 
 def extra_functionality(n, snapshots):
     """
@@ -243,23 +263,25 @@ def solve_network(n, config, solving, opts="", **kwargs):
         )
 
     if status != "ok":
-        logger.warning(
-            f"Solving status '{status}' with termination condition '{condition}'"
-        )
+        logger.warning(f"Solving status '{status}' with termination condition '{condition}'")
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
 
     return n
 
-if __name__ == '__main__':
-    if 'snakemake' not in globals():
+
+if __name__ == "__main__":
+    if "snakemake" not in globals():
         from _helpers import mock_snakemake
-        snakemake = mock_snakemake('solve_network_myopic',
-                                   opts='ll',
-                                   topology='current+Neighbor',
-                                   pathway='exponential175',
-                                   co2_reduction='0.0',
-                                   planning_horizons="2025")
+
+        snakemake = mock_snakemake(
+            "solve_network_myopic",
+            opts="ll",
+            topology="current+Neighbor",
+            pathway="exponential175",
+            co2_reduction="0.0",
+            planning_horizons="2025",
+        )
 
     configure_logging(snakemake)
 
@@ -277,10 +299,7 @@ if __name__ == '__main__':
     else:
         n = pypsa.Network(snakemake.input.network)
 
-    n = prepare_network(
-        n,
-        solve_opts
-    )
+    n = prepare_network(n, solve_opts)
 
     n = solve_network(
         n,
@@ -290,6 +309,6 @@ if __name__ == '__main__':
         log_fn=snakemake.log.solver,
     )
 
-    #n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
+    # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
     n.export_to_netcdf(snakemake.output.network_name)

@@ -17,9 +17,7 @@ def get_var(n, c, key):
     return n.model[f"{c}-{key}"]
 
 
-def define_variables(
-    n, lower, upper, name, attr="", axes=None, spec="", mask=None, **kwargs
-):
+def define_variables(n, lower, upper, name, attr="", axes=None, spec="", mask=None, **kwargs):
     """
     Define a variable for a given network.
 
@@ -27,14 +25,10 @@ def define_variables(
     and was created for compatibility reasons.
     """
     name = f"{name}-{attr}" + (f"-{spec}" if spec else "")
-    return n.model.add_variables(
-        lower, upper, coords=axes, name=name, mask=mask, **kwargs
-    )
+    return n.model.add_variables(lower, upper, coords=axes, name=name, mask=mask, **kwargs)
 
 
-def define_constraints(
-    n, lhs, sense, rhs, name, attr="", axes=None, spec="", mask=None, **kwargs
-):
+def define_constraints(n, lhs, sense, rhs, name, attr="", axes=None, spec="", mask=None, **kwargs):
     """
     Define a constraint for a given network.
 

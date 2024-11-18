@@ -81,10 +81,7 @@ def define_objective(n, sns):
 
         if n._multi_invest:
             active = pd.concat(
-                {
-                    period: n.get_active_assets(c, period)[ext_i]
-                    for period in sns.unique("period")
-                },
+                {period: n.get_active_assets(c, period)[ext_i] for period in sns.unique("period")},
                 axis=1,
             )
             cost = active @ period_weighting * cost
@@ -123,10 +120,7 @@ def define_objective(n, sns):
 
         if n._multi_invest:
             active = pd.concat(
-                {
-                    period: n.get_active_assets(c, period)[ext_i]
-                    for period in sns.unique("period")
-                },
+                {period: n.get_active_assets(c, period)[ext_i] for period in sns.unique("period")},
                 axis=1,
             )
             cost = active @ period_weighting * cost
@@ -347,15 +341,11 @@ def post_processing(n):
     # correct prices with objective weightings
     if n._multi_invest:
         period_weighting = n.investment_period_weightings.objective
-        weightings = n.snapshot_weightings.objective.mul(
-            period_weighting, level=0, axis=0
-        ).loc[sns]
+        weightings = n.snapshot_weightings.objective.mul(period_weighting, level=0, axis=0).loc[sns]
     else:
         weightings = n.snapshot_weightings.objective.loc[sns]
 
-    n.buses_t.marginal_price.loc[sns] = n.buses_t.marginal_price.loc[sns].divide(
-        weightings, axis=0
-    )
+    n.buses_t.marginal_price.loc[sns] = n.buses_t.marginal_price.loc[sns].divide(weightings, axis=0)
 
     # load
     if len(n.loads):
@@ -376,10 +366,7 @@ def post_processing(n):
     sign = lambda c: n.df(c).sign if "sign" in n.df(c) else -1  # sign for 'Link'
     n.buses_t.p = (
         pd.concat(
-            [
-                n.pnl(c)[attr].mul(sign(c)).rename(columns=n.df(c)[group])
-                for c, attr, group in ca
-            ],
+            [n.pnl(c)[attr].mul(sign(c)).rename(columns=n.df(c)[group]) for c, attr, group in ca],
             axis=1,
         )
         .groupby(level=0, axis=1)
@@ -450,9 +437,7 @@ def optimize(
     n._linearized_uc = linearized_unit_commitment
 
     n.consistency_check()
-    m = create_model(
-        n, sns, multi_investment_periods, linearized_unit_commitment, **model_kwargs
-    )
+    m = create_model(n, sns, multi_investment_periods, linearized_unit_commitment, **model_kwargs)
     if extra_functionality:
         extra_functionality(n, sns)
     kwargs.setdefault("solver_name", "glpk")

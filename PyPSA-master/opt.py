@@ -8,9 +8,7 @@ Essentially this library replaces Pyomo expressions with more strict
 objects with a pre-defined affine structure.
 """
 
-__author__ = (
-    "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
-)
+__author__ = "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
 __copyright__ = (
     "Copyright 2015-2023 PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html, "
     "MIT License"
@@ -78,16 +76,12 @@ class LExpression(object):
 
     def __add__(self, other):
         if isinstance(other, LExpression):
-            return LExpression(
-                self.variables + other.variables, self.constant + other.constant
-            )
+            return LExpression(self.variables + other.variables, self.constant + other.constant)
         else:
             try:
                 constant = float(other)
             except:
-                logger.error(
-                    "Can only add an LExpression to another LExpression or a constant!"
-                )
+                logger.error("Can only add an LExpression to another LExpression or a constant!")
                 return None
             return LExpression(self.variables[:], self.constant + constant)
 
@@ -186,9 +180,7 @@ def l_constraint(model, name, constraints, *args):
     for i in v._index_set:
         c = constraints[i]
         if isinstance(c, LConstraint):
-            variables = c.lhs.variables + [
-                (-item[0], item[1]) for item in c.rhs.variables
-            ]
+            variables = c.lhs.variables + [(-item[0], item[1]) for item in c.rhs.variables]
             sense = c.sense
             constant = c.rhs.constant - c.lhs.constant
         else:
@@ -208,9 +200,7 @@ def l_constraint(model, name, constraints, *args):
             lo, hi = constant
             constr_expr = inequality(lo, sum_expr, hi)
         else:
-            raise KeyError(
-                '`sense` must be one of "==", "<=", ">=", "><"; got: {}'.format(sense)
-            )
+            raise KeyError('`sense` must be one of "==", "<=", ">=", "><"; got: {}'.format(sense))
 
         v._data[i] = _GeneralConstraintData(constr_expr, v)
 
@@ -244,9 +234,7 @@ def l_objective(model, objective=None, sense=minimize):
 
     # initialise with a dummy
     model.objective = Objective(expr=0.0, sense=sense)
-    model.objective._expr = _build_sum_expression(
-        objective.variables, constant=objective.constant
-    )
+    model.objective._expr = _build_sum_expression(objective.variables, constant=objective.constant)
 
 
 def free_pyomo_initializers(obj):
@@ -360,9 +348,7 @@ def patch_optsolver_record_memusage_before_solving(opt, network):
         opt._apply_solver = wrapper
         return True
     except ImportError:
-        logger.debug(
-            "Unable to measure memory usage, since the resource library is missing"
-        )
+        logger.debug("Unable to measure memory usage, since the resource library is missing")
         return False
 
 

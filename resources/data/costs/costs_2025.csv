@@ -241,7 +241,7 @@ biomass EOP,2025,lifetime,25,years,"Danish Energy Agency, technology_data_for_el
 biomass HOP,2025,FOM,5.78,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","09c Straw HOP:  Fixed O&M, heat output"
 biomass HOP,2025,VOM,2.45,EUR/MWh,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",09c Straw HOP:  Variable O&M heat output
 biomass HOP,2025,efficiency,1.03,per unit,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","09c Straw HOP:  Total efficiency , net, annual average"
-biomass HOP,2025,investment,854.02,EUR/kW_th - heat output,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",09c Straw HOP:  Nominal investment 
+biomass HOP,2025,investment,854.02,EUR/kW_th - heat output,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",09c Straw HOP:  Nominal investment
 biomass HOP,2025,lifetime,25,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",09c Straw HOP:  Technical lifetime
 biomass boiler,2025,FOM,7.43,%/year,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx","204 Biomass boiler, automatic:  Fixed O&M"
 biomass boiler,2025,efficiency,0.84,per unit,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx","204 Biomass boiler, automatic:  Heat efficiency, annual average, net"
@@ -453,7 +453,7 @@ electrobiofuels,2025,efficiency-biomass,1.32,per unit,Stoichiometric calculation
 electrobiofuels,2025,efficiency-hydrogen,1.2,per unit,Stoichiometric calculation,
 electrobiofuels,2025,efficiency-tot,0.63,per unit,Stoichiometric calculation,
 electrobiofuels,2025,investment,473961.81,EUR/kW_th,combination of BtL and electrofuels,
-electrolysis,2025,FOM,2,%/year,"Danish Energy Agency, data_sheets_for_renewable_fuels.xlsx",86 AEC 100MW:  Fixed O&M 
+electrolysis,2025,FOM,2,%/year,"Danish Energy Agency, data_sheets_for_renewable_fuels.xlsx",86 AEC 100MW:  Fixed O&M
 electrolysis,2025,efficiency,0.67,per unit,"Danish Energy Agency, data_sheets_for_renewable_fuels.xlsx",86 AEC 100MW:  Hydrogen
 electrolysis,2025,efficiency-heat,0.18,per unit,"Danish Energy Agency, data_sheets_for_renewable_fuels.xlsx",86 AEC 100MW:   - hereof recoverable for district heating
 electrolysis,2025,investment,550,EUR/kW_e,"Danish Energy Agency, data_sheets_for_renewable_fuels.xlsx",86 AEC 100MW:  Specific investment
@@ -568,7 +568,7 @@ oil,2025,investment,343,EUR/kW,"Danish Energy Agency, technology_data_for_el_and
 oil,2025,lifetime,25,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",50 Diesel engine farm:  Technical lifetime
 onwind,2025,FOM,1.23,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Fixed O&M
 onwind,2025,VOM,1.42,EUR/MWh,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Variable O&M
-onwind,2025,investment,1077.17,EUR/kW,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Nominal investment 
+onwind,2025,investment,1077.17,EUR/kW,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Nominal investment
 onwind,2025,lifetime,28.5,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Technical lifetime
 ror,2025,FOM,2,%/year,DIW DataDoc http://hdl.handle.net/10419/80348, from old pypsa cost assumptions
 ror,2025,efficiency,0.9,per unit,DIW DataDoc http://hdl.handle.net/10419/80348, from old pypsa cost assumptions

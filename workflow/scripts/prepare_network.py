@@ -237,9 +237,14 @@ def prepare_network(config):
         pd.date_range("2020-03-01 00:00", "2020-12-31 23:00", freq=config["freq"])
     )
 
-    heat_demand, space_heat_demand, water_heat_demand, ashp_cop, gshp_cop, co2_totals = (
-        prepare_data(network, date_range, planning_horizons)
-    )
+    (
+        heat_demand,
+        space_heat_demand,
+        water_heat_demand,
+        ashp_cop,
+        gshp_cop,
+        co2_totals,
+    ) = prepare_data(network, date_range, planning_horizons)
 
     ds_solar = xr.open_dataset(snakemake.input.profile_solar)
     ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)

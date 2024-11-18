@@ -25,6 +25,7 @@ from _helpers import configure_logging
 
 import pandas as pd
 import matplotlib.pyplot as plt
+
 plt.style.use("ggplot")
 
 logger = logging.getLogger(__name__)
@@ -36,16 +37,9 @@ def rename_techs(label):
         "decentral ",
     ]
 
-    rename_if_contains_dict = {
-        "water tanks": "hot water storage",
-        "H2": "H2",
-        "coal cc": "CC"
-    }
+    rename_if_contains_dict = {"water tanks": "hot water storage", "H2": "H2", "coal cc": "CC"}
 
-    rename_if_contains = [
-        "gas",
-        "coal"
-    ]
+    rename_if_contains = ["gas", "coal"]
 
     rename = {
         "solar": "solar PV",
@@ -60,7 +54,7 @@ def rename_techs(label):
         "AC": "transmission lines",
         "CO2 capture": "biomass carbon capture",
         "CC": "coal carbon capture",
-        "battery": "battery"
+        "battery": "battery",
     }
 
     for ptr in prefix_to_remove:
@@ -116,20 +110,19 @@ preferred_order = pd.Index(
 )
 
 
-
 def plot_costs(infn, config, fn=None):
 
     ## For now ignore the simpl header
-    cost_df = pd.read_csv(infn,index_col=list(range(3)),header=[1])
+    cost_df = pd.read_csv(infn, index_col=list(range(3)), header=[1])
 
     df = cost_df.groupby(cost_df.index.get_level_values(2)).sum()
 
-    #convert to billions
-    df = df/1e9
+    # convert to billions
+    df = df / 1e9
 
     df = df.groupby(df.index.map(rename_techs)).sum()
 
-    to_drop = df.index[df.max(axis=1) < config['plotting']['costs_plots_threshold']]
+    to_drop = df.index[df.max(axis=1) < config["plotting"]["costs_plots_threshold"]]
 
     print("dropping")
 
@@ -139,29 +132,26 @@ def plot_costs(infn, config, fn=None):
 
     print(df.sum())
 
-    new_index = preferred_order.intersection(df.index).append(
-        df.index.difference(preferred_order)
-    )
+    new_index = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
 
     new_columns = df.sum().sort_values().index
 
     fig, ax = plt.subplots()
-    fig.set_size_inches((12,8))
+    fig.set_size_inches((12, 8))
 
-    df.loc[new_index,new_columns].T.plot(
+    df.loc[new_index, new_columns].T.plot(
         kind="bar",
         ax=ax,
         stacked=True,
-        color=[config['plotting']['tech_colors'][i] for i in new_index],
+        color=[config["plotting"]["tech_colors"][i] for i in new_index],
     )
 
-
-    handles,labels = ax.get_legend_handles_labels()
+    handles, labels = ax.get_legend_handles_labels()
 
     handles.reverse()
     labels.reverse()
 
-    ax.set_ylim([0,config['plotting']['costs_max']])
+    ax.set_ylim([0, config["plotting"]["costs_max"]])
 
     ax.set_ylabel("System Cost [EUR billion per year]")
 
@@ -169,8 +159,7 @@ def plot_costs(infn, config, fn=None):
 
     ax.grid(axis="y")
 
-    ax.legend(handles,labels,ncol=4,bbox_to_anchor=[1, 1],loc="upper left")
-
+    ax.legend(handles, labels, ncol=4, bbox_to_anchor=[1, 1], loc="upper left")
 
     fig.tight_layout()
 
@@ -180,16 +169,16 @@ def plot_costs(infn, config, fn=None):
 
 def plot_energy(infn, config, fn=None):
 
-    energy_df = pd.read_csv(infn, index_col=list(range(2)),header=[1])
+    energy_df = pd.read_csv(infn, index_col=list(range(2)), header=[1])
 
     df = energy_df.groupby(energy_df.index.get_level_values(1)).sum()
 
-    #convert MWh to TWh
-    df = df/1e6
+    # convert MWh to TWh
+    df = df / 1e6
 
     df = df.groupby(df.index.map(rename_techs)).sum()
 
-    to_drop = df.index[df.abs().max(axis=1) < config['plotting']['energy_threshold']]
+    to_drop = df.index[df.abs().max(axis=1) < config["plotting"]["energy_threshold"]]
 
     logger.info(
         f"Dropping all technology with energy consumption or production below {config['plotting']['energy_threshold']} TWh/a"
@@ -200,30 +189,28 @@ def plot_energy(infn, config, fn=None):
 
     logger.info(f"Total energy of {round(df.sum()[0])} TWh/a")
 
-    new_index = preferred_order.intersection(df.index).append(
-        df.index.difference(preferred_order)
-    )
+    new_index = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
 
     new_columns = df.columns.sort_values()
 
     fig, ax = plt.subplots()
-    fig.set_size_inches((12,8))
+    fig.set_size_inches((12, 8))
 
     logger.debug(df.loc[new_index, new_columns])
 
-    df.loc[new_index,new_columns].T.plot(
+    df.loc[new_index, new_columns].T.plot(
         kind="bar",
         ax=ax,
         stacked=True,
-        color=[config['plotting']['tech_colors'][i] for i in new_index],
+        color=[config["plotting"]["tech_colors"][i] for i in new_index],
     )
 
-    handles,labels = ax.get_legend_handles_labels()
+    handles, labels = ax.get_legend_handles_labels()
 
     handles.reverse()
     labels.reverse()
 
-    ax.set_ylim([config['plotting']['energy_min'], config['plotting']['energy_max']])
+    ax.set_ylim([config["plotting"]["energy_min"], config["plotting"]["energy_max"]])
 
     ax.set_ylabel("Energy [TWh/a]")
 
@@ -231,7 +218,7 @@ def plot_energy(infn, config, fn=None):
 
     ax.grid(axis="y")
 
-    ax.legend(handles,labels,ncol=4,bbox_to_anchor=[1, 1],loc="upper left")
+    ax.legend(handles, labels, ncol=4, bbox_to_anchor=[1, 1], loc="upper left")
 
     fig.tight_layout()
 
@@ -240,13 +227,16 @@ def plot_energy(infn, config, fn=None):
 
 
 if __name__ == "__main__":
-    if 'snakemake' not in globals():
+    if "snakemake" not in globals():
         from _helpers import mock_snakemake
-        snakemake = mock_snakemake('plot_summary',
-                                   opts='ll',
-                                   topology ='current+Neighbor',
-                                   pathway ='exponential175',
-                                   planning_horizons="2020")
+
+        snakemake = mock_snakemake(
+            "plot_summary",
+            opts="ll",
+            topology="current+Neighbor",
+            pathway="exponential175",
+            planning_horizons="2020",
+        )
     configure_logging(snakemake)
 
     config = snakemake.config
@@ -255,7 +245,7 @@ if __name__ == "__main__":
     out = snakemake.output
     paths = snakemake.input
 
-    Summary = ['energy', 'costs']
+    Summary = ["energy", "costs"]
     summary_i = 0
     for summary in Summary:
         try:

@@ -1,2 +1,2 @@
-# run git config filter.strip-notebook-output.clean 'jupyter nbconvert --ClearOutputPreprocessor.enabled=True --to=notebook --stdin --stdout --log-level=ERROR'  
-*.ipynb filter=strip-notebook-output  
+# run git config filter.strip-notebook-output.clean 'jupyter nbconvert --ClearOutputPreprocessor.enabled=True --to=notebook --stdin --stdout --log-level=ERROR'
+*.ipynb filter=strip-notebook-output
