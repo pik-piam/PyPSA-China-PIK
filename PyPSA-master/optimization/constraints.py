@@ -141,15 +141,11 @@ def define_operational_constraints_for_committables(n, sns, c):
         until_start_up = n.pnl(c).status.iloc[:start_i][::-1].reindex(columns=com_i)
         ref = range(1, len(until_start_up) + 1)
         up_time_before = until_start_up[until_start_up.cumsum().eq(ref, axis=0)].sum()
-        up_time_before_set = up_time_before.clip(
-            upper=min_up_time_set, lower=up_time_before_set
-        )
+        up_time_before_set = up_time_before.clip(upper=min_up_time_set, lower=up_time_before_set)
         # get number of snapshots for generators which are offline before the first regarded snapshot
         until_start_down = ~until_start_up.astype(bool)
         ref = range(1, len(until_start_down) + 1)
-        down_time_before = until_start_down[
-            until_start_down.cumsum().eq(ref, axis=0)
-        ].sum()
+        down_time_before = until_start_down[until_start_down.cumsum().eq(ref, axis=0)].sum()
         down_time_before_set = down_time_before.clip(
             upper=min_down_time_set, lower=down_time_before_set
         )
@@ -171,9 +167,7 @@ def define_operational_constraints_for_committables(n, sns, c):
     rhs = pd.DataFrame(0, sns, com_i)
     rhs.loc[sns[0], initially_up] = 1
     lhs = shut_down + status_diff
-    n.model.add_constraints(
-        lhs, ">=", rhs, f"{c}-com-transition-shut-down", mask=active
-    )
+    n.model.add_constraints(lhs, ">=", rhs, f"{c}-com-transition-shut-down", mask=active)
 
     # min up time
     expr = []
@@ -321,9 +315,7 @@ def define_ramp_limit_constraints(n, sns, c, attr):
         rhs_start = pd.DataFrame(0, index=sns[1:], columns=n.df(c).index)
         rhs_start.index.name = "snapshot"
         p_actual = lambda idx: reindex(p, c, idx).sel(snapshot=sns[1:])
-        p_previous = (
-            lambda idx: reindex(p, c, idx).shift(snapshot=1).sel(snapshot=sns[1:])
-        )
+        p_previous = lambda idx: reindex(p, c, idx).shift(snapshot=1).sel(snapshot=sns[1:])
 
     # ----------------------------- Fixed Generators ----------------------------- #
 
@@ -340,9 +332,7 @@ def define_ramp_limit_constraints(n, sns, c, attr):
     # fix down
     if not assets.ramp_limit_down.isnull().all():
         lhs = p_actual(fix_i) - p_previous(fix_i)
-        rhs = assets.eval("- ramp_limit_down * p_nom") + rhs_start.reindex(
-            columns=fix_i
-        )
+        rhs = assets.eval("- ramp_limit_down * p_nom") + rhs_start.reindex(columns=fix_i)
         mask = active.reindex(columns=fix_i) & assets.ramp_limit_down.notnull()
         m.add_constraints(lhs, ">=", rhs, f"{c}-fix-{attr}-ramp_limit_down", mask=mask)
 
@@ -474,19 +464,12 @@ def define_nodal_balance_constraints(n, sns, buses=None, suffix=""):
             idx = pd.MultiIndex.from_arrays(
                 [cbuses, cbuses.groupby(cbuses).cumcount()], names=["Bus", "_term"]
             )
-            ds = (
-                expr.data.squeeze()
-                .assign_coords({c: idx})
-                .unstack(c)
-                .reset_index("_term")
-            )
+            ds = expr.data.squeeze().assign_coords({c: idx}).unstack(c).reset_index("_term")
             expr = LinearExpression(ds, m)
 
             exprs.append(expr)
 
-    lhs = merge(exprs, join="outer").reindex(
-        Bus=buses, fill_value=LinearExpression.fill_value
-    )
+    lhs = merge(exprs, join="outer").reindex(Bus=buses, fill_value=LinearExpression.fill_value)
     rhs = (
         (-get_as_dense(n, "Load", "p_set", sns) * n.loads.sign)
         .groupby(n.loads.bus, axis=1)
@@ -672,11 +655,7 @@ def define_storage_unit_constraints(n, sns):
     include_previous_soc = (active.cumsum(dim) != 1).where(noncyclic_b, True)
 
     previous_soc = (
-        soc.where(active)
-        .ffill(dim)
-        .roll(snapshot=1)
-        .ffill(dim)
-        .where(include_previous_soc)
+        soc.where(active).ffill(dim).roll(snapshot=1).ffill(dim).where(include_previous_soc)
     )
 
     # We add inflow and initial soc for noncyclic assets to rhs
@@ -709,9 +688,7 @@ def define_storage_unit_constraints(n, sns):
 
         # update the previous_soc variables and right hand side
         previous_soc = previous_soc.where(~per_period, previous_soc_pp.values)
-        include_previous_soc = include_previous_soc_pp.where(
-            per_period, include_previous_soc
-        )
+        include_previous_soc = include_previous_soc_pp.where(per_period, include_previous_soc)
     lhs += [(eff_stand, previous_soc)]
     rhs = rhs.where(include_previous_soc, rhs - soc_init)
     m.add_constraints(lhs, "=", rhs, f"{c}-energy-balance", mask=active)
@@ -748,9 +725,7 @@ def define_store_constraints(n, sns):
     noncyclic_b = ~assets.e_cyclic.to_xarray()
     include_previous_e = (active.cumsum(dim) != 1).where(noncyclic_b, True)
 
-    previous_e = (
-        e.where(active).ffill(dim).roll(snapshot=1).ffill(dim).where(include_previous_e)
-    )
+    previous_e = e.where(active).ffill(dim).roll(snapshot=1).ffill(dim).where(include_previous_e)
 
     # We add inflow and initial e for for noncyclic assets to rhs
     e_init = assets.e_initial.to_xarray()
@@ -760,8 +735,7 @@ def define_store_constraints(n, sns):
         # for all assets which are cyclid/non-cyclid per period.
         periods = e.coords["period"]
         per_period = (
-            assets.e_cyclic_per_period.to_xarray()
-            | assets.e_initial_per_period.to_xarray()
+            assets.e_cyclic_per_period.to_xarray() | assets.e_initial_per_period.to_xarray()
         )
 
         # We calculate the previous e per period while cycling within a period

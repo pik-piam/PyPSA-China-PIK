@@ -4,9 +4,7 @@
 Descriptors for component attributes.
 """
 
-__author__ = (
-    "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
-)
+__author__ = "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
 __copyright__ = (
     "Copyright 2015-2023 PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html, "
     "MIT License"
@@ -64,9 +62,7 @@ elif parse(nx.__version__) >= Version("1.10"):
 
 else:
     raise ImportError(
-        "NetworkX version {} is too old. At least 1.10 is needed.".format(
-            nx.__version__
-        )
+        "NetworkX version {} is too old. At least 1.10 is needed.".format(nx.__version__)
     )
 
 if parse(nx.__version__) >= Version("2.0"):
@@ -93,9 +89,7 @@ class Dict(dict):
         setattr is called when the syntax a.b = 2 is used to set a value.
         """
         if hasattr(Dict, name):
-            raise AttributeError(
-                "'Dict' object attribute " "'{0}' is read-only".format(name)
-            )
+            raise AttributeError("'Dict' object attribute " "'{0}' is read-only".format(name))
         self[name] = value
 
     def __getattr__(self, item):
@@ -433,8 +427,4 @@ def get_bounds_pu(n, c, sns, index=None, attr=None):
 
 
 def additional_linkports(n):
-    return [
-        i[3:]
-        for i in n.links.columns
-        if i.startswith("bus") and i not in ["bus0", "bus1"]
-    ]
+    return [i[3:] for i in n.links.columns if i.startswith("bus") and i not in ["bus0", "bus1"]]

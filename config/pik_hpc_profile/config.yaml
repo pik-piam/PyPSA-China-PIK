@@ -50,26 +50,25 @@ set-resources:
   retrieve_build_up_raster:
     time: 300
     cores: 1
-    partition: io 
+    partition: io
     qos: io
   retrieve_Grass_raster:
     time: 300
     cores: 1
-    partition: io 
+    partition: io
     qos: io
   retrieve_Bare_raster:
     time: 300
     cores: 1
-    partition: io 
+    partition: io
     qos: io
   retrieve_Shrubland_raster:
     time: 300
     cores: 1
-    partition: io 
+    partition: io
     qos: io
   build_cutout:
     time: 300
     cores: 1
-    partition: io 
+    partition: io
     qos: io
-

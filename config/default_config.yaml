@@ -6,8 +6,8 @@ version: 0412.175.1H
 
 run:
   name: 'China-175'
-  
-foresight: "myopic" 
+
+foresight: "myopic"
 # foresight: "steady-state"
 results_dir: 'results/'
 summary_dir: 'summary/'
@@ -95,12 +95,12 @@ logging_level: INFO
 logging:
   level: INFO
   format: '%(levelname)s:%(name)s:%(message)s'
-  
+
 enable:
   build_cutout: false
   retrieve_cutout: false
   retrieve_raster: false
-  
+
 atlite:
   nprocesses: 4
   show_progress: true
@@ -246,4 +246,3 @@ line_cost_factor: 1
 existing_capacities:
   grouping_years: [1980,1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
   threshold_capacity: 1
-

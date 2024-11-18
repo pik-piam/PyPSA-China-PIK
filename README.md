@@ -2,7 +2,7 @@
 
 This is the PIK implementation of the PyPSA-China power model, first published by Xiaowei Zhou et al for their  "Multi-energy system horizon planning: Early decarbonisation in China avoids stranded assets" (doi.org/10.1049/ein2.12011). It is adapted from the original by the PIK RD3 team, with the aim of coupling it to the [REMIND](https://www.pik-potsdam.de/en/institute/departments/transformation-pathways/models/remind) integrated assessment model.
 
-PyPSA-China should be understood as a modelling worklow, using snakemake as workflow manager, around the [PyPSA python power system analysis](https://pypsa.org/) package. The workflow collects data, builds the power system network and plots the results. It is akin to its more mature sister project, [PyPSA-EUR](https://github.com/PyPSA/pypsa-eur). 
+PyPSA-China should be understood as a modelling worklow, using snakemake as workflow manager, around the [PyPSA python power system analysis](https://pypsa.org/) package. The workflow collects data, builds the power system network and plots the results. It is akin to its more mature sister project, [PyPSA-EUR](https://github.com/PyPSA/pypsa-eur).
 
 Unlike PyPSA-EUR, which simplifies high resolution data into a user-defined network size, the PyPSA-China network is currently fixed to one node per province. This is in large part due to data availability issues.
 
@@ -24,12 +24,12 @@ exit
 You will then need to add the contents of the public key `~/.ssh/id_rsa.cluster_internal_exchange.pub` to your authorised `~/.ssh/authorized_keys`
 
 In addition you should have your .profile setup as per https://gitlab.pik-potsdam.de/rse/rsewiki/-/wikis/Cluster-Access
-and add `module load anaconda/2024.10` (or latest) to it 
+and add `module load anaconda/2024.10` (or latest) to it
 
 ## General installation
 - Create the conda environment in workflow/envs/ (maybe snakemake does it automatically for you provided the profile has use-conda)
 - If you experience issues switch to the pinned environment #TODO: generate
-- NB! you may need to modify atlite for things to work. Instructions to follow.     
+- NB! you may need to modify atlite for things to work. Instructions to follow.
 
 
 ## Getting the data
@@ -39,8 +39,8 @@ and add `module load anaconda/2024.10` (or latest) to it
 - you can also copy the data from the tmp folder
 
 # Usage
-- If you are not running on the PIK hpc, you will need make a new profile for your machine under `config/<myprofile>/config.yaml` 
-- The workflow can be launched with `snakemake --profile config/pik_hpc_profile` 
+- If you are not running on the PIK hpc, you will need make a new profile for your machine under `config/<myprofile>/config.yaml`
+- The workflow can be launched with `snakemake --profile config/pik_hpc_profile`
 
 # Changelog
 - restructure project to match snakemake8 guidelines & update to snakemake8

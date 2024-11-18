@@ -39,7 +39,7 @@ storage:
 #                     + "/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}_ext.pdf",
 #                     **config["scenario"],
 #                     ),
-#     default_target: True 
+#     default_target: True
 
 
 
@@ -155,7 +155,7 @@ rule build_population_gridcell_map:
     input:
         cutout="resources/cutouts/China-2020.nc",
         province_populations="resources/derived_data/population/population.h5",
-        # 
+        #
         population_density_grid="resources/data/population/CFSR_grid.nc",
         # admin 1 level = first administrative level within country
         province_shape="resources/data/province_shapes/CHN_adm1.shp"
@@ -334,7 +334,7 @@ elif config["foresight"] == "myopic":
             elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
             heat_demand_profile= "resources/derived_data/heating/heat_demand_profile_{heating_demand}_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
-            tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",   
+            tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
             biomass_potental = "resources/derived_data/p_nom/biomass_potential.h5",
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                for tech in config['renewable']}

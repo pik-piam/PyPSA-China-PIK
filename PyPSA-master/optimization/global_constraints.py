@@ -32,9 +32,7 @@ def define_tech_capacity_expansion_limit(n, sns):
     None.
     """
     m = n.model
-    glcs = n.global_constraints.loc[
-        lambda df: df.type == "tech_capacity_expansion_limit"
-    ]
+    glcs = n.global_constraints.loc[lambda df: df.type == "tech_capacity_expansion_limit"]
 
     for (carrier, sense, period), glcs_group in glcs.groupby(
         ["carrier_attribute", "sense", "investment_period"]
@@ -52,11 +50,7 @@ def define_tech_capacity_expansion_limit(n, sns):
             if c not in n.one_port_components or "carrier" not in df:
                 continue
 
-            ext_i = (
-                n.get_extendable_i(c)
-                .intersection(df.index[df.carrier == carrier])
-                .rename(dim)
-            )
+            ext_i = n.get_extendable_i(c).intersection(df.index[df.carrier == carrier]).rename(dim)
             if period is not None:
                 ext_i = ext_i[n.get_active_assets(c, period)[ext_i]]
 
@@ -142,11 +136,7 @@ def define_nominal_constraints_per_bus_carrier(n, sns):
             if c not in n.one_port_components or "carrier" not in df:
                 continue
 
-            ext_i = (
-                n.get_extendable_i(c)
-                .intersection(df.index[df.carrier == carrier])
-                .rename(dim)
-            )
+            ext_i = n.get_extendable_i(c).intersection(df.index[df.carrier == carrier]).rename(dim)
             if period is not None:
                 ext_i = ext_i[n.get_active_assets(c, period)[ext_i]]
 
@@ -183,9 +173,7 @@ def define_growth_limit(n, sns):
     periods = sns.unique("period")
     carrier_i = n.carriers.query("max_growth != inf").index.rename("Carrier")
     max_absolute_growth = DataArray(n.carriers.loc[carrier_i, "max_growth"])
-    max_relative_growth = DataArray(
-        n.carriers.loc[carrier_i, "max_relative_growth"]
-    ).clip(min=0)
+    max_relative_growth = DataArray(n.carriers.loc[carrier_i, "max_relative_growth"]).clip(min=0)
 
     if carrier_i.empty:
         return
@@ -200,9 +188,7 @@ def define_growth_limit(n, sns):
             continue
 
         limited_i = (
-            df.index[df.carrier.isin(carrier_i)]
-            .intersection(n.get_extendable_i(c))
-            .rename(dim)
+            df.index[df.carrier.isin(carrier_i)].intersection(n.get_extendable_i(c)).rename(dim)
         )
         if limited_i.empty:
             continue
@@ -336,16 +322,12 @@ def define_transmission_volume_expansion_limit(n, sns):
             if ext_i.empty:
                 continue
 
-            ext_i = ext_i.intersection(n.df(c).query("carrier in @car").index).rename(
-                ext_i.name
-            )
+            ext_i = ext_i.intersection(n.df(c).query("carrier in @car").index).rename(ext_i.name)
 
             if not isnan(period):
                 ext_i = ext_i[n.get_active_assets(c, period)].rename(ext_i.name)
             elif isinstance(sns, pd.MultiIndex):
-                ext_i = ext_i[n.get_active_assets(c, sns.unique("period"))].rename(
-                    ext_i.name
-                )
+                ext_i = ext_i[n.get_active_assets(c, sns.unique("period"))].rename(ext_i.name)
 
             length = n.df(c).length.reindex(ext_i)
             vars = m[f"{c}-{attr}"].loc[ext_i]
@@ -391,16 +373,12 @@ def define_transmission_expansion_cost_limit(n, sns):
             if ext_i.empty:
                 continue
 
-            ext_i = ext_i.intersection(n.df(c).query("carrier in @car").index).rename(
-                ext_i.name
-            )
+            ext_i = ext_i.intersection(n.df(c).query("carrier in @car").index).rename(ext_i.name)
 
             if not isnan(period):
                 ext_i = ext_i[n.get_active_assets(c, period)].rename(ext_i.name)
             elif isinstance(sns, pd.MultiIndex):
-                ext_i = ext_i[n.get_active_assets(c, sns.unique("period"))].rename(
-                    ext_i.name
-                )
+                ext_i = ext_i[n.get_active_assets(c, sns.unique("period"))].rename(ext_i.name)
 
             cost = n.df(c).capital_cost.reindex(ext_i)
             vars = m[f"{c}-{attr}"].loc[ext_i]
