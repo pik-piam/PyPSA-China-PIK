@@ -304,9 +304,10 @@ if __name__ == "__main__":
             topology="current+Neighbor",
             pathway="exponential175",
             planning_horizons="2020",
+            heating_demand="positive",
         )
 
-    logger = configure_logging(snakemake, logger=logger)
+    configure_logging(snakemake, logger=logger)
 
     set_plot_style()
 
