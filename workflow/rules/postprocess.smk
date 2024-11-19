@@ -38,30 +38,31 @@ elif config["foresight"] == "myopic":
             #     ** config["scenario"]
             # ),
             # expand(
-            #     base_results_dir + '/plots/network/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf',
+            #     base_results_dir + '/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf',
             #     **config["scenario"]
             # ),
-            # expand(
-            #     base_results_dir + '/plots/network/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf',
-            #     **config["scenario"]
-            # )
+            expand(
+                base_results_dir
+                + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf",
+                **config["scenario"],
+            ),
 
 
 # TODO fix paths
 rule plot_network:
     input:
         network=base_results_dir
-        + "/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
-        tech_costs="resources/data/costs_{planning_horizons}.csv",
+        + "/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
+        tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
     output:
         only_map=base_results_dir
-        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.pdf",
+        + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.pdf",
         cost_map=base_results_dir
-        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",
+        + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",
         ext=base_results_dir
-        + "/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf",
+        + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf",
     log:
-        "logs/plot_network/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
+        "logs/plot_network/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
     script:
         "../scripts/plot_network.py"
 
