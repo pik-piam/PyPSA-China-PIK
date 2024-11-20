@@ -4,9 +4,7 @@
 Functions for importing and exporting data.
 """
 
-__author__ = (
-    "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
-)
+__author__ = "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
 __copyright__ = (
     "Copyright 2015-2023 PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html, "
     "MIT License"
@@ -106,11 +104,7 @@ class ImporterCSV(Importer):
 
     def get_static(self, list_name):
         fn = os.path.join(self.csv_folder_name, list_name + ".csv")
-        return (
-            pd.read_csv(fn, index_col=0, encoding=self.encoding)
-            if os.path.isfile(fn)
-            else None
-        )
+        return pd.read_csv(fn, index_col=0, encoding=self.encoding) if os.path.isfile(fn) else None
 
     def get_series(self, list_name):
         for fn in os.listdir(self.csv_folder_name):
@@ -132,9 +126,7 @@ class ExporterCSV(Exporter):
 
         # make sure directory exists
         if not os.path.isdir(csv_folder_name):
-            logger.warning(
-                "Directory {} does not exist, creating it".format(csv_folder_name)
-            )
+            logger.warning("Directory {} does not exist, creating it".format(csv_folder_name))
             os.mkdir(csv_folder_name)
 
     def save_attributes(self, attrs):
@@ -191,9 +183,7 @@ class ImporterHDF5(Importer):
         return self.ds["/snapshots"] if "/snapshots" in self.ds else None
 
     def get_investment_periods(self):
-        return (
-            self.ds["/investment_periods"] if "/investment_periods" in self.ds else None
-        )
+        return self.ds["/investment_periods"] if "/investment_periods" in self.ds else None
 
     def get_static(self, list_name):
         if "/" + list_name not in self.ds:
@@ -320,9 +310,7 @@ if has_xarray:
             self.ds = xr.Dataset()
 
         def save_attributes(self, attrs):
-            self.ds.attrs.update(
-                ("network_" + attr, val) for attr, val in attrs.items()
-            )
+            self.ds.attrs.update(("network_" + attr, val) for attr, val in attrs.items())
 
         def save_meta(self, meta):
             self.ds.attrs["meta"] = json.dumps(meta)
@@ -386,10 +374,7 @@ def _export_to_exporter(network, exporter, basename, export_standard_types=False
     attrs = dict(
         (attr, getattr(network, attr))
         for attr in dir(network)
-        if (
-            not attr.startswith("__")
-            and isinstance(getattr(network, attr), allowed_types)
-        )
+        if (not attr.startswith("__") and isinstance(getattr(network, attr), allowed_types))
     )
     exporter.save_attributes(attrs)
 
@@ -467,8 +452,7 @@ def _export_to_exporter(network, exporter, basename, export_standard_types=False
         exported_components.append(list_name)
 
     logger.info(
-        f"Exported network {str(basename or '<unnamed>')} "
-        f"has {', '.join(exported_components)}"
+        f"Exported network {str(basename or '<unnamed>')} " f"has {', '.join(exported_components)}"
     )
 
 
@@ -498,9 +482,7 @@ def import_from_csv_folder(network, csv_folder_name, encoding=None, skip_time=Fa
         _import_from_importer(network, importer, basename=basename, skip_time=skip_time)
 
 
-def export_to_csv_folder(
-    network, csv_folder_name, encoding=None, export_standard_types=False
-):
+def export_to_csv_folder(network, csv_folder_name, encoding=None, export_standard_types=False):
     """
     Export network and components to a folder of CSVs.
 
@@ -694,9 +676,7 @@ def _import_from_importer(network, importer, basename, skip_time=False):
 
     ##https://docs.python.org/3/tutorial/datastructures.html#comparing-sequences-and-other-types
     if pypsa_version is None or pypsa_version < current_pypsa_version:
-        pypsa_version_str = (
-            ".".join(map(str, pypsa_version)) if pypsa_version is not None else "?"
-        )
+        pypsa_version_str = ".".join(map(str, pypsa_version)) if pypsa_version is not None else "?"
         current_pypsa_version_str = ".".join(map(str, current_pypsa_version))
         msg = (
             f"Importing network from PyPSA version v{pypsa_version_str} while "
@@ -717,18 +697,14 @@ def _import_from_importer(network, importer, basename, skip_time=False):
 
     if df is not None:
         # check if imported snapshots have MultiIndex
-        snapshot_levels = set(["period", "timestep", "snapshot"]).intersection(
-            df.columns
-        )
+        snapshot_levels = set(["period", "timestep", "snapshot"]).intersection(df.columns)
         if snapshot_levels:
             df.set_index(sorted(snapshot_levels), inplace=True)
         network.set_snapshots(df.index)
 
         cols = ["objective", "generators", "stores"]
         if not df.columns.intersection(cols).empty:
-            network.snapshot_weightings = df.reindex(
-                index=network.snapshots, columns=cols
-            )
+            network.snapshot_weightings = df.reindex(index=network.snapshots, columns=cols)
         elif "weightings" in df.columns:
             network.snapshot_weightings = df["weightings"].reindex(network.snapshots)
 
@@ -740,9 +716,7 @@ def _import_from_importer(network, importer, basename, skip_time=False):
     if periods is not None:
         network._investment_periods = periods.index
 
-        network._investment_period_weightings = periods.reindex(
-            network.investment_periods
-        )
+        network._investment_period_weightings = periods.reindex(network.investment_periods)
 
     imported_components = []
 
@@ -857,9 +831,7 @@ def import_components_from_dataframe(network, dataframe, cls_name):
 
     for k in non_static_attrs_in_df:
         # If reading in outputs, fill the outputs
-        pnl[k] = pnl[k].reindex(
-            columns=new_df.index, fill_value=non_static_attrs.at[k, "default"]
-        )
+        pnl[k] = pnl[k].reindex(columns=new_df.index, fill_value=non_static_attrs.at[k, "default"])
         pnl[k].loc[:, dataframe.index] = dataframe.loc[:, k].values
 
     setattr(network, network.components[cls_name]["list_name"] + "_t", pnl)
@@ -926,15 +898,11 @@ def import_series_from_dataframe(network, dataframe, cls_name, attr):
         dataframe = dataframe.reindex(network.snapshots, fill_value=default)
 
     if not attr_series.static:
-        pnl[attr] = pnl[attr].reindex(
-            columns=df.index.union(columns), fill_value=default
-        )
+        pnl[attr] = pnl[attr].reindex(columns=df.index.union(columns), fill_value=default)
     else:
         pnl[attr] = pnl[attr].reindex(columns=(pnl[attr].columns.union(columns)))
 
-    pnl[attr].loc[network.snapshots, columns] = dataframe.loc[
-        network.snapshots, columns
-    ]
+    pnl[attr].loc[network.snapshots, columns] = dataframe.loc[network.snapshots, columns]
 
 
 def import_from_pypower_ppc(network, ppc, overwrite_zero_s_nom=None):
@@ -958,9 +926,7 @@ def import_from_pypower_ppc(network, ppc, overwrite_zero_s_nom=None):
     """
     version = ppc["version"]
     if int(version) != 2:
-        logger.warning(
-            "Warning, importing from PYPOWER may not work if PPC version is not 2!"
-        )
+        logger.warning("Warning, importing from PYPOWER may not work if PPC version is not 2!")
 
     logger.warning(
         "Warning: Note that when importing from PYPOWER, some PYPOWER features not supported: areas, gencosts, component status"
@@ -1006,27 +972,21 @@ def import_from_pypower_ppc(network, ppc, overwrite_zero_s_nom=None):
     pdf["buses"]["control"] = pdf["buses"].pop("type").map(lambda i: controls[int(i)])
 
     # add loads for any buses with Pd or Qd
-    pdf["loads"] = pdf["buses"].loc[
-        pdf["buses"][["Pd", "Qd"]].any(axis=1), ["Pd", "Qd"]
-    ]
+    pdf["loads"] = pdf["buses"].loc[pdf["buses"][["Pd", "Qd"]].any(axis=1), ["Pd", "Qd"]]
     pdf["loads"]["bus"] = pdf["loads"].index
     pdf["loads"].rename(columns={"Qd": "q_set", "Pd": "p_set"}, inplace=True)
     pdf["loads"].index = ["L" + str(i) for i in range(len(pdf["loads"]))]
 
     # add shunt impedances for any buses with Gs or Bs
 
-    shunt = pdf["buses"].loc[
-        pdf["buses"][["Gs", "Bs"]].any(axis=1), ["v_nom", "Gs", "Bs"]
-    ]
+    shunt = pdf["buses"].loc[pdf["buses"][["Gs", "Bs"]].any(axis=1), ["v_nom", "Gs", "Bs"]]
 
     # base power for shunt is 1 MVA, so no need to rebase here
     shunt["g"] = shunt["Gs"] / shunt["v_nom"] ** 2
     shunt["b"] = shunt["Bs"] / shunt["v_nom"] ** 2
     pdf["shunt_impedances"] = shunt.reindex(columns=["g", "b"])
     pdf["shunt_impedances"]["bus"] = pdf["shunt_impedances"].index
-    pdf["shunt_impedances"].index = [
-        "S" + str(i) for i in range(len(pdf["shunt_impedances"]))
-    ]
+    pdf["shunt_impedances"].index = ["S" + str(i) for i in range(len(pdf["shunt_impedances"]))]
 
     # add gens
 
@@ -1055,9 +1015,7 @@ def import_from_pypower_ppc(network, ppc, overwrite_zero_s_nom=None):
         ", "
     )
 
-    pdf["branches"] = pd.DataFrame(
-        columns=columns, data=ppc["branch"][:, : len(columns)]
-    )
+    pdf["branches"] = pd.DataFrame(columns=columns, data=ppc["branch"][:, : len(columns)])
 
     pdf["branches"]["original_index"] = pdf["branches"].index
 
@@ -1090,20 +1048,12 @@ def import_from_pypower_ppc(network, ppc, overwrite_zero_s_nom=None):
         | (pdf["branches"].phase_shift != 0)
     )
     pdf["transformers"] = pd.DataFrame(pdf["branches"][transformers])
-    pdf["lines"] = pdf["branches"][~transformers].drop(
-        ["tap_ratio", "phase_shift"], axis=1
-    )
+    pdf["lines"] = pdf["branches"][~transformers].drop(["tap_ratio", "phase_shift"], axis=1)
 
     # convert transformers from base baseMVA to base s_nom
-    pdf["transformers"]["r"] = (
-        pdf["transformers"]["r"] * pdf["transformers"]["s_nom"] / baseMVA
-    )
-    pdf["transformers"]["x"] = (
-        pdf["transformers"]["x"] * pdf["transformers"]["s_nom"] / baseMVA
-    )
-    pdf["transformers"]["b"] = (
-        pdf["transformers"]["b"] * baseMVA / pdf["transformers"]["s_nom"]
-    )
+    pdf["transformers"]["r"] = pdf["transformers"]["r"] * pdf["transformers"]["s_nom"] / baseMVA
+    pdf["transformers"]["x"] = pdf["transformers"]["x"] * pdf["transformers"]["s_nom"] / baseMVA
+    pdf["transformers"]["b"] = pdf["transformers"]["b"] * baseMVA / pdf["transformers"]["s_nom"]
 
     # correct per unit impedances
     pdf["lines"]["r"] = v_nom**2 * pdf["lines"]["r"] / baseMVA
@@ -1114,9 +1064,7 @@ def import_from_pypower_ppc(network, ppc, overwrite_zero_s_nom=None):
         logger.warning(
             "Warning, some transformers have a tap ratio of 0., setting the tap ratio of these to 1."
         )
-        pdf["transformers"].loc[
-            pdf["transformers"]["tap_ratio"] == 0.0, "tap_ratio"
-        ] = 1.0
+        pdf["transformers"].loc[pdf["transformers"]["tap_ratio"] == 0.0, "tap_ratio"] = 1.0
 
     # name them nicely
     pdf["transformers"].index = ["T" + str(i) for i in range(len(pdf["transformers"]))]
@@ -1149,9 +1097,7 @@ def import_from_pypower_ppc(network, ppc, overwrite_zero_s_nom=None):
     )
 
 
-def import_from_pandapower_net(
-    network, net, extra_line_data=False, use_pandapower_index=False
-):
+def import_from_pandapower_net(network, net, extra_line_data=False, use_pandapower_index=False):
     """
     Import PyPSA network from pandapower net.
 
@@ -1195,9 +1141,7 @@ def import_from_pandapower_net(
         index=net.bus.name,
     )
 
-    d["Bus"].loc[
-        net.bus.name.loc[net.gen.bus].values, "v_mag_pu_set"
-    ] = net.gen.vm_pu.values
+    d["Bus"].loc[net.bus.name.loc[net.gen.bus].values, "v_mag_pu_set"] = net.gen.vm_pu.values
 
     d["Bus"].loc[
         net.bus.name.loc[net.ext_grid.bus].values, "v_mag_pu_set"
@@ -1308,12 +1252,7 @@ def import_from_pandapower_net(
         x = np.sqrt(z**2 - r**2)
 
         y = net.trafo.i0_percent.values / 100.0
-        g = (
-            net.trafo.pfe_kw.values
-            / net.trafo.sn_mva.values
-            / 1000
-            / net.trafo.sn_mva.values
-        )
+        g = net.trafo.pfe_kw.values / net.trafo.sn_mva.values / 1000 / net.trafo.sn_mva.values
         b = np.sqrt(y**2 - g**2)
 
         d["Transformer"] = pd.DataFrame(

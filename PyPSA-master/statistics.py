@@ -5,9 +5,7 @@ Statistics Accessor.
 """
 
 
-__author__ = (
-    "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
-)
+__author__ = "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
 __copyright__ = (
     "Copyright 2015-2023 PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html, "
     "MIT License"
@@ -206,9 +204,7 @@ class StatisticsAccessor:
         def func(n, c):
             return n.df(c).eval(f"{nominal_attrs[c]}_opt * capital_cost")
 
-        df = aggregate_components(
-            n, func, comps=comps, agg=aggregate_groups, groupby=groupby
-        )
+        df = aggregate_components(n, func, comps=comps, agg=aggregate_groups, groupby=groupby)
         df.attrs["unit"] = "€"
         return df.rename("Capital Expenditure")
 
@@ -225,9 +221,7 @@ class StatisticsAccessor:
         def func(n, c):
             return n.df(c)[f"{nominal_attrs[c]}_opt"]
 
-        df = aggregate_components(
-            n, func, comps=comps, agg=aggregate_groups, groupby=groupby
-        )
+        df = aggregate_components(n, func, comps=comps, agg=aggregate_groups, groupby=groupby)
         df.attrs["unit"] = "MW"
         return df.rename("Optimal Capacity")
 
@@ -244,9 +238,7 @@ class StatisticsAccessor:
         def func(n, c):
             return n.df(c)[f"{nominal_attrs[c]}"]
 
-        df = aggregate_components(
-            n, func, comps=comps, agg=aggregate_groups, groupby=groupby
-        )
+        df = aggregate_components(n, func, comps=comps, agg=aggregate_groups, groupby=groupby)
         df.attrs["unit"] = "MW"
         return df.rename("Installed Capacity")
 
@@ -259,9 +251,7 @@ class StatisticsAccessor:
         """
         df = self.optimal_capacity(
             comps=comps, aggregate_groups=aggregate_groups, groupby=groupby
-        ) - self.installed_capacity(
-            comps=comps, aggregate_groups=aggregate_groups, groupby=groupby
-        )
+        ) - self.installed_capacity(comps=comps, aggregate_groups=aggregate_groups, groupby=groupby)
         df.attrs["unit"] = "MW"
         return df.rename("Expanded Capacity")
 
@@ -290,9 +280,7 @@ class StatisticsAccessor:
             weights = get_weightings(n, c)
             return aggregate_timeseries(opex, weights, agg=aggregate_time)
 
-        df = aggregate_components(
-            n, func, comps=comps, agg=aggregate_groups, groupby=groupby
-        )
+        df = aggregate_components(n, func, comps=comps, agg=aggregate_groups, groupby=groupby)
         df.attrs["unit"] = "€"
         return df.rename("Operational Expenditure")
 
@@ -321,9 +309,7 @@ class StatisticsAccessor:
             weights = get_weightings(n, c)
             return aggregate_timeseries(p, weights, agg=aggregate_time)
 
-        df = aggregate_components(
-            n, func, comps=comps, agg=aggregate_groups, groupby=groupby
-        )
+        df = aggregate_components(n, func, comps=comps, agg=aggregate_groups, groupby=groupby)
         df.attrs["unit"] = "MWh"
         return df.rename("Supply")
 
@@ -352,9 +338,7 @@ class StatisticsAccessor:
             weights = get_weightings(n, c)
             return aggregate_timeseries(p, weights, agg=aggregate_time)
 
-        df = aggregate_components(
-            n, func, comps=comps, agg=aggregate_groups, groupby=groupby
-        )
+        df = aggregate_components(n, func, comps=comps, agg=aggregate_groups, groupby=groupby)
         df.attrs["unit"] = "MWh"
         return df.rename("Withdrawal")
 
@@ -383,9 +367,7 @@ class StatisticsAccessor:
             weights = get_weightings(n, c)
             return aggregate_timeseries(p, weights, agg=aggregate_time)
 
-        df = aggregate_components(
-            n, func, comps=comps, agg=aggregate_groups, groupby=groupby
-        )
+        df = aggregate_components(n, func, comps=comps, agg=aggregate_groups, groupby=groupby)
         df.attrs["unit"] = "MWh"
         return df.rename("Curtailment")
 
@@ -410,9 +392,7 @@ class StatisticsAccessor:
             weights = get_weightings(n, c)
             return aggregate_timeseries(p, weights, agg=aggregate_time)
 
-        df = aggregate_components(
-            n, func, comps=comps, agg=aggregate_groups, groupby=groupby
-        )
+        df = aggregate_components(n, func, comps=comps, agg=aggregate_groups, groupby=groupby)
         capacity = self.optimal_capacity(
             comps=comps, aggregate_groups=aggregate_groups, groupby=groupby
         )
@@ -450,9 +430,7 @@ class StatisticsAccessor:
             weights = get_weightings(n, c)
             return aggregate_timeseries(revenue, weights, agg=aggregate_time)
 
-        df = aggregate_components(
-            n, func, comps=comps, agg=aggregate_groups, groupby=groupby
-        )
+        df = aggregate_components(n, func, comps=comps, agg=aggregate_groups, groupby=groupby)
         df.attrs["unit"] = "€"
         return df.rename("Revenue")
 

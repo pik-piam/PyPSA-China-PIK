@@ -7,9 +7,7 @@ Power system components.
 
 from weakref import ref
 
-__author__ = (
-    "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
-)
+__author__ = "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
 __copyright__ = (
     "Copyright 2015-2023 PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html, "
     "MIT License"
@@ -295,9 +293,7 @@ class Network(Basic):
             attrs["static"] = attrs["type"] != "series"
             attrs["varying"] = attrs["type"].isin({"series", "static or series"})
             attrs["typ"] = (
-                attrs["type"]
-                .map({"boolean": bool, "int": int, "string": str})
-                .fillna(float)
+                attrs["type"].map({"boolean": bool, "int": int, "string": str}).fillna(float)
             )
             attrs["dtype"] = (
                 attrs["type"]
@@ -396,13 +392,9 @@ class Network(Basic):
         for std_type in self.standard_type_components:
             list_name = self.components[std_type]["list_name"]
 
-            file_name = os.path.join(
-                dir_name, standard_types_dir_name, list_name + ".csv"
-            )
+            file_name = os.path.join(dir_name, standard_types_dir_name, list_name + ".csv")
 
-            self.components[std_type]["standard_types"] = pd.read_csv(
-                file_name, index_col=0
-            )
+            self.components[std_type]["standard_types"] = pd.read_csv(file_name, index_col=0)
 
             self.import_components_from_dataframe(
                 self.components[std_type]["standard_types"], std_type
@@ -475,9 +467,7 @@ class Network(Basic):
         else:
             self._snapshots = pd.Index(value, name="snapshot")
 
-        self.snapshot_weightings = self.snapshot_weightings.reindex(
-            self._snapshots, fill_value=1.0
-        )
+        self.snapshot_weightings = self.snapshot_weightings.reindex(self._snapshots, fill_value=1.0)
 
         for component in self.all_components:
             pnl = self.pnl(component)
@@ -514,9 +504,7 @@ class Network(Basic):
 
     @snapshot_weightings.setter
     def snapshot_weightings(self, df):
-        assert df.index.equals(
-            self.snapshots
-        ), "Weightings not defined for all snapshots."
+        assert df.index.equals(self.snapshots), "Weightings not defined for all snapshots."
         if isinstance(df, pd.Series):
             logger.info("Applying weightings to all columns of `snapshot_weightings`")
             df = pd.DataFrame({c: df for c in self._snapshot_weightings.columns})
@@ -543,11 +531,7 @@ class Network(Basic):
         None.
         """
         periods = pd.Index(periods)
-        if not (
-            periods.is_integer()
-            and periods.is_unique
-            and periods.is_monotonic_increasing
-        ):
+        if not (periods.is_integer() and periods.is_unique and periods.is_monotonic_increasing):
             raise ValueError(
                 "Investment periods are not strictly increasing integers, "
                 "which is required for multi-period investment optimisation."
@@ -559,8 +543,7 @@ class Network(Basic):
                 )
             if len(periods) < len(self.snapshots.levels[0]):
                 raise NotImplementedError(
-                    "Investment periods do not equal first level "
-                    "values of snapshots."
+                    "Investment periods do not equal first level " "values of snapshots."
                 )
         else:
             # Convenience case:
@@ -577,9 +560,7 @@ class Network(Basic):
                     pnl[k] = pd.concat({p: pnl[k] for p in periods}, names=names)
                     pnl[k].index.name = "snapshot"
 
-            self._snapshots = pd.MultiIndex.from_product(
-                [periods, self.snapshots], names=names
-            )
+            self._snapshots = pd.MultiIndex.from_product([periods, self.snapshots], names=names)
             self._snapshots.name = "snapshot"
             self._snapshot_weightings = pd.concat(
                 {p: self.snapshot_weightings for p in periods}, names=names
@@ -618,12 +599,8 @@ class Network(Basic):
             self.investment_periods
         ), "Weightings not defined for all investment periods."
         if isinstance(df, pd.Series):
-            logger.info(
-                "Applying weightings to all columns of `investment_period_weightings`"
-            )
-            df = pd.DataFrame(
-                {c: df for c in self._investment_period_weightings.columns}
-            )
+            logger.info("Applying weightings to all columns of `investment_period_weightings`")
+            df = pd.DataFrame({c: df for c in self._investment_period_weightings.columns})
         self._investment_period_weightings = df
 
     def lopf(
@@ -791,9 +768,7 @@ class Network(Basic):
         >>> network.add("Bus", "my_bus_1", v_nom=380)
         >>> network.add("Line", "my_line_name", bus0="my_bus_0", bus1="my_bus_1", length=34, r=2, x=4)
         """
-        assert class_name in self.components, "Component class {} not found".format(
-            class_name
-        )
+        assert class_name in self.components, "Component class {} not found".format(class_name)
 
         cls_df = self.df(class_name)
         cls_pnl = self.pnl(class_name)
@@ -810,9 +785,7 @@ class Network(Basic):
         static_attrs = attrs[attrs.static].drop("name")
 
         # This guarantees that the correct attribute type is maintained
-        obj_df = pd.DataFrame(
-            data=[static_attrs.default], index=[name], columns=static_attrs.index
-        )
+        obj_df = pd.DataFrame(data=[static_attrs.default], index=[name], columns=static_attrs.index)
         new_df = pd.concat([cls_df, obj_df], sort=False)
 
         new_df.index.name = class_name
@@ -820,9 +793,7 @@ class Network(Basic):
 
         for k, v in kwargs.items():
             if k not in attrs.index:
-                logger.warning(
-                    f"{class_name} has no attribute {k}, " "ignoring this passed value."
-                )
+                logger.warning(f"{class_name} has no attribute {k}, " "ignoring this passed value.")
                 continue
             typ = attrs.at[k, "typ"]
             if not attrs.at[k, "varying"]:
@@ -965,9 +936,7 @@ class Network(Basic):
             else:
                 static[k] = v
 
-        self.import_components_from_dataframe(
-            pd.DataFrame(static, index=new_names), class_name
-        )
+        self.import_components_from_dataframe(pd.DataFrame(static, index=new_names), class_name)
 
         for k, v in series.items():
             self.import_series_from_dataframe(v, class_name, k)
@@ -1068,13 +1037,8 @@ class Network(Basic):
         for component in self.iterate_components(["Bus", "Carrier"] + other_comps):
             df = component.df
             # drop the standard types to avoid them being read in twice
-            if (
-                not ignore_standard_types
-                and component.name in self.standard_type_components
-            ):
-                df = component.df.drop(
-                    network.components[component.name]["standard_types"].index
-                )
+            if not ignore_standard_types and component.name in self.standard_type_components:
+                df = component.df.drop(network.components[component.name]["standard_types"].index)
 
             import_components_from_dataframe(network, df, component.name)
 
@@ -1091,9 +1055,9 @@ class Network(Basic):
                 for k in component.pnl.keys():
                     pnl[k] = component.pnl[k].loc[snapshots].copy()
             network.snapshot_weightings = self.snapshot_weightings.loc[snapshots].copy()
-            network.investment_period_weightings = (
-                self.investment_period_weightings.loc[investment_periods].copy()
-            )
+            network.investment_period_weightings = self.investment_period_weightings.loc[
+                investment_periods
+            ].copy()
 
         # catch all remaining attributes of network
         for attr in ["name", "srid"]:
@@ -1161,9 +1125,7 @@ class Network(Basic):
             n.import_components_from_dataframe(pd.DataFrame(df), c)
 
         for c in self.branch_components:
-            df = self.df(c).loc[
-                lambda df: df.bus0.isin(buses_i) & df.bus1.isin(buses_i)
-            ]
+            df = self.df(c).loc[lambda df: df.bus0.isin(buses_i) & df.bus1.isin(buses_i)]
             n.import_components_from_dataframe(pd.DataFrame(df), c)
 
         n.set_snapshots(self.snapshots[time_i])
@@ -1210,9 +1172,7 @@ class Network(Basic):
             sort=True,
         )
 
-    def determine_network_topology(
-        self, investment_period=None, skip_isolated_buses=False
-    ):
+    def determine_network_topology(self, investment_period=None, skip_isolated_buses=False):
         """
         Build sub_networks from topology.
 
@@ -1226,9 +1186,7 @@ class Network(Basic):
             branch_components=self.passive_branch_components,
             investment_period=investment_period,
         )
-        n_components, labels = csgraph.connected_components(
-            adjacency_matrix, directed=False
-        )
+        n_components, labels = csgraph.connected_components(adjacency_matrix, directed=False)
 
         # remove all old sub_networks
         for sub_network in self.sub_networks.index:
@@ -1262,9 +1220,7 @@ class Network(Basic):
             self.add("SubNetwork", i, carrier=carrier)
 
         # add objects
-        self.sub_networks["obj"] = [
-            SubNetwork(self, name) for name in self.sub_networks.index
-        ]
+        self.sub_networks["obj"] = [SubNetwork(self, name) for name in self.sub_networks.index]
 
         self.buses.loc[:, "sub_network"] = labels.astype(str)
 
@@ -1486,9 +1442,7 @@ class Network(Basic):
 
             if c.name in {"Generator"}:
                 bad_uc_gens = c.df.index[
-                    c.df.committable
-                    & (c.df.up_time_before > 0)
-                    & (c.df.down_time_before > 0)
+                    c.df.committable & (c.df.up_time_before > 0) & (c.df.down_time_before > 0)
                 ]
                 if not bad_uc_gens.empty:
                     logger.warning(
@@ -1539,9 +1493,7 @@ class Network(Basic):
                             typ,
                         )
 
-        constraint_periods = set(
-            self.global_constraints.investment_period.dropna().unique()
-        )
+        constraint_periods = set(self.global_constraints.investment_period.dropna().unique())
         if isinstance(self.snapshots, pd.MultiIndex):
             if not constraint_periods.issubset(self.snapshots.unique("period")):
                 raise ValueError(
@@ -1595,9 +1547,7 @@ class SubNetwork(Common):
         return self.network.lines.index[self.network.lines.sub_network == self.name]
 
     def transformers_i(self):
-        return self.network.transformers.index[
-            self.network.transformers.sub_network == self.name
-        ]
+        return self.network.transformers.index[self.network.transformers.sub_network == self.name]
 
     def branches_i(self):
         types = []
@@ -1620,15 +1570,11 @@ class SubNetwork(Common):
         return self.network.loads.index[sub_networks == self.name]
 
     def shunt_impedances_i(self):
-        sub_networks = self.network.shunt_impedances.bus.map(
-            self.network.buses.sub_network
-        )
+        sub_networks = self.network.shunt_impedances.bus.map(self.network.buses.sub_network)
         return self.network.shunt_impedances.index[sub_networks == self.name]
 
     def storage_units_i(self):
-        sub_networks = self.network.storage_units.bus.map(
-            self.network.buses.sub_network
-        )
+        sub_networks = self.network.storage_units.bus.map(self.network.buses.sub_network)
         return self.network.storage_units.index[sub_networks == self.name]
 
     def stores_i(self):
@@ -1669,9 +1615,7 @@ class SubNetwork(Common):
         Component
             Container for component data. See Component class for details.
         """
-        for c in self.network.iterate_components(
-            components=components, skip_empty=False
-        ):
+        for c in self.network.iterate_components(components=components, skip_empty=False):
             ind = getattr(self, c.list_name + "_i")()
             pnl = Dict()
             for k, v in c.pnl.items():

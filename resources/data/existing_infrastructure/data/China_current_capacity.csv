@@ -1,0 +1,249 @@
+Province,Type,Value
+Anhui,CHP Coal,22000
+Beijing,CHP Coal,6720
+Chongqing,CHP Coal,2030
+Fujian,CHP Coal,9430
+Gansu,CHP Coal,13440
+Guangdong,CHP Coal,17560
+Guangxi,CHP Coal,690
+Guizhou,CHP Coal,900
+Hainan,CHP Coal,0
+Hebei,CHP Coal,43980
+Heilongjiang,CHP Coal,17210
+Henan,CHP Coal,29050
+Hubei,CHP Coal,6270
+Hunan,CHP Coal,4500
+InnerMongolia,CHP Coal,45580
+Jiangsu,CHP Coal,79930
+Jiangxi,CHP Coal,0
+Jilin,CHP Coal,13360
+Liaoning,CHP Coal,27660
+Ningxia,CHP Coal,12790
+Qinghai,CHP Coal,0
+Shaanxi,CHP Coal,14880
+Shandong,CHP Coal,83120
+Shanghai,CHP Coal,8360
+Shanxi,CHP Coal,39990
+Sichuan,CHP Coal,0
+Tianjin,CHP Coal,14890
+Tibet,CHP Coal,0
+Xinjiang,CHP Coal,18010
+Yunnan,CHP Coal,0
+Zhejiang,CHP Coal,30600
+Anhui,Coal,33610
+Beijing,Coal,4640
+Chongqing,Coal,13420
+Fujian,Coal,25350
+Gansu,Coal,9640
+Guangdong,Coal,78260
+Guangxi,Coal,22750
+Guizhou,Coal,34700
+Hainan,Coal,5460
+Hebei,Coal,9930
+Heilongjiang,Coal,7020
+Henan,Coal,41630
+Hubei,Coal,26890
+Hunan,Coal,18190
+InnerMongolia,Coal,48160
+Jiangsu,Coal,20860
+Jiangxi,Coal,24550
+Jilin,Coal,5160
+Liaoning,Coal,8770
+Ningxia,Coal,20470
+Qinghai,Coal,3930
+Shaanxi,Coal,35050
+Shandong,Coal,28230
+Shanghai,Coal,16140
+Shanxi,Coal,28790
+Sichuan,Coal,15960
+Tianjin,Coal,1790
+Tibet,Coal,430
+Xinjiang,Coal,45360
+Yunnan,Coal,15170
+Zhejiang,Coal,32980
+Anhui,OCGT,0
+Beijing,OCGT,9458
+Chongqing,OCGT,940
+Fujian,OCGT,3740
+Gansu,OCGT,0
+Guangdong,OCGT,28517
+Guangxi,OCGT,0
+Guizhou,OCGT,0
+Hainan,OCGT,2364
+Hebei,OCGT,800
+Heilongjiang,OCGT,0
+Henan,OCGT,3060
+Hubei,OCGT,0
+Hunan,OCGT,0
+InnerMongolia,OCGT,300
+Jiangsu,OCGT,6034
+Jiangxi,OCGT,0
+Jilin,OCGT,0
+Liaoning,OCGT,0
+Ningxia,OCGT,0
+Qinghai,OCGT,300
+Shaanxi,OCGT,0
+Shandong,OCGT,0
+Shanghai,OCGT,11022
+Shanxi,OCGT,0
+Sichuan,OCGT,700
+Tianjin,OCGT,3327
+Tibet,OCGT,284
+Xinjiang,OCGT,0
+Yunnan,OCGT,0
+Zhejiang,OCGT,4310
+Anhui,Onwind,4120
+Beijing,Onwind,190
+Chongqing,Onwind,970
+Fujian,Onwind,4306
+Gansu,Onwind,13730
+Guangdong,Onwind,5006
+Guangxi,Onwind,5786
+Guizhou,Onwind,5800
+Hainan,Onwind,257
+Hebei,Onwind,20148
+Heilongjiang,Onwind,6860
+Henan,Onwind,15180
+Hubei,Onwind,5020
+Hunan,Onwind,6690
+InnerMongolia,Onwind,37860
+Jiangsu,Onwind,13707
+Jiangxi,Onwind,5100
+Jilin,Onwind,5770
+Liaoning,Onwind,8692
+Ningxia,Onwind,13770
+Qinghai,Onwind,8430
+Shaanxi,Onwind,8920
+Shandong,Onwind,15904
+Shanghai,Onwind,727
+Shanxi,Onwind,19740
+Sichuan,Onwind,4260
+Tianjin,Onwind,753
+Tibet,Onwind,10
+Xinjiang,Onwind,23610
+Yunnan,Onwind,8810
+Zhejiang,Onwind,1648
+Anhui,Offwind,0
+Beijing,Offwind,0
+Chongqing,Offwind,0
+Fujian,Offwind,554
+Gansu,Offwind,0
+Guangdong,Offwind,644
+Guangxi,Offwind,744
+Guizhou,Offwind,0
+Hainan,Offwind,33
+Hebei,Offwind,2592
+Heilongjiang,Offwind,0
+Henan,Offwind,0
+Hubei,Offwind,0
+Hunan,Offwind,0
+InnerMongolia,Offwind,0
+Jiangsu,Offwind,1763
+Jiangxi,Offwind,0
+Jilin,Offwind,0
+Liaoning,Offwind,1118
+Ningxia,Offwind,0
+Qinghai,Offwind,0
+Shaanxi,Offwind,0
+Shandong,Offwind,2046
+Shanghai,Offwind,93
+Shanxi,Offwind,0
+Sichuan,Offwind,0
+Tianjin,Offwind,97
+Tibet,Offwind,0
+Xinjiang,Offwind,0
+Yunnan,Offwind,0
+Zhejiang,Offwind,212
+Anhui,Solar,13700
+Beijing,Solar,620
+Chongqing,Solar,670
+Fujian,Solar,2020
+Gansu,Solar,9820
+Guangdong,Solar,7970
+Guangxi,Solar,2050
+Guizhou,Solar,10570
+Hainan,Solar,1430
+Hebei,Solar,21900
+Heilongjiang,Solar,3180
+Henan,Solar,11750
+Hubei,Solar,6980
+Hunan,Solar,3910
+InnerMongolia,Solar,12370
+Jiangsu,Solar,16840
+Jiangxi,Solar,7760
+Jilin,Solar,3380
+Liaoning,Solar,4000
+Ningxia,Solar,11970
+Qinghai,Solar,16010
+Shaanxi,Solar,10890
+Shandong,Solar,22720
+Shanghai,Solar,1370
+Shanxi,Solar,13090
+Sichuan,Solar,1910
+Tianjin,Solar,1640
+Tibet,Solar,1370
+Xinjiang,Solar,12660
+Yunnan,Solar,3880
+Zhejiang,Solar,15170
+Anhui,Hydro,0
+Beijing,Hydro,0
+Chongqing,Hydro,0
+Fujian,Hydro,0
+Gansu,Hydro,0
+Guangdong,Hydro,0
+Guangxi,Hydro,630
+Guizhou,Hydro,11385
+Hainan,Hydro,0
+Hebei,Hydro,0
+Heilongjiang,Hydro,0
+Henan,Hydro,0
+Hubei,Hydro,27075
+Hunan,Hydro,1200
+InnerMongolia,Hydro,0
+Jiangsu,Hydro,0
+Jiangxi,Hydro,0
+Jilin,Hydro,0
+Liaoning,Hydro,0
+Ningxia,Hydro,0
+Qinghai,Hydro,8917
+Shaanxi,Hydro,0
+Shandong,Hydro,0
+Shanghai,Hydro,0
+Shanxi,Hydro,0
+Sichuan,Hydro,67185
+Tianjin,Hydro,0
+Tibet,Hydro,0
+Xinjiang,Hydro,0
+Yunnan,Hydro,23930
+Zhejiang,Hydro,0
+Anhui,Nuclear,0
+Beijing,Nuclear,0
+Chongqing,Nuclear,0
+Fujian,Nuclear,11034
+Gansu,Nuclear,0
+Guangdong,Nuclear,16136
+Guangxi,Nuclear,2172
+Guizhou,Nuclear,0
+Hainan,Nuclear,1300
+Hebei,Nuclear,0
+Heilongjiang,Nuclear,0
+Henan,Nuclear,0
+Hubei,Nuclear,0
+Hunan,Nuclear,0
+InnerMongolia,Nuclear,0
+Jiangsu,Nuclear,6608
+Jiangxi,Nuclear,0
+Jilin,Nuclear,0
+Liaoning,Nuclear,5594
+Ningxia,Nuclear,0
+Qinghai,Nuclear,0
+Shaanxi,Nuclear,0
+Shandong,Nuclear,2717
+Shanghai,Nuclear,0
+Shanxi,Nuclear,0
+Sichuan,Nuclear,0
+Tianjin,Nuclear,0
+Tibet,Nuclear,0
+Xinjiang,Nuclear,0
+Yunnan,Nuclear,0
+Zhejiang,Nuclear,9086

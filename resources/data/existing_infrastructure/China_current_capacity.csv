@@ -1,0 +1,280 @@
+Province,Type,Value
+Beijing,CHP coal,9424.999998
+Tianjin,CHP coal,11971.37
+Hebei,CHP coal,38095.15
+Shanxi,CHP coal,38803.25
+InnerMongolia,CHP coal,54602.52
+Liaoning,CHP coal,45939.45
+Jilin,CHP coal,21085.4
+Heilongjiang,CHP coal,41663.32
+Shanghai,CHP coal,0
+Jiangsu,CHP coal,0
+Zhejiang,CHP coal,0
+Anhui,CHP coal,2081.5
+Fujian,CHP coal,0
+Jiangxi,CHP coal,0
+Shandong,CHP coal,82321.374
+Henan,CHP coal,25846.65
+Hubei,CHP coal,1104.01
+Hunan,CHP coal,0
+Guangdong,CHP coal,0
+Guangxi,CHP coal,0
+Hainan,CHP coal,0
+Chongqing,CHP coal,0
+Sichuan,CHP coal,7.999999998
+Guizhou,CHP coal,0
+Yunnan,CHP coal,0
+Tibet,CHP coal,155.88
+Shaanxi,CHP coal,11598.95
+Gansu,CHP coal,10277.41
+Qinghai,CHP coal,4277
+Ningxia,CHP coal,9067.999998
+Xinjiang,CHP coal,16149.63
+Beijing,coal power plant,1935
+Tianjin,coal power plant,4708.63
+Hebei,coal power plant,15814.85
+Shanxi,coal power plant,29976.75
+InnerMongolia,coal power plant,39137.48
+Liaoning,coal power plant,0
+Jilin,coal power plant,0
+Heilongjiang,coal power plant,0
+Shanghai,coal power plant,24500
+Jiangsu,coal power plant,100790
+Zhejiang,coal power plant,63580.00002
+Anhui,coal power plant,53528.5
+Fujian,coal power plant,34780
+Jiangxi,coal power plant,24550
+Shandong,coal power plant,29028.626
+Henan,coal power plant,44833.35
+Hubei,coal power plant,32055.99
+Hunan,coal power plant,22690
+Guangdong,coal power plant,95820
+Guangxi,coal power plant,23440
+Hainan,coal power plant,5460
+Chongqing,coal power plant,15450
+Sichuan,coal power plant,15952
+Guizhou,coal power plant,35600
+Yunnan,coal power plant,15170
+Tibet,coal power plant,274.12
+Shaanxi,coal power plant,38331.05
+Gansu,coal power plant,12802.59
+Qinghai,coal power plant,0
+Ningxia,coal power plant,24192
+Xinjiang,coal power plant,47220.37
+Anhui,OCGT,0
+Beijing,OCGT,9458
+Chongqing,OCGT,940
+Fujian,OCGT,3740
+Gansu,OCGT,0
+Guangdong,OCGT,28517
+Guangxi,OCGT,0
+Guizhou,OCGT,0
+Hainan,OCGT,2364
+Hebei,OCGT,800
+Heilongjiang,OCGT,0
+Henan,OCGT,3060
+Hubei,OCGT,0
+Hunan,OCGT,0
+InnerMongolia,OCGT,300
+Jiangsu,OCGT,6034
+Jiangxi,OCGT,0
+Jilin,OCGT,0
+Liaoning,OCGT,0
+Ningxia,OCGT,0
+Qinghai,OCGT,300
+Shaanxi,OCGT,0
+Shandong,OCGT,0
+Shanghai,OCGT,11022
+Shanxi,OCGT,0
+Sichuan,OCGT,700
+Tianjin,OCGT,3327
+Tibet,OCGT,284
+Xinjiang,OCGT,0
+Yunnan,OCGT,0
+Zhejiang,OCGT,4310
+Anhui,onshore wind,4120
+Beijing,onshore wind,190
+Chongqing,onshore wind,970
+Fujian,onshore wind,4306
+Gansu,onshore wind,13730
+Guangdong,onshore wind,5006
+Guangxi,onshore wind,5786
+Guizhou,onshore wind,5800
+Hainan,onshore wind,257
+Hebei,onshore wind,20148
+Heilongjiang,onshore wind,6860
+Henan,onshore wind,15180
+Hubei,onshore wind,5020
+Hunan,onshore wind,6690
+InnerMongolia,onshore wind,37860
+Jiangsu,onshore wind,13707
+Jiangxi,onshore wind,5100
+Jilin,onshore wind,5770
+Liaoning,onshore wind,8692
+Ningxia,onshore wind,13770
+Qinghai,onshore wind,8430
+Shaanxi,onshore wind,8920
+Shandong,onshore wind,15904
+Shanghai,onshore wind,727
+Shanxi,onshore wind,19740
+Sichuan,onshore wind,4260
+Tianjin,onshore wind,753
+Tibet,onshore wind,10
+Xinjiang,onshore wind,23610
+Yunnan,onshore wind,8810
+Zhejiang,onshore wind,1648
+Anhui,offshore wind,0
+Beijing,offshore wind,0
+Chongqing,offshore wind,0
+Fujian,offshore wind,554
+Gansu,offshore wind,0
+Guangdong,offshore wind,644
+Guangxi,offshore wind,744
+Guizhou,offshore wind,0
+Hainan,offshore wind,33
+Hebei,offshore wind,2592
+Heilongjiang,offshore wind,0
+Henan,offshore wind,0
+Hubei,offshore wind,0
+Hunan,offshore wind,0
+InnerMongolia,offshore wind,0
+Jiangsu,offshore wind,1763
+Jiangxi,offshore wind,0
+Jilin,offshore wind,0
+Liaoning,offshore wind,1118
+Ningxia,offshore wind,0
+Qinghai,offshore wind,0
+Shaanxi,offshore wind,0
+Shandong,offshore wind,2046
+Shanghai,offshore wind,93
+Shanxi,offshore wind,0
+Sichuan,offshore wind,0
+Tianjin,offshore wind,97
+Tibet,offshore wind,0
+Xinjiang,offshore wind,0
+Yunnan,offshore wind,0
+Zhejiang,offshore wind,212
+Anhui,solar PV,13700
+Beijing,solar PV,620
+Chongqing,solar PV,670
+Fujian,solar PV,2020
+Gansu,solar PV,9820
+Guangdong,solar PV,7970
+Guangxi,solar PV,2050
+Guizhou,solar PV,10570
+Hainan,solar PV,1430
+Hebei,solar PV,21900
+Heilongjiang,solar PV,3180
+Henan,solar PV,11750
+Hubei,solar PV,6980
+Hunan,solar PV,3910
+InnerMongolia,solar PV,12370
+Jiangsu,solar PV,16840
+Jiangxi,solar PV,7760
+Jilin,solar PV,3380
+Liaoning,solar PV,4000
+Ningxia,solar PV,11970
+Qinghai,solar PV,16010
+Shaanxi,solar PV,10890
+Shandong,solar PV,22720
+Shanghai,solar PV,1370
+Shanxi,solar PV,13090
+Sichuan,solar PV,1910
+Tianjin,solar PV,1640
+Tibet,solar PV,1370
+Xinjiang,solar PV,12660
+Yunnan,solar PV,3880
+Zhejiang,solar PV,15170
+Anhui,hydroelectricity,0
+Beijing,hydroelectricity,0
+Chongqing,hydroelectricity,0
+Fujian,hydroelectricity,0
+Gansu,hydroelectricity,0
+Guangdong,hydroelectricity,0
+Guangxi,hydroelectricity,630
+Guizhou,hydroelectricity,11385
+Hainan,hydroelectricity,0
+Hebei,hydroelectricity,0
+Heilongjiang,hydroelectricity,0
+Henan,hydroelectricity,0
+Hubei,hydroelectricity,27075
+Hunan,hydroelectricity,1200
+InnerMongolia,hydroelectricity,0
+Jiangsu,hydroelectricity,0
+Jiangxi,hydroelectricity,0
+Jilin,hydroelectricity,0
+Liaoning,hydroelectricity,0
+Ningxia,hydroelectricity,0
+Qinghai,hydroelectricity,8917
+Shaanxi,hydroelectricity,0
+Shandong,hydroelectricity,0
+Shanghai,hydroelectricity,0
+Shanxi,hydroelectricity,0
+Sichuan,hydroelectricity,67185
+Tianjin,hydroelectricity,0
+Tibet,hydroelectricity,0
+Xinjiang,hydroelectricity,0
+Yunnan,hydroelectricity,23930
+Zhejiang,hydroelectricity,0
+Anhui,nuclear,0
+Beijing,nuclear,0
+Chongqing,nuclear,0
+Fujian,nuclear,11034
+Gansu,nuclear,0
+Guangdong,nuclear,16136
+Guangxi,nuclear,2172
+Guizhou,nuclear,0
+Hainan,nuclear,1300
+Hebei,nuclear,0
+Heilongjiang,nuclear,0
+Henan,nuclear,0
+Hubei,nuclear,0
+Hunan,nuclear,0
+InnerMongolia,nuclear,0
+Jiangsu,nuclear,6608
+Jiangxi,nuclear,0
+Jilin,nuclear,0
+Liaoning,nuclear,5594
+Ningxia,nuclear,0
+Qinghai,nuclear,0
+Shaanxi,nuclear,0
+Shandong,nuclear,2717
+Shanghai,nuclear,0
+Shanxi,nuclear,0
+Sichuan,nuclear,0
+Tianjin,nuclear,0
+Tibet,nuclear,0
+Xinjiang,nuclear,0
+Yunnan,nuclear,0
+Zhejiang,nuclear,9086
+Beijing,coal boiler,40231
+Tianjin,coal boiler,20610.34
+Hebei,coal boiler,23849.91
+Shanxi,coal boiler,16568.95
+InnerMongolia,coal boiler,23805.17
+Liaoning,coal boiler,48315.06
+Jilin,coal boiler,31636.33
+Heilongjiang,coal boiler,28927.06
+Shanghai,coal boiler,0
+Jiangsu,coal boiler,1.999999998
+Zhejiang,coal boiler,0
+Anhui,coal boiler,252
+Fujian,coal boiler,0
+Jiangxi,coal boiler,0
+Shandong,coal boiler,19399.19
+Henan,coal boiler,3136.4
+Hubei,coal boiler,0
+Hunan,coal boiler,0
+Guangdong,coal boiler,0
+Guangxi,coal boiler,0
+Hainan,coal boiler,0
+Chongqing,coal boiler,0
+Sichuan,coal boiler,59
+Guizhou,coal boiler,225.75
+Yunnan,coal boiler,31.9
+Tibet,coal boiler,82.99999998
+Shaanxi,coal boiler,18149.48
+Gansu,coal boiler,19498.49
+Qinghai,coal boiler,2530.06
+Ningxia,coal boiler,4276.39
+Xinjiang,coal boiler,32959.79

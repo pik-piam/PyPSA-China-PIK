@@ -55,9 +55,7 @@ def get_strongly_meshed_buses(n, threshold=45):
     -------
     pandas series of all meshed buses.
     """
-    all_buses = pd.Series(
-        hstack([ravel(c.df.filter(like="bus")) for c in n.iterate_components()])
-    )
+    all_buses = pd.Series(hstack([ravel(c.df.filter(like="bus")) for c in n.iterate_components()]))
     all_buses = all_buses[all_buses != ""]
     counts = all_buses.value_counts()
     return counts.index[counts > 20].rename("Bus-meshed")
