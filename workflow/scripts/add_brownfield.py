@@ -15,6 +15,7 @@ idx = pd.IndexSlice
 logger = logging.getLogger(__name__)
 
 
+# TODO switch ot os. basename
 def basename(x):
     return x.split("-2")[0]
 
