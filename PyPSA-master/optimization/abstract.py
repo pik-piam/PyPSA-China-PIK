@@ -62,30 +62,23 @@ def optimize_transmission_expansion_iteratively(
     ext_untyped_i = ext_i.difference(typed_i)
     ext_typed_i = ext_i.intersection(typed_i)
     base_s_nom = (
-        np.sqrt(3)
-        * n.lines["type"].map(n.line_types.i_nom)
-        * n.lines.bus0.map(n.buses.v_nom)
+        np.sqrt(3) * n.lines["type"].map(n.line_types.i_nom) * n.lines.bus0.map(n.buses.v_nom)
     )
     n.lines.loc[ext_typed_i, "num_parallel"] = (n.lines.s_nom / base_s_nom)[ext_typed_i]
 
     def update_line_params(n, s_nom_prev):
         factor = n.lines.s_nom_opt / s_nom_prev
         for attr, carrier in (("x", "AC"), ("r", "DC")):
-            ln_i = n.lines.query("carrier == @carrier").index.intersection(
-                ext_untyped_i
-            )
+            ln_i = n.lines.query("carrier == @carrier").index.intersection(ext_untyped_i)
             n.lines.loc[ln_i, attr] /= factor[ln_i]
         ln_i = ext_i.intersection(typed_i)
         n.lines.loc[ln_i, "num_parallel"] = (n.lines.s_nom_opt / base_s_nom)[ln_i]
 
     def msq_diff(n, s_nom_prev):
         lines_err = (
-            np.sqrt((s_nom_prev - n.lines.s_nom_opt).pow(2).mean())
-            / n.lines["s_nom_opt"].mean()
+            np.sqrt((s_nom_prev - n.lines.s_nom_opt).pow(2).mean()) / n.lines["s_nom_opt"].mean()
         )
-        logger.info(
-            f"Mean square difference after iteration {iteration} is " f"{lines_err}"
-        )
+        logger.info(f"Mean square difference after iteration {iteration} is " f"{lines_err}")
         return lines_err
 
     def save_optimal_capacities(n, iteration, status):
@@ -94,9 +87,7 @@ def optimize_transmission_expansion_iteratively(
         setattr(n, f"status_{iteration}", status)
         setattr(n, f"objective_{iteration}", n.objective)
         n.iteration = iteration
-        n.global_constraints = n.global_constraints.rename(
-            columns={"mu": f"mu_{iteration}"}
-        )
+        n.global_constraints = n.global_constraints.rename(columns={"mu": f"mu_{iteration}"})
 
     if track_iterations:
         for c, attr in pd.Series(nominal_attrs)[n.branch_components].items():
@@ -108,16 +99,14 @@ def optimize_transmission_expansion_iteratively(
     while diff >= msq_threshold or iteration < min_iterations:
         if iteration > max_iterations:
             logger.info(
-                f"Iteration {iteration} beyond max_iterations "
-                f"{max_iterations}. Stopping ..."
+                f"Iteration {iteration} beyond max_iterations " f"{max_iterations}. Stopping ..."
             )
             break
 
         s_nom_prev = n.lines.s_nom_opt.copy() if iteration else n.lines.s_nom.copy()
         status, termination_condition = n.optimize(snapshots, **kwargs)
         assert status == "ok", (
-            f"Optimization failed with status {status}"
-            f"and termination {termination_condition}"
+            f"Optimization failed with status {status}" f"and termination {termination_condition}"
         )
         if track_iterations:
             save_optimal_capacities(n, iteration, status)
@@ -146,9 +135,7 @@ def optimize_transmission_expansion_iteratively(
     n.links.loc[ext_dc_links_b, "p_nom_extendable"] = True
 
     ## add costs of additional infrastructure to objective value of last iteration
-    obj_links = (
-        n.links[ext_dc_links_b].eval("capital_cost * (p_nom_opt - p_nom_min)").sum()
-    )
+    obj_links = n.links[ext_dc_links_b].eval("capital_cost * (p_nom_opt - p_nom_min)").sum()
     obj_lines = n.lines.eval("capital_cost * (s_nom_opt - s_nom_min)").sum()
     n.objective += obj_links + obj_lines
     n.objective_constant -= obj_links + obj_lines
@@ -200,9 +187,7 @@ def optimize_security_constrained(
 
         diff = set(branch_outages) - set(all_passive_branches)
         if diff:
-            raise ValueError(
-                f"The following passive branches are not in the network: {diff}"
-            )
+            raise ValueError(f"The following passive branches are not in the network: {diff}")
 
     if not len(all_passive_branches):
         return n.optimize(

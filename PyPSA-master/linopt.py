@@ -15,9 +15,7 @@ This module supports the linear optimal power flow calculation without using
 pyomo (see module linopt.py)
 """
 
-__author__ = (
-    "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
-)
+__author__ = "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
 __copyright__ = (
     "Copyright 2015-2023 PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html, "
     "MIT License"
@@ -140,9 +138,7 @@ def define_binaries(n, axes, name, attr="", spec="", mask=None):
     return var
 
 
-def define_constraints(
-    n, lhs, sense, rhs, name, attr="", axes=None, spec="", mask=None
-):
+def define_constraints(n, lhs, sense, rhs, name, attr="", axes=None, spec="", mask=None):
     """
     Defines constraint(s) for pypsa-network with given left hand side (lhs),
     sense and right hand side (rhs). The constraints are stored in the network
@@ -751,9 +747,7 @@ def run_and_read_highs(
     command += f"--solver {method} --options_file {options_fn}"
     logger.info(f'Solver command: "{command}"')
     # execute command and store command window output
-    process = subprocess.Popen(
-        command.split(" "), stdout=subprocess.PIPE, universal_newlines=True
-    )
+    process = subprocess.Popen(command.split(" "), stdout=subprocess.PIPE, universal_newlines=True)
 
     def read_until_break():
         # Function that reads line by line the command window
@@ -799,9 +793,7 @@ def run_and_read_highs(
     sol_rows = sol[(sol.index > row_no)]
     sol_cols = sol[(sol.index < row_no)].set_index("Name").pipe(set_int_index)
     variables_sol = pd.to_numeric(sol_cols["Primal"], errors="raise")
-    constraints_dual = pd.to_numeric(sol_rows["Dual"], errors="raise").reset_index(
-        drop=True
-    )
+    constraints_dual = pd.to_numeric(sol_rows["Dual"], errors="raise").reset_index(drop=True)
     constraints_dual.index += 1
 
     return (status, termination_condition, variables_sol, constraints_dual, objective)
@@ -942,19 +934,14 @@ def run_and_read_glpk(
     duals = io.StringIO("".join(read_until_break(f))[:-2])
     duals = pd.read_fwf(duals)[1:].set_index("Row name")
     if "Marginal" in duals:
-        constraints_dual = (
-            pd.to_numeric(duals["Marginal"], "coerce").fillna(0).pipe(set_int_index)
-        )
+        constraints_dual = pd.to_numeric(duals["Marginal"], "coerce").fillna(0).pipe(set_int_index)
     else:
         logger.warning("Shadow prices of MILP couldn't be parsed")
         constraints_dual = pd.Series(index=duals.index, dtype=float)
 
     sol = io.StringIO("".join(read_until_break(f))[:-2])
     variables_sol = (
-        pd.read_fwf(sol)[1:]
-        .set_index("Column name")["Activity"]
-        .astype(float)
-        .pipe(set_int_index)
+        pd.read_fwf(sol)[1:].set_index("Column name")["Activity"].astype(float).pipe(set_int_index)
     )
     f.close()
 
@@ -1025,18 +1012,14 @@ def run_and_read_cplex(
             del n.basis_fn
 
     objective = m.solution.get_objective_value()
-    variables_sol = pd.Series(m.solution.get_values(), m.variables.get_names()).pipe(
-        set_int_index
-    )
+    variables_sol = pd.Series(m.solution.get_values(), m.variables.get_names()).pipe(set_int_index)
     if is_lp:
         constraints_dual = pd.Series(
             m.solution.get_dual_values(), m.linear_constraints.get_names()
         ).pipe(set_int_index)
     else:
         logger.warning("Shadow prices of MILP couldn't be parsed")
-        constraints_dual = pd.Series(index=m.linear_constraints.get_names()).pipe(
-            set_int_index
-        )
+        constraints_dual = pd.Series(index=m.linear_constraints.get_names()).pipe(set_int_index)
     del m
     return (status, termination_condition, variables_sol, constraints_dual, objective)
 
@@ -1092,9 +1075,7 @@ def run_and_read_gurobi(
             del n.basis_fn
 
     Status = gurobipy.GRB.Status
-    statusmap = {
-        getattr(Status, s): s.lower() for s in Status.__dir__() if not s.startswith("_")
-    }
+    statusmap = {getattr(Status, s): s.lower() for s in Status.__dir__() if not s.startswith("_")}
     termination_condition = statusmap[m.status]
 
     if termination_condition == "optimal":

@@ -4,9 +4,7 @@
 Functions for plotting networks.
 """
 
-__author__ = (
-    "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
-)
+__author__ = "PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html"
 __copyright__ = (
     "Copyright 2015-2023 PyPSA Developers, see https://pypsa.readthedocs.io/en/latest/developers.html, "
     "MIT License"
@@ -315,9 +313,7 @@ def plot(
         for b_i in s.index[s != 0]:
             radius = s.at[b_i] ** 0.5
             patches.append(
-                Circle(
-                    (x.at[b_i], y.at[b_i]), radius, facecolor=c.at[b_i], alpha=bus_alpha
-                )
+                Circle((x.at[b_i], y.at[b_i]), radius, facecolor=c.at[b_i], alpha=bus_alpha)
             )
         bus_collection = PatchCollection(patches, match_original=True, zorder=5)
         ax.add_collection(bus_collection)
@@ -420,9 +416,7 @@ def plot(
             # update the line width, allows to set line widths separately from flows
             # b_widths.update((5 * b_flow.abs()).pipe(np.sqrt))
             area_factor = projected_area_factor(ax, n.srid)
-            f_collection = directed_flow(
-                coords, b_flow, b_colors, area_factor, b_cmap, b_alpha
-            )
+            f_collection = directed_flow(coords, b_flow, b_colors, area_factor, b_cmap, b_alpha)
             if b_nums is not None:
                 f_collection.set_array(np.asarray(b_nums))
                 f_collection.set_cmap(b_cmap)
@@ -508,9 +502,7 @@ def projected_area_factor(ax, original_crs=4326):
         ax.projection, np.array([x1, x2]), np.array([y1, y2])
     )
 
-    return np.sqrt(
-        abs((x2 - x1) * (y2 - y1)) / abs((pbounds[0] - pbounds[1])[:2].prod())
-    )
+    return np.sqrt(abs((x2 - x1) * (y2 - y1)) / abs((pbounds[0] - pbounds[1])[:2].prod()))
 
 
 def draw_map_cartopy(ax, geomap=True, color_geomap=None):
@@ -532,9 +524,7 @@ def draw_map_cartopy(ax, geomap=True, color_geomap=None):
         }
 
     if "land" in color_geomap:
-        ax.add_feature(
-            cartopy.feature.LAND.with_scale(resolution), facecolor=color_geomap["land"]
-        )
+        ax.add_feature(cartopy.feature.LAND.with_scale(resolution), facecolor=color_geomap["land"])
 
     if "ocean" in color_geomap:
         ax.add_feature(
@@ -545,13 +535,13 @@ def draw_map_cartopy(ax, geomap=True, color_geomap=None):
     ax.add_feature(
         cartopy.feature.BORDERS.with_scale(resolution),
         linewidth=0.3,
-        color=color_geomap.get("border", 'k'),
+        color=color_geomap.get("border", "k"),
     )
 
     ax.add_feature(
         cartopy.feature.COASTLINE.with_scale(resolution),
         linewidth=0.3,
-        color=color_geomap.get("coastline", 'k'),
+        color=color_geomap.get("coastline", "k"),
     )
 
 
@@ -662,9 +652,7 @@ def add_legend_circles(ax, sizes, labels, srid=4326, patch_kw={}, legend_kw={}):
 
     handles = [Circle((0, 0), radius=s**0.5, **patch_kw) for s in sizes]
 
-    legend = ax.legend(
-        handles, labels, handler_map={Circle: HandlerCircle()}, **legend_kw
-    )
+    legend = ax.legend(handles, labels, handler_map={Circle: HandlerCircle()}, **legend_kw)
 
     ax.get_figure().add_artist(legend)
 
@@ -702,9 +690,7 @@ def directed_flow(coords, flow, color, area_factor=1, cmap=None, alpha=1):
         {
             "arrowsize": flow.abs().pipe(np.sqrt).clip(lower=1e-8),
             "direction": np.sign(flow),
-            "linelength": (
-                np.sqrt((coords.x1 - coords.x2) ** 2.0 + (coords.y1 - coords.y2) ** 2)
-            ),
+            "linelength": (np.sqrt((coords.x1 - coords.x2) ** 2.0 + (coords.y1 - coords.y2) ** 2)),
         }
     )
     data = data.join(coords)
@@ -720,10 +706,8 @@ def directed_flow(coords, flow, color, area_factor=1, cmap=None, alpha=1):
             lambda ds: FancyArrow(
                 ds.x1,
                 ds.y1,
-                0.6 * (ds.x2 - ds.x1)
-                - ds.arrowsize * 0.75 * (ds.x2 - ds.x1) / ds.linelength,
-                0.6 * (ds.y2 - ds.y1)
-                - ds.arrowsize * 0.75 * (ds.y2 - ds.y1) / ds.linelength,
+                0.6 * (ds.x2 - ds.x1) - ds.arrowsize * 0.75 * (ds.x2 - ds.x1) / ds.linelength,
+                0.6 * (ds.y2 - ds.y1) - ds.arrowsize * 0.75 * (ds.y2 - ds.y1) / ds.linelength,
                 head_width=ds.arrowsize,
             ),
             axis=1,
