@@ -43,9 +43,16 @@ def area_from_lon_lat_poly(geometry):
     return new_geometry.area / 1e6
 
 
-def haversine(p1, p2):
+def haversine(p1, p2) -> float:
     """Calculate the great circle distance in km between two points on
     the earth (specified in decimal degrees)
+
+    Args:
+        p1 (shapely.Point): location 1 in decimal deg
+        p2 (shapely.Point): location 2 in decimal deg
+
+    Returns:
+        float: great circle distance in [km]
     """
 
     # convert decimal degrees to radians
@@ -81,41 +88,20 @@ def generate_periodic_profiles(
     return week_df
 
 
-def shift_df(df, hours=1):
-    """Works both on Series and DataFrame"""
-    df = df.copy()
-    df.values[:] = np.concatenate([df.values[-hours:], df.values[:-hours]])
-    return df
+def prepare_data(
+    network: pypsa.Network, date_range: pd.date_range, planning_horizons: int
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, any, any, any]:
+    """prepare profiles
 
+    Args:
+        network (pypsa.Network): the network object
+        date_range (pd.date_range): the date range of the model
+        planning_horizons (int): the run year
 
-def transport_degree_factor(
-    temperature,
-    deadband_lower=15,
-    deadband_upper=20,
-    lower_degree_factor=0.5,
-    upper_degree_factor=1.6,
-):
-    """Work out how much energy demand in vehicles increases due to heating and cooling.
-    There is a deadband where there is no increase.
-    Degree factors are % increase in demand compared to no heating/cooling fuel consumption.
-    Returns per unit increase in demand for each place and time"""
-
-    dd = temperature.copy()
-
-    dd[(temperature > deadband_lower) & (temperature < deadband_upper)] = 0.0
-
-    dd[temperature < deadband_lower] = (
-        lower_degree_factor / 100.0 * (deadband_lower - temperature[temperature < deadband_lower])
-    )
-
-    dd[temperature > deadband_upper] = (
-        upper_degree_factor / 100.0 * (temperature[temperature > deadband_upper] - deadband_upper)
-    )
-
-    return dd
-
-
-def prepare_data(network, date_range, planning_horizons):
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, any, any, any]: the heat,
+          space heat, water heat demand, the cop, the cop, co2
+    """
 
     ##############
     # Heating
@@ -166,14 +152,22 @@ def prepare_data(network, date_range, planning_horizons):
 
     # tCO2
     represented_hours = network.snapshot_weightings.sum()[0]
-    Nyears = represented_hours / 8760.0
+    n_years = represented_hours / 8760.0
     with pd.HDFStore(snakemake.input.co2_totals_name, mode="r") as store:
-        co2_totals = Nyears * store["co2"]
+        co2_totals = n_years * store["co2"]
 
     return heat_demand, space_heat_demand, water_heat_demand, ashp_cop, gshp_cop, co2_totals
 
 
-def prepare_network(config):
+def prepare_network(config: dict) -> pypsa.Network:
+    """Monster function to be broken up and make modular. Prepares the network
+
+    Args:
+        config (dict): the snakemake config
+
+    Returns:
+        pypsa.Network: the pypsa network object
+    """
     # add CHP definition
     override_component_attrs = pypsa.descriptors.Dict(
         {k: v.copy() for k, v in pypsa.components.component_attrs.items()}
@@ -234,16 +228,16 @@ def prepare_network(config):
 
     network.snapshot_weightings[:] = config["frequency"]
     represented_hours = network.snapshot_weightings.sum()[0]
-    Nyears = represented_hours / 8760.0
+    n_years = represented_hours / 8760.0
 
     tech_costs = snakemake.input.tech_costs
     cost_year = snakemake.wildcards.planning_horizons
-    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, Nyears)
+    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
     date_range = pd.date_range("2020-01-01 00:00", "2020-02-28 23:00", freq=config["freq"]).append(
         pd.date_range("2020-03-01 00:00", "2020-12-31 23:00", freq=config["freq"])
     )
-
+    # TODO fix not used
     (
         heat_demand,
         space_heat_demand,
@@ -284,7 +278,7 @@ def prepare_network(config):
     pro_shapes.index = PROV_NAMES
 
     # add buses
-    network.madd(
+    network.add(
         "Bus",
         nodes,
         x=pro_shapes["geometry"].centroid.x,
@@ -312,7 +306,7 @@ def prepare_network(config):
     if not isinstance(config["scenario"]["co2_reduction"], tuple):
 
         if config["scenario"]["co2_reduction"] is not None:
-
+            # TODO fix hard coded
             co2_limit = (
                 5.59 * 1e9 * (1 - config["scenario"]["co2_reduction"])
             )  # Chinese 2020 CO2 emissions of electric and heating sector
@@ -334,10 +328,10 @@ def prepare_network(config):
 
     load.columns = PROV_NAMES
 
-    network.madd("Load", nodes, bus=nodes, p_set=load[nodes])
+    network.add("Load", nodes, bus=nodes, p_set=load[nodes])
 
     # add renewables
-    network.madd(
+    network.add(
         "Generator",
         nodes,
         suffix=" onwind",
@@ -352,7 +346,7 @@ def prepare_network(config):
     )
 
     offwind_nodes = ds_offwind["bus"].to_pandas().index
-    network.madd(
+    network.add(
         "Generator",
         offwind_nodes,
         suffix=" offwind",
@@ -366,7 +360,7 @@ def prepare_network(config):
         lifetime=costs.at["offwind", "lifetime"],
     )
 
-    network.madd(
+    network.add(
         "Generator",
         nodes,
         suffix=" solar",
@@ -386,7 +380,7 @@ def prepare_network(config):
         network.add(
             "Carrier", "gas", co2_emissions=costs.at["gas", "co2_emissions"]
         )  # in t_CO2/MWht
-        network.madd(
+        network.add(
             "Bus",
             nodes,
             suffix=" gas",
@@ -395,7 +389,7 @@ def prepare_network(config):
             carrier="gas",
         )
 
-        network.madd(
+        network.add(
             "Generator",
             nodes,
             suffix=" gas fuel",
@@ -405,11 +399,11 @@ def prepare_network(config):
             marginal_cost=costs.at["OCGT", "fuel"],
         )
 
-        network.madd(
+        network.add(
             "Store", nodes + " gas Store", bus=nodes + " gas", e_nom_extendable=True, carrier="gas"
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes,
             suffix=" OCGT",
@@ -425,7 +419,7 @@ def prepare_network(config):
         )
 
         if config["add_chp"]:
-            network.madd(
+            network.add(
                 "Link",
                 nodes,
                 suffix=" CHP gas",
@@ -444,7 +438,7 @@ def prepare_network(config):
 
     if config["add_coal"]:
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
-        network.madd(
+        network.add(
             "Generator",
             nodes,
             suffix=" coal",
@@ -459,7 +453,7 @@ def prepare_network(config):
         )
 
         if config["add_chp"]:
-            network.madd(
+            network.add(
                 "Bus",
                 nodes,
                 suffix=" CHP coal",
@@ -468,7 +462,7 @@ def prepare_network(config):
                 carrier="coal",
             )
 
-            network.madd(
+            network.add(
                 "Generator",
                 nodes + " CHP coal fuel",
                 bus=nodes + " CHP coal",
@@ -477,7 +471,7 @@ def prepare_network(config):
                 marginal_cost=costs.at["coal", "fuel"],
             )
 
-            network.madd(
+            network.add(
                 "Link",
                 nodes,
                 suffix=" CHP coal",
@@ -497,7 +491,7 @@ def prepare_network(config):
     if config["add_nuclear"]:
         network.add("Carrier", "uranium")
         nuclear_p_nom = pd.read_hdf("data/p_nom/nuclear_p_nom.h5")
-        network.madd(
+        network.add(
             "Generator",
             nodes,
             suffix=" nuclear",
@@ -522,7 +516,7 @@ def prepare_network(config):
         else:
             cc = 0.0
 
-        network.madd(
+        network.add(
             "StorageUnit",
             phss,
             suffix=" PHS",
@@ -559,7 +553,7 @@ def prepare_network(config):
 
         #######
         # ### Add hydro stations as buses
-        network.madd(
+        network.add(
             "Bus",
             dams.index,
             suffix=" station",
@@ -579,7 +573,7 @@ def prepare_network(config):
         initial_capacity = initial_capacity / water_consumption_factor
         effective_capacity = effective_capacity / water_consumption_factor
 
-        network.madd(
+        network.add(
             "Store",
             dams.index,
             suffix=" reservoir",
@@ -591,7 +585,7 @@ def prepare_network(config):
         )
 
         # add hydro turbines to link stations to provinces
-        network.madd(
+        network.add(
             "Link",
             dams.index,
             suffix=" turbines",
@@ -671,7 +665,7 @@ def prepare_network(config):
         if config["add_hydro"] and config["hydro"]["hydro_capital_cost"]:
             hydro_cc = costs.at["hydro", "capital_cost"]
 
-            network.madd(
+            network.add(
                 "StorageUnit",
                 dams.index,
                 suffix=" hydro dummy",
@@ -687,7 +681,7 @@ def prepare_network(config):
 
     if config["add_H2_storage"]:
 
-        network.madd(
+        network.add(
             "Bus",
             nodes,
             suffix=" H2",
@@ -696,7 +690,7 @@ def prepare_network(config):
             carrier="H2",
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes + " H2 Electrolysis",
             bus0=nodes,
@@ -708,7 +702,7 @@ def prepare_network(config):
             lifetime=costs.at["electrolysis", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes + " H2 Fuel Cell",
             bus0=nodes + " H2",
@@ -720,7 +714,7 @@ def prepare_network(config):
             lifetime=costs.at["fuel cell", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Store",
             nodes + " H2 Store",
             bus=nodes + " H2",
@@ -731,7 +725,7 @@ def prepare_network(config):
         )
 
     if config["add_methanation"]:
-        network.madd(
+        network.add(
             "Link",
             nodes + " Sabatier",
             bus0=nodes + " H2",
@@ -745,7 +739,7 @@ def prepare_network(config):
 
     if config["add_battery_storage"]:
 
-        network.madd(
+        network.add(
             "Bus",
             nodes,
             suffix=" battery",
@@ -754,7 +748,7 @@ def prepare_network(config):
             carrier="battery",
         )
 
-        network.madd(
+        network.add(
             "Store",
             nodes + " battery",
             bus=nodes + " battery",
@@ -764,7 +758,7 @@ def prepare_network(config):
             lifetime=costs.at["battery storage", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes + " battery charger",
             bus0=nodes,
@@ -776,7 +770,7 @@ def prepare_network(config):
             lifetime=costs.at["battery inverter", "lifetime"],
         )
 
-        network.madd(
+        network.add(
             "Link",
             nodes + " battery discharger",
             bus0=nodes + " battery",
@@ -801,7 +795,7 @@ def prepare_network(config):
 
         central_fraction = pd.read_hdf("data/heating/DH1.h5")
 
-        network.madd(
+        network.add(
             "Bus",
             nodes,
             suffix=" decentral heat",
@@ -810,7 +804,7 @@ def prepare_network(config):
             carrier="heat",
         )
 
-        network.madd(
+        network.add(
             "Bus",
             nodes,
             suffix=" central heat",
@@ -819,7 +813,7 @@ def prepare_network(config):
             carrier="heat",
         )
 
-        network.madd(
+        network.add(
             "Load",
             nodes,
             suffix=" decentral heat",
@@ -827,7 +821,7 @@ def prepare_network(config):
             p_set=heat_demand[nodes].multiply(1 - central_fraction),
         )
 
-        network.madd(
+        network.add(
             "Load",
             nodes,
             suffix=" central heat",
@@ -838,7 +832,7 @@ def prepare_network(config):
         if config["add_heat_pumps"]:
 
             for cat in [" decentral ", " central "]:
-                network.madd(
+                network.add(
                     "Link",
                     nodes,
                     suffix=cat + "heat pump",
@@ -855,7 +849,7 @@ def prepare_network(config):
                     lifetime=costs.at[cat.lstrip() + "air-sourced heat pump", "lifetime"],
                 )
 
-            network.madd(
+            network.add(
                 "Link",
                 nodes,
                 suffix=" ground heat pump",
@@ -875,7 +869,7 @@ def prepare_network(config):
         if config["add_thermal_storage"]:
 
             for cat in [" decentral ", " central "]:
-                network.madd(
+                network.add(
                     "Bus",
                     nodes,
                     suffix=cat + "water tanks",
@@ -884,7 +878,7 @@ def prepare_network(config):
                     carrier="water tanks",
                 )
 
-                network.madd(
+                network.add(
                     "Link",
                     nodes + cat + "water tanks charger",
                     bus0=nodes + cat + "heat",
@@ -894,7 +888,7 @@ def prepare_network(config):
                     p_nom_extendable=True,
                 )
 
-                network.madd(
+                network.add(
                     "Link",
                     nodes + cat + "water tanks discharger",
                     bus0=nodes + cat + "water tanks",
@@ -904,7 +898,7 @@ def prepare_network(config):
                     p_nom_extendable=True,
                 )
 
-                network.madd(
+                network.add(
                     "Store",
                     nodes + cat + "water tank",
                     bus=nodes + cat + "water tanks",
@@ -925,7 +919,7 @@ def prepare_network(config):
                 network.add("Carrier", "resistive heater")
 
                 for cat in [" decentral ", " central "]:
-                    network.madd(
+                    network.add(
                         "Link",
                         nodes + cat + "resistive heater",
                         bus0=nodes,
@@ -940,7 +934,7 @@ def prepare_network(config):
 
             if config["add_gas"]:
                 for cat in [" decentral ", " central "]:
-                    network.madd(
+                    network.add(
                         "Link",
                         nodes + cat + "gas boiler",
                         p_nom_extendable=True,
@@ -970,7 +964,7 @@ def prepare_network(config):
             solar_thermal = solar_thermal.loc[date_range].set_index(network.snapshots)
 
             for cat in [" decentral "]:
-                network.madd(
+                network.add(
                     "Generator",
                     nodes,
                     suffix=cat + "solar thermal collector",
@@ -998,17 +992,17 @@ def prepare_network(config):
             )
 
             # if config['line_volume_limit_max'] is not None:
-            #     cc = Nyears * 0.01  # Set line costs to ~zero because we already restrict the line volume
+            #     cc = n_years * 0.01  # Set line costs to ~zero because we already restrict the line volume
             # else:
             cc = (
                 (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
                 * 1.5
                 * 1.02
-                * Nyears
+                * n_years
                 * annuity(40.0, config["costs"]["discountrate"])
             )
 
-            network.madd(
+            network.add(
                 "Link",
                 edges[0] + "-" + edges[1],
                 bus0=edges[0].values,
@@ -1019,7 +1013,7 @@ def prepare_network(config):
                 capital_cost=cc,
             )
 
-        if config["scenario"]["topology"] == "current":
+        elif config["scenario"]["topology"] == "current":
             lengths = 1.25 * np.array(
                 [
                     haversine(
@@ -1031,17 +1025,17 @@ def prepare_network(config):
             )
 
             # if config['line_volume_limit_max'] is not None:
-            #     cc = Nyears * 0.01  # Set line costs to ~zero because we already restrict the line volume
+            #     cc = n_years * 0.01  # Set line costs to ~zero because we already restrict the line volume
             # else:
             cc = (
                 (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
                 * 1.5
                 * 1.02
-                * Nyears
+                * n_years
                 * annuity(40.0, config["costs"]["discountrate"])
             )
 
-            network.madd(
+            network.add(
                 "Link",
                 edges_current[0] + "-" + edges_current[1],
                 bus0=edges_current[0].values,
@@ -1054,7 +1048,7 @@ def prepare_network(config):
                 capital_cost=cc,
             )
 
-        if config["scenario"]["topology"] == "current+FCG":
+        elif config["scenario"]["topology"] == "current+FCG":
             lengths = 1.25 * np.array(
                 [
                     haversine(
@@ -1067,17 +1061,17 @@ def prepare_network(config):
 
             # Set line costs to ~zero because we already restrict the line volume
             # if config['line_volume_limit_max'] is not None:
-            #     cc = Nyears * 0.01
+            #     cc = n_years * 0.01
             # else:
             cc = (
                 (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
                 * 1.5
                 * 1.02
-                * Nyears
+                * n_years
                 * annuity(40.0, config["costs"]["discountrate"])
             )
 
-            network.madd(
+            network.add(
                 "Link",
                 edges_current_FCG[0] + "-" + edges_current_FCG[1],
                 bus0=edges_current_FCG[0].values,

@@ -6,11 +6,12 @@
 import os
 import sys
 import subprocess
-import traceback
+import json
 import pandas as pd
 from pathlib import Path
 from types import SimpleNamespace
 import logging
+import matplotlib.pyplot as plt
 
 # from constants import SNAKEFILE_CHOICES
 
@@ -433,3 +434,14 @@ def define_spatial(nodes, options):
     spatial.lignite.locations = ["China"]
 
     return spatial
+
+
+def load_plot_style(plot_config: os.PathLike):
+    """load a matplotlib style from a json file
+
+    Args:
+        plot_config (os.Pathlike): the json config
+    """
+
+    cfg = json.load(plot_config)
+    plt.style.use(cfg)

@@ -90,3 +90,19 @@ OFFSHORE_WIND_NODES = np.array(
     ],
     dtype=str,
 )
+
+# ==== technologies
+
+CARRIERS = [
+    "coal",
+    "CHP coal",
+    "CHP gas",
+    "OCGT",
+    "solar",
+    "solar thermal",
+    "onwind",
+    "offwind",
+    "coal boiler",
+    "ground heat pump",
+    "nuclear",
+]

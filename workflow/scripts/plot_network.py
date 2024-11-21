@@ -1,6 +1,6 @@
 import logging
 import pypsa
-
+from pathlib import Path
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -8,12 +8,14 @@ import pandas as pd
 # from make_summary import assign_carriers
 from plot_summary import preferred_order, rename_techs
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
-from _helpers import configure_logging, mock_snakemake
+from _helpers import configure_logging, mock_snakemake, load_plot_style
 
 logger = logging.getLogger(__name__)
 
 
+# TODO make not hardcoded
 def set_plot_style():
+    """set hard coded plot style, move to a config file"""
     plt.style.use(
         [
             "classic",
@@ -33,7 +35,13 @@ def set_plot_style():
     )
 
 
-def assign_location(n):
+# TODO work out what this does
+def assign_location(n: pypsa.Network):
+    """_summary_
+
+    Args:
+        n (pypsa.Network): _description_
+    """
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         ifind = pd.Series(c.df.index.str.find(" ", start=4), c.df.index)
         for i in ifind.value_counts().index:
@@ -44,7 +52,15 @@ def assign_location(n):
             c.df.loc[names, "location"] = names.str[:i]
 
 
-def get_costs(costs, tech_colors):
+def get_costs(costs: pd.DataFrame, tech_colors: dict):
+    """_summary_
+
+    Args:
+        costs (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
     costs = costs.groupby(costs.columns, axis=1).sum()
     costs.drop(list(costs.columns[(costs == 0.0).all()]), axis=1, inplace=True)
     new_columns = preferred_order.intersection(costs.columns).append(
@@ -78,10 +94,17 @@ def get_link_widths(n, attr):
 
 
 def plot_cost_map(
-    network,
-    opts,
+    network: pypsa.Network,
+    opts: dict,
     components=["generators", "links", "stores", "storage_units"],
 ):
+    """_summary_
+
+    Args:
+        network (pypsa.Network): _description_
+        opts (dict): _description_
+        components (list, optional): _description_. Defaults to ["generators", "links", "stores", "storage_units"].
+    """
     tech_colors = opts["tech_colors"]
 
     n = network.copy()
@@ -303,7 +326,7 @@ if __name__ == "__main__":
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
-            planning_horizons="2020",
+            planning_horizons="2060",
             heating_demand="positive",
         )
 

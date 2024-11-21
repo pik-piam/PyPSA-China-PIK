@@ -6,7 +6,7 @@ import pandas as pd
 import pypsa
 
 from types import SimpleNamespace
-from constants import YEAR_HRS
+from constants import YEAR_HRS, CARRIERS
 from add_electricity import load_costs
 from _helpers import override_component_attrs, mock_snakemake, configure_logging
 
@@ -50,7 +50,7 @@ def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
 
 
 def add_existing_capacities(df_agg):
-
+    # TODO fix/centralise ()
     carrier = {
         "coal": "coal power plant",
         "CHP coal": "CHP coal",
@@ -64,20 +64,8 @@ def add_existing_capacities(df_agg):
         "ground heat pump": "heat pump",
         "nuclear": "nuclear",
     }
-
-    for tech in [
-        "coal",
-        "CHP coal",
-        "CHP gas",
-        "OCGT",
-        "solar",
-        "solar thermal",
-        "onwind",
-        "offwind",
-        "coal boiler",
-        "ground heat pump",
-        "nuclear",
-    ]:
+    # TODO fix centralise (make a dict from start?)
+    for tech in CARRIERS:
 
         df = pd.read_csv(snakemake.input[f"existing_{tech}"], index_col=0).fillna(0.0)
         df.columns = df.columns.astype(int)
@@ -95,7 +83,9 @@ def add_existing_capacities(df_agg):
                     df_agg.at[name, "cluster_bus"] = node
 
 
-def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear, config):
+def add_power_capacities_installed_before_baseyear(
+    n: pypsa.Network, grouping_years, costs, baseyear, config
+):
     """
     Parameters
     ----------
