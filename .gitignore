@@ -18,9 +18,11 @@ __pycache__
 /resources/data/province_shapes
 /resources/data/landuse_availability/World_EEZ/*eez*
 /results
+!/results/.gitkeep
 /cutouts
 /logs
 /benchmarks
 
 !**.gitkeep
 .vscode/launch.json
+/workflow/logs/*
