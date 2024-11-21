@@ -25,8 +25,8 @@ DEFAULT_TUNNEL_PORT = 1080
 
 
 def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = None):
-    """A uitility function to set up the Gurobi environment variables and establish an SSH tunnel
-    Otherwise the license check will fail
+    """A utility function to set up the Gurobi environment variables and establish an SSH tunnel on HPCs
+    Otherwise the license check will fail if the compute nodes do not have internet access or a token server isn't set up
 
     Args:
         config (dict): the snakemake pypsa-china configuration
@@ -88,20 +88,25 @@ def override_component_attrs(directory: os.PathLike) -> dict:
     return attrs
 
 
-def configure_logging(snakemake, logger=None, skip_handlers=False, level="INFO", fname=None):
-    """
-    Configure the basic behaviour for the logging module.
+def configure_logging(
+    snakemake: object, logger: logging.Logger = None, skip_handlers=False, level="INFO"
+):
+    """Configure the logger or the  behaviour for the logging module.
+
     Note: Must only be called once from the __main__ section of a script.
     The setup includes printing log messages to STDERR and to a log file defined
     by either (in priority order): snakemake.log.python, snakemake.log[0] or "logs/{rulename}.log".
     Additional keywords from logging.basicConfig are accepted via the snakemake configuration
     file under snakemake.config.logging.
-    Parameters
-    ----------
-    snakemake : snakemake object
-        Your snakemake object containing a snakemake.config and snakemake.log.
-    skip_handlers : True | False (default)
-        Do (not) skip the default handlers created for redirecting output to STDERR and file.
+
+    ISSUE: may not work properly with snakemake logging yaml config [to be solved]
+
+    Args:
+        snakemake (object):  snakemake script object
+        logger (Logger, optional): the script logger. Defaults to None (Root logger).
+            Passing a local logger will apply the configuration to the logger instead of root.
+        skip_handlers (bool, optional): Do (not) skip the default handlers redirecting output to STDERR and file. Defaults to False.
+        level (str, optional): the logging level. Defaults to "INFO".
     """
 
     if not logger:
@@ -139,22 +144,6 @@ def configure_logging(snakemake, logger=None, skip_handlers=False, level="INFO",
         logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
         sys.excepthook = handle_exception
 
-    # def handle_exception(exc_type, exc_value, exc_traceback):
-    #     # do not overload if KeyboardInterrupt
-    #     if issubclass(exc_type, KeyboardInterrupt):
-    #         sys.__excepthook__(exc_type, exc_value, exc_traceback)
-    #         return
-
-    #     logger.error(
-    #         "".join(
-    #             [
-    #                 "Uncaught exception: ",
-    #                 *traceback.format_exception(exc_type, exc_value, exc_traceback),
-    #             ]
-    #         )
-    #     )
-
-    # Install exception handler
     sys.excepthook = handle_exception
 
 
@@ -258,10 +247,17 @@ def mock_snakemake(
     return snakemake
 
 
-def load_network_for_plots(fn, tech_costs, config, cost_year, combine_hydro_ps=True):
+def load_network_for_plots(
+    network_file: os.PathLike,
+    tech_costs: os.PathLike,
+    config: dict,
+    cost_year: int,
+    combine_hydro_ps=True,
+) -> pypsa.Network:
+
     from add_electricity import update_transmission_costs, load_costs
 
-    n = pypsa.Network(fn)
+    n = pypsa.Network(network_file)
 
     n.loads["carrier"] = n.loads.bus.map(n.buses.carrier) + " load"
     n.stores["carrier"] = n.stores.bus.map(n.buses.carrier)
@@ -287,7 +283,7 @@ def load_network_for_plots(fn, tech_costs, config, cost_year, combine_hydro_ps=T
     return n
 
 
-def aggregate_p(n):
+def aggregate_p(n: pypsa.Network) -> pd.Series:
     return pd.concat(
         [
             n.generators_t.p.sum().groupby(n.generators.carrier).sum(),
@@ -364,7 +360,9 @@ def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
     return label
 
 
-def aggregate_costs(n, flatten=False, opts=None, existing_only=False):
+def aggregate_costs(
+    n: pypsa.Network, flatten=False, opts: dict = None, existing_only=False
+) -> pd.Series | pd.DataFrame:
 
     components = dict(
         Link=("p_nom", "p0"),
@@ -405,7 +403,7 @@ def aggregate_costs(n, flatten=False, opts=None, existing_only=False):
     return costs
 
 
-def update_p_nom_max(n):
+def update_p_nom_max(n: pypsa.Network) -> None:
     # if extendable carriers (solar/onwind/...) have capacity >= 0,
     # e.g. existing assets from the OPSD project are included to the network,
     # the installed capacity might exceed the expansion limit.
