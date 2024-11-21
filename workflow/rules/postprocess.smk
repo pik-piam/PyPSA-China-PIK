@@ -55,12 +55,12 @@ rule plot_network:
         + "/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
         tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
     output:
-        only_map=base_results_dir
-        + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.pdf",
+        # only_map=base_results_dir
+        # + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.pdf",
         cost_map=base_results_dir
         + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",
-        ext=base_results_dir
-        + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf",
+        # ext=base_results_dir
+        # + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf",
     log:
         "logs/plot_network/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
     script:
