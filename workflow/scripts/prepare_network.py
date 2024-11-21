@@ -23,7 +23,7 @@ from shapely.ops import transform
 from constants import PROV_NAMES
 from functions import HVAC_cost_curve
 from _helpers import configure_logging, mock_snakemake
-from add_electricity import load_costs
+from add_electricity import load_costs, sanitize_carriers
 
 logger = logging.getLogger(__name__)
 
@@ -1100,10 +1100,10 @@ if __name__ == "__main__":
             planning_horizons=2060,
         )
     configure_logging(snakemake)
-
     population = pd.read_hdf(snakemake.input.population_name)
 
     network = prepare_network(snakemake.config)
+    sanitize_carriers(network, snakemake.config)
 
     network.export_to_netcdf(snakemake.output.network_name)
 

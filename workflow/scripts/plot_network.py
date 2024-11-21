@@ -98,13 +98,14 @@ def plot_cost_map(
     opts: dict,
     components=["generators", "links", "stores", "storage_units"],
 ):
-    """_summary_
+    """plot a map of the costs
 
     Args:
         network (pypsa.Network): _description_
         opts (dict): _description_
         components (list, optional): _description_. Defaults to ["generators", "links", "stores", "storage_units"].
     """
+    logger.info("Plotting cost map")
     tech_colors = opts["tech_colors"]
 
     n = network.copy()
@@ -116,6 +117,7 @@ def plot_cost_map(
     costs_nom = pd.DataFrame(index=n.buses.index)
 
     for comp in components:
+        logger.info(f"getting {comp}")
         df_c = getattr(n, comp)
 
         if df_c.empty:
@@ -189,6 +191,7 @@ def plot_cost_map(
     line_widths = line_widths.replace(line_lower_threshold, 0)
     link_widths = link_widths.replace(line_lower_threshold, 0)
 
+    logger.info("Plotting total grid ax1")
     n.plot(
         bus_sizes=costs_nom / bus_size_factor,
         bus_colors=tech_colors,
@@ -224,7 +227,7 @@ def plot_cost_map(
 
     line_widths = line_widths.replace(line_lower_threshold, 0)
     link_widths = link_widths.replace(line_lower_threshold, 0)
-
+    logger.info("Plotting added grid ax2")
     n.plot(
         bus_sizes=costs_add / bus_size_factor,
         bus_colors=tech_colors,
@@ -249,7 +252,6 @@ def plot_cost_map(
         handletextpad=0,
         title="system cost",
     )
-
     add_legend_circles(
         ax1,
         sizes,
@@ -326,7 +328,7 @@ if __name__ == "__main__":
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
-            planning_horizons="2060",
+            planning_horizons="2050",
             heating_demand="positive",
         )
 

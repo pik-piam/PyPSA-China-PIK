@@ -27,7 +27,7 @@ from constants import (
 )
 from functions import HVAC_cost_curve
 from _helpers import configure_logging, override_component_attrs, mock_snakemake, is_leap_year
-from add_electricity import load_costs
+from add_electricity import load_costs, sanitize_carriers
 from functions import haversine
 from readers import read_province_shapes
 
@@ -1176,6 +1176,7 @@ if __name__ == "__main__":
     configure_logging(snakemake)
 
     network = prepare_network(snakemake.config)
+    sanitize_carriers(network, snakemake.config)
 
     network.export_to_netcdf(snakemake.output.network_name)
 

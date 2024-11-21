@@ -8,7 +8,7 @@ Plots energy and cost summaries for solved networks.
 
 import os
 import logging
-from workflow.scripts._helpers import configure_logging, mock_snakemake
+from _helpers import configure_logging, mock_snakemake
 
 import pandas as pd
 import matplotlib.pyplot as plt

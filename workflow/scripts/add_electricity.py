@@ -1,7 +1,10 @@
 import logging
 import pandas as pd
-from os import PathLike
 import pypsa
+from os import PathLike
+
+from _helpers import rename_techs
+from constants import NICE_NAMES
 
 idx = pd.IndexSlice
 logger = logging.getLogger(__name__)
@@ -123,6 +126,7 @@ def load_costs(
     return costs
 
 
+# TODO understand why this is in make_summary but not in the main optimisation
 def update_transmission_costs(n, costs, length_factor=1.0):
     # TODO: line length factor of lines is applied to lines and links.
     # Separate the function to distinguish.
@@ -178,22 +182,26 @@ def sanitize_carriers(n: pypsa.Network, config: dict) -> None:
         config (dict): A dictionary containing configuration information, specifically the
         "plotting" key with "nice_names" and "tech_colors" keys for carriers.
     """
-
+    # update default nice names w user settings
+    nice_names = NICE_NAMES.update(config["plotting"].get(["nice_names"], {}))
     for c in n.iterate_components():
         if "carrier" in c.df:
             add_missing_carriers(n, c.df.carrier)
 
+    # sort the nice names to match carriers and fill missing with "ugly" names
     carrier_i = n.carriers.index
-    nice_names = (
-        pd.Series(config["plotting"]["nice_names"]).reindex(carrier_i).fillna(carrier_i.to_series())
-    )
-    n.carriers["nice_name"] = n.carriers.nice_name.where(n.carriers.nice_name != "", nice_names)
+    nice_names = pd.Series(nice_names).reindex(carrier_i).fillna(carrier_i.to_series())
+    # replace empty nice names with nice names
+    n.carriers.nice_name.where(n.carriers.nice_name != "", cond=nice_names, inplace=True)
 
+    # TODO make less messy, avoid using map
     tech_colors = config["plotting"]["tech_colors"]
     colors = pd.Series(tech_colors).reindex(carrier_i)
     # try to fill missing colors with tech_colors after renaming
     missing_colors_i = colors[colors.isna()].index
-    colors[missing_colors_i] = missing_colors_i.map(rename_techs).map(tech_colors)
+    colors[missing_colors_i] = missing_colors_i.map(lambda x: rename_techs(x, nice_names)).map(
+        tech_colors
+    )
     if colors.isna().any():
         missing_i = list(colors.index[colors.isna()])
         logger.warning(f"tech_colors for carriers {missing_i} not defined in config.")

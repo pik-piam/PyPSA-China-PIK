@@ -106,3 +106,22 @@ CARRIERS = [
     "ground heat pump",
     "nuclear",
 ]
+
+NICE_NAMES = {
+    "solar": "solar PV",
+    "Sabatier": "methanation",
+    "offwind": "offshore wind",
+    "offwind-ac": "offshore wind (AC)",
+    "offwind-dc": "offshore wind (DC)",
+    "offwind-float": "offshore wind (Float)",
+    "onwind": "onshore wind",
+    "ror": "hydroelectricity",
+    "hydro": "hydroelectricity",
+    "PHS": "hydroelectricity",
+    "NH3": "ammonia",
+    "co2 Store": "DAC",
+    "co2 stored": "CO2 sequestration",
+    "AC": "transmission lines",
+    "DC": "transmission lines",
+    "B2B": "transmission lines",
+}

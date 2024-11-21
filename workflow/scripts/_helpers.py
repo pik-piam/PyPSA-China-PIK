@@ -12,12 +12,12 @@ from pathlib import Path
 from types import SimpleNamespace
 import logging
 import matplotlib.pyplot as plt
+from pypsa.components import components, component_attrs
+import pypsa
 
-# from constants import SNAKEFILE_CHOICES
+from constants import NICE_NAMES
 
 # from pypsa.descriptors import Dict
-import pypsa
-from pypsa.components import components, component_attrs
 
 # get root logger
 logger = logging.getLogger()
@@ -296,6 +296,71 @@ def aggregate_p(n):
             -n.loads_t.p.sum().groupby(n.loads.carrier).sum(),
         ]
     )
+
+
+# TODO make a standard apply/str op instead ofmap in add_electricity.sanitize_carriers
+def rename_techs(label: str, nice_names: dict = None) -> str:
+    """Rename technology labels for better readability. Removes some prefixes
+        and renames if certain conditions  defined in function body are met.
+
+    Args:
+        label (str): original technology label
+        nice_names (dict, optional): nice names that will overwrite defaults
+
+    Returns:
+        str: renamed tech label
+    """
+
+    prefix_to_remove = [
+        "residential ",
+        "services ",
+        "urban ",
+        "rural ",
+        "central ",
+        "decentral ",
+    ]
+
+    rename_if_contains = [
+        "CHP",
+        "gas boiler",
+        "biogas",
+        "solar thermal",
+        "air heat pump",
+        "ground heat pump",
+        "resistive heater",
+        "Fischer-Tropsch",
+    ]
+
+    rename_if_contains_dict = {
+        "water tanks": "hot water storage",
+        "retrofitting": "building retrofitting",
+        # "H2 Electrolysis": "hydrogen storage",
+        # "H2 Fuel Cell": "hydrogen storage",
+        # "H2 pipeline": "hydrogen storage",
+        "battery": "battery storage",
+        "H2 for industry": "H2 for industry",
+        "land transport fuel cell": "land transport fuel cell",
+        "land transport oil": "land transport oil",
+        "oil shipping": "shipping oil",
+        # "CC": "CC"
+    }
+
+    for ptr in prefix_to_remove:
+        if label[: len(ptr)] == ptr:
+            label = label[len(ptr) :]
+
+    for rif in rename_if_contains:
+        if rif in label:
+            label = rif
+
+    for old, new in rename_if_contains_dict.items():
+        if old in label:
+            label = new
+    nice_names = NICE_NAMES.update(nice_names)
+    for old, new in nice_names.items():
+        if old == label:
+            label = new
+    return label
 
 
 def aggregate_costs(n, flatten=False, opts=None, existing_only=False):
