@@ -14,7 +14,7 @@ plotting:
   costs_max: 500
   costs_avg: 50
   costs_threshold: 1000
-  costs_plots_threshold: 20
+  costs_plots_threshold: 10
 
   energy_max: 25000.
   energy_min: 0.
@@ -300,6 +300,7 @@ plotting:
     DC: "#8a1caf"
     DC-DC: "#8a1caf"
     DC link: "#8a1caf"
+    Other: "k"
   nice_names:
     AC-AC: "Electric grid"
     H2-AC: "H2 Fuel Cell"

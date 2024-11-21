@@ -2,6 +2,9 @@ import numpy as np
 
 SNAKEFILE_CHOICES = ["Snakefile", "snakefile"]
 
+PLOT_COST_UNITS = 1e9  # bnEur
+COST_UNIT = 1
+
 # ==== data inputs ====
 YEARBOOK_DATA2POP = 1e4
 POP_YEAR = "2020"
