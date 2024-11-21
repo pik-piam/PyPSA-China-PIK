@@ -24,10 +24,12 @@ def calculate_annuity(lifetime: int, discount_rate: float) -> float:
     r = discount_rate
     n = lifetime
 
-    if r < 0:
-        raise ValueError("Discount rate must be positive")
     if isinstance(r, pd.Series):
+        if r.any() < 0:
+            raise ValueError("Discount rate must be positive")
         return pd.Series(1 / n, index=r.index).where(r == 0, r / (1.0 - 1.0 / (1.0 + r) ** n))
+    elif r < 0:
+        raise ValueError("Discount rate must be positive")
     elif r > 0:
         return r / (1.0 - 1.0 / (1.0 + r) ** n)
     else:
@@ -118,7 +120,7 @@ def load_costs(
     )
 
     for attr in ("marginal_cost", "capital_cost"):
-        overwrites = config.get(attr)
+        overwrites = cost_config.get(attr)
         if overwrites is not None:
             overwrites = pd.Series(overwrites)
             costs.loc[overwrites.index, attr] = overwrites
@@ -183,7 +185,7 @@ def sanitize_carriers(n: pypsa.Network, config: dict) -> None:
         "plotting" key with "nice_names" and "tech_colors" keys for carriers.
     """
     # update default nice names w user settings
-    nice_names = NICE_NAMES.update(config["plotting"].get(["nice_names"], {}))
+    nice_names = NICE_NAMES.update(config["plotting"].get("nice_names", {}))
     for c in n.iterate_components():
         if "carrier" in c.df:
             add_missing_carriers(n, c.df.carrier)
@@ -192,7 +194,7 @@ def sanitize_carriers(n: pypsa.Network, config: dict) -> None:
     carrier_i = n.carriers.index
     nice_names = pd.Series(nice_names).reindex(carrier_i).fillna(carrier_i.to_series())
     # replace empty nice names with nice names
-    n.carriers.nice_name.where(n.carriers.nice_name != "", cond=nice_names, inplace=True)
+    n.carriers.nice_name.where(n.carriers.nice_name != "", nice_names, inplace=True)
 
     # TODO make less messy, avoid using map
     tech_colors = config["plotting"]["tech_colors"]

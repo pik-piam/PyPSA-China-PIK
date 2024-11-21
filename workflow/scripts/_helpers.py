@@ -299,7 +299,7 @@ def aggregate_p(n):
 
 
 # TODO make a standard apply/str op instead ofmap in add_electricity.sanitize_carriers
-def rename_techs(label: str, nice_names: dict = None) -> str:
+def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
     """Rename technology labels for better readability. Removes some prefixes
         and renames if certain conditions  defined in function body are met.
 
@@ -356,8 +356,9 @@ def rename_techs(label: str, nice_names: dict = None) -> str:
     for old, new in rename_if_contains_dict.items():
         if old in label:
             label = new
-    nice_names = NICE_NAMES.update(nice_names)
-    for old, new in nice_names.items():
+    names_new = NICE_NAMES.copy()
+    names_new.update(nice_names)
+    for old, new in names_new.items():
         if old == label:
             label = new
     return label
