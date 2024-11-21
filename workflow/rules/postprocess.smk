@@ -87,17 +87,20 @@ rule make_summary:
 
 rule plot_summary:
     input:
-        base_results_dir
-        + "/summary/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}",
+        expand(
+            base_results_dir
+            + "/summary/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}",
+            **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
+        ),
     output:
         energy=base_results_dir
-        + "/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_energy.png",
+        + "/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_energy.png",
         costs=base_results_dir
-        + "/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png",
+        + "/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_costs.png",
     log:
-        "logs/plot/{heating_demand}_summary_plot_postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
+        "logs/plot/{heating_demand}_summary_plot_postnetwork-{opts}-{topology}-{pathway}-summary.log",
     script:
-        "../scripts/plot_summary.py"
+        "../scripts/plot_summary_all.py"
 
 
 # TODO add to config options
