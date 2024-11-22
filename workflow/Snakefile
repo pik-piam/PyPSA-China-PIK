@@ -69,7 +69,7 @@ if config["foresight"] == "steady-state":
                 config["base_results_dir"]+ '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
                 **config["scenario"]
             )
-            
+
 elif config["foresight"] == "myopic":
 
     # rule prepare_all_networks:
@@ -112,7 +112,7 @@ elif config["foresight"] == "myopic":
                 **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
             )
             # expand(
-            #     
+            #
             # config["base_results_dir"]+ '/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf',
             #     **config["scenario"]
             # )
