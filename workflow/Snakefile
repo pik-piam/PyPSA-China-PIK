@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from os.path import normpath, abspath
+from os.path import normpath, abspath, getctime
 from shutil import move
 from pathlib import Path
 from snakemake.utils import min_version
@@ -68,8 +68,8 @@ if config["foresight"] == "steady-state":
             expand(
                 config["base_results_dir"]+ '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
                 **config["scenario"]
-            ),
-
+            )
+            
 elif config["foresight"] == "myopic":
 
     # rule prepare_all_networks:
@@ -108,15 +108,12 @@ elif config["foresight"] == "myopic":
             #     ** config["scenario"]
             # ),
             expand(
-                config["base_results_dir"]+ '/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
-                **config["scenario"]
-            ),
-            expand(
-                config["base_results_dir"]+ '/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf',
-                **config["scenario"]
-            ),
+                config["base_results_dir"]+ '/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_costs.png',
+                **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
+            )
             # expand(
-            #     config["base_results_dir"]+ '/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf',
+            #     
+            # config["base_results_dir"]+ '/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf',
             #     **config["scenario"]
             # )
 else:
@@ -418,3 +415,26 @@ rule dag:
         dot -Tpdf -o {output.pdf} {output.dot}
         dot -Tpng -o {output.png} {output.dot}
         """
+
+def copy_sm_log():
+    # Set the source and destination directories
+    SOURCE_DIR = ".snakemake/logs"
+    DEST_DIR = "logs/"
+    NEW_NAME = "latest_snakemake.log"  # The desired new filename
+
+    try:
+        logs_sm = Path(".snakemake/log").rglob("*.log")
+        newest_log = max(logs_sm, key=getctime)
+        destination_file = Path(DEST_DIR) / NEW_NAME
+        # Copy and rename the newest file to the destination directory
+        shutil.copy(newest_log, destination_file)
+    except FileNotFoundError as e:
+        pass
+    except Exception as e:
+        pass
+
+onerror:
+    copy_sm_log()
+
+onsuccess:
+    copy_sm_log()
