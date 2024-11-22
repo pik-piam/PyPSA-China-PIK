@@ -30,14 +30,24 @@ idx = pd.IndexSlice
 nodes = pd.Index(PROV_NAMES)
 
 
+# TODO check this is compatible w naive timestamps!
 def generate_periodic_profiles(
-    dt_index=None,
+    dt_index: pd.DatetimeIndex = None,
     col_tzs=pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]),
     weekly_profile=range(24 * 7),
-):
+) -> pd.DataFrame:
     """Give a 24*7 long list of weekly hourly profiles, generate this
     for each country for the period dt_index, taking account of time
-    zones and Summer Time."""
+    zones and Summer Time.
+
+    Args:
+        dt_index (DatetimeIndex, optional): _description_. Defaults to None.
+        col_tzs (pd.Series, optional): _description_. Defaults to pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]).
+        weekly_profile (_type_, optional): _description_. Defaults to range(24 * 7).
+
+    Returns:
+        pd.DataFrame: _description_
+    """
 
     weekly_profile = pd.Series(weekly_profile, range(24 * 7))
 
@@ -56,7 +66,7 @@ def build_daily_heat_demand_profiles() -> pd.DataFrame:
     """build the heat demand profile according to forecast demans
 
     Returns:
-        pd.DataFrame: daily heating demand with Alpri to Sept forced to 0
+        pd.DataFrame: daily heating demand with April to Sept forced to 0
     """
     with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
         pop_map = store["population_gridcell_map"]
@@ -83,7 +93,7 @@ def build_daily_heat_demand_profiles() -> pd.DataFrame:
 
 
 # TODO separate the two functions (day and yearly)
-def build_hot_water_per_day(planning_horizons):
+def build_hot_water_per_day(planning_horizons: int | str) -> np.array:
 
     with pd.HDFStore(snakemake.input.population, mode="r") as store:
         population_count = store["population"]
@@ -107,14 +117,14 @@ def build_hot_water_per_day(planning_horizons):
 
     if snakemake.wildcards["heating_demand"] == "mean":
 
-        def func(x, a, b):
+        def lin_func(x: np.array, a: float, b: float) -> np.array:
             return a * x + b
 
         x = np.array([START_YEAR, END_YEAR])
         y = np.array([unit_hot_water_start_yr, unit_hot_water_end_yr])
-        popt, pcov = curve_fit(func, x, y)
+        popt, pcov = curve_fit(lin_func, x, y)
 
-        unit_hot_water = (func(int(planning_horizons), *popt) + UNIT_HOT_WATER_START_YEAR) / 2
+        unit_hot_water = (lin_func(int(planning_horizons), *popt) + UNIT_HOT_WATER_START_YEAR) / 2
 
         # MWh per day
     hot_water_per_day = unit_hot_water * population_count / 365.0
@@ -124,7 +134,10 @@ def build_hot_water_per_day(planning_horizons):
 
 # TODO make indep of model years
 def build_heat_demand_profile(
-    daily_hd: pd.DataFrame, hot_water_per_day: pd.DataFrame, date_range, planning_horizons
+    daily_hd: pd.DataFrame,
+    hot_water_per_day: pd.DataFrame,
+    date_range,
+    planning_horizons: int | str,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """_summary_
 
@@ -132,7 +145,7 @@ def build_heat_demand_profile(
         daily_hd (DataFrame): _description_
         hot_water_per_day (DataFrame): _description_
         date_range (_type_): _description_
-        planning_horizons (_type_): _description_
+        planning_horizons (int | str): the planning year
 
     Returns:
         tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: heat, space_heat and water_heat demands
@@ -225,7 +238,7 @@ if __name__ == "__main__":
             "build_load_profiles", heating_demand="positive", planning_horizons="2020"
         )
 
-    configure_logging(snakemake)
+    configure_logging(snakemake, logger=logger)
 
     daily_hd = build_daily_heat_demand_profiles()
 
@@ -250,3 +263,5 @@ if __name__ == "__main__":
 
     with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w", complevel=4) as store:
         store["heat_demand_profiles"] = heat_demand
+
+    logger.info("Heat demand profiles successfully built")

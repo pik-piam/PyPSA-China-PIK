@@ -62,6 +62,8 @@ if __name__ == "__main__":
         from _helpers import mock_snakemake
 
         snakemake = mock_snakemake("build_cop_profiles")
-    configure_logging(snakemake)
+    configure_logging(snakemake, logger=logger)
 
     build_cop_profiles()
+
+    logger.info("COP profiles successfully built")

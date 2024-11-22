@@ -1,7 +1,9 @@
 import cartopy.io.shapereader as shpreader
 import geopandas as gpd
 import os.path
+import logging
 
+from _helpers import configure_logging, mock_snakemake
 from constants import PROV_NAMES, CRS
 
 # TODO integrate constants with repo/config files/snakefile
@@ -11,6 +13,8 @@ NATURAL_EARTH_DATA_SET = "admin_1_states_provinces"
 
 # TODO fix this messy path
 DEFAULT_SHAPE_OUTPATH = "resources/data/province_shapes/CHN_adm1.shp"
+
+logger = logging.getLogger(__name__)
 
 
 def fetch_natural_earth_records(country_iso2_code="CN") -> object:
@@ -101,7 +105,11 @@ def save_province_data(
 
 
 if __name__ == "__main__":
-
+    if not "snakemake" in globals():
+        snakemake = mock_snakemake("build_province_shapes")
+    configure_logging(snakemake, logger=logger)
     records = fetch_natural_earth_records(country_iso2_code="CN")
     provinces_gdf = records_to_data_frame(records)
     save_province_data(provinces_gdf, CRS, DEFAULT_SHAPE_OUTPATH)
+
+    logger.info("Province shapes successfully built")

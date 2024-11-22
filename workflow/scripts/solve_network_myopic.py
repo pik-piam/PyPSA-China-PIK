@@ -14,6 +14,8 @@ import xarray as xr
 from _helpers import (
     configure_logging,
     override_component_attrs,
+    mock_snakemake,
+    setup_gurobi_tunnel_and_env,
 )
 
 logger = logging.getLogger(__name__)
@@ -158,7 +160,7 @@ def add_transimission_constraints(n):
 
 
 def add_retrofit_constraints(n):
-    p_nom_max = pd.read_csv("data/p_nom/p_nom_max_cc.csv", index_col=0)
+    p_nom_max = pd.read_csv("resources/data/p_nom/p_nom_max_cc.csv", index_col=0)
     planning_horizon = snakemake.wildcards.planning_horizons
     for year in range(int(planning_horizon) - 40, 2021, 5):
         coal = (
@@ -272,8 +274,6 @@ def solve_network(n, config, solving, opts="", **kwargs):
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
-
         snakemake = mock_snakemake(
             "solve_network_myopic",
             opts="ll",
@@ -284,6 +284,13 @@ if __name__ == "__main__":
         )
 
     configure_logging(snakemake)
+
+    # deal with the gurobi license activation, which requires a tunnel to the login nodes
+    solver_config = snakemake.config["solving"]["solver"]
+    gurobi_license_config = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
+    logger.info(f"Solver config {solver_config} and license cfg {gurobi_license_config}")
+    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
+        setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
 
     opts = snakemake.wildcards.opts
     if "sector_opts" in snakemake.wildcards.keys():
@@ -312,3 +319,5 @@ if __name__ == "__main__":
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
     n.export_to_netcdf(snakemake.output.network_name)
+
+    logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")

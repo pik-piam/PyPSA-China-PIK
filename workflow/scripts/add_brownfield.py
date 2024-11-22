@@ -8,13 +8,14 @@ import numpy as np
 import xarray as xr
 
 from add_existing_baseyear import add_build_year_to_new_assets
-from _helpers import override_component_attrs
+from _helpers import override_component_attrs, mock_snakemake, configure_logging
 from constants import PROV_NAMES, OFFSHORE_WIND_NODES
 
 idx = pd.IndexSlice
 logger = logging.getLogger(__name__)
 
 
+# TODO switch ot os. basename
 def basename(x):
     return x.split("-2")[0]
 
@@ -131,8 +132,6 @@ def add_brownfield(n, n_p, year):
 if __name__ == "__main__":
 
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
-
         snakemake = mock_snakemake(
             "add_brownfield",
             opts="ll",
@@ -142,8 +141,7 @@ if __name__ == "__main__":
             planning_horizons=2025,
         )
 
-    print(snakemake.input.network_p)
-    logging.basicConfig(level=snakemake.config["logging_level"])
+    configure_logging(snakemake, logger=logger)
 
     year = int(snakemake.wildcards.planning_horizons)
 
@@ -157,3 +155,7 @@ if __name__ == "__main__":
     add_brownfield(n, n_p, year)
 
     n.export_to_netcdf(snakemake.output.network_name)
+
+    logger.info(
+        f"Brownfield extension successfully added for {snakemake.wildcards.planning_horizons}"
+    )
