@@ -2,7 +2,7 @@
 
 This is the PIK implementation of the PyPSA-China power model, first published by Xiaowei Zhou et al for their  "Multi-energy system horizon planning: Early decarbonisation in China avoids stranded assets" (doi.org/10.1049/ein2.12011). It is adapted from the original by the PIK RD3 team, with the aim of coupling it to the [REMIND](https://www.pik-potsdam.de/en/institute/departments/transformation-pathways/models/remind) integrated assessment model.
 
-PyPSA-China should be understood as a modelling worklow, using snakemake as workflow manager, around the [PyPSA python power system analysis](https://pypsa.org/) package. The workflow collects data, builds the power system network and plots the results. It is akin to its more mature sister project, [PyPSA-EUR](https://github.com/PyPSA/pypsa-eur).
+PyPSA-China should be understood as a modelling worklow, using snakemake as workflow manager, around the [PyPSA python power system analysis](https://pypsa.org/) package. The workflow collects data, builds the power system network and plots the results. It is akin to its more mature sister project, [PyPSA-EUR](https://github.com/PyPSA/pypsa-eur), from which it is derived.
 
 Unlike PyPSA-EUR, which simplifies high resolution data into a user-defined network size, the PyPSA-China network is currently fixed to one node per province. This is in large part due to data availability issues.
 
@@ -27,7 +27,7 @@ In addition you should have your .profile setup as per https://gitlab.pik-potsda
 and add `module load anaconda/2024.10` (or latest) to it
 
 ## General installation
-- Create the conda environment in workflow/envs/ (maybe snakemake does it automatically for you provided the profile has use-conda)
+- Create the conda environment in workflow/envs/ (maybe snakemake does it automatically for you provided the profile has use-conda) `conda env create --file path_to_env` (name is opt.). You can use either the pinned (exact) or the loose env (will install later package versions too). 
 - If you experience issues switch to the pinned environment #TODO: generate
 - NB! you may need to modify atlite for things to work. Instructions to follow.
 
