@@ -8,13 +8,13 @@ Plots energy and cost summaries for solved networks.
 
 import os
 import logging
-from _helpers import configure_logging, mock_snakemake
-
 import pandas as pd
 import matplotlib.pyplot as plt
+import re
+from _helpers import configure_logging, mock_snakemake
+from constants import PLOT_COST_UNITS, COST_UNIT
 
 plt.style.use("ggplot")
-
 logger = logging.getLogger(__name__)
 
 
@@ -96,26 +96,31 @@ preferred_order = pd.Index(
 )
 
 
-def plot_costs(results_file: os.PathLike, config: dict, fig_name: os.PathLike = None):
+def plot_pathway_costs(file_list: list, config: dict, fig_name: os.PathLike = None):
     """plot the costs
 
     Args:
-        results_file (os.PathLike): the input csv
+        results_file (list): the input csvs
         config (dict): the configuration for plotting
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
-    # For now ignore the simpl header
+    # all years in one df
+    df = pd.DataFrame()
+    for results_file in file_list:
+        cost_df = pd.read_csv(results_file, index_col=list(range(3)), header=[1])
+        df_ = cost_df.groupby(cost_df.index.get_level_values(2)).sum()
+        # do this here so aggregate costs of small items only for that year
+        # TODO centralise unit
+        df_ = df_ * COST_UNIT / PLOT_COST_UNITS
+        df_ = df_.groupby(df_.index.map(rename_techs)).sum()
+        to_drop = df_.index[df_.max(axis=1) < config["plotting"]["costs_plots_threshold"]]
+        df_.loc["Other"] = df_.loc[to_drop].sum(axis=0)
+        df_ = df_.drop(to_drop)
 
-    cost_df = pd.read_csv(results_file, index_col=list(range(3)), header=[1])
-    df = cost_df.groupby(cost_df.index.get_level_values(2)).sum()
+        df = pd.concat([df_, df], axis=1)
 
-    # TODO centralise ?
-    # convert to billions
-    df = df / 1e9
-    df = df.groupby(df.index.map(rename_techs)).sum()
-    to_drop = df.index[df.max(axis=1) < config["plotting"]["costs_plots_threshold"]]
-    df = df.drop(to_drop)
-
+    df.fillna(0, inplace=True)
+    df.sort_index(axis=1, inplace=True)
     new_index = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
 
     new_columns = df.sum().sort_values().index
@@ -132,14 +137,26 @@ def plot_costs(results_file: os.PathLike, config: dict, fig_name: os.PathLike = 
 
     handles, labels = ax.get_legend_handles_labels()
 
-    handles.reverse()
-    labels.reverse()
+    # Remove duplicate legend entries
+    from collections import OrderedDict
 
-    ax.set_ylim([0, config["plotting"]["costs_max"]])
+    by_label = OrderedDict(zip(labels, handles))
+
+    ax.set_ylim([0, df.sum(axis=0).max() * 1.1])
     ax.set_ylabel("System Cost [EUR billion per year]")
     ax.set_xlabel("")
     ax.grid(axis="y")
-    ax.legend(handles, labels, ncol=4, bbox_to_anchor=[1, 1], loc="upper left")
+    # TODO fix this - doesnt work with non-constant interval
+    ax.annotate(
+        f"Total cost in bn Eur: {df.sum().sum()*5:.2f}",
+        xy=(0.3, 0.9),
+        color="darkgray",
+        xycoords="axes fraction",
+        ha="right",
+        va="top",
+    )
+
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
 
     fig.tight_layout()
 
@@ -147,36 +164,43 @@ def plot_costs(results_file: os.PathLike, config: dict, fig_name: os.PathLike = 
         fig.savefig(fig_name, transparent=True)
 
 
-def plot_energy(results_file: os.PathLike, config: dict, fig_name=None):
+def plot_energy(file_list: list, config: dict, fig_name=None):
     """plot the costs
 
     Args:
-        results_file (os.PathLike): the input csv
+        results_file (list): the input csvs
         config (dict): the configuration for plotting
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
-    energy_df = pd.read_csv(results_file, index_col=list(range(2)), header=[1])
-    df = energy_df.groupby(energy_df.index.get_level_values(1)).sum()
-    # convert MWh to TWh
-    df = df / 1e6
-    df = df.groupby(df.index.map(rename_techs)).sum()
+    energy_df = pd.DataFrame()
+    for results_file in file_list:
+        cost_df = pd.read_csv(results_file, index_col=list(range(2)), header=[1])
+        df_ = cost_df.groupby(cost_df.index.get_level_values(1)).sum()
+        # do this here so aggregate costs of small items only for that year
+        # TODO centralise unit
+        # convert MWh to TWh
+        df_ = df_ / 1e6
+        df_ = df_.groupby(df_.index.map(rename_techs)).sum()
+        to_drop = df_.index[df_.max(axis=1) < config["plotting"]["energy_threshold"]]
+        df_.loc["Other"] = df_.loc[to_drop].sum(axis=0)
+        df_ = df_.drop(to_drop)
 
-    to_drop = df.index[df.abs().max(axis=1) < config["plotting"]["energy_threshold"]]
-    logger.info(
-        f"Dropping all technology with energy consumption or production below {config['plotting']['energy_threshold']} TWh/a"
+        energy_df = pd.concat([df_, energy_df], axis=1)
+    energy_df.fillna(0, inplace=True)
+    energy_df.sort_index(axis=1, inplace=True)
+
+    logger.info(f"Total energy of {round(energy_df.sum()[0])} TWh/a")
+    new_index = preferred_order.intersection(energy_df.index).append(
+        energy_df.index.difference(preferred_order)
     )
-    logger.debug(df.loc[to_drop])
-    df = df.drop(to_drop)
-    logger.info(f"Total energy of {round(df.sum()[0])} TWh/a")
-    new_index = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
-    new_columns = df.columns.sort_values()
+    new_columns = energy_df.columns.sort_values()
 
     fig, ax = plt.subplots()
     fig.set_size_inches((12, 8))
 
-    logger.debug(df.loc[new_index, new_columns])
+    logger.debug(energy_df.loc[new_index, new_columns])
 
-    df.loc[new_index, new_columns].T.plot(
+    energy_df.loc[new_index, new_columns].T.plot(
         kind="bar",
         ax=ax,
         stacked=True,
@@ -188,11 +212,11 @@ def plot_energy(results_file: os.PathLike, config: dict, fig_name=None):
     handles.reverse()
     labels.reverse()
 
-    ax.set_ylim([config["plotting"]["energy_min"], config["plotting"]["energy_max"]])
+    ax.set_ylim([config["plotting"]["energy_min"], energy_df.sum(axis=0).max() * 1.1])
     ax.set_ylabel("Energy [TWh/a]")
     ax.set_xlabel("")
     ax.grid(axis="y")
-    ax.legend(handles, labels, ncol=4, bbox_to_anchor=[1, 1], loc="upper left")
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
     fig.tight_layout()
 
     if fig_name is not None:
@@ -207,10 +231,22 @@ if __name__ == "__main__":
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
-            planning_horizons="2020",
             heating_demand="positive",
+            planning_horizons=[
+                "2020",
+                "2025",
+                "2030",
+                "2035",
+                "2040",
+                "2045",
+                "2050",
+                "2055",
+                "2060",
+            ],
         )
+
     configure_logging(snakemake)
+    logger.info(snakemake.input)
 
     config = snakemake.config
     wildcards = snakemake.wildcards
@@ -219,10 +255,11 @@ if __name__ == "__main__":
     paths = snakemake.input
 
     data_paths = {
-        "energy": os.path.join(paths[0], "energy.csv"),
-        "costs": os.path.join(paths[0], "costs.csv"),
+        "energy": [os.path.join(p, "energy.csv") for p in paths],
+        "costs": [os.path.join(p, "costs.csv") for p in paths],
     }
-    plot_costs(data_paths["costs"], config, output_paths.costs)
-    plot_energy(data_paths["energy"], config, output_paths.energy)
+
+    plot_pathway_costs(data_paths["costs"], config, fig_name=output_paths.costs)
+    plot_energy(data_paths["energy"], config, fig_name=output_paths.energy)
 
     logger.info(f"Successfully plotted summary for {wildcards}")

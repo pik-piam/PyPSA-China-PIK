@@ -302,7 +302,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake("build_renewable_potential")
 
-    configure_logging(snakemake)
+    configure_logging(snakemake, logger=logger)
     pgb.streams.wrap_stderr()  # ?
 
     nprocesses = int(snakemake.threads)  # ?
@@ -346,3 +346,5 @@ if __name__ == "__main__":
             cutout=cutout,
             outp_path=snakemake.output.offwind_profile,
         )
+
+    logger.info("Renewable potential profiles successfully built.")

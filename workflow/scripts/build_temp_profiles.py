@@ -42,7 +42,9 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake("build_temp_profiles")
 
-    configure_logging(snakemake)
+    configure_logging(snakemake, logger=logger)
     build_temp_profiles(
         snakemake.input.population_map, snakemake.input.cutout, snakemake.output.temp
     )
+
+    logger.info("Temperature profiles successfully built")

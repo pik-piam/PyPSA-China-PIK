@@ -2,6 +2,9 @@ import numpy as np
 
 SNAKEFILE_CHOICES = ["Snakefile", "snakefile"]
 
+PLOT_COST_UNITS = 1e9  # bnEur
+COST_UNIT = 1
+
 # ==== data inputs ====
 YEARBOOK_DATA2POP = 1e4
 POP_YEAR = "2020"
@@ -90,3 +93,38 @@ OFFSHORE_WIND_NODES = np.array(
     ],
     dtype=str,
 )
+
+# ==== technologies
+
+CARRIERS = [
+    "coal",
+    "CHP coal",
+    "CHP gas",
+    "OCGT",
+    "solar",
+    "solar thermal",
+    "onwind",
+    "offwind",
+    "coal boiler",
+    "ground heat pump",
+    "nuclear",
+]
+
+NICE_NAMES = {
+    "solar": "solar PV",
+    "Sabatier": "methanation",
+    "offwind": "offshore wind",
+    "offwind-ac": "offshore wind (AC)",
+    "offwind-dc": "offshore wind (DC)",
+    "offwind-float": "offshore wind (Float)",
+    "onwind": "onshore wind",
+    "ror": "hydroelectricity",
+    "hydro": "hydroelectricity",
+    "PHS": "hydroelectricity",
+    "NH3": "ammonia",
+    "co2 Store": "DAC",
+    "co2 stored": "CO2 sequestration",
+    "AC": "transmission lines",
+    "DC": "transmission lines",
+    "B2B": "transmission lines",
+}
