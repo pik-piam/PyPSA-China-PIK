@@ -49,8 +49,9 @@ default-resources:
 set-resources:
   plot_network:
     mem_mb: 4000
-    cores: 1
-    partition: io
+    cores: 2
+    # partition: io
+    # qos: io
   retrieve_build_up_raster:
     time: 300
     cores: 1
