@@ -27,7 +27,7 @@ In addition you should have your .profile setup as per https://gitlab.pik-potsda
 and add `module load anaconda/2024.10` (or latest) to it
 
 ## General installation
-- Create the conda environment in workflow/envs/ (maybe snakemake does it automatically for you provided the profile has use-conda) `conda env create --file path_to_env` (name is opt.). You can use either the pinned (exact) or the loose env (will install later package versions too). 
+- Create the conda environment in workflow/envs/ (maybe snakemake does it automatically for you provided the profile has use-conda) `conda env create --file path_to_env` (name is opt.). You can use either the pinned (exact) or the loose env (will install later package versions too).
 - If you experience issues switch to the pinned environment #TODO: generate
 - NB! you may need to modify atlite for things to work. Instructions to follow.
 
