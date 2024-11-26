@@ -61,14 +61,19 @@ if config["foresight"] == "steady-state":
 
     rule plot_all:
         input:
+            # expand(
+            #     config["base_results_dir"]+ '/plots/summary/steady_state/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf',
+            #     **config["scenario"]
+            # ),
             expand(
-                config["base_results_dir"]+ '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf',
+                config["base_results_dir"]+ '/plots/summary/steady_state/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-pathway_costs.png',
+                **config["scenario"]
+        ),
+            # network plot
+            expand(
+                config["base_results_dir"]+"/plots/steady_state/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",      
                 **config["scenario"]
             ),
-            expand(
-                config["base_results_dir"]+ '/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png',
-                **config["scenario"]
-            )
 
 elif config["foresight"] == "myopic":
 
@@ -110,12 +115,12 @@ elif config["foresight"] == "myopic":
             expand(
                 config["base_results_dir"]+ '/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_costs.png',
                 **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
-            )
-            # expand(
-            #
-            # config["base_results_dir"]+ '/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf',
-            #     **config["scenario"]
-            # )
+            ),
+            # network plot
+            expand(
+                config["base_results_dir"]+"/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",      
+                **config["scenario"]
+            ),
 else:
     raise ValueError("Invalid scenario config: {}".format(config["foresight"]))
 
@@ -406,12 +411,10 @@ rule dag:
         dot="results/dag/dag.dot",
         pdf="results/dag/dag.pdf",
         png="results/dag/dag.png",
-    conda:
-        "envs/environment.yaml"
     shell:
         # switch to all
         r"""
-        snakemake --rulegraph execute_workflow | sed -n "/digraph/,\$p" > {output.dot}
+        snakemake --rulegraph plot_all | sed -n "/digraph/,\$p" > {output.dot}
         dot -Tpdf -o {output.pdf} {output.dot}
         dot -Tpng -o {output.png} {output.dot}
         """
