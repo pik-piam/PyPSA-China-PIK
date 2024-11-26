@@ -264,4 +264,8 @@ if __name__ == "__main__":
     with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w", complevel=4) as store:
         store["heat_demand_profiles"] = heat_demand
 
+    with pd.HDFStore(snakemake.output.energy_totals_name, mode="w") as store:
+        space_heating_per_hdd = store["space_heating_per_hdd"]
+        hot_water_per_day = store["hot_water_per_day"]
+
     logger.info("Heat demand profiles successfully built")

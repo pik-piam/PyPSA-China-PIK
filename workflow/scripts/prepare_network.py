@@ -146,17 +146,7 @@ def prepare_data(
         * 1e9
     )
 
-    ###############
-    # CO2
-    ###############
-
-    # tCO2
-    represented_hours = network.snapshot_weightings.sum()[0]
-    n_years = represented_hours / 8760.0
-    with pd.HDFStore(snakemake.input.co2_totals_name, mode="r") as store:
-        co2_totals = n_years * store["co2"]
-
-    return heat_demand, space_heat_demand, water_heat_demand, ashp_cop, gshp_cop, co2_totals
+    return heat_demand, space_heat_demand, water_heat_demand, ashp_cop, gshp_cop
 
 
 def prepare_network(config: dict) -> pypsa.Network:
@@ -244,7 +234,6 @@ def prepare_network(config: dict) -> pypsa.Network:
         water_heat_demand,
         ashp_cop,
         gshp_cop,
-        co2_totals,
     ) = prepare_data(network, date_range, planning_horizons)
 
     ds_solar = xr.open_dataset(snakemake.input.profile_solar)
