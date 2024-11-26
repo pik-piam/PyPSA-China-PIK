@@ -113,7 +113,7 @@ def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -
     return data
 
 
-def prepare_network(config: dict):
+def prepare_network(config: dict)->pypsa.Network:
 
     if "overrides" in snakemake.input.keys():
         overrides = override_component_attrs(snakemake.input.overrides)
