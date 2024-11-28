@@ -11,7 +11,6 @@ from shapely.geometry import Point
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-import pytz
 import pyproj
 import xarray as xr
 import logging
@@ -20,10 +19,11 @@ from math import radians, cos, sin, asin, sqrt
 from functools import partial
 from shapely.ops import transform
 
-from constants import PROV_NAMES
+from constants import PROV_NAMES, CRS, CO2_HEATING_2020, CO2_EL_2020
 from functions import HVAC_cost_curve
 from _helpers import configure_logging, mock_snakemake
 from add_electricity import load_costs, sanitize_carriers
+from readers import read_province_shapes
 
 logger = logging.getLogger(__name__)
 
@@ -80,10 +80,7 @@ def generate_periodic_profiles(
 
     week_df = pd.DataFrame(index=dt_index, columns=col_tzs.index)
     for ct in col_tzs.index:
-        week_df[ct] = [
-            24 * dt.weekday() + dt.hour
-            for dt in dt_index.tz_convert(pytz.timezone("Asia/{}".format(col_tzs[ct])))
-        ]
+        week_df[ct] = [24 * dt.weekday() + dt.hour for dt in dt_index.tz_localize(None)]
         week_df[ct] = week_df[ct].map(weekly_profile)
     return week_df
 
@@ -114,6 +111,7 @@ def prepare_data(
         # the ffill converts daily values into hourly values
         h = store["heat_demand_profiles"]
         h_n = h[~h.index.duplicated(keep="first")].iloc[:-1, :]
+        h_n = h_n.tz_localize(None)
         heat_demand_hdh = h_n.reindex(index=network.snapshots, method="ffill")
 
     with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
@@ -124,7 +122,7 @@ def prepare_data(
         space_heating_per_hdd = store["space_heating_per_hdd"]
         hot_water_per_day = store["hot_water_per_day"]
 
-    intraday_profiles = pd.read_csv("data/heating/heat_load_profile_DK_AdamJensen.csv", index_col=0)
+    intraday_profiles = pd.read_csv(snakemake.input.intraday_profiles, index_col=0)
     intraday_year_profiles = generate_periodic_profiles(
         dt_index=heat_demand_hdh.index.tz_localize("UTC"),
         weekly_profile=(
@@ -135,18 +133,10 @@ def prepare_data(
     space_heat_demand = intraday_year_profiles.mul(heat_demand_hdh).mul(space_heating_per_hdd)
     water_heat_demand = intraday_year_profiles.mul(hot_water_per_day / 24.0)
 
-    heat_demand_calculate = (
-        space_heat_demand + water_heat_demand
-    )  # only consider heat demand at first
+    # only consider heat demand at first
+    combined_heat_demand = space_heat_demand + water_heat_demand
 
-    heat_demand = (
-        heat_demand_calculate
-        / (heat_demand_calculate.sum().sum() * snakemake.config["frequency"])
-        * snakemake.config["heating_demand"][planning_horizons]
-        * 1e9
-    )
-
-    return heat_demand, space_heat_demand, water_heat_demand, ashp_cop, gshp_cop
+    return combined_heat_demand, space_heat_demand, water_heat_demand, ashp_cop, gshp_cop
 
 
 def prepare_network(config: dict) -> pypsa.Network:
@@ -159,7 +149,7 @@ def prepare_network(config: dict) -> pypsa.Network:
         pypsa.Network: the pypsa network object
     """
     # add CHP definition
-    override_component_attrs = pypsa.descriptors.Dict(
+    override_component_attrs = dict(
         {k: v.copy() for k, v in pypsa.components.component_attrs.items()}
     )
     override_component_attrs["Link"].loc["bus2"] = [
@@ -189,9 +179,9 @@ def prepare_network(config: dict) -> pypsa.Network:
 
     # load graph
     nodes = pd.Index(PROV_NAMES)
-    edges = pd.read_csv("data/edges.txt", sep=",", header=None)
-    edges_current = pd.read_csv("data/edges_current.csv", header=None)
-    edges_current_FCG = pd.read_csv("data/edges_current_FCG.csv", header=None)
+    edges = pd.read_csv("resources/data/grids/edges.txt", sep=",", header=None)
+    edges_current = pd.read_csv("resources/data/grids/edges_current.csv", header=None)
+    edges_current_FCG = pd.read_csv("resources/data/grids/edges_current_FCG.csv", header=None)
 
     # set times
     planning_horizons = snakemake.wildcards["planning_horizons"]
@@ -262,17 +252,11 @@ def prepare_network(config: dict) -> pypsa.Network:
         .set_index(network.snapshots)
     )
 
-    pro_shapes = gpd.GeoDataFrame.from_file("data/province_shapes/CHN_adm1.shp")
-    pro_shapes = pro_shapes.to_crs(4326)
-    pro_shapes.index = PROV_NAMES
+    prov_shapes = read_province_shapes(snakemake.input.province_shape)
+    prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
 
     # add buses
-    network.add(
-        "Bus",
-        nodes,
-        x=pro_shapes["geometry"].centroid.x,
-        y=pro_shapes["geometry"].centroid.y,
-    )
+    network.add("Bus", nodes, x=prov_centroids.x, y=prov_centroids.y)
 
     # add carriers
     network.add("Carrier", "onwind")
@@ -292,26 +276,46 @@ def prepare_network(config: dict) -> pypsa.Network:
         network.add("Carrier", "heat")
         network.add("Carrier", "water tanks")
 
-    if not isinstance(config["scenario"]["co2_reduction"], tuple):
+    if config["scenario"]["co2_reduction"] is None:
+        pass
+    # TODO fix
+    elif isinstance(config["scenario"]["co2_reduction"], dict):
+        logger.info("Adding CO2 constraint based on scenario")
+        pathway = snakemake.wildcards["pathway"]
+        reduction = float(config["scenario"]["co2_reduction"][pathway][str(planning_horizons)])
+        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (1 - reduction)
+        network.add(
+            "GlobalConstraint",
+            f"co2_limit_{planning_horizons}",
+            type="primary_energy",
+            carrier_attribute="co2_emissions",
+            sense="<=",
+            constant=co2_limit,
+        )
+    elif not isinstance(config["scenario"]["co2_reduction"], tuple):
+        logger.info("Adding CO2 constraint based on scenario")
+        # TODO fix hard coded
+        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (
+            1 - float(config["scenario"]["co2_reduction"])
+        )  # Chinese 2020 CO2 emissions of electric and heating sector
 
-        if config["scenario"]["co2_reduction"] is not None:
-            # TODO fix hard coded
-            co2_limit = (
-                5.59 * 1e9 * (1 - config["scenario"]["co2_reduction"])
-            )  # Chinese 2020 CO2 emissions of electric and heating sector
-
-            network.add(
-                "GlobalConstraint",
-                "co2_limit",
-                type="primary_energy",
-                carrier_attribute="co2_emissions",
-                sense="<=",
-                constant=co2_limit,
-            )
+        network.add(
+            "GlobalConstraint",
+            "co2_limit",
+            type="primary_energy",
+            carrier_attribute="co2_emissions",
+            sense="<=",
+            constant=co2_limit,
+        )
+    else:
+        logger.error(
+            f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}. No CO2 constraint added"
+        )
+        raise ValueError(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}")
 
     # load demand data
     with pd.HDFStore(
-        f"data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5", mode="r"
+        f"resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5", mode="r"
     ) as store:
         load = 1e6 * store["load"].loc[network.snapshots]
 
@@ -373,8 +377,8 @@ def prepare_network(config: dict) -> pypsa.Network:
             "Bus",
             nodes,
             suffix=" gas",
-            x=pro_shapes["geometry"].centroid.x,
-            y=pro_shapes["geometry"].centroid.y,
+            x=prov_centroids.x,
+            y=prov_centroids.y,
             carrier="gas",
         )
 
@@ -446,8 +450,8 @@ def prepare_network(config: dict) -> pypsa.Network:
                 "Bus",
                 nodes,
                 suffix=" CHP coal",
-                x=pro_shapes["geometry"].centroid.x,
-                y=pro_shapes["geometry"].centroid.y,
+                x=prov_centroids.x,
+                y=prov_centroids.y,
                 carrier="coal",
             )
 
@@ -476,18 +480,19 @@ def prepare_network(config: dict) -> pypsa.Network:
                 efficiency2=config["chp_parameters"]["eff_th"],
                 lifetime=costs.at["central coal CHP", "lifetime"],
             )
-
+    # TODO fix max build limits
     if config["add_nuclear"]:
         network.add("Carrier", "uranium")
-        nuclear_p_nom = pd.read_hdf("data/p_nom/nuclear_p_nom.h5")
+        nuclear_p_nom = pd.read_csv("resources/data/p_nom/nuclear_p_nom.csv", index_col=0)
+        nuclear_p_nom = pd.Series(nuclear_p_nom.squeeze())
         network.add(
             "Generator",
             nodes,
             suffix=" nuclear",
             p_nom_extendable=True,
-            p_nom=nuclear_p_nom,
-            p_nom_max=nuclear_p_nom * 2,
-            p_nom_min=nuclear_p_nom,
+            # p_nom=nuclear_p_nom,
+            # p_nom_max=nuclear_p_nom * 2,
+            # p_nom_min=nuclear_p_nom,
             bus=nodes,
             carrier="uranium",
             efficiency=costs.at["nuclear", "efficiency"],
@@ -498,7 +503,7 @@ def prepare_network(config: dict) -> pypsa.Network:
 
     if config["add_PHS"]:
         # pure pumped hydro storage, fixed, 6h energy by default, no inflow
-        hydrocapa_df = pd.read_csv("data/hydro/PHS_p_nom.csv", index_col=0)
+        hydrocapa_df = pd.read_csv("resources/data/hydro/PHS_p_nom.csv", index_col=0)
         phss = hydrocapa_df.index[hydrocapa_df["MW"] > 0].intersection(nodes)
         if config["hydro"]["hydro_capital_cost"]:
             cc = costs.at["PHS", "capital_cost"]
@@ -525,14 +530,14 @@ def prepare_network(config: dict) -> pypsa.Network:
     if config["add_hydro"]:
 
         #######
-        df = pd.read_csv("data/hydro/dams_large.csv", index_col=0)
+        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
         points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
         dams = gpd.GeoDataFrame(df, geometry=points)
         dams.crs = {"init": "epsg:4326"}
 
-        hourly_rng = pd.date_range("1979-01-01", "2017-01-01", freq="1H", closed="left")
+        hourly_rng = pd.date_range("1979-01-01", "2017-01-01", freq="1H", inclusive="left")
         inflow = pd.read_pickle(
-            "data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
+            "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
         ).reindex(hourly_rng, fill_value=0)
         inflow.columns = dams.index
 
@@ -555,8 +560,10 @@ def prepare_network(config: dict) -> pypsa.Network:
 
         # ### add hydro reservoirs as stores
 
-        initial_capacity = pd.read_pickle("data/hydro/reservoir_initial_capacity.pickle")
-        effective_capacity = pd.read_pickle("data/hydro/reservoir_effective_capacity.pickle")
+        initial_capacity = pd.read_pickle("resources/data/hydro/reservoir_initial_capacity.pickle")
+        effective_capacity = pd.read_pickle(
+            "resources/data/hydro/reservoir_effective_capacity.pickle"
+        )
         initial_capacity.index = dams.index
         effective_capacity.index = dams.index
         initial_capacity = initial_capacity / water_consumption_factor
@@ -674,8 +681,8 @@ def prepare_network(config: dict) -> pypsa.Network:
             "Bus",
             nodes,
             suffix=" H2",
-            x=pro_shapes["geometry"].centroid.x,
-            y=pro_shapes["geometry"].centroid.y,
+            x=prov_centroids.x,
+            y=prov_centroids.y,
             carrier="H2",
         )
 
@@ -709,8 +716,10 @@ def prepare_network(config: dict) -> pypsa.Network:
             bus=nodes + " H2",
             e_nom_extendable=True,
             e_cyclic=True,
-            capital_cost=costs.at["hydrogen storage tank", "capital_cost"],
-            lifetime=costs.at["hydrogen storage tank", "lifetime"],
+            capital_cost=costs.at[
+                "hydrogen storage tank type 1 including compressor", "capital_cost"
+            ],
+            lifetime=costs.at["hydrogen storage tank type 1 including compressor", "lifetime"],
         )
 
     if config["add_methanation"]:
@@ -732,8 +741,8 @@ def prepare_network(config: dict) -> pypsa.Network:
             "Bus",
             nodes,
             suffix=" battery",
-            x=pro_shapes["geometry"].centroid.x,
-            y=pro_shapes["geometry"].centroid.y,
+            x=prov_centroids.x,
+            y=prov_centroids.y,
             carrier="battery",
         )
 
@@ -777,19 +786,20 @@ def prepare_network(config: dict) -> pypsa.Network:
 
         # urban = nodes
 
-        # NB: must add costs of central heating afterwards (EUR 400 / kWpeak, 50a, 1% FOM from Fraunhofer ISE)
+        # NB: must add costs of central heating afterwards
+        # (EUR 400 / kWpeak, 50a, 1% FOM from Fraunhofer ISE)
 
         # central are urban nodes with district heating
         # central = nodes ^ urban
 
-        central_fraction = pd.read_hdf("data/heating/DH1.h5")
+        central_fraction = pd.read_hdf(snakemake.input.central_fraction)
 
         network.add(
             "Bus",
             nodes,
             suffix=" decentral heat",
-            x=pro_shapes["geometry"].centroid.x,
-            y=pro_shapes["geometry"].centroid.y,
+            x=prov_centroids.x,
+            y=prov_centroids.y,
             carrier="heat",
         )
 
@@ -797,8 +807,8 @@ def prepare_network(config: dict) -> pypsa.Network:
             "Bus",
             nodes,
             suffix=" central heat",
-            x=pro_shapes["geometry"].centroid.x,
-            y=pro_shapes["geometry"].centroid.y,
+            x=prov_centroids.x,
+            y=prov_centroids.y,
             carrier="heat",
         )
 
@@ -862,8 +872,8 @@ def prepare_network(config: dict) -> pypsa.Network:
                     "Bus",
                     nodes,
                     suffix=cat + "water tanks",
-                    x=pro_shapes["geometry"].centroid.x,
-                    y=pro_shapes["geometry"].centroid.y,
+                    x=prov_centroids.x,
+                    y=prov_centroids.y,
                     carrier="water tanks",
                 )
 
@@ -1084,9 +1094,10 @@ if __name__ == "__main__":
             "prepare_networks",
             opts="ll",
             topology="current+FCG",
-            pathway="non-pathway",
+            pathway="exponential175",
             co2_reduction="0.0",
             planning_horizons=2060,
+            heating_demand="positive",
         )
     configure_logging(snakemake)
     population = pd.read_hdf(snakemake.input.population_name)

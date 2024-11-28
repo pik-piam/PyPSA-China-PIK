@@ -25,8 +25,9 @@ DEFAULT_TUNNEL_PORT = 1080
 
 
 def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = None):
-    """A utility function to set up the Gurobi environment variables and establish an SSH tunnel on HPCs
-    Otherwise the license check will fail if the compute nodes do not have internet access or a token server isn't set up
+    """A utility function to set up the Gurobi environment variables and establish an
+    SSH tunnel on HPCs. Otherwise the license check will fail if the compute nodes do
+     not have internet access or a token server isn't set up
 
     Args:
         config (dict): the snakemake pypsa-china configuration

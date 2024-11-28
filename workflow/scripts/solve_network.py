@@ -188,7 +188,7 @@ def solve_network(n, config, solving, opts="", **kwargs):
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "solve_network_myopic", co2_reduction="0.0", opts="ll", planning_horizons=2020
+            "solve_networks", co2_reduction="0.0", opts="ll", planning_horizons=2020
         )
     configure_logging(snakemake)
 
@@ -207,9 +207,9 @@ if __name__ == "__main__":
 
     if "overrides" in snakemake.input.keys():
         overrides = override_component_attrs(snakemake.input.overrides)
-        n = pypsa.Network(snakemake.input.network, override_component_attrs=overrides)
+        n = pypsa.Network(snakemake.input.network_name, override_component_attrs=overrides)
     else:
-        n = pypsa.Network(snakemake.input.network)
+        n = pypsa.Network(snakemake.input.network_name)
 
     n = prepare_network(n, solve_opts)
 

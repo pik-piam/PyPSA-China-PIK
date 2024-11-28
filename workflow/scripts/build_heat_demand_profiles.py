@@ -34,9 +34,9 @@ def build_heat_demand_profiles():
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        snakemake = mock_snakemake("build_heat_demand_profiles")
+        snakemake = mock_snakemake("build_daily_heat_demand_profile")
     configure_logging(snakemake, logger=logger)
 
-    df = build_heat_demand_profiles()
+    build_heat_demand_profiles()
 
     logger.info("Heat demand profiles successfully built")

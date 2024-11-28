@@ -1,5 +1,5 @@
 # TAKE CARE OF PLOTTING
-
+from os.path import join
 
 base_results_dir = config["base_results_dir"]
 
@@ -21,33 +21,37 @@ if config["foresight"] == "steady-state":
     # TODO fix paths
     rule plot_network:
         input:
-            network=base_results_dir
-            + "/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc",
+            network=join(
+                base_results_dir,
+                "steady_state_{heating_demand}/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
+            ),
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
         output:
             # only_map=base_results_dir
             # + "/plots/network_steady_state/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.pdf",
             cost_map=base_results_dir
-            + "/plots/steady_state/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}-cost.pdf",
+            + "/plots/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",
             # ext=base_results_dir
             # + "/plots/steady_state/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf",
         log:
-            "logs/plot_network/steady_state/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.log",
+            "logs/plot_network/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
         script:
             "../scripts/plot_network.py"
 
     rule make_summary:
         input:
-            network=base_results_dir
-            + "/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc",
+            network=join(
+                base_results_dir,
+                "steady_state_{heating_demand}/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
+            ),
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
         output:
             directory(
                 base_results_dir
-                + "/summary/postnetworks/steady_state/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}"
+                + "/summary/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}"
             ),
         log:
-            "logs/make_summary_postnetworks_steady_state/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.log",
+            "logs/make_summary_steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
         resources:
             mem_mb=5000,
         script:
@@ -57,16 +61,20 @@ if config["foresight"] == "steady-state":
         input:
             expand(
                 base_results_dir
-                + "/summary/postnetworks/steady_state/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}",
-                **config["scenario"],
+                + "/summary/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}",
+                **{
+                    k: v
+                    for k, v in config["scenario"].items()
+                    if k != "planing_horizons"
+                },
             ),
         output:
             energy=base_results_dir
-            + "/plots/summary/steady_state/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-pathway_energy.png",
+            + "/plots/summary/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_energy.png",
             costs=base_results_dir
-            + "/plots/summary/steady_state/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-pathway_costs.png",
+            + "/plots/summary/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_costs.png",
         log:
-            "logs/plot/steady_state/summary_plot_postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-summary.log",
+            "logs/plot/steady_state_{heating_demand}/summary_plot_postnetwork-{opts}-{topology}-{pathway}-summary.log",
         script:
             "../scripts/plot_summary_all.py"
 

@@ -13,7 +13,7 @@ max-jobs-per-second: 10
 max-status-checks-per-second: 1
 # local-cores: 1
 latency-wait: 60
-keep-going: True
+keep-going: False
 rerun-incomplete: True
 printshellcmds: True
 scheduler: greedy
@@ -34,7 +34,7 @@ cluster-generic-submit-cmd:
     --cpus-per-task={threads}
     --mem={resources.mem_mb}
     --job-name=smk-{rule}-{wildcards}
-    --output=logs/logs_slurm/{rule}/{rule}-{wildcards}-%j.out
+    --output=logs/logs_slurm/{rule}/%j-{rule}-{wildcards}.out
     --parsable
     --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
 cluster-generic-cancel-cmd: scancel
@@ -47,6 +47,10 @@ default-resources:
   cores: 8
 
 set-resources:
+  solve_network_myopic:
+    mem_mb: 24000
+  solve_networks:
+    mem_mb: 50000
   plot_network:
     mem_mb: 4000
     cores: 2

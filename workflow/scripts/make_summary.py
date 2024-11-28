@@ -620,7 +620,8 @@ if __name__ == "__main__":
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
-            planning_horizons=["2020"],
+            planning_horizons="2020",
+            heating_demand="positive",
         )
 
     configure_logging(snakemake)
@@ -628,16 +629,23 @@ if __name__ == "__main__":
     config = snakemake.config
     wildcards = snakemake.wildcards
 
-    # TODO : make readable
-    networks_dict = {
-        (pathway, planning_horizons): config["base_results_dir"]
-        + f"/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc"
-        for opts in expand_from_wildcard("opts", config)
-        for planning_horizons in expand_from_wildcard("planning_horizons", config)
-        for pathway in expand_from_wildcard("pathway", config)
-        for topology in expand_from_wildcard("topology", config)
-        for heating_demand in expand_from_wildcard("heating_demand", config)
-    }
+    # The original was intended to handle a list of files
+    # this doesnt reflect the current snakefile
+    # previous code was hardcoded and could cause issue w snakefile input
+
+    # To go back to the all in one, would need to parse the file list
+    # or hope that snamek wildcards are ordered in a sensible way
+
+    # == here would be the way to get the list of possible wildcards
+    pathways = expand_from_wildcard("pathway", config)
+    years = expand_from_wildcard("planning_horizons", config)
+
+    if len(pathways) != 1 or len(years) != 1:
+        raise ValueError("Multi file mode not implemented for summary")
+    else:
+        pathway, planning_horizons = pathways[0], years[0]
+
+    networks_dict = {(pathway, planning_horizons): snakemake.input.network}
 
     df = make_summaries(networks_dict)
     df["metrics"].loc["total costs"] = df["costs"].sum()
@@ -648,3 +656,5 @@ if __name__ == "__main__":
             df.to_csv(os.path.join(dir, f"{key}.csv"))
 
     to_csv(df, snakemake.output[0])
+
+    logger.info(f"Made summary for {planning_horizons} in {pathway}")

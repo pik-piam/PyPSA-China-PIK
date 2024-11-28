@@ -23,6 +23,16 @@ CRS = 4326  # WGS84
 CO2_EL_2020 = 5.288987673 * 1e9  # tCO2 # TODO verify unit
 CO2_HEATING_2020 = 0.628275682 * 1e9  # tCO2
 
+NUCLEAR_EXTENDABLE = [
+    "Liaoning",
+    "Shandong",
+    "Jiangsu",
+    "Zhejiang",
+    "Fujian",
+    "Guangdong",
+    "Hainan",
+    "Guangxi",
+]
 # FACTORS
 LOAD_CONVERSION_FACTOR = 1e6  # convert from  ? to ?
 DEFAULT_OFFSHORE_WIND_CORR_FACTOR = 1.0

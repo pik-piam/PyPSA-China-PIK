@@ -24,6 +24,7 @@ from constants import (
     CO2_EL_2020,
     CO2_HEATING_2020,
     INFLOW_DATA_YR,
+    NUCLEAR_EXTENDABLE,
 )
 from functions import HVAC_cost_curve
 from _helpers import configure_logging, override_component_attrs, mock_snakemake, is_leap_year
@@ -113,7 +114,7 @@ def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -
     return data
 
 
-def prepare_network(config: dict)->pypsa.Network:
+def prepare_network(config: dict) -> pypsa.Network:
 
     if "overrides" in snakemake.input.keys():
         overrides = override_component_attrs(snakemake.input.overrides)
@@ -664,17 +665,7 @@ def prepare_network(config: dict)->pypsa.Network:
     )
 
     if "nuclear" in config["Techs"]["vre_techs"]:
-        nuclear_extendable = [
-            "Liaoning",
-            "Shandong",
-            "Jiangsu",
-            "Zhejiang",
-            "Fujian",
-            "Guangdong",
-            "Hainan",
-            "Guangxi",
-        ]
-        nuclear_nodes = pd.Index(nuclear_extendable)
+        nuclear_nodes = pd.Index(NUCLEAR_EXTENDABLE)
         network.add(
             "Generator",
             nuclear_nodes,
@@ -1180,6 +1171,5 @@ if __name__ == "__main__":
 
     network.export_to_netcdf(snakemake.output.network_name)
 
-    logger.info(
-        f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {snakemake.output.network_name}"
-    )
+    msg = f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {snakemake.output.network_name}"
+    logger.info(msg)

@@ -1,5 +1,5 @@
 import logging
-from _helpers import configure_logging, is_leap_year
+from _helpers import configure_logging, is_leap_year, mock_snakemake
 
 import atlite
 import pytz
@@ -48,15 +48,13 @@ def generate_periodic_profiles(
     Returns:
         pd.DataFrame: _description_
     """
+    # TODO fix this profile timezone
 
     weekly_profile = pd.Series(weekly_profile, range(24 * 7))
 
     week_df = pd.DataFrame(index=dt_index, columns=col_tzs.index)
     for ct in col_tzs.index:
-        week_df[ct] = [
-            24 * dt.weekday() + dt.hour
-            for dt in dt_index.tz_convert(pytz.timezone("Asia/{}".format(col_tzs[ct])))
-        ]
+        week_df[ct] = [24 * dt.weekday() + dt.hour for dt in dt_index.tz_localize(None)]
         week_df[ct] = week_df[ct].map(weekly_profile)
     return week_df
 
@@ -112,10 +110,10 @@ def build_hot_water_per_day(planning_horizons: int | str) -> np.array:
 
         unit_hot_water = func(int(planning_horizons), *popt)
 
-    if snakemake.wildcards["heating_demand"] == "constant":
+    elif snakemake.wildcards["heating_demand"] == "constant":
         unit_hot_water = unit_hot_water_start_yr
 
-    if snakemake.wildcards["heating_demand"] == "mean":
+    elif snakemake.wildcards["heating_demand"] == "mean":
 
         def lin_func(x: np.array, a: float, b: float) -> np.array:
             return a * x + b
@@ -125,7 +123,8 @@ def build_hot_water_per_day(planning_horizons: int | str) -> np.array:
         popt, pcov = curve_fit(lin_func, x, y)
 
         unit_hot_water = (lin_func(int(planning_horizons), *popt) + UNIT_HOT_WATER_START_YEAR) / 2
-
+    else:
+        raise ValueError(f"Invalid heating demand type {snakemake.wildcards['heating_demand']}")
         # MWh per day
     hot_water_per_day = unit_hot_water * population_count / 365.0
 
@@ -138,7 +137,7 @@ def build_heat_demand_profile(
     hot_water_per_day: pd.DataFrame,
     date_range,
     planning_horizons: int | str,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame, object, pd.DataFrame]:
     """_summary_
 
     Args:
@@ -148,7 +147,7 @@ def build_heat_demand_profile(
         planning_horizons (int | str): the planning year
 
     Returns:
-        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: heat, space_heat and water_heat demands
+        tuple[pd.DataFrame, pd.DataFrame, object, pd.DataFrame]: heat, space_heat, space_heating_per_hdd, water_heat demands
     """
 
     h = daily_hd
@@ -227,12 +226,11 @@ def build_heat_demand_profile(
 
     heat_demand = space_heat_demand + water_heat_demand
 
-    return heat_demand, space_heat_demand, water_heat_demand
+    return heat_demand, space_heat_demand, space_heating_per_hdd, water_heat_demand
 
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
 
         snakemake = mock_snakemake(
             "build_load_profiles", heating_demand="positive", planning_horizons="2020"
@@ -247,6 +245,7 @@ if __name__ == "__main__":
     hot_water_per_day = build_hot_water_per_day(planning_horizons)
 
     # why?
+    # TODO cebtralise and align with settings
     date_range = pd.date_range(
         f"{planning_horizons}-01-01 00:00",
         f"{planning_horizons}-12-31 23:00",
@@ -254,18 +253,20 @@ if __name__ == "__main__":
         tz=TIMEZONE,
     )
 
-    heat_demand, space_heat_demand, water_heat_demand = build_heat_demand_profile(
-        daily_hd,
-        hot_water_per_day,
-        date_range,
-        planning_horizons,
+    heat_demand, space_heat_demand, space_heating_per_hdd, water_heat_demand = (
+        build_heat_demand_profile(
+            daily_hd,
+            hot_water_per_day,
+            date_range,
+            planning_horizons,
+        )
     )
 
     with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w", complevel=4) as store:
         store["heat_demand_profiles"] = heat_demand
 
     with pd.HDFStore(snakemake.output.energy_totals_name, mode="w") as store:
-        space_heating_per_hdd = store["space_heating_per_hdd"]
-        hot_water_per_day = store["hot_water_per_day"]
+        store["space_heating_per_hdd"] = space_heating_per_hdd
+        store["hot_water_per_day"] = hot_water_per_day
 
     logger.info("Heat demand profiles successfully built")

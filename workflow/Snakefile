@@ -2,12 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from os.path import normpath, abspath, getctime
+from os.path import abspath, getctime
 from shutil import move
 from pathlib import Path
 from snakemake.utils import min_version
+import logging
 
-min_version("8.11")
 
 # NB: duplicated parameters will be overwritten by the last read cfg
 configfile: "config/default_config.yaml"
@@ -24,40 +24,9 @@ ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 storage:
     provider="http",
 
-# The pseudo-rule that requests the output of the workflow and ensures full execution
-# by default, only the first rule is executed (unless default_target is specified)
-# the input is set to be the output of the post-process rule
-# TODO if config["plot"] else False
-# rule execute_workflow:
-#     input:
-#         expand(
-#                 config["base_results_dir"]+ '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
-#                 **config["scenario"]
-#             ),
-#         expand(
-#             base_results_dir
-#                     + "/plots/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}_ext.pdf",
-#                     **config["scenario"],
-#                     ),
-#     default_target: True
 
-
-
-# snakemake will resolve the missing networls
+# PSEUDO RULE TO CALL WHOLE WORKFLOW
 if config["foresight"] == "steady-state":
-    rule prepare_all_networks:
-        input:
-            expand(
-                config["base_results_dir"]+ '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
-                **config["scenario"]
-            )
-
-    rule solve_all_networks:
-        input:
-            expand(
-                config["base_results_dir"]+ '/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
-                **config["scenario"]
-            ),
 
     rule plot_all:
         input:
@@ -66,41 +35,16 @@ if config["foresight"] == "steady-state":
             #     **config["scenario"]
             # ),
             expand(
-                config["base_results_dir"]+ '/plots/summary/steady_state/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-pathway_costs.png',
-                **config["scenario"]
+                config["base_results_dir"]+ '/plots/summary/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_costs.png',
+                **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
         ),
             # network plot
             expand(
-                config["base_results_dir"]+"/plots/steady_state/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}-cost.pdf",      
+                config["base_results_dir"]+"/plots/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",      
                 **config["scenario"]
             ),
 
 elif config["foresight"] == "myopic":
-
-    # rule prepare_all_networks:
-    #     input:
-    #         expand(
-    #             config["base_results_dir"]+ '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
-    #             **config["scenario"]
-    #         ),
-    #         expand(
-    #             config['results_dir'] + 'version-' + str(config[
-    #                 'version']) + '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
-    #             ** config["scenario"]
-    #         )
-
-
-    # rule solve_all_networks:
-    #     input:
-    #         expand(
-    #             config["base_results_dir"]+ '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
-    #             **config["scenario"]
-    #         ),
-
-    #         expand(
-    #             config["base_results_dir"]+ '/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
-    #             **config["scenario"]
-    #         ),
 
     rule plot_all:
         input:
@@ -253,8 +197,9 @@ rule build_load_profiles:
         intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
         space_heat_demand="resources/data/heating/SPH_2020.csv"
     output:
-        heat_demand_profile = "resources/derived_data/heating/heat_demand_profile_{planning_horizons}.h5",
-        energy_totals_name = "resources/derived_data/energy_totals_{planning_horizons}.h5"
+        heat_demand_profile = "resources/derived_data/heating/heat_demand_profile_{heating_demand}_{planning_horizons}.h5",
+        energy_totals_name = "resources/derived_data/energy_totals_{heating_demand}_{planning_horizons}.h5"
+    log: "logs/build_load_profiles/build_{heating_demand}_{planning_horizons}.log"
     threads: ATLITE_NPROCESSES
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_load_profiles.py"
@@ -263,8 +208,8 @@ rule build_biomass_potential:
     input:
         # from doi.org/10.1038/s41467-021-23282-x
         biomass_feedstocks = "resources/data/p_nom/41467_2021_23282_MOESM4_ESM.xlsx"
-    # log:
-    #     "logs/build_biomass_potential.log"
+    log:
+        "logs/build_biomass_potential.log"
     output:
         biomass_potential = "resources/derived_data/p_nom/biomass_potential.h5"
     threads: ATLITE_NPROCESSES
@@ -277,34 +222,34 @@ if config["foresight"] == "steady-state":
         input:
             population_name="resources/derived_data/population/population.h5",
             solar_thermal_name="resources/derived_data/heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
-            heat_demand_name="resources/derived_data/heating/daily_heat_demand.h5",
+            heat_demand_name="resources/derived_data/heating/heat_demand_profile_{heating_demand}_{planning_horizons}.h5",
             cop_name="resources/derived_data/heating/cop.h5",
-            energy_totals_name="resources/derived_data/energy_totals_{planning_horizons}.h5",
+            energy_totals_name="resources/derived_data/energy_totals_{heating_demand}_{planning_horizons}.h5",
             temp="resources/derived_data/heating/temp.h5",
+            intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
             tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
+            province_shape="resources/data/province_shapes/CHN_adm1.shp",
+            central_fraction="resources/data/heating/DH_city_town_2020.h5",
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
-            network_name=config["base_results_dir"]+ '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc',
+            network_name=config["base_results_dir"]+ '/steady_state_{heating_demand}/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
         threads: 1
         resources: mem_mb=10000
         script: "scripts/prepare_network.py"
 
     rule solve_networks:
+        params:
+            solving = config["solving"],
         input:
-            network_name=config["base_results_dir"]+ '/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc',
+            network_name=config["base_results_dir"]+ '/steady_state_{heating_demand}/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
         output:
-            network_name=config["base_results_dir"]+ '/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.nc'
+            network_name=config["base_results_dir"]+ '/steady_state_{heating_demand}/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc'
         log:
-            solver=normpath("logs/solve_operations_network/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{co2_reduction}-{planning_horizons}.log")
+            solver = "logs/solve_network/steady_state_{heating_demand}_postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log"
         threads: 4
         resources: mem_mb=35000
         script: "scripts/solve_network.py"
-
-    rule build_daily_heat_demand_profile:
-        input: population_map="resources/derived_data/population/population_gridcell_map.h5"
-        output: daily_heat_demand="resources/derived_data/heating/daily_heat_demand.h5"
-        script: "scripts/build_heat_demand_profiles.py"
 
 elif config["foresight"] == "myopic":
     rule prepare_base_networks_2020:
@@ -392,7 +337,6 @@ elif config["foresight"] == "myopic":
     rule solve_network_myopic:
         params:
             solving = config["solving"],
-            planning_horizons=config["scenario"]["planning_horizons"]
         input:
             overrides = "resources/data/override_component_attrs",
             network=config["base_results_dir"]+ '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
@@ -401,26 +345,31 @@ elif config["foresight"] == "myopic":
         output:
             network_name = config["base_results_dir"]+ '/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc'
         log:
-            solver = normpath("logs/solve_operations_network/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log")
+            solver = "logs/solve_network_myopic/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log"
         threads: 4
         resources: mem_mb = 80000
         script: "scripts/solve_network_myopic.py"
 
 
-# runme with snakemake -R dag
+# runme with snakemake --allowed-rules dag
 rule dag:
     message:
         "Creating DAG of workflow."
     output:
-        dot="results/dag/dag.dot",
-        pdf="results/dag/dag.pdf",
-        png="results/dag/dag.png",
+        dag_dot=f"results/dag/dag.dot",
+        dag_pdf="results/dag/dag.pdf",
+        dag_png="results/dag/dag.png",
+        rules_dot="results/dag/rules_graph.dot",
+        rules_pdf="results/dag/rules_graph.pdf",
+        rules_png="results/dag/rules_graph.png",
     shell:
-        # switch to all
         r"""
-        snakemake --rulegraph plot_all | sed -n "/digraph/,\$p" > {output.dot}
-        dot -Tpdf -o {output.pdf} {output.dot}
-        dot -Tpng -o {output.png} {output.dot}
+        snakemake --dag plot_all | sed -n "/digraph/,\$p" > {output.dag_dot}
+        dot -Tpdf -o {output.dag_pdf} {output.dag_dot}
+        dot -Tpng -o {output.dag_png} {output.dag_dot}
+        snakemake --rulegraph plot_all | sed -n "/digraph/,\$p" > {output.rules_dot}
+        dot -Tpdf -o {output.rules_pdf} {output.rules_dot}
+        dot -Tpng -o {output.rules_png} {output.rules_dot}
         """
 
 def copy_sm_log():
