@@ -10,16 +10,17 @@ from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 from plot_summary import preferred_order, rename_techs
 from _plot_utilities import assign_location, set_plot_style
 from _helpers import configure_logging, mock_snakemake, annualise_component_capex
-from constants import PLOT_COST_UNITS
+from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS
 
 
 logger = logging.getLogger(__name__)
 
 
-def make_cost_pies(cost_df: pd.DataFrame, tech_colors: dict) -> pd.DataFrame:
+def make_cost_pies(ntwk: pypsa.Network, cost_df: pd.DataFrame, tech_colors: dict) -> pd.DataFrame:
     """Make pies for plotting
 
     Args:
+        ntwk (pypsa.Network): the network
         cost_df (pd.DataFrame): the costs
         tech_colors (dict): the tech color config
 
@@ -40,7 +41,7 @@ def make_cost_pies(cost_df: pd.DataFrame, tech_colors: dict) -> pd.DataFrame:
         logger.warning(f"Missing colors in plot config for {missing_colors}")
     dict(zip(missing_colors, [tech_colors.get("other", "pink")] * len(missing_colors)))
     costs = costs.stack()  # .sort_index()
-    to_drop = costs.index.levels[0].symmetric_difference(n.buses.index)
+    to_drop = costs.index.levels[0].symmetric_difference(ntwk.buses.index)
     costs.drop(to_drop, level=0, inplace=True, axis=0, errors="ignore")
     # make sure they are removed from index
     costs.index = pd.MultiIndex.from_tuples(costs.index.values)
@@ -121,6 +122,7 @@ def add_cost_pannel(
 
 def plot_map(
     network: pypsa.Network,
+    tech_colors: dict,
     edge_widths: pd.Series,
     bus_colors: pd.Series,
     bus_sizes: pd.Series,
@@ -135,6 +137,7 @@ def plot_map(
 
     Args:
         network (pypsa.Network): the pypsa network (filtered to contain only relevant buses & links)
+        tech_colors (dict): config mapping
         edge_colors (pd.Series|str): the series of edge colors
         edge_widths (pd.Series): the edge widths
         bus_colors (pd.Series): the series of bus colors
@@ -219,6 +222,8 @@ def plot_map(
 
 def plot_cost_map(
     network: pypsa.Network,
+    planning_horizon: int,
+    discount_rate: float,
     opts: dict,
     components=["generators", "links", "stores", "storage_units"],
     base_year=2020,
@@ -236,8 +241,8 @@ def plot_cost_map(
     )
 
     costs_pathway, costs_nom = sum_components_costs(plot_ntwk, components)
-    cost_pie = make_cost_pies(costs_pathway, tech_colors)
-    cost_pie_nom = make_cost_pies(costs_nom, tech_colors)
+    cost_pie = make_cost_pies(plot_ntwk, costs_pathway, tech_colors)
+    cost_pie_nom = make_cost_pies(plot_ntwk, costs_nom, tech_colors)
 
     # TODO aggregate costs below threshold into "other" -> requires messing with network
 
@@ -266,6 +271,7 @@ def plot_cost_map(
     )
     plot_map(
         plot_ntwk,
+        tech_colors=tech_colors,
         edge_widths=edge_widths / linewidth_factor,
         bus_colors=tech_colors,
         bus_sizes=cost_pie_nom / bus_size_factor,
@@ -281,6 +287,7 @@ def plot_cost_map(
     ) - pd.concat([plot_ntwk.lines.s_nom, plot_ntwk.links.p_nom])
     plot_map(
         plot_ntwk,
+        tech_colors=tech_colors,
         edge_widths=edge_widths_added / linewidth_factor,
         bus_colors=tech_colors,
         bus_sizes=cost_pie / bus_size_factor,
@@ -297,8 +304,7 @@ def plot_cost_map(
         df["added"] = cost_pie.groupby(level=1).sum()
         df = df.fillna(0)
         df = df / PLOT_COST_UNITS
-        planning_horizon = int(snakemake.wildcards.planning_horizons)
-        df = df / (1 + snakemake.config["costs"]["discountrate"]) ** (planning_horizon - base_year)
+        df = df / (1 + discount_rate) ** (int(planning_horizon) - base_year)
         add_cost_pannel(df, fig, preferred_order, tech_colors, ax_loc=[-0.09, 0.28, 0.09, 0.45])
 
     fig.tight_layout()
@@ -330,6 +336,8 @@ if __name__ == "__main__":
 
     plot_cost_map(
         n,
+        planning_horizon=snakemake.wildcards.planning_horizons,
+        discount_rate=config["costs"]["discountrate"],
         opts=config["plotting"],
         components=["generators", "links", "stores", "storage_units"],
     )
