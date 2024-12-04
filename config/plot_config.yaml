@@ -1,6 +1,18 @@
 
 plot: True
 plotting:
+  network_style_config_file: "config/plotting_styles/network_map.mplstyle"
+  cost_map:
+    figsize: [14, 8]
+    boundaries: [71, 135., 10, 56.]
+    bus_size_factor: 1.e+10
+    linewidth_factor: 6.e+3
+    bus_size_factor_demand: 2.e+7
+    bus_size_factor_heat: 5.e+4
+    linewidth_factor_heat: 5.e+4
+    ref_edge_sizes : [5e3,10e3,30e3] # MW
+    ref_bus_sizes : [20e9, 10e9, 5e9] # eur/currnecy
+    ref_bus_unit: "bn €/a"
   map:
     figsize: [14, 8]
     boundaries: [71, 135., 0, 56.]
@@ -10,15 +22,12 @@ plotting:
     bus_size_factor_demand: 2.e+7
     bus_size_factor_heat: 5.e+4
     linewidth_factor_heat: 5.e+4
+  cost_panel:
+    y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
 
-  costs_max: 500
-  costs_avg: 50
   costs_threshold: 1000
-  costs_plots_threshold: 10
-
-  energy_max: 25000.
-  energy_min: 0.
   energy_threshold: 50.
+
   loads: ['electricity', 'decentral heat', 'central heat']
   vre_techs: [ "onwind", "offwind", "solar"]
   conv_techs: [ "gas", "gas-heat", "gas-AC", "AC-gas", "coal", "coal-AC","solar thermal","AC-heat","AC-AC","stations-AC","uranium", "H2-AC", "H2-gas",]
@@ -47,6 +56,7 @@ plotting:
     PHS: '#51dbcc'
     hydro+PHS: "#08ad97"
     wave: '#a7d4cf'
+    stations: "pink"
     # solar
     solar: "#f9d002"
     solar PV: "#f9d002"
@@ -82,6 +92,7 @@ plotting:
     gas for industry CC: '#692e0a'
     gas pipeline: '#ebbca0'
     gas pipeline new: '#a87c62'
+    gas-AC: "grey"
     # oil
     oil: '#c9c9c9'
     oil boiler: '#adadad'
@@ -101,6 +112,7 @@ plotting:
     # coal
     Coal: '#545454'
     coal: '#545454'
+    coal-AC: '#545454'
     coal power plant: '#545454'
     coal boiler: '#787575'
     Coal marginal: '#545454'
@@ -263,6 +275,7 @@ plotting:
     methanol: '#468c8b'
     shipping methanol: '#468c8b'
     # co2
+    CO2 capture: '#f29dae'
     CC: '#f29dae'
     CCS: '#f29dae'
     CO2 sequestration: '#f29dae'
@@ -301,6 +314,7 @@ plotting:
     DC-DC: "#8a1caf"
     DC link: "#8a1caf"
     Other: "k"
+    stations-AC: "pink"
   nice_names:
     AC-AC: "Electric grid"
     H2-AC: "H2 Fuel Cell"
@@ -334,3 +348,37 @@ plotting:
       onwind: "Onshore Wind"
       solar: "Solar"
       solar thermal: "Solar Thermal"
+
+  preferred_order:
+  - transmission lines
+  - hydroelectricity
+  - nuclear
+  - coal
+  - coal carbon capture
+  - coal power plant
+  - coal power plant retrofit
+  - coal boiler
+  - CHP coal
+  - gas
+  - OCGT
+  - gas boiler
+  - CHP gas
+  - biomass
+  - biomass carbon capture
+  - heat pump
+  - resistive heater
+  - methanation
+  - H2
+  - H2 fuel cell
+  - H2 CHP
+  - hot water storage
+  - hydrogen storage
+  - solar thermal
+  - onshore wind
+  - offshore wind
+  - battery storage
+  - battery discharger
+  - solar PV
+  - battery
+  - electric load
+  - heat load

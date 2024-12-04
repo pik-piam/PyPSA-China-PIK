@@ -157,7 +157,6 @@ add_heat_pumps: True
 add_thermal_storage: True
 add_resistive_heater: True
 add_boilers: True
-add_gas: True
 
 solving:
   options:

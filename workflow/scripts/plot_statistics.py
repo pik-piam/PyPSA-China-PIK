@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pypsa
 import seaborn as sns
 from _helpers import configure_logging
-from _plot_utilities import rename_index
+from _plot_utilities import rename_index, fix_network_names_colors
 
 sns.set_theme("paper", style="whitegrid")
 
@@ -41,23 +41,7 @@ if __name__ == "__main__":
     n = pypsa.Network(snakemake.input.network)
 
     # incase an old version need to add missing info to network
-    if (n.carriers.nice_name == "").sum() > 0:
-        # deal with missing carriers
-        n.add("Carrier", "AC")
-        if snakemake.config["add_hydro"]:
-            n.add("Carrier", "stations")
-            n.add("Carrier", "hydro_inflow")
-
-        # deal with missign colors and nice_names
-        nice_names = snakemake.config["plotting"]["nice_names"]
-        missing_names = n.carriers.index.difference(nice_names)
-        nice_names.update(dict(zip(missing_names, missing_names)))
-
-        n.carriers.nice_name = n.carriers.index.map(nice_names)
-        t_colors = snakemake.config["plotting"]["tech_colors"]
-        n.carriers.color = n.carriers.index.map(t_colors)
-        NAN_COLOR = "lightgrey"
-        n.carriers.color.fillna(NAN_COLOR, inplace=True)
+    fix_network_names_colors(n)
 
     n.loads.carrier = "load"
     n.carriers.loc["load", ["nice_name", "color"]] = "Load", "darkred"
