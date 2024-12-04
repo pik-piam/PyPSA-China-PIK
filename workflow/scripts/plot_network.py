@@ -6,50 +6,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # from make_summary import assign_carriers
-from plot_summary import preferred_order, rename_techs
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
+from plot_summary import preferred_order, rename_techs
+from _plot_utilities import assign_location, set_plot_style
 from _helpers import configure_logging, mock_snakemake, load_plot_style
 
 logger = logging.getLogger(__name__)
-
-
-# TODO make not hardcoded
-def set_plot_style():
-    """set hard coded plot style, move to a config file"""
-    plt.style.use(
-        [
-            "classic",
-            "seaborn-v0_8-white",
-            {
-                "axes.grid": False,
-                "grid.linestyle": "--",
-                "grid.color": "0.6",
-                "hatch.color": "white",
-                "patch.linewidth": 0.5,
-                "font.size": 12,
-                "legend.fontsize": "medium",
-                "lines.linewidth": 1.5,
-                "pdf.fonttype": 42,
-            },
-        ]
-    )
-
-
-# TODO work out what this does
-def assign_location(n: pypsa.Network):
-    """_summary_
-
-    Args:
-        n (pypsa.Network): _description_
-    """
-    for c in n.iterate_components(n.one_port_components | n.branch_components):
-        ifind = pd.Series(c.df.index.str.find(" ", start=4), c.df.index)
-        for i in ifind.value_counts().index:
-            # these have already been assigned defaults
-            if i == -1:
-                continue
-            names = ifind.index[ifind == i]
-            c.df.loc[names, "location"] = names.str[:i]
 
 
 def get_costs(costs: pd.DataFrame, tech_colors: dict):
@@ -334,7 +296,10 @@ if __name__ == "__main__":
 
     configure_logging(snakemake, logger=logger)
 
-    set_plot_style()
+    set_plot_style(
+        style_config_file=snakemake.config["plotting"]["network_style_config_file"],
+        base_styles=["classic", "seaborn-v0_8-white"],
+    )
 
     config = snakemake.config
 
