@@ -334,6 +334,13 @@ if __name__ == "__main__":
 
     n = pypsa.Network(snakemake.input.network)
 
+    # check the timespan
+    timespan = n.snapshots.max() - n.snapshots.min()
+    if not 365 <= timespan.days <= 366:
+        logger.warning(
+            "Network timespan is not one year, this may cause issues with the CAPEX calculation,"
+            + " which is referenced to the time period and not directly annualised"
+        )
     plot_capex_map(
         n,
         planning_horizon=snakemake.wildcards.planning_horizons,

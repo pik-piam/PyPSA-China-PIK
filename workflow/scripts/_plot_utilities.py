@@ -1,9 +1,25 @@
 import pypsa
-import matplotlib.pyplot as plt
-import json
-from os import PathLike
-import os.path
 import pandas as pd
+import os.path
+
+import matplotlib.pyplot as plt
+from os import PathLike
+
+
+def rename_index(ds: pd.DataFrame) -> pd.DataFrame:
+    """Plot utility function from pypsa-eur that combined the multii index into as str idx
+
+    Args:
+        ds (pd.DataFrame): the multiindexed data
+
+    Returns:
+        pd.DataFrame: data w plot_friendly index
+    """
+    specific = ds.index.map(lambda x: f"{x[1]}\n({x[0]})")
+    generic = ds.index.get_level_values("carrier")
+    duplicated = generic.duplicated(keep=False)
+    index = specific.where(duplicated, generic)
+    return ds.set_axis(index)
 
 
 def aggregate_small_values(df: pd.DataFrame, threshold: float, column_name=None) -> pd.DataFrame:

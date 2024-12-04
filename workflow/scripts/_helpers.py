@@ -7,14 +7,17 @@ import os
 import sys
 import subprocess
 import pandas as pd
+import logging
+import pypsa
+import pyproj
 from pathlib import Path
 from types import SimpleNamespace
-import logging
-import matplotlib.pyplot as plt
-from pypsa.components import components, component_attrs
-import pypsa
+from functools import partial
+from math import radians, cos, sin, asin, sqrt
+from shapely.ops import transform
 
-from constants import NICE_NAMES
+from pypsa.components import components, component_attrs
+from constants import NICE_NAMES_DEFAULT
 
 # from pypsa.descriptors import Dict
 

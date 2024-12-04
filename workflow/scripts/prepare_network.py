@@ -11,60 +11,17 @@ from shapely.geometry import Point
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-import pyproj
 import xarray as xr
 import logging
 
-from math import radians, cos, sin, asin, sqrt
-from functools import partial
-from shapely.ops import transform
 
 from constants import PROV_NAMES, CRS, CO2_HEATING_2020, CO2_EL_2020
-from functions import HVAC_cost_curve
 from _helpers import configure_logging, mock_snakemake
+from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
 from readers import read_province_shapes
 
 logger = logging.getLogger(__name__)
-
-
-# This function follows http://toblerity.org/shapely/manual.html
-def area_from_lon_lat_poly(geometry):
-    """For shapely geometry in lon-lat coordinates,
-    returns area in km^2."""
-
-    project = partial(
-        pyproj.transform, pyproj.Proj(init="epsg:4326"), pyproj.Proj(proj="aea")  # Source: Lon-Lat
-    )  # Target: Albers Equal Area Conical https://en.wikipedia.org/wiki/Albers_projection
-
-    new_geometry = transform(project, geometry)
-
-    # default area is in m^2
-    return new_geometry.area / 1e6
-
-
-def haversine(p1, p2) -> float:
-    """Calculate the great circle distance in km between two points on
-    the earth (specified in decimal degrees)
-
-    Args:
-        p1 (shapely.Point): location 1 in decimal deg
-        p2 (shapely.Point): location 2 in decimal deg
-
-    Returns:
-        float: great circle distance in [km]
-    """
-
-    # convert decimal degrees to radians
-    lon1, lat1, lon2, lat2 = map(radians, [p1[0], p1[1], p2[0], p2[1]])
-
-    # haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-    c = 2 * asin(sqrt(a))
-    r = 6371  # Radius of earth in kilometers. Use 3956 for miles
-    return c * r
 
 
 def generate_periodic_profiles(

@@ -4,7 +4,7 @@ import pypsa
 from os import PathLike
 
 from _helpers import rename_techs
-from constants import NICE_NAMES
+from constants import NICE_NAMES_DEFAULT
 
 idx = pd.IndexSlice
 logger = logging.getLogger(__name__)
@@ -185,7 +185,7 @@ def sanitize_carriers(n: pypsa.Network, config: dict) -> None:
         "plotting" key with "nice_names" and "tech_colors" keys for carriers.
     """
     # update default nice names w user settings
-    nice_names = NICE_NAMES.update(config["plotting"].get("nice_names", {}))
+    nice_names = NICE_NAMES_DEFAULT.update(config["plotting"].get("nice_names", {}))
     for c in n.iterate_components():
         if "carrier" in c.df:
             add_missing_carriers(n, c.df.carrier)

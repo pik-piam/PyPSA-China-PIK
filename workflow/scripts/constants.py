@@ -121,7 +121,7 @@ CARRIERS = [
     "nuclear",
 ]
 
-NICE_NAMES = {
+NICE_NAMES_DEFAULT = {
     "solar": "solar PV",
     "Sabatier": "methanation",
     "offwind": "offshore wind",

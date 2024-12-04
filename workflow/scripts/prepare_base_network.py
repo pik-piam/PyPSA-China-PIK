@@ -62,8 +62,12 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         config (dict): the config file
         costs (pd.DataFrame): the costs dataframe
     """
-
+    network.add("Carrier", "AC")
+    
     # add carriers
+    if config["add_hydro"]:
+        network.add("Carrier", "hydroelectricity")
+        network.add("Carrier", "hydro_inflow")
     if config["heat_coupling"]:
         network.add("Carrier", "heat")
     for carrier in config["Techs"]["vre_techs"]:
