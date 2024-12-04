@@ -8,7 +8,7 @@ from _helpers import configure_logging, mock_snakemake
 logger = logging.getLogger(__name__)
 
 
-def plot_electricity_balance(
+def plot_energy_balance(
     n: pypsa.Network,
     plot_config: dict,
     bus_carrier="AC",
@@ -52,12 +52,12 @@ def plot_electricity_balance(
     )
     color_series.rename(plot_config["nice_names"], inplace=True)
 
-    supply = p.where(p >= 0).dropna(axis=1)
-    # TODO make robust
+    supply = p.where(p >= 0).dropna(axis=1, how="all")
     preferred_order = plot_config["preferred_order"]
-    plot_order = [name for name in preferred_order if name in supply.columns] + [
-        name for name in supply.columns if name not in preferred_order
-    ]
+    plot_order = (
+        supply.columns.intersection(preferred_order).to_list()
+        + supply.columns.difference(preferred_order).to_list()
+    )
     supply = supply.reindex(columns=plot_order)
 
     charge = p.where(p < 0).dropna(how="all", axis=1)
@@ -105,15 +105,15 @@ if __name__ == "__main__":
     n = pypsa.Network(snakemake.input.network)
 
     fig, ax = plt.subplots(figsize=(16, 8))
-    plot_electricity_balance(
+    plot_energy_balance(
         n, config["plotting"], start_date="2060-03-31 21:00", end_date="2060-04-06 12:00:00", ax=ax
     )
-    fig.savefig(snakemake.output.spring)
+    fig.savefig(snakemake.output.el_spring)
 
     fig, ax = plt.subplots(figsize=(16, 8))
-    plot_electricity_balance(
+    plot_energy_balance(
         n, config["plotting"], start_date="2060-12-10 21:00", end_date="2060-12-17 12:00:00", ax=ax
     )
-    fig.savefig(snakemake.output.winter)
+    fig.savefig(snakemake.output.el_winter)
 
     logger.info("Network successfully plotted")
