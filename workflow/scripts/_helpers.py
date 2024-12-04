@@ -9,11 +9,8 @@ import subprocess
 import pandas as pd
 import logging
 import pypsa
-import pyproj
 from pathlib import Path
 from types import SimpleNamespace
-from functools import partial
-from math import radians, cos, sin, asin, sqrt
 from shapely.ops import transform
 
 from pypsa.components import components, component_attrs

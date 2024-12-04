@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 
 from _plot_utilities import get_stat_colors, set_plot_style
 from _helpers import configure_logging, mock_snakemake
-from constants import NICE_NAMES_DEFAULT
 
 logger = logging.getLogger(__name__)
 
