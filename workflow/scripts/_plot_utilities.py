@@ -1,9 +1,80 @@
 import pypsa
 import pandas as pd
 import os.path
-
 import matplotlib.pyplot as plt
 from os import PathLike
+
+
+def get_stat_colors(
+    df_stats: pd.DataFrame,
+    n: pypsa.Network,
+    plot_config: dict,
+    nan_color="lightgrey",
+    extra_colors: dict = None,
+) -> pd.DataFrame:
+    """Make several attempts to get colors for statistics from difference sources
+
+    Args:
+        df_stats (pd.DataFrame): the statistics output from n.statistics
+        n (pypsa.Network): the network
+        plot_config (dict): the plotting config
+        nan_color (str, optional): _description_. Defaults to "grey".
+        extra_colors (dict, optional): Additional args for color. Defaults to None.
+
+    Returns:
+        pd.DataFrame: _description_
+    """
+    color_series = n.carriers.color.copy().drop_duplicates(ignore_index=False)
+    tech_colors = plot_config["tech_colors"].copy()
+    nice_names = plot_config["nice_names"]
+    if extra_colors:
+        tech_colors.update(extra_colors)
+    # fill in with tech colors
+    missing_colors = df_stats.columns.difference(color_series).to_frame()
+    missing_colors["color"] = missing_colors.index.map(tech_colors).values
+    missing_colors.loc[missing_colors.color.isna(), "color"] = (
+        missing_colors.loc[missing_colors.color.isna()].index.str.lower().map(tech_colors)
+    )
+    # in case the carrier has the nicename in index
+    nice_n_colors = {v: tech_colors[k] for k, v in nice_names.items() if k in tech_colors}
+    missing_colors.loc[missing_colors.color.isna(), "color"] = missing_colors.loc[
+        missing_colors.color.isna()
+    ].index.map(nice_n_colors)
+    # fillna & add to
+    missing_colors.color.fillna(nan_color, inplace=True)
+    return pd.concat([color_series, missing_colors.color]).drop_duplicates(ignore_index=False)
+
+
+# x = get_stat_colors(p,n, config["plotting"], extra_colors={"Load":"black"})
+
+
+def fix_network_names_colors(n: pypsa.Network, config: dict):
+    """Add missing attributes to network for older versions of the code
+    This ensures compatibility with the newer pypsa eur plot functions
+    where the results belonged to the old code
+
+    Args:
+        n (pypsa.Network): the network
+        config (dict): the snakemake config dict
+    """
+    # incase an old version need to add missing info to network
+    if (n.carriers.nice_name == "").sum() > 0:
+        # deal with missing carriers
+        n.add("Carrier", "AC")
+        if config["add_hydro"]:
+            n.add("Carrier", "stations")
+            n.add("Carrier", "hydro_inflow")
+
+        # deal with missign colors and nice_names
+        nice_names = config["plotting"]["nice_names"]
+        missing_names = n.carriers.index.difference(nice_names)
+        nice_names.update(dict(zip(missing_names, missing_names)))
+
+        n.carriers.nice_name = n.carriers.index.map(nice_names)
+        t_colors = config["plotting"]["tech_colors"]
+        n.carriers.color = n.carriers.index.map(t_colors)
+        NAN_COLOR = "lightgrey"
+        n.carriers.color.fillna(NAN_COLOR, inplace=True)
 
 
 def rename_index(ds: pd.DataFrame) -> pd.DataFrame:

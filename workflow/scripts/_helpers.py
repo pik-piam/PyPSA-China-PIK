@@ -371,7 +371,7 @@ def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
     for old, new in rename_if_contains_dict.items():
         if old in label:
             label = new
-    names_new = NICE_NAMES.copy()
+    names_new = NICE_NAMES_DEFAULT.copy()
     names_new.update(nice_names)
     for old, new in names_new.items():
         if old == label:
@@ -380,7 +380,10 @@ def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
 
 
 def aggregate_costs(
-    n: pypsa.Network, flatten=False, opts: dict = None, existing_only=False
+    n: pypsa.Network,
+    flatten=False,
+    opts: dict = None,
+    existing_only=False,
 ) -> pd.Series | pd.DataFrame:
 
     components = dict(
@@ -394,17 +397,15 @@ def aggregate_costs(
 
     costs = {}
     for c, (p_nom, p_attr) in zip(
-        n.iterate_components(components.keys(), skip_empty=False), components.values()
+        n.iterate_components(components.keys(), skip_empty=True), components.values()
     ):
-        if c.df.empty:
-            continue
         if not existing_only:
             p_nom += "_opt"
         costs[(c.list_name, "capital")] = (
             (c.df[p_nom] * c.df.capital_cost).groupby(c.df.carrier).sum()
         )
         if p_attr is not None:
-            p = c.pnl[p_attr].sum()
+            p = c.dynamic[p_attr].sum()
             if c.name == "StorageUnit":
                 p = p.loc[p > 0]
             costs[(c.list_name, "marginal")] = (p * c.df.marginal_cost).groupby(c.df.carrier).sum()
