@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+# BEWARE YEARS ARE HARDCODED BASED ON THE PLANNING_HORIZONS LINE IN THE MAKESUMMARY OUTPUT....
+
 """
 Plots energy and cost summaries for solved networks.
 """
@@ -10,11 +12,13 @@ import os
 import logging
 import pandas as pd
 import matplotlib.pyplot as plt
-import re
+
+
 from _helpers import configure_logging, mock_snakemake
 from constants import PLOT_COST_UNITS, COST_UNIT
 
 plt.style.use("ggplot")
+
 logger = logging.getLogger(__name__)
 
 
@@ -165,7 +169,7 @@ def plot_pathway_costs(file_list: list, config: dict, fig_name: os.PathLike = No
 
 
 def plot_energy(file_list: list, config: dict, fig_name=None):
-    """plot the costs
+    """plot the energy production and consumption
 
     Args:
         results_file (list): the input csvs
@@ -223,6 +227,74 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
         fig.savefig(fig_name, transparent=True)
 
 
+def plot_prices(file_list: list, config: dict, fig_name=None):
+    """plot the prices
+
+    Args:
+        results_file (list): the input csvs
+        config (dict): the configuration for plotting
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+    """
+    prices_df = pd.DataFrame()
+    for results_file in file_list:
+        df_year = pd.read_csv(results_file, index_col=list(range(1)), header=[1]).T
+
+        prices_df = pd.concat([df_year, prices_df])
+    prices_df.sort_index(axis=0, inplace=True)
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    colors = config["plotting"]["tech_colors"]
+
+    prices_df.plot(
+        ax=ax,
+        kind="line",
+        color=[colors[k] if k in colors else "k" for k in prices_df.columns],
+        linewidth=3,
+    )
+    ax.set_ylim([prices_df.min().min() * 1.1, prices_df.max().max() * 1.1])
+    ax.set_ylabel("prices [X/UNIT]")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+
+    handles, labels = ax.get_legend_handles_labels()
+
+    handles.reverse()
+    labels.reverse()
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=False)
+
+
+def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
+    """plot the co2 price
+
+    Args:
+        results_file (list): the input csvs
+        config (dict): the configuration for plotting
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+    """
+    co2_prices = {}
+    planning_horizons = config["scenario"]["planning_horizons"]
+
+    for i, results_file in enumerate(file_list):
+        df_metrics = pd.read_csv(results_file, index_col=list(range(1)), header=[1])
+        co2_prices.update(dict(df_metrics.loc["co2_shadow"]))
+
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    ax.plot(co2_prices.keys(), co2_prices.values(), marker="o", color="black")
+    ax.set_ylabel("CO2 Shadow price")
+    ax.set_xlabel("Year")
+    fig.tight_layout()
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=True)
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
 
@@ -257,9 +329,21 @@ if __name__ == "__main__":
     data_paths = {
         "energy": [os.path.join(p, "energy.csv") for p in paths],
         "costs": [os.path.join(p, "costs.csv") for p in paths],
+        "co2_price": [os.path.join(p, "metrics.csv") for p in paths],
+        "prices": [os.path.join(p, "prices.csv") for p in paths],
     }
 
     plot_pathway_costs(data_paths["costs"], config, fig_name=output_paths.costs)
     plot_energy(data_paths["energy"], config, fig_name=output_paths.energy)
+    plot_prices(
+        data_paths["prices"],
+        config,
+        fig_name=os.path.dirname(output_paths.costs) + "/prices.png",
+    )
+    plot_co2_shadow_price(
+        data_paths["co2_price"],
+        config,
+        fig_name=os.path.dirname(output_paths.costs) + "/co2_shadow_prices.png",
+    )
 
     logger.info(f"Successfully plotted summary for {wildcards}")
