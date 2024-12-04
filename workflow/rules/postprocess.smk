@@ -165,13 +165,18 @@ elif config["foresight"] == "myopic":
             "../scripts/plot_summary_all.py"
 
 
-# TODO add to config options
-# rule plot_heatmap:
-#     input:
-#         network = base_results_dir + '/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
-#     output:
-#         water = base_results_dir + '/plots/heatmap/{heating_demand}/water_tank/water_tank-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-#         water_store = base_results_dir + '/plots/heatmap/{heating_demand}/water_tank/water_store-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-#         battery = base_results_dir + '/plots/heatmap/{heating_demand}/battery/battery-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-#         H2 = base_results_dir + '/plots/heatmap/{heating_demand}/H2/H2-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-#     script:  "../scripts/plot_heatmap.py"
+rule plot_heatmap:
+    input:
+        network=base_results_dir
+        + "/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
+    output:
+        water=base_results_dir
+        + "/plots/heatmap/{heating_demand}/water_tank/water_tank-{opts}-{topology}-{pathway}-{planning_horizons}.png",
+        water_store=base_results_dir
+        + "/plots/heatmap/{heating_demand}/water_tank/water_store-{opts}-{topology}-{pathway}-{planning_horizons}.png",
+        battery=base_results_dir
+        + "/plots/heatmap/{heating_demand}/battery/battery-{opts}-{topology}-{pathway}-{planning_horizons}.png",
+        H2=base_results_dir
+        + "/plots/heatmap/{heating_demand}/H2/H2-{opts}-{topology}-{pathway}-{planning_horizons}.png",
+    script:
+        "../scripts/plot_heatmap.py"
