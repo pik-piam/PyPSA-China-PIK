@@ -41,17 +41,6 @@ def assign_location(n: pypsa.Network):
         c.df["location"] = c.df.index.str.split(" ", expand=True).get_level_values(0)
 
 
-def load_plot_style(plot_config: os.PathLike):
-    """load a matplotlib style from a json file
-
-    Args:
-        plot_config (os.Pathlike): the json config
-    """
-
-    cfg = json.load(plot_config)
-    plt.style.use(cfg)
-
-
 def set_plot_style(
     style_config_file: PathLike = "./config/plotting_styles/default_style.mplstyle",
     base_styles=["classic"],
