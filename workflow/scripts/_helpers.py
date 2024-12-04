@@ -516,7 +516,7 @@ def define_spatial(nodes, options):
     return spatial
 
 
-def annualise_component_capex(comp_df: pd.DataFrame, capacity_name="p_nom_opt") -> pd.DataFrame:
+def calc_component_capex(comp_df: pd.DataFrame, capacity_name="p_nom_opt") -> pd.DataFrame:
     """Annualise the capex costs of the components
 
     Args:

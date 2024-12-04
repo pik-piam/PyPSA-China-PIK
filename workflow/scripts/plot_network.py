@@ -9,7 +9,7 @@ import pandas as pd
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 from plot_summary import preferred_order, rename_techs
 from _plot_utilities import assign_location, set_plot_style
-from _helpers import configure_logging, mock_snakemake, annualise_component_capex
+from _helpers import configure_logging, mock_snakemake, calc_component_capex
 from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS
 
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def make_cost_pies(ntwk: pypsa.Network, cost_df: pd.DataFrame, tech_colors: dict) -> pd.DataFrame:
-    """Make pies for plotting
+    """Make cost pies for plotting
 
     Args:
         ntwk (pypsa.Network): the network
@@ -25,7 +25,7 @@ def make_cost_pies(ntwk: pypsa.Network, cost_df: pd.DataFrame, tech_colors: dict
         tech_colors (dict): the tech color config
 
     Returns:
-        pd.DataFrame: the pies per bus location
+        pd.DataFrame: the cost pies per bus location
     """
 
     costs = cost_df.T.groupby(cost_df.columns).sum().T
@@ -48,7 +48,7 @@ def make_cost_pies(ntwk: pypsa.Network, cost_df: pd.DataFrame, tech_colors: dict
     return costs
 
 
-def sum_components_costs(
+def annualised_network_capex(
     ntwk: pypsa.Network,
     components_list: list,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -77,8 +77,8 @@ def sum_components_costs(
         cap_name = "e_nom_opt" if comp == "stores" else "p_nom_opt"
         cap_before_ext = "e_nom" if comp == "stores" else "p_nom"
 
-        costs_total = annualise_component_capex(df_c, cap_name)
-        costs_before_ext = annualise_component_capex(df_c, cap_before_ext)
+        costs_total = calc_component_capex(df_c, cap_name)
+        costs_before_ext = calc_component_capex(df_c, cap_before_ext)
         costs_diff = costs_total - costs_before_ext
 
         costs_add = pd.concat([costs_add, costs_diff], axis=1)
@@ -205,7 +205,7 @@ def plot_map(
             "labelspacing": 0.8,
             "frameon": False,
             "handletextpad": 0,
-            "title": kwargs.get("bus_ref_title", "System cost"),
+            "title": kwargs.get("bus_ref_title", "System cost (CAPEX)"),
         }
 
         add_legend_circles(
@@ -220,7 +220,7 @@ def plot_map(
     return ax
 
 
-def plot_cost_map(
+def plot_capex_map(
     network: pypsa.Network,
     planning_horizon: int,
     discount_rate: float,
@@ -240,7 +240,7 @@ def plot_cost_map(
         inplace=True,
     )
 
-    costs_pathway, costs_nom = sum_components_costs(plot_ntwk, components)
+    costs_pathway, costs_nom = annualised_network_capex(plot_ntwk, components)
     cost_pie = make_cost_pies(plot_ntwk, costs_pathway, tech_colors)
     cost_pie_nom = make_cost_pies(plot_ntwk, costs_nom, tech_colors)
 
@@ -334,7 +334,7 @@ if __name__ == "__main__":
 
     n = pypsa.Network(snakemake.input.network)
 
-    plot_cost_map(
+    plot_capex_map(
         n,
         planning_horizon=snakemake.wildcards.planning_horizons,
         discount_rate=config["costs"]["discountrate"],
