@@ -16,6 +16,7 @@ import pandas as pd
 import pypsa
 
 from _helpers import mock_snakemake, configure_logging
+from _plot_utilities import assign_locations
 
 # import numpy as np
 # from add_electricity import load_costs, update_transmission_costs
@@ -31,18 +32,7 @@ def assign_carriers(n):
         n.lines["carrier"] = "AC"
 
 
-def assign_locations(n):
-    for c in n.iterate_components(n.one_port_components | n.branch_components):
-        ifind = pd.Series(c.df.index.str.find(" ", start=4), c.df.index)
-        for i in ifind.unique():
-            names = ifind.index[ifind == i]
-            if i == -1:
-                c.df.loc[names, "location"] = ""
-            else:
-                c.df.loc[names, "location"] = names.str[:i]
-
-
-def calculate_nodal_cfs(n, label, nodal_cfs):
+def calculate_nodal_cfs(n: pypsa.Network, label: str, nodal_cfs: pd.DataFrame):
     # Beware this also has extraneous locations for country (e.g. biomass)
     # or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
@@ -74,7 +64,7 @@ def calculate_nodal_cfs(n, label, nodal_cfs):
     return nodal_cfs
 
 
-def calculate_cfs(n, label, cfs):
+def calculate_cfs(n: pypsa.Network, label: str, cfs: pd.DataFrame):
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load", "StorageUnit"}
     ):
@@ -100,7 +90,7 @@ def calculate_cfs(n, label, cfs):
     return cfs
 
 
-def calculate_nodal_costs(n, label, nodal_costs):
+def calculate_nodal_costs(n: pypsa.Network, label: str, nodal_costs: pd.DataFrame):
     # Beware this also has extraneous locations for country (e.g. biomass)
     #  or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
@@ -141,7 +131,7 @@ def calculate_nodal_costs(n, label, nodal_costs):
     return nodal_costs
 
 
-def calculate_costs(n, label, costs):
+def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame):
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
@@ -190,7 +180,7 @@ def calculate_costs(n, label, costs):
     return costs
 
 
-def calculate_nodal_capacities(n, label, nodal_capacities):
+def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: pd.DataFrame):
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
@@ -207,7 +197,7 @@ def calculate_nodal_capacities(n, label, nodal_capacities):
     return nodal_capacities
 
 
-def calculate_capacities(n, label, capacities):
+def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame):
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
@@ -223,7 +213,7 @@ def calculate_capacities(n, label, capacities):
     return capacities
 
 
-def calculate_curtailment(n, label, curtailment):
+def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFrame):
     avail = (
         n.generators_t.p_max_pu.multiply(n.generators.p_nom_opt)
         .sum()
@@ -237,7 +227,7 @@ def calculate_curtailment(n, label, curtailment):
     return curtailment
 
 
-def calculate_energy(n, label, energy):
+def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame):
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         if c.name in n.one_port_components:
             c_energies = (
@@ -265,7 +255,7 @@ def calculate_energy(n, label, energy):
     return energy
 
 
-def calculate_supply(n, label, supply):
+def calculate_supply(n: pypsa.Network, label: str, supply: pd.DataFrame):
     """
     Calculate the max dispatch of each component at the buses aggregated by
     carrier.
@@ -316,7 +306,7 @@ def calculate_supply(n, label, supply):
     return supply
 
 
-def calculate_supply_energy(n, label, supply_energy):
+def calculate_supply_energy(n: pypsa.Network, label: str, supply_energy: pd.DataFrame):
     """
     Calculate the total energy supply/consuption of each component at the buses
     aggregated by carrier.
@@ -368,7 +358,7 @@ def calculate_supply_energy(n, label, supply_energy):
     return supply_energy
 
 
-def calculate_metrics(n, label, metrics):
+def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
     metrics_list = [
         "line_volume",
         "line_volume_limit",
@@ -398,7 +388,7 @@ def calculate_metrics(n, label, metrics):
     return metrics
 
 
-def calculate_prices(n, label, prices):
+def calculate_prices(n: pypsa.Network, label: str, prices: pd.DataFrame):
     prices = prices.reindex(prices.index.union(n.buses.carrier.unique()))
 
     # WARNING: this is time-averaged, see weighted_prices for load-weighted average
@@ -407,7 +397,7 @@ def calculate_prices(n, label, prices):
     return prices
 
 
-def calculate_weighted_prices(n, label, weighted_prices):
+def calculate_weighted_prices(n: pypsa.Network, label: str, weighted_prices: pd.DataFrame):
     # Warning: doesn't include storage units as loads
 
     weighted_prices = weighted_prices.reindex(
@@ -485,7 +475,7 @@ def calculate_weighted_prices(n, label, weighted_prices):
     return weighted_prices
 
 
-def calculate_market_values(n, label, market_values):
+def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.DataFrame):
     # Warning: doesn't include storage units
 
     carrier = "AC"
@@ -540,7 +530,7 @@ def calculate_market_values(n, label, market_values):
     return market_values
 
 
-def calculate_price_statistics(n, label, price_statistics):
+def calculate_price_statistics(n: pypsa.Network, label: str, price_statistics: pd.DataFrame):
     price_statistics = price_statistics.reindex(
         price_statistics.index.union(pd.Index(["zero_hours", "mean", "standard_deviation"]))
     )
@@ -564,33 +554,33 @@ def calculate_price_statistics(n, label, price_statistics):
     return price_statistics
 
 
-def make_summaries(networks_dict):
-    outputs = [
-        "nodal_costs",
-        "nodal_capacities",
-        "nodal_cfs",
-        "cfs",
-        "costs",
-        "capacities",
-        "curtailment",
-        "energy",
-        "supply",
-        "supply_energy",
-        "prices",
-        "weighted_prices",
-        "price_statistics",
-        "market_values",
-        "metrics",
-    ]
+def make_summaries(networks_dict: dict[tuple, os.PathLike]):
+    output_funcs = {
+        "nodal_costs": calculate_nodal_costs,
+        "nodal_capacities": calculate_nodal_capacities,
+        "nodal_cfs": calculate_nodal_cfs,
+        "cfs": calculate_cfs,
+        "costs": calculate_costs,
+        "capacities": calculate_capacities,
+        "curtailment": calculate_curtailment,
+        "energy": calculate_energy,
+        "supply": calculate_supply,
+        "supply_energy": calculate_supply_energy,
+        "prices": calculate_prices,
+        "weighted_prices": calculate_weighted_prices,
+        "price_statistics": calculate_price_statistics,
+        "market_values": calculate_market_values,
+        "metrics": calculate_metrics,
+    }
 
     columns = pd.MultiIndex.from_tuples(
         networks_dict.keys(), names=["pathway", "planning_horizons"]
     )
 
-    df = {}
+    dataframes_dict = {}
 
-    for output in outputs:
-        df[output] = pd.DataFrame(columns=columns, dtype=float)
+    for output in output_funcs.keys():
+        dataframes_dict[output] = pd.DataFrame(columns=columns, dtype=float)
 
     for label, filename in networks_dict.items():
         logger.info(f"Make summary for scenario {label}, using {filename}")
@@ -600,10 +590,10 @@ def make_summaries(networks_dict):
         assign_carriers(n)
         assign_locations(n)
 
-        for output in outputs:
-            df[output] = globals()["calculate_" + output](n, label, df[output])
+        for output, output_fn in output_funcs.items():
+            dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
 
-    return df
+    return dataframes_dict
 
 
 # TODO move to helper?

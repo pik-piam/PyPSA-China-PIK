@@ -3,6 +3,7 @@ import numpy as np
 SNAKEFILE_CHOICES = ["Snakefile", "snakefile"]
 
 PLOT_COST_UNITS = 1e9  # bnEur
+PLOT_CAP_UNITS = 1e3  # MW->GW
 COST_UNIT = 1
 
 # ==== data inputs ====

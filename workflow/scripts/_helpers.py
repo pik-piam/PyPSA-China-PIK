@@ -6,7 +6,6 @@
 import os
 import sys
 import subprocess
-import json
 import pandas as pd
 from pathlib import Path
 from types import SimpleNamespace
@@ -106,7 +105,8 @@ def configure_logging(
         snakemake (object):  snakemake script object
         logger (Logger, optional): the script logger. Defaults to None (Root logger).
             Passing a local logger will apply the configuration to the logger instead of root.
-        skip_handlers (bool, optional): Do (not) skip the default handlers redirecting output to STDERR and file. Defaults to False.
+        skip_handlers (bool, optional): Do (not) skip the default handlers
+            redirecting output to STDERR and file. Defaults to False.
         level (str, optional): the logging level. Defaults to "INFO".
     """
 
@@ -157,6 +157,7 @@ def is_leap_year(year: int) -> bool:
 def mock_snakemake(
     rulename: str,
     configfiles: list | str = None,
+    snakefile_path: os.PathLike = None,
     **wildcards,
 ):
     """A function to enable scripts to run as standalone, giving them access to
@@ -187,63 +188,77 @@ def mock_snakemake(
         WorkflowSettings,
     )
 
-    for p in SNAKEFILE_CHOICES:
-        if os.path.exists(p):
-            snakefile = p
-            break
-    if configfiles is None:
-        configfiles = []
-    elif isinstance(configfiles, str):
-        configfiles = [configfiles]
+    # horrible hack
+    curr_path = os.getcwd()
+    if snakefile_path:
+        os.chdir(os.path.dirname(snakefile_path))
+    try:
+        snakefile = None
+        for p in SNAKEFILE_CHOICES:
+            if os.path.exists(p):
+                snakefile = p
+                break
 
-    resource_settings = ResourceSettings()
-    config_settings = ConfigSettings(configfiles=map(Path, configfiles))
-    workflow_settings = WorkflowSettings()
-    storage_settings = StorageSettings()
-    dag_settings = DAGSettings(rerun_triggers=[])
-    workflow = Workflow(
-        config_settings,
-        resource_settings,
-        workflow_settings,
-        storage_settings,
-        dag_settings,
-        storage_provider_settings=dict(),
-    )
-    workflow.include(snakefile)
+        if snakefile is None:
+            raise FileNotFoundError("Snakefile not found.")
 
-    if configfiles:
-        for f in configfiles:
-            if not os.path.exists(f):
-                raise FileNotFoundError(f"Config file {f} does not exist.")
-            workflow.configfile(f)
+        if configfiles is None:
+            configfiles = []
+        elif isinstance(configfiles, str):
+            configfiles = [configfiles]
 
-    workflow.global_resources = {}
-    rule = workflow.get_rule(rulename)
-    dag = sm.dag.DAG(workflow, rules=[rule])
-    wc = wildcards
-    job = sm.jobs.Job(rule, dag, wc)
+        resource_settings = ResourceSettings()
+        config_settings = ConfigSettings(configfiles=map(Path, configfiles))
+        workflow_settings = WorkflowSettings()
+        storage_settings = StorageSettings()
+        dag_settings = DAGSettings(rerun_triggers=[])
+        workflow = Workflow(
+            config_settings,
+            resource_settings,
+            workflow_settings,
+            storage_settings,
+            dag_settings,
+            storage_provider_settings=dict(),
+        )
+        workflow.include(snakefile)
 
-    def make_accessable(*ios):
-        for io in ios:
-            for i, _ in enumerate(io):
-                io[i] = os.path.abspath(io[i])
+        if configfiles:
+            for f in configfiles:
+                if not os.path.exists(f):
+                    raise FileNotFoundError(f"Config file {f} does not exist.")
+                workflow.configfile(f)
 
-    make_accessable(job.input, job.output, job.log)
-    snakemake = Snakemake(
-        job.input,
-        job.output,
-        job.params,
-        job.wildcards,
-        job.threads,
-        job.resources,
-        job.log,
-        job.dag.workflow.config,
-        job.rule.name,
-        None,
-    )
-    # create log and output dir if not existent
-    for path in list(snakemake.log) + list(snakemake.output):
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        workflow.global_resources = {}
+        rule = workflow.get_rule(rulename)
+        dag = sm.dag.DAG(workflow, rules=[rule])
+        wc = wildcards
+        job = sm.jobs.Job(rule, dag, wc)
+
+        def make_accessable(*ios):
+            for io in ios:
+                for i, _ in enumerate(io):
+                    io[i] = os.path.abspath(io[i])
+
+        make_accessable(job.input, job.output, job.log)
+        snakemake = Snakemake(
+            job.input,
+            job.output,
+            job.params,
+            job.wildcards,
+            job.threads,
+            job.resources,
+            job.log,
+            job.dag.workflow.config,
+            job.rule.name,
+            None,
+        )
+        # create log and output dir if not existent
+        for path in list(snakemake.log) + list(snakemake.output):
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        raise e
+    finally:
+        os.chdir(curr_path)
 
     return snakemake
 
@@ -501,12 +516,23 @@ def define_spatial(nodes, options):
     return spatial
 
 
-def load_plot_style(plot_config: os.PathLike):
-    """load a matplotlib style from a json file
+def annualise_component_capex(comp_df: pd.DataFrame, capacity_name="p_nom_opt") -> pd.DataFrame:
+    """Annualise the capex costs of the components
 
     Args:
-        plot_config (os.Pathlike): the json config
+        comp_df (pd.DataFrame): the component dataframe (from n.itercomponents() or getattr)
+        capacity_name (str, optional): the capacity (power, energy,..). Defaults to "p_nom_opt".
+
+    Returns:
+        pd.Dataframe: annualised capex
     """
 
-    cfg = json.load(plot_config)
-    plt.style.use(cfg)
+    costs_a = (
+        (comp_df.capital_cost * comp_df[capacity_name])
+        .groupby([comp_df.location, comp_df.nice_group])
+        .sum()
+        .unstack()
+        .fillna(0.0)
+    )
+
+    return costs_a
