@@ -1,8 +1,12 @@
 import pypsa
+import logging
 import matplotlib.pyplot as plt
 
-from _plot_utilities import get_stat_colors
+from _plot_utilities import get_stat_colors, set_plot_style
+from _helpers import configure_logging, mock_snakemake
 from constants import NICE_NAMES_DEFAULT
+
+logger = logging.getLogger(__name__)
 
 
 def plot_electricity_balance(
@@ -12,8 +16,9 @@ def plot_electricity_balance(
     start_date="2060-03-31 21:00",
     end_date="2060-04-06 12:00:00",
     add_load_line=True,
+    ax: plt.Axes = None,
 ):
-    """_summary_
+    """plot the electricity balance of the network for the given time range
 
     Args:
         n (pypsa.Network): the network
@@ -23,6 +28,8 @@ def plot_electricity_balance(
         end_date (str, optional): the range to plot. Defaults to "2060-04-06 12:00:00".
         add_load_line (bool, optional): add a dashed line for the load. Defaults to True.
     """
+    if not ax:
+        fig, ax = plt.subplots(figsize=(16, 8))
 
     p = (
         n.statistics.energy_balance(aggregate_time=False, bus_carrier=bus_carrier)
@@ -61,7 +68,6 @@ def plot_electricity_balance(
     ]
     charge = charge.reindex(columns=plot_order)
 
-    fig, ax = plt.subplots(figsize=(16, 8))
     if not charge.empty:
         charge.plot.area(ax=ax, linewidth=0, color=color_series.loc[charge.columns])
     supply.plot.area(
@@ -79,3 +85,36 @@ def plot_electricity_balance(
     ax.grid(axis="y")
 
     return ax
+
+
+if __name__ == "__main__":
+
+    # Detect running outside of snakemake and mock snakemake for testing
+    if "snakemake" not in globals():
+        snakemake = mock_snakemake(
+            "plot_time_series",
+        )
+    configure_logging(snakemake)
+
+    set_plot_style(
+        style_config_file=snakemake.config["plotting"]["network_style_config_file"],
+        base_styles=["classic", "seaborn-v0_8-white"],
+    )
+
+    config = snakemake.config
+
+    n = pypsa.Network(snakemake.input.network)
+
+    fig, ax = plt.subplots(figsize=(16, 8))
+    plot_electricity_balance(
+        n, config["plotting"], start_date="2060-03-31 21:00", end_date="2060-04-06 12:00:00", ax=ax
+    )
+    fig.savefig(snakemake.output.spring)
+
+    fig, ax = plt.subplots(figsize=(16, 8))
+    plot_electricity_balance(
+        n, config["plotting"], start_date="2060-12-10 21:00", end_date="2060-12-17 12:00:00", ax=ax
+    )
+    fig.savefig(snakemake.output.winter)
+
+    logger.info("Network successfully plotted")
