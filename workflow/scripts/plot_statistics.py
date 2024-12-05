@@ -43,7 +43,7 @@ if __name__ == "__main__":
     n = pypsa.Network(snakemake.input.network)
 
     # incase an old version need to add missing info to network
-    fix_network_names_colors(n)
+    fix_network_names_colors(n, snakemake.config)
 
     n.loads.carrier = "load"
     n.carriers.loc["load", ["nice_name", "color"]] = "Load", "darkred"

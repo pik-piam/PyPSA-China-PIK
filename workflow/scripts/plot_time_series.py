@@ -77,10 +77,11 @@ def plot_energy_balance(
     if add_load_line:
         charge["load_pos"] = charge["Load"] * -1
         charge["load_pos"].plot(linewidth=2, color="black", label="Load", ax=ax, linestyle="--")
+        charge.drop(columns="load_pos", inplace=True)
 
     ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
     ax.set_ylabel("GW")
-    ax.set_ylim(charge.sum(axis=1).min() * 1.14, supply.sum(axis=1).max() * 1.13)
+    ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
     ax.grid(axis="y")
 
     return ax

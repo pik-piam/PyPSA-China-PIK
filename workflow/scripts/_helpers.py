@@ -537,3 +537,21 @@ def calc_component_capex(comp_df: pd.DataFrame, capacity_name="p_nom_opt") -> pd
     )
 
     return costs_a
+
+
+def get_supply(
+    n: pypsa.Network, bus_carrier: str = None, components_list=["Generator"]
+) -> pd.DataFrame:
+    """Get the period supply for all or a certain carrier from the network buses
+
+    Args:
+        n (pypsa.Network): the network object
+        bus_carrier (str, optional): the carrier for the buses. Defaults to None.
+        components_list (list, optional): the list of components. Defaults to ['Generator'].
+
+    Returns:
+        pd.DataFrame: the supply for each bus and component type
+    """
+    return n.statistics.supply(
+        groupby=pypsa.statistics.get_bus_and_carrier, bus_carrier=bus_carrier, comps=components_list
+    )

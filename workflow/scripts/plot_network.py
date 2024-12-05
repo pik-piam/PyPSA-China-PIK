@@ -9,8 +9,8 @@ import os
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 from plot_summary import preferred_order, rename_techs
 from _plot_utilities import assign_location, set_plot_style
-from _helpers import configure_logging, mock_snakemake, calc_component_capex
-from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS
+from _helpers import configure_logging, get_supply, mock_snakemake, calc_component_capex
+from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS
 
 
 logger = logging.getLogger(__name__)
@@ -129,6 +129,8 @@ def plot_map(
     add_ref_edge_sizes=True,
     add_ref_bus_sizes=True,
     add_legend=True,
+    bus_unit_conv=PLOT_COST_UNITS,
+    edge_unit_conv=PLOT_CAP_UNITS,
     ax=None,
     **kwargs,
 ) -> plt.Axes:
@@ -176,8 +178,8 @@ def plot_map(
     if add_ref_edge_sizes & (type(edge_colors) == str):
         ref_unit = kwargs.get("ref_edge_unit", "GW")
         size_factor = float(kwargs.get("linewidth_factor", 1e5))
-        ref_sizes = kwargs.get("ref_edge_sizes", [10e5, 5e5])
-        labels = [f"{float(s)/PLOT_CAP_UNITS} {ref_unit}" for s in ref_sizes]
+        ref_sizes = kwargs.get("ref_edge_sizes", [1e5, 5e5])
+        labels = [f"{float(s)/edge_unit_conv} {ref_unit}" for s in ref_sizes]
         ref_sizes = list(map(lambda x: float(x) / size_factor, ref_sizes))
         legend_kw = dict(
             loc="upper left",
@@ -191,11 +193,12 @@ def plot_map(
             ax, ref_sizes, labels, patch_kw=dict(color=edge_colors), legend_kw=legend_kw
         )
 
+    # add reference bus sizes ferom the units
     if add_ref_bus_sizes:
         ref_unit = kwargs.get("ref_bus_unit", "bEUR/a")
         size_factor = float(kwargs.get("bus_size_factor", 1e10))
-        ref_sizes = kwargs.get("ref_bus_sizes", [20e10, 10e10, 5e10])
-        labels = [f"{float(s)/PLOT_COST_UNITS} {ref_unit}" for s in ref_sizes]
+        ref_sizes = kwargs.get("ref_bus_sizes", [2e10, 1e10, 5e10])
+        labels = [f"{float(s)/bus_unit_conv:.0f} {ref_unit}" for s in ref_sizes]
         ref_sizes = list(map(lambda x: float(x) / size_factor, ref_sizes))
 
         legend_kw = {
@@ -260,11 +263,11 @@ def plot_capex_map(
 
     # Make figure with two pannels
     fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": ccrs.PlateCarree()})
-    fig.set_size_inches(opts["map"]["figsize"])
+    fig.set_size_inches(opts["cost_map"]["figsize"])
 
     # Add the total costs
-    bus_size_factor = opts["map"]["cost_size_factor"]
-    linewidth_factor = opts["map"]["linewidth_factor"]
+    bus_size_factor = opts["cost_map"]["bus_size_factor"]
+    linewidth_factor = opts["cost_map"]["linewidth_factor"]
     edge_widths = (
         pd.concat([plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt])
         .clip(line_lower_threshold, line_upper_threshold)
@@ -313,6 +316,109 @@ def plot_capex_map(
         fig.savefig(save_path, transparent=True, bbox_inches="tight")
 
 
+def plot_energy_map(
+    network: pypsa.Network,
+    opts: dict,
+    energy_pannel=True,
+    save_path=None,
+):
+    plot_ntwk = network.copy()
+    plot_ntwk.buses.drop(plot_ntwk.buses.index[plot_ntwk.buses.carrier != "AC"], inplace=True)
+
+    assign_location(plot_ntwk)
+
+    plot_ntwk.links.drop(
+        plot_ntwk.links.index[plot_ntwk.links.length == 0],
+        inplace=True,
+    )
+
+    energy_supply = get_supply(plot_ntwk, bus_carrier="AC", components_list=["Generator"])
+    supply_pies = energy_supply.droplevel(0)
+
+    # TODO aggregate costs below threshold into "other" -> requires messing with network
+
+    # get all carrier types
+    carriers = supply_pies.index.get_level_values(1).unique()
+    carriers = carriers.tolist()
+
+    # TODO make line handling nicer
+    line_lower_threshold = 500.0
+    line_upper_threshold = 1e4
+    # Make figure
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
+    fig.set_size_inches(opts["energy_map"]["figsize"])
+    # get colors
+    bus_colors = plot_ntwk.carriers.loc[plot_ntwk.carriers.nice_name.isin(carriers), "color"]
+    bus_colors.rename(opts["nice_names"], inplace=True)
+    # Add the total costs
+    bus_size_factor = opts["energy_map"]["bus_size_factor"]
+    linewidth_factor = opts["energy_map"]["linewidth_factor"]
+    edge_widths = (
+        pd.concat([plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt])
+        .clip(line_lower_threshold, line_upper_threshold)
+        .replace(line_lower_threshold, 0)
+    )
+    preferred_order = pd.Index(opts["preferred_order"])
+    reordered = preferred_order.intersection(bus_colors.index).append(
+        bus_colors.index.difference(preferred_order)
+    )
+
+    plot_map(
+        plot_ntwk,
+        tech_colors=plot_ntwk.carriers.color,
+        edge_widths=edge_widths / linewidth_factor,
+        bus_colors=bus_colors.loc[reordered],
+        bus_sizes=supply_pies / bus_size_factor,
+        edge_colors="indigo",
+        ax=ax,
+        edge_unit_conv=PLOT_CAP_UNITS,
+        bus_unit_conv=PLOT_SUPPLY_UNITS,
+        add_legend=False,
+        **opts["energy_map"],
+    )
+    # # Add the optional cost pannel
+    if energy_pannel:
+        df = supply_pies.groupby(level=1).sum().to_frame()
+        df = df.fillna(0)
+        add_energy_pannel(df, fig, preferred_order, bus_colors, ax_loc=[-0.09, 0.28, 0.09, 0.45])
+
+    fig.tight_layout()
+    if save_path:
+        fig.savefig(save_path, transparent=True, bbox_inches="tight")
+
+
+def add_energy_pannel(
+    df, fig: plt.Figure, preferred_order, colors: pd.Series, ax_loc=[-0.09, 0.28, 0.09, 0.45]
+) -> None:
+    """Add a cost pannel to the figure
+
+    Args:
+        df (_type_): _description_
+        fig (plt.Figure): the figure object to which the cost pannel will be added
+        preferred_order (_type_): index, the order in whiich to plot
+        colors (pd.Series): the colors for the techs, with the correct index and no extra techs
+        ax_loc (list, optional): _description_. Defaults to [-0.09, 0.28, 0.09, 0.45].
+    """
+    ax3 = fig.add_axes(ax_loc)
+    reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
+    df = df / PLOT_SUPPLY_UNITS
+    # only works if colors has correct index
+    df.loc[reordered, df.columns].T.plot(
+        kind="bar",
+        ax=ax3,
+        stacked=True,
+        color=colors[reordered],
+    )
+
+    ax3.legend().remove()
+    ax3.set_ylabel("Electricity supply [TWh]")
+    ax3.set_xticklabels(ax3.get_xticklabels(), rotation="horizontal")
+    ax3.grid(axis="y")
+    ax3.set_ylim([0, df.sum().max() * 1.1])
+
+    fig.tight_layout()
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -349,6 +455,7 @@ if __name__ == "__main__":
         opts=config["plotting"],
         components=["generators", "links", "stores", "storage_units"],
         save_path=snakemake.output.cost_map,
+        **config["plotting"]["cost_map"],
     )
 
     logger.info("Network successfully plotted")
