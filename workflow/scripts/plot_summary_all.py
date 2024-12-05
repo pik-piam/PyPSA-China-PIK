@@ -65,47 +65,12 @@ def rename_techs(label):
     return label
 
 
-preferred_order = pd.Index(
-    [
-        "transmission lines",
-        "hydroelectricity",
-        "nuclear",
-        "coal",
-        "coal carbon capture",
-        "coal power plant",
-        "coal power plant retrofit",
-        "coal boiler",
-        "CHP coal",
-        "gas",
-        "OCGT",
-        "gas boiler",
-        "CHP gas",
-        "biomass",
-        # "biomass carbon capture",
-        "onshore wind",
-        "offshore wind",
-        "solar PV",
-        "solar thermal",
-        "heat pump",
-        "resistive heater",
-        "methanation",
-        "H2",
-        "H2 fuel cell",
-        "H2 CHP",
-        "battery",
-        "battery storage",
-        "hot water storage",
-        "hydrogen storage",
-    ]
-)
-
-
 def plot_pathway_costs(file_list: list, config: dict, fig_name: os.PathLike = None):
     """plot the costs
 
     Args:
         results_file (list): the input csvs
-        config (dict): the configuration for plotting
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
     # all years in one df
@@ -117,7 +82,7 @@ def plot_pathway_costs(file_list: list, config: dict, fig_name: os.PathLike = No
         # TODO centralise unit
         df_ = df_ * COST_UNIT / PLOT_COST_UNITS
         df_ = df_.groupby(df_.index.map(rename_techs)).sum()
-        to_drop = df_.index[df_.max(axis=1) < config["plotting"]["costs_plots_threshold"]]
+        to_drop = df_.index[df_.max(axis=1) < config["costs_plots_threshold"]]
         df_.loc["Other"] = df_.loc[to_drop].sum(axis=0)
         df_ = df_.drop(to_drop)
 
@@ -125,6 +90,7 @@ def plot_pathway_costs(file_list: list, config: dict, fig_name: os.PathLike = No
 
     df.fillna(0, inplace=True)
     df.sort_index(axis=1, inplace=True)
+    preferred_order = pd.Index(config["preferred_order"])
     new_index = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
 
     new_columns = df.sum().sort_values().index
@@ -136,7 +102,7 @@ def plot_pathway_costs(file_list: list, config: dict, fig_name: os.PathLike = No
         kind="bar",
         ax=ax,
         stacked=True,
-        color=[config["plotting"]["tech_colors"][i] for i in new_index],
+        color=[config["tech_colors"][i] for i in new_index],
     )
 
     handles, labels = ax.get_legend_handles_labels()
@@ -173,7 +139,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
 
     Args:
         results_file (list): the input csvs
-        config (dict): the configuration for plotting
+        config (dict): the configuration for plotting (snamkemake.config["plotting"])
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
     energy_df = pd.DataFrame()
@@ -185,7 +151,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
         # convert MWh to TWh
         df_ = df_ / 1e6
         df_ = df_.groupby(df_.index.map(rename_techs)).sum()
-        to_drop = df_.index[df_.max(axis=1) < config["plotting"]["energy_threshold"]]
+        to_drop = df_.index[df_.max(axis=1) < config["energy_threshold"]]
         df_.loc["Other"] = df_.loc[to_drop].sum(axis=0)
         df_ = df_.drop(to_drop)
 
@@ -194,6 +160,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
     energy_df.sort_index(axis=1, inplace=True)
 
     logger.info(f"Total energy of {round(energy_df.sum()[0])} TWh/a")
+    preferred_order = pd.Index(config["preferred_order"])
     new_index = preferred_order.intersection(energy_df.index).append(
         energy_df.index.difference(preferred_order)
     )
@@ -208,7 +175,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
         kind="bar",
         ax=ax,
         stacked=True,
-        color=[config["plotting"]["tech_colors"][i] for i in new_index],
+        color=[config["tech_colors"][i] for i in new_index],
     )
 
     handles, labels = ax.get_legend_handles_labels()
@@ -216,7 +183,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
     handles.reverse()
     labels.reverse()
 
-    ax.set_ylim([config["plotting"]["energy_min"], energy_df.sum(axis=0).max() * 1.1])
+    ax.set_ylim([config["energy_min"], energy_df.sum(axis=0).max() * 1.1])
     ax.set_ylabel("Energy [TWh/a]")
     ax.set_xlabel("")
     ax.grid(axis="y")
@@ -273,7 +240,7 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
 
     Args:
         results_file (list): the input csvs
-        config (dict): the configuration for plotting
+        config (dict): the snakemake configuration
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
     co2_prices = {}
@@ -333,8 +300,8 @@ if __name__ == "__main__":
         "prices": [os.path.join(p, "prices.csv") for p in paths],
     }
 
-    plot_pathway_costs(data_paths["costs"], config, fig_name=output_paths.costs)
-    plot_energy(data_paths["energy"], config, fig_name=output_paths.energy)
+    plot_pathway_costs(data_paths["costs"], config["plotting"], fig_name=output_paths.costs)
+    plot_energy(data_paths["energy"], config["plotting"], fig_name=output_paths.energy)
     plot_prices(
         data_paths["prices"],
         config,

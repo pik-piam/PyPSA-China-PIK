@@ -41,7 +41,7 @@ def get_stat_colors(
         missing_colors.color.isna()
     ].index.map(nice_n_colors)
     # fillna & add to
-    missing_colors.color.fillna(nan_color, inplace=True)
+    missing_colors.fillna(value={"color": nan_color}, inplace=True)
     return pd.concat([color_series, missing_colors.color]).drop_duplicates(ignore_index=False)
 
 

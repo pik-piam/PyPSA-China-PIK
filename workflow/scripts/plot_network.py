@@ -3,6 +3,7 @@ import pypsa
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
 
 # from make_summary import assign_carriers
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
@@ -51,7 +52,7 @@ def annualised_network_capex(
     ntwk: pypsa.Network,
     components_list: list,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """sum component costs
+    """sum component costs [WARNING COSTS ONLY ANNUALISED IF THE PERIOD IS ONE YEAR, OTHERWISE THEY ARE PER PERIOD]
 
     Args:
         ntwk (pypsa.Network): the network
@@ -61,7 +62,6 @@ def annualised_network_capex(
         tuple[pd.DataFrame, pd.DataFrame]: the total and pathway costs
     """
 
-    # Drop non-electric buses so they don't clutter the plot
     costs_add = pd.DataFrame(index=ntwk.buses.index)
     costs_nom = pd.DataFrame(index=ntwk.buses.index)
 
@@ -107,14 +107,14 @@ def add_cost_pannel(
         stacked=True,
         color=[tech_colors[i] for i in reordered],
     )
-    percent = round((df.sum()[1] / df.sum()[0]) * 100)
+    percent = round((df.sum()["added"] / df.sum()["total"]) * 100)
     ax3.legend().remove()
     ax3.set_ylabel("annualized system cost bEUR/a")
     ax3.set_xticklabels(ax3.get_xticklabels(), rotation="horizontal")
     ax3.grid(axis="y")
     ax3.set_ylim([0, df.sum().max() * 1.1])
     # add label
-    ax3.text(0.85, (df.sum()[1] + 15), str(percent) + "%", color="black")
+    ax3.text(0.85, (df.sum()["added"] + 15), str(percent) + "%", color="black")
 
     fig.tight_layout()
 
@@ -227,9 +227,11 @@ def plot_capex_map(
     components=["generators", "links", "stores", "storage_units"],
     base_year=2020,
     cost_pannel=True,
+    save_path: os.PathLike = None,
 ):
     tech_colors = opts["tech_colors"]
     plot_ntwk = network.copy()
+    # Drop non-electric buses so they don't clutter the plot
     plot_ntwk.buses.drop(plot_ntwk.buses.index[plot_ntwk.buses.carrier != "AC"], inplace=True)
 
     assign_location(plot_ntwk)
@@ -280,7 +282,7 @@ def plot_capex_map(
         **opts["cost_map"],
     )
 
-    # Add the added costs
+    # Add the added pathway costs
     edge_widths_added = pd.concat(
         [plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt]
     ) - pd.concat([plot_ntwk.lines.s_nom, plot_ntwk.links.p_nom])
@@ -307,8 +309,8 @@ def plot_capex_map(
         add_cost_pannel(df, fig, preferred_order, tech_colors, ax_loc=[-0.09, 0.28, 0.09, 0.45])
 
     fig.tight_layout()
-
-    fig.savefig(snakemake.output.cost_map, transparent=True, bbox_inches="tight")
+    if save_path:
+        fig.savefig(save_path, transparent=True, bbox_inches="tight")
 
 
 if __name__ == "__main__":
@@ -346,6 +348,7 @@ if __name__ == "__main__":
         discount_rate=config["costs"]["discountrate"],
         opts=config["plotting"],
         components=["generators", "links", "stores", "storage_units"],
+        save_path=snakemake.output.cost_map,
     )
 
     logger.info("Network successfully plotted")
