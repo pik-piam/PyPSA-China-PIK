@@ -16,7 +16,7 @@ from _helpers import (
     configure_logging,
     mock_snakemake,
 )
-from _plot_utilities import rename_index, fix_network_names_colors, set_plot_style
+from _plot_utilities import fix_network_names_colors, set_plot_style
 
 to_rgba = mpl.colors.colorConverter.to_rgba
 logger = logging.getLogger(__name__)

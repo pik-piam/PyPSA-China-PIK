@@ -114,7 +114,7 @@ def plot_costs(results_file: os.PathLike, config: dict, fig_name: os.PathLike = 
     # convert to billions
     df = df / 1e9
     df = df.groupby(df.index.map(rename_techs)).sum()
-    to_drop = df.index[df.max(axis=1) < config["plotting"]["costs_plots_threshold"]]
+    to_drop = df.index[df.max(axis=1) < config["plotting"].get("costs_threshold", 0)]
     df = df.drop(to_drop)
 
     new_index = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
@@ -162,7 +162,7 @@ def plot_energy(results_file: os.PathLike, config: dict, fig_name=None):
     df = df / 1e6
     df = df.groupby(df.index.map(rename_techs)).sum()
 
-    to_drop = df.index[df.abs().max(axis=1) < config["plotting"]["energy_threshold"]]
+    to_drop = df.index[df.abs().max(axis=1) < config["plotting"].get("energy_threshold", 0)]
     logger.info(
         f"Dropping all technology with energy consumption or production below {config['plotting']['energy_threshold']} TWh/a"
     )

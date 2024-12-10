@@ -347,7 +347,7 @@ def plot_energy_map(
         inplace=True,
     )
 
-    # this will be used to group nodes (gets first part of bus name)
+    # Location will be used to group nodes (gets first part of bus name)
     # more robust could be based on x,y
     assign_location(plot_ntwk)
 
@@ -474,7 +474,6 @@ if __name__ == "__main__":
         opts=config["plotting"],
         components=["generators", "links", "stores", "storage_units"],
         save_path=snakemake.output.cost_map,
-        **config["plotting"]["cost_map"],
     )
 
     logger.info("Network successfully plotted")

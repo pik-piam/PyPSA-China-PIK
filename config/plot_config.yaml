@@ -2,6 +2,8 @@
 plot: True
 plotting:
   network_style_config_file: "config/plotting_styles/network_map.mplstyle"
+  cost_panel:
+    y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
   cost_map:
     figsize: [14, 8]
     boundaries: [71, 135., 10, 56.]
@@ -13,19 +15,20 @@ plotting:
     ref_edge_sizes : [5e3,10e3,30e3] # MW
     ref_bus_sizes : [20e9, 10e9, 5e9] # eur/currnecy
     ref_bus_unit: "bn €/a"
-  map:
-    figsize: [14, 8]
+  energy_map:
+    figsize: [9, 8]
     boundaries: [71, 135., 0, 56.]
-    cost_size_factor: 1.5e+10
-    bus_size_factor: 1.e+5
+    bus_size_factor: 1.e+9
     linewidth_factor: 6.e+3
     bus_size_factor_demand: 2.e+7
     bus_size_factor_heat: 5.e+4
     linewidth_factor_heat: 5.e+4
-  cost_panel:
-    y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
+    ref_bus_unit: "TWh"
+    ref_edge_sizes : [5e3,10e3,30e3]  # in MW
+    ref_bus_sizes : [5e7, 1e8, 2e9] # MWh
+    bus_ref_title : "Electricity supply"
 
-  costs_threshold: 1000
+  costs_threshold: 10
   energy_threshold: 50.
 
   loads: ['electricity', 'decentral heat', 'central heat']
@@ -233,6 +236,7 @@ plotting:
     urban central resistive heater: '#8cdf85'
     retrofitting: '#8487e8'
     coal carbon capture: '#8487e8'
+    coal cc: '#8487e8'
     coal power plant retrofit: '#8487e8'
     building retrofitting: '#8487e8'
     # hydrogen
@@ -328,6 +332,7 @@ plotting:
     onwind: "Onshore Wind"
     solar: "Solar"
     coal: "Coal Power Plant"
+    coal cc: "coal carbon capture"
     coal-AC: "Combined Heat and Power"
     coal-heat: "Coal Boiler"
     gas-AC: "Open-Cycle Gas"

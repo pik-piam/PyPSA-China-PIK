@@ -11,7 +11,6 @@ import logging
 import pypsa
 from pathlib import Path
 from types import SimpleNamespace
-from shapely.ops import transform
 
 from pypsa.components import components, component_attrs
 from constants import NICE_NAMES_DEFAULT
