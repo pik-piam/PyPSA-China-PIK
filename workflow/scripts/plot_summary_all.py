@@ -107,11 +107,6 @@ def plot_pathway_costs(file_list: list, config: dict, fig_name: os.PathLike = No
 
     handles, labels = ax.get_legend_handles_labels()
 
-    # Remove duplicate legend entries
-    from collections import OrderedDict
-
-    by_label = OrderedDict(zip(labels, handles))
-
     ax.set_ylim([0, df.sum(axis=0).max() * 1.1])
     ax.set_ylabel("System Cost [EUR billion per year]")
     ax.set_xlabel("")
@@ -244,7 +239,6 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
     co2_prices = {}
-    planning_horizons = config["scenario"]["planning_horizons"]
 
     for i, results_file in enumerate(file_list):
         df_metrics = pd.read_csv(results_file, index_col=list(range(1)), header=[1])

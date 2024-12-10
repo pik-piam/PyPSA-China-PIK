@@ -175,7 +175,7 @@ def plot_map(
         leg_opt = {"bbox_to_anchor": (1.42, 1.04), "frameon": False}
         add_legend_patches(ax, colors, labels, legend_kw=leg_opt)
 
-    if add_ref_edge_sizes & (type(edge_colors) == str):
+    if add_ref_edge_sizes & isinstance(edge_colors, str):
         ref_unit = kwargs.get("ref_edge_unit", "GW")
         size_factor = float(kwargs.get("linewidth_factor", 1e5))
         ref_sizes = kwargs.get("ref_edge_sizes", [1e5, 5e5])
@@ -320,26 +320,45 @@ def plot_energy_map(
     network: pypsa.Network,
     opts: dict,
     energy_pannel=True,
-    save_path=None,
+    save_path: os.PathLike = None,
+    carrier="AC",
 ):
+    """A map plot of energy, either AC or heat
+
+    Args:
+        network (pypsa.Network): the pyPSA network object
+        opts (dict): the plotting options (snakemake.config["plotting"])
+        energy_pannel (bool, optional): add an anergy pie to the left. Defaults to True.
+        save_path (os.PathLike, optional): Fig outp path. Defaults to None (no save).
+        carrier (str, optional): the energy carrier. Defaults to "AC".
+    raises:
+        ValueError: if carrier is not AC or heat
+    """
+    if carrier not in ["AC", "heat"]:
+        raise ValueError("Carrier must be either 'AC' or 'heat'")
+
+    # THIS IS INEFFICIENT (3s copy), is there a better way?
     plot_ntwk = network.copy()
-    plot_ntwk.buses.drop(plot_ntwk.buses.index[plot_ntwk.buses.carrier != "AC"], inplace=True)
 
-    assign_location(plot_ntwk)
-
+    # avoid cluttering the plot
+    plot_ntwk.buses.drop(plot_ntwk.buses.index[plot_ntwk.buses.carrier != carrier], inplace=True)
     plot_ntwk.links.drop(
         plot_ntwk.links.index[plot_ntwk.links.length == 0],
         inplace=True,
     )
 
-    energy_supply = get_supply(plot_ntwk, bus_carrier="AC", components_list=["Generator"])
+    # this will be used to group nodes (gets first part of bus name)
+    # more robust could be based on x,y
+    assign_location(plot_ntwk)
+
+    energy_supply = get_supply(plot_ntwk, bus_carrier=carrier, components_list=["Generator"])
     supply_pies = energy_supply.droplevel(0)
 
     # TODO aggregate costs below threshold into "other" -> requires messing with network
 
     # get all carrier types
-    carriers = supply_pies.index.get_level_values(1).unique()
-    carriers = carriers.tolist()
+    carriers_list = supply_pies.index.get_level_values(1).unique()
+    carriers_list = carriers_list.tolist()
 
     # TODO make line handling nicer
     line_lower_threshold = 500.0
@@ -348,7 +367,7 @@ def plot_energy_map(
     fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
     fig.set_size_inches(opts["energy_map"]["figsize"])
     # get colors
-    bus_colors = plot_ntwk.carriers.loc[plot_ntwk.carriers.nice_name.isin(carriers), "color"]
+    bus_colors = plot_ntwk.carriers.loc[plot_ntwk.carriers.nice_name.isin(carriers_list), "color"]
     bus_colors.rename(opts["nice_names"], inplace=True)
     # Add the total costs
     bus_size_factor = opts["energy_map"]["bus_size_factor"]

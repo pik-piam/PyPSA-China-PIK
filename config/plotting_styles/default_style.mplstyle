@@ -7,7 +7,7 @@ grid.linestyle: --
 grid.color: 0.6
 hatch.color: white
 patch.linewidth: 0.5
-font.size: 12
+font.size: 15
 legend.fontsize: medium
 lines.linewidth: 1.5
 pdf.fonttype: 42
