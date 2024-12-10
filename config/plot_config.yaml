@@ -36,6 +36,8 @@ plotting:
   conv_techs: [ "gas", "gas-heat", "gas-AC", "AC-gas", "coal", "coal-AC","solar thermal","AC-heat","AC-AC","stations-AC","uranium", "H2-AC", "H2-gas",]
   storage_techs: [ "hydro+PHS", "battery", "AC-battery", "H2", "AC-H2" , "AC-heat"]
 
+  nan_color: "pink"
+  
   tech_colors:
     blank: "white"
     # wind
