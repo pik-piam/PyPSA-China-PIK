@@ -212,11 +212,15 @@ def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame)
     return capacities
 
 
-def calculate_co2_balance(n: pypsa.Network, withdrawal_stores=["CO2 capture"]) -> pd.DataFrame:
+def calculate_co2_balance(
+    n: pypsa.Network, label: str, co2_balance: pd.DataFrame, withdrawal_stores=["CO2 capture"]
+) -> pd.DataFrame:
     """calc the co2 balance [DOES NOT INCLUDE EMISSION GENERATING LINKSs]
     Args:
         n (pypsa.Network): the network object
         withdrawal_stores (list, optional): names of stores. Defaults to ["CO2 capture"].
+        label (str): the label for the column
+        co2_balance (pd.DataFrame): the df to update
 
     Returns:
         tuple[float,float,float]: balance,
@@ -238,14 +242,20 @@ def calculate_co2_balance(n: pypsa.Network, withdrawal_stores=["CO2 capture"]) -
     # format and drop 0 values
     emissions_carrier = emissions_carrier.where(emissions_carrier > 0).dropna()
     emissions_carrier.rename(year, inplace=True)
-    emissions_carrier = emissions_carrier.div(CO2_CONV).to_frame()
+    emissions_carrier = emissions_carrier.to_frame()
     # CO2 withdrawal
     stores = n.stores_t.e.T.groupby(n.stores.carrier).sum()
-    co2_withdrawal = stores.iloc[:, -1].loc[withdrawal_stores] * -1 / CO2_CONV  # Mt
+    co2_stores = stores.index.intersection(withdrawal_stores)
+    co2_withdrawal = stores.iloc[:, -1].loc[co2_stores] * -1
     co2_withdrawal.rename(year, inplace=True)
     co2_withdrawal = co2_withdrawal.to_frame()
+    year_balance = pd.concat([emissions_carrier, co2_withdrawal])
 
-    return pd.concat([emissions_carrier, co2_withdrawal])
+    #  combine with previous
+    co2_balance = co2_balance.reindex(year_balance.index.union(co2_balance.index))
+    co2_balance.loc[year_balance.index, label] = year_balance[year]
+
+    return co2_balance
 
 
 def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFrame):
@@ -413,7 +423,7 @@ def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
         ["line_volume_AC", "line_volume_DC"], label
     ].sum()
 
-    if "lv_limit" in n.s.index:
+    if "lv_limit" in n.global_constraints.index:
         metrics.at["line_volume_limit", label] = n.global_constraints.at["lv_limit", "constant"]
         metrics.at["line_volume_shadow", label] = n.global_constraints.at["lv_limit", "mu"]
 

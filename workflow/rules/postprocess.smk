@@ -26,12 +26,13 @@ if config["foresight"] == "steady-state":
                 "steady_state_{heating_demand}/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
             ),
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
+            province_shape="resources/data/province_shapes/CHN_adm1.shp",
         output:
             # only_map=base_results_dir
             # + "/plots/network_steady_state/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.pdf",
             cost_map=base_results_dir
             + "/plots/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",
-            # ext=base_results_dir
+            # el_suppy_map=base_results_dir
             # + "/plots/steady_state/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf",
         log:
             "logs/plot_network/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
@@ -114,13 +115,12 @@ elif config["foresight"] == "myopic":
             network=base_results_dir
             + "/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
+            province_shape="resources/data/province_shapes/CHN_adm1.shp",
         output:
-            # only_map=base_results_dir
-            # + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.pdf",
             cost_map=base_results_dir
             + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",
-            # ext=base_results_dir
-            # + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf",
+            el_suppy_map=base_results_dir
+            + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_el_supply.pdf",
         log:
             "logs/plot_network/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
         script:

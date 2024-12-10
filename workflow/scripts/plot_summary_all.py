@@ -12,6 +12,7 @@ import os
 import logging
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 from _helpers import configure_logging, mock_snakemake
 from constants import PLOT_COST_UNITS, COST_UNIT
@@ -251,20 +252,26 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
         df_year = pd.read_csv(results_file, index_col=list(range(1)), header=[1]).T
         co2_balance_df = pd.concat([df_year, co2_balance_df])
 
+    co2_balance_df.sort_index(axis=0, inplace=True)
+
     fig, ax = plt.subplots()
     bar_width = 0.6
-    co2_balance_df.T.plot(
+    colors = co2_balance_df.T.index.map(config["plotting"]["tech_colors"]).values
+
+    co2_balance_df.plot(
         kind="bar",
         stacked=True,
         width=bar_width,
-        color=co2_balance_df.index.map(n.carriers.color),
+        color=pd.Series(colors).fillna(NAN_COLOR),
         ax=ax,
     )
     bar_centers = np.unique([patch.get_x() + bar_width / 2 for patch in ax.patches])
     handles, labels = ax.get_legend_handles_labels()
+    labels = co2_balance_df.columns.values
+    print("LABELS", labels,"\n", co2_balance_df.columns.values)
     ax.plot(
         bar_centers,
-        co2_balance_df.sum(axis=0).values,
+        co2_balance_df.sum(axis=1).values,
         color="black",
         marker="D",
         markersize=10,
@@ -272,6 +279,9 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
     )
     ax.set_ylabel("Mt CO2")
     ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=True)
 
 
 def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
@@ -336,10 +346,7 @@ if __name__ == "__main__":
     output_paths = snakemake.output
     paths = snakemake.input
 
-    ## ONE OFF HACK
-    base = "/home/ivanra/documents/PyPSA-China-PIK/results/version-0325.175.1H/summary/postnetworks/positive"
-    paths = [os.path.join(base, p) for p in os.listdir(base)]
-
+    NAN_COLOR = config["plotting"]["nan_color"]
     data_paths = {
         "energy": [os.path.join(p, "energy.csv") for p in paths],
         "costs": [os.path.join(p, "costs.csv") for p in paths],

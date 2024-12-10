@@ -8,7 +8,7 @@ import os
 # from make_summary import assign_carriers
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 from plot_summary import preferred_order, rename_techs
-from _plot_utilities import assign_location, set_plot_style
+from _plot_utilities import assign_location, set_plot_style, fix_network_names_colors
 from _helpers import configure_logging, get_supply, mock_snakemake, calc_component_capex
 from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS
 
@@ -445,7 +445,7 @@ if __name__ == "__main__":
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
-            planning_horizons="2050",
+            planning_horizons="2045",
             heating_demand="positive",
         )
 
@@ -459,6 +459,8 @@ if __name__ == "__main__":
     config = snakemake.config
 
     n = pypsa.Network(snakemake.input.network)
+    # backward compatibility for old network files
+    fix_network_names_colors(n, config)
 
     # check the timespan
     timespan = n.snapshots.max() - n.snapshots.min()
@@ -474,6 +476,14 @@ if __name__ == "__main__":
         opts=config["plotting"],
         components=["generators", "links", "stores", "storage_units"],
         save_path=snakemake.output.cost_map,
+    )
+
+    plot_energy_map(
+        n,
+        opts=config["plotting"],
+        save_path=snakemake.output.el_suppy_map,
+        carrier="AC",
+        energy_pannel=True,
     )
 
     logger.info("Network successfully plotted")
