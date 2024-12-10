@@ -6,17 +6,16 @@
 Create summary CSV files for all scenario runs including costs, capacities,
 capacity factors, curtailment, energy balances, prices and other metrics.
 """
-
+import os
+import sys
 import logging
 
-import sys
-import os
-
 import pandas as pd
+import numpy as np
 import pypsa
 
 from _helpers import mock_snakemake, configure_logging
-from _plot_utilities import assign_locations
+from _plot_utilities import assign_location
 
 # import numpy as np
 # from add_electricity import load_costs, update_transmission_costs
@@ -213,6 +212,42 @@ def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame)
     return capacities
 
 
+def calculate_co2_balance(n: pypsa.Network, withdrawal_stores=["CO2 capture"]) -> pd.DataFrame:
+    """calc the co2 balance [DOES NOT INCLUDE EMISSION GENERATING LINKSs]
+    Args:
+        n (pypsa.Network): the network object
+        withdrawal_stores (list, optional): names of stores. Defaults to ["CO2 capture"].
+
+    Returns:
+        tuple[float,float,float]: balance,
+    """
+
+    # year *(assumes one planning year intended),
+    year = int(np.round(n.snapshots.year.values.mean(), 0))
+
+    # emissions from generators (from fneumann course)
+    emissions = (
+        n.generators_t.p
+        / n.generators.efficiency
+        * n.generators.carrier.map(n.carriers.co2_emissions)
+    )  # t/h
+    emissions_carrier = (
+        (n.snapshot_weightings.generators @ emissions).groupby(n.generators.carrier).sum()
+    )
+
+    # format and drop 0 values
+    emissions_carrier = emissions_carrier.where(emissions_carrier > 0).dropna()
+    emissions_carrier.rename(year, inplace=True)
+    emissions_carrier = emissions_carrier.div(CO2_CONV).to_frame()
+    # CO2 withdrawal
+    stores = n.stores_t.e.T.groupby(n.stores.carrier).sum()
+    co2_withdrawal = stores.iloc[:, -1].loc[withdrawal_stores] * -1 / CO2_CONV  # Mt
+    co2_withdrawal.rename(year, inplace=True)
+    co2_withdrawal = co2_withdrawal.to_frame()
+
+    return pd.concat([emissions_carrier, co2_withdrawal])
+
+
 def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFrame):
     avail = (
         n.generators_t.p_max_pu.multiply(n.generators.p_nom_opt)
@@ -378,7 +413,7 @@ def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
         ["line_volume_AC", "line_volume_DC"], label
     ].sum()
 
-    if "lv_limit" in n.global_constraints.index:
+    if "lv_limit" in n.s.index:
         metrics.at["line_volume_limit", label] = n.global_constraints.at["lv_limit", "constant"]
         metrics.at["line_volume_shadow", label] = n.global_constraints.at["lv_limit", "mu"]
 
@@ -561,6 +596,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         "nodal_cfs": calculate_nodal_cfs,
         "cfs": calculate_cfs,
         "costs": calculate_costs,
+        "co2_balance": calculate_co2_balance,
         "capacities": calculate_capacities,
         "curtailment": calculate_curtailment,
         "energy": calculate_energy,
@@ -586,9 +622,8 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         logger.info(f"Make summary for scenario {label}, using {filename}")
 
         n = pypsa.Network(filename)
-
         assign_carriers(n)
-        assign_locations(n)
+        assign_location(n)
 
         for output, output_fn in output_funcs.items():
             dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
@@ -620,7 +655,7 @@ if __name__ == "__main__":
     wildcards = snakemake.wildcards
 
     # The original was intended to handle a list of files
-    # this doesnt reflect the current snakefile
+    # this doesnt r eflect the current snakefile
     # previous code was hardcoded and could cause issue w snakefile input
 
     # To go back to the all in one, would need to parse the file list
