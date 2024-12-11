@@ -12,17 +12,19 @@ plotting:
     bus_size_factor_demand: 2.e+7
     bus_size_factor_heat: 5.e+4
     linewidth_factor_heat: 5.e+4
+    min_edge_capacity : 1.e+4
     ref_edge_sizes : [5e3,10e3,30e3] # MW
     ref_bus_sizes : [20e9, 10e9, 5e9] # eur/currnecy
     ref_bus_unit: "bn €/a"
   energy_map:
     figsize: [9, 8]
     boundaries: [71, 135., 0, 56.]
-    bus_size_factor: 1.e+9
-    linewidth_factor: 6.e+3
+    bus_size_factor: 4.e+8
+    linewidth_factor: 8.e+3
     bus_size_factor_demand: 2.e+7
     bus_size_factor_heat: 5.e+4
     linewidth_factor_heat: 5.e+4
+    min_edge_capacity : 1.e+4
     ref_bus_unit: "TWh"
     ref_edge_sizes : [5e3,10e3,30e3]  # in MW
     ref_bus_sizes : [5e7, 1e8, 2e9] # MWh
@@ -37,7 +39,7 @@ plotting:
   storage_techs: [ "hydro+PHS", "battery", "AC-battery", "H2", "AC-H2" , "AC-heat"]
 
   nan_color: "pink"
-  
+
   tech_colors:
     blank: "white"
     # wind
@@ -74,6 +76,7 @@ plotting:
     solar rooftop: '#ffea80'
     # gas
     OCGT: '#e0986c'
+    OCGT gas: '#e0986c'
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
     gas boiler: '#db6a25'

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from _helpers import configure_logging, mock_snakemake
-from constants import PLOT_COST_UNITS, COST_UNIT
+from constants import PLOT_COST_UNITS, COST_UNIT, PLOT_CO2_UNITS
 from _plot_utilities import set_plot_style
 
 logger = logging.getLogger(__name__)
@@ -257,7 +257,7 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
     fig, ax = plt.subplots()
     bar_width = 0.6
     colors = co2_balance_df.T.index.map(config["plotting"]["tech_colors"]).values
-
+    co2_balance_df = co2_balance_df / PLOT_CO2_UNITS
     co2_balance_df.plot(
         kind="bar",
         stacked=True,
@@ -266,9 +266,6 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
         ax=ax,
     )
     bar_centers = np.unique([patch.get_x() + bar_width / 2 for patch in ax.patches])
-    handles, labels = ax.get_legend_handles_labels()
-    labels = co2_balance_df.columns.values
-    print("LABELS", labels,"\n", co2_balance_df.columns.values)
     ax.plot(
         bar_centers,
         co2_balance_df.sum(axis=1).values,
@@ -276,9 +273,13 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
         marker="D",
         markersize=10,
         lw=3,
+        label="Total",
     )
     ax.set_ylabel("Mt CO2")
+
+    handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+
     fig.tight_layout()
     if fig_name is not None:
         fig.savefig(fig_name, transparent=True)

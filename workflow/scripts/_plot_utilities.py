@@ -5,6 +5,19 @@ import matplotlib.pyplot as plt
 from os import PathLike
 
 
+def make_nice_tech_colors(tech_colors: dict, nice_names: dict) -> dict:
+    """add the nice names to the tech_colors dict keys
+
+    Args:
+        tech_colors (dict): the tech colors (plot config)
+        nice_names (dict): the nice names (plot config)
+
+    Returns:
+        dict: dict with names & nice names as keys
+    """
+    return {nice: tech_colors[n] for n, nice in nice_names.items() if n in tech_colors}
+
+
 def get_stat_colors(
     df_stats: pd.DataFrame,
     n: pypsa.Network,

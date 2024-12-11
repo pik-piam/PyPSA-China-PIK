@@ -8,7 +8,12 @@ import os
 # from make_summary import assign_carriers
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 from plot_summary import preferred_order, rename_techs
-from _plot_utilities import assign_location, set_plot_style, fix_network_names_colors
+from _plot_utilities import (
+    assign_location,
+    set_plot_style,
+    fix_network_names_colors,
+    get_stat_colors,
+)
 from _helpers import configure_logging, get_supply, mock_snakemake, calc_component_capex
 from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS
 
@@ -164,14 +169,15 @@ def plot_map(
     )
 
     if add_legend:
-        carriers = bus_sizes.index.get_level_values(1).unique().tolist()
-        colors = [tech_colors[c] for c in carriers]
+        carriers = bus_sizes.index.get_level_values(1).unique()
+        colors = carriers.intersection(tech_colors).map(tech_colors).to_list()
+
         if isinstance(edge_colors, str):
             colors += [edge_colors]
-            labels = carriers + ["HVDC or HVAC link"]
+            labels = carriers.to_list() + ["HVDC or HVAC link"]
         else:
             colors += edge_colors.values.to_list()
-            labels = carriers + edge_colors.index.to_list()
+            labels = carriers.to_list() + edge_colors.index.to_list()
         leg_opt = {"bbox_to_anchor": (1.42, 1.04), "frameon": False}
         add_legend_patches(ax, colors, labels, legend_kw=leg_opt)
 
@@ -179,6 +185,7 @@ def plot_map(
         ref_unit = kwargs.get("ref_edge_unit", "GW")
         size_factor = float(kwargs.get("linewidth_factor", 1e5))
         ref_sizes = kwargs.get("ref_edge_sizes", [1e5, 5e5])
+
         labels = [f"{float(s)/edge_unit_conv} {ref_unit}" for s in ref_sizes]
         ref_sizes = list(map(lambda x: float(x) / size_factor, ref_sizes))
         legend_kw = dict(
@@ -229,9 +236,23 @@ def plot_capex_map(
     opts: dict,
     components=["generators", "links", "stores", "storage_units"],
     base_year=2020,
+    plot_additions=True,
     cost_pannel=True,
     save_path: os.PathLike = None,
 ):
+    """Plot the capex of each node on a map as well as the line capacities
+
+    Args:
+        network (pypsa.Network): the network obkect
+        planning_horizon (int): the year reoresebtubg investment period
+        discount_rate (float): the social discount rate, applied to the cost pannel only
+        opts (dict): the plotting config (snakemake.config["plotting"])
+        components (list, optional): the components to plot. Defaults to ["generators", "links", "stores", "storage_units"].
+        base_year (int, optional): the base year (for cost delta). Defaults to 2020.
+        plot_additions (bool, optional): plot a map of investments (p_nom_opt vs p_nom). Defaults to True.
+        cost_pannel (bool, optional): add a bar graph with costs. Defaults to True.
+        save_path (os.PathLike, optional): save figure to path (or not if None). Defaults to None.
+    """
     tech_colors = opts["tech_colors"]
     plot_ntwk = network.copy()
     # Drop non-electric buses so they don't clutter the plot
@@ -258,9 +279,7 @@ def plot_capex_map(
     )
     carriers = carriers.tolist()
 
-    line_lower_threshold = 500.0
-    line_upper_threshold = 1e4
-
+    line_lower_threshold = opts.get("min_edge_capacity", 0)
     # Make figure with two pannels
     fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": ccrs.PlateCarree()})
     fig.set_size_inches(opts["cost_map"]["figsize"])
@@ -268,11 +287,8 @@ def plot_capex_map(
     # Add the total costs
     bus_size_factor = opts["cost_map"]["bus_size_factor"]
     linewidth_factor = opts["cost_map"]["linewidth_factor"]
-    edge_widths = (
-        pd.concat([plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt])
-        .clip(line_lower_threshold, line_upper_threshold)
-        .replace(line_lower_threshold, 0)
-    )
+    edges = pd.concat([plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt])
+    edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
     plot_map(
         plot_ntwk,
         tech_colors=tech_colors,
@@ -281,25 +297,26 @@ def plot_capex_map(
         bus_sizes=cost_pie_nom / bus_size_factor,
         edge_colors="indigo",
         ax=ax1,
-        add_legend=False,
+        add_legend=not plot_additions,
         **opts["cost_map"],
     )
 
     # Add the added pathway costs
-    edge_widths_added = pd.concat(
-        [plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt]
-    ) - pd.concat([plot_ntwk.lines.s_nom, plot_ntwk.links.p_nom])
-    plot_map(
-        plot_ntwk,
-        tech_colors=tech_colors,
-        edge_widths=edge_widths_added / linewidth_factor,
-        bus_colors=tech_colors,
-        bus_sizes=cost_pie / bus_size_factor,
-        edge_colors="rosybrown",
-        ax=ax2,
-        add_legend=True,
-        **opts["cost_map"],
-    )
+    if plot_additions:
+        edge_widths_added = pd.concat(
+            [plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt]
+        ) - pd.concat([plot_ntwk.lines.s_nom, plot_ntwk.links.p_nom])
+        plot_map(
+            plot_ntwk,
+            tech_colors=tech_colors,
+            edge_widths=edge_widths_added / linewidth_factor,
+            bus_colors=tech_colors,
+            bus_sizes=cost_pie / bus_size_factor,
+            edge_colors="rosybrown",
+            ax=ax2,
+            add_legend=True,
+            **opts["cost_map"],
+        )
 
     # Add the optional cost pannel
     if cost_pannel:
@@ -361,9 +378,8 @@ def plot_energy_map(
     carriers_list = carriers_list.tolist()
 
     # TODO make line handling nicer
-    line_lower_threshold = 500.0
-    line_upper_threshold = 1e4
-    # Make figure
+    line_lower_threshold = opts.get("min_edge_capacity", 500)
+    # Make figur
     fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
     fig.set_size_inches(opts["energy_map"]["figsize"])
     # get colors
@@ -372,19 +388,19 @@ def plot_energy_map(
     # Add the total costs
     bus_size_factor = opts["energy_map"]["bus_size_factor"]
     linewidth_factor = opts["energy_map"]["linewidth_factor"]
-    edge_widths = (
-        pd.concat([plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt])
-        .clip(line_lower_threshold, line_upper_threshold)
-        .replace(line_lower_threshold, 0)
-    )
+    edges = pd.concat([plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt])
+    edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
     preferred_order = pd.Index(opts["preferred_order"])
     reordered = preferred_order.intersection(bus_colors.index).append(
         bus_colors.index.difference(preferred_order)
     )
 
+    colors = plot_ntwk.carriers.color.copy()
+    colors.index = colors.index.map(opts["nice_names"])
+
     plot_map(
         plot_ntwk,
-        tech_colors=plot_ntwk.carriers.color,
+        tech_colors=colors.to_dict(),
         edge_widths=edge_widths / linewidth_factor,
         bus_colors=bus_colors.loc[reordered],
         bus_sizes=supply_pies / bus_size_factor,
@@ -392,7 +408,7 @@ def plot_energy_map(
         ax=ax,
         edge_unit_conv=PLOT_CAP_UNITS,
         bus_unit_conv=PLOT_SUPPLY_UNITS,
-        add_legend=False,
+        add_legend=True,
         **opts["energy_map"],
     )
     # # Add the optional cost pannel
@@ -401,7 +417,10 @@ def plot_energy_map(
         df = df.fillna(0)
         add_energy_pannel(df, fig, preferred_order, bus_colors, ax_loc=[-0.09, 0.28, 0.09, 0.45])
 
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
     fig.tight_layout()
+
     if save_path:
         fig.savefig(save_path, transparent=True, bbox_inches="tight")
 
