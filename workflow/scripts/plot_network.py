@@ -92,16 +92,20 @@ def annualised_network_capex(
 
 
 def add_cost_pannel(
-    df, fig: plt.Figure, preferred_order, tech_colors: dict, ax_loc=[-0.09, 0.28, 0.09, 0.45]
+    df: pd.DataFrame,
+    fig: plt.Figure,
+    preferred_order: pd.Index,
+    tech_colors: dict,
+    ax_loc=[-0.09, 0.28, 0.09, 0.45],
 ) -> None:
     """Add a cost pannel to the figure
 
     Args:
-        df (_type_): _description_
+        df (pd.DataFrame): the cost data to plot
         fig (plt.Figure): the figure object to which the cost pannel will be added
-        preferred_order (_type_): index, the order in whiich to plot
+        preferred_order (pd.Index): index, the order in whiich to plot
         tech_colors (dict): the tech colors
-        ax_loc (list, optional): _description_. Defaults to [-0.09, 0.28, 0.09, 0.45].
+        ax_loc (list, optional): the location of the cost pannel. Defaults to [-0.09, 0.28, 0.09, 0.45].
     """
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
@@ -426,16 +430,20 @@ def plot_energy_map(
 
 
 def add_energy_pannel(
-    df, fig: plt.Figure, preferred_order, colors: pd.Series, ax_loc=[-0.09, 0.28, 0.09, 0.45]
+    df: pd.DataFrame,
+    fig: plt.Figure,
+    preferred_order: pd.Index,
+    colors: pd.Series,
+    ax_loc=[-0.09, 0.28, 0.09, 0.45],
 ) -> None:
     """Add a cost pannel to the figure
 
     Args:
-        df (_type_): _description_
+        df (pd.DataFrame): _description_
         fig (plt.Figure): the figure object to which the cost pannel will be added
-        preferred_order (_type_): index, the order in whiich to plot
+        preferred_order (pd.Index): index, the order in whiich to plot
         colors (pd.Series): the colors for the techs, with the correct index and no extra techs
-        ax_loc (list, optional): _description_. Defaults to [-0.09, 0.28, 0.09, 0.45].
+        ax_loc (list, optional): the pannel location. Defaults to [-0.09, 0.28, 0.09, 0.45].
     """
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
