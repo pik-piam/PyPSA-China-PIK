@@ -411,6 +411,7 @@ def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
         "line_volume_DC",
         "line_volume_shadow",
         "co2_shadow",
+        "co2_budget",
     ]
 
     metrics = metrics.reindex(pd.Index(metrics_list).union(metrics.index))
@@ -429,7 +430,7 @@ def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
 
     if "co2_limit" in n.global_constraints.index:
         metrics.at["co2_shadow", label] = n.global_constraints.at["co2_limit", "mu"]
-
+        metrics.at["co2_budget", label] = n.global_constraints.at["co2_limit", "constant"]
     return metrics
 
 
@@ -655,7 +656,7 @@ if __name__ == "__main__":
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
-            planning_horizons="2020",
+            planning_horizons="2035",
             heating_demand="positive",
         )
 

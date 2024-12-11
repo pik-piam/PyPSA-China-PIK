@@ -5,6 +5,8 @@ SNAKEFILE_CHOICES = ["Snakefile", "snakefile"]
 PLOT_COST_UNITS = 1e9  # bnEur
 PLOT_CAP_UNITS = 1e3  # MW->GW
 PLOT_SUPPLY_UNITS = 1e6  # MWh->TWh
+PLOT_CO2_UNITS = 1e6  # tCO2->MtCO2
+PLOT_CO2_LABEL = "Mt CO2"
 COST_UNIT = 1
 
 # ==== data inputs ====

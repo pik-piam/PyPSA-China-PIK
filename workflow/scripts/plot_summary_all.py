@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from _helpers import configure_logging, mock_snakemake
-from constants import PLOT_COST_UNITS, COST_UNIT, PLOT_CO2_UNITS
+from constants import PLOT_COST_UNITS, COST_UNIT, PLOT_CO2_UNITS, PLOT_CO2_LABEL, PLOT_SUPPLY_UNITS
 from _plot_utilities import set_plot_style
 
 logger = logging.getLogger(__name__)
@@ -147,12 +147,11 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
     """
     energy_df = pd.DataFrame()
     for results_file in file_list:
-        cost_df = pd.read_csv(results_file, index_col=list(range(2)), header=[1])
-        df_ = cost_df.groupby(cost_df.index.get_level_values(1)).sum()
+        en_df = pd.read_csv(results_file, index_col=list(range(2)), header=[1])
+        df_ = en_df.groupby(en_df.index.get_level_values(1)).sum()
         # do this here so aggregate costs of small items only for that year
-        # TODO centralise unit
         # convert MWh to TWh
-        df_ = df_ / 1e6
+        df_ = df_ / PLOT_SUPPLY_UNITS
         df_ = df_.groupby(df_.index.map(rename_techs)).sum()
         to_drop = df_.index[df_.max(axis=1) < config["energy_threshold"]]
         df_.loc["Other"] = df_.loc[to_drop].sum(axis=0)
@@ -195,6 +194,134 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
 
     if fig_name is not None:
         fig.savefig(fig_name, transparent=True)
+
+
+def plot_electricty_heat_balance(file_list: list[os.PathLike], config: dict, fig_dir=None):
+    """plot the energy production and consumption
+
+    Args:
+        results_file (list): the input csvs ([year/supply_energy.csv])
+        config (dict): the configuration for plotting (snamkemake.config["plotting"])
+        fig_dir (os.PathLike, optional): the figure name. Defaults to None.
+    """
+    elec_df = pd.DataFrame()
+    heat_df = pd.DataFrame()
+
+    for results_file in file_list:
+        balance_df = pd.read_csv(results_file, index_col=list(range(2)), header=[1])
+        elec = balance_df.loc["AC"]
+        elec.set_index(elec.columns[0], inplace=True)
+        elec.index = elec.index.fillna("electric load")
+        elec.index.rename("carrier", inplace=True)
+
+        heat = balance_df.loc["heat"]
+        heat.set_index(heat.columns[0], inplace=True)
+        heat.index = heat.index.fillna("heat load")
+        heat.index.rename("carrier", inplace=True)
+
+        to_drop = elec.index[elec.max(axis=1).abs() < config["energy_threshold"]]
+        elec.loc["Other"] = elec.loc[to_drop].sum(axis=0)
+        elec = elec.drop(to_drop)
+
+        to_drop = heat.index[heat.max(axis=1).abs() < config["energy_threshold"]]
+        heat.loc["Other"] = heat.loc[to_drop].sum(axis=0)
+        heat = heat.drop(to_drop)
+
+        elec_df = pd.concat([elec, elec_df], axis=1)
+        heat_df = pd.concat([heat, heat_df], axis=1)
+
+    elec_df.fillna(0, inplace=True)
+    elec_df.sort_index(axis=1, inplace=True, ascending=True)
+    elec_df = elec_df / PLOT_SUPPLY_UNITS
+
+    heat_df.fillna(0, inplace=True)
+    heat_df.sort_index(axis=1, inplace=True, ascending=True)
+    heat_df = heat_df / PLOT_SUPPLY_UNITS
+
+    # # split into consumption and generation
+    el_gen = elec_df.where(elec_df >= 0).dropna(axis=0, how="all").fillna(0)
+    el_con = elec_df.where(elec_df < 0).dropna(axis=0, how="all").fillna(0)
+    heat_gen = heat_df.where(heat_df > 0).dropna(axis=0, how="all").fillna(0)
+    heat_con = heat_df.where(heat_df < 0).dropna(axis=0, how="all").fillna(0)
+
+    # remove trailing digits from index, while keeping O and H (CO2,H2,CH4)
+    for df in [el_gen, el_con, heat_gen, heat_con]:
+        df.index = df.index.str.replace(r"(?<!O|H)\d+", "", regex=True).str.strip()
+    # group identical values
+    el_con = el_con.groupby(el_con.index).sum()
+    el_gen = el_gen.groupby(el_gen.index).sum()
+    heat_con = heat_con.groupby(heat_con.index).sum()
+    heat_gen = heat_gen.groupby(heat_gen.index).sum()
+
+    logger.info(f"Total energy of {round(elec_df.sum()[0])} TWh/a")
+
+    # ===========        electricity =================
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    for df in [el_gen, el_con]:
+        preferred_order = pd.Index(config["preferred_order"])
+        new_index = preferred_order.intersection(df.index).append(
+            df.index.difference(preferred_order)
+        )
+        colors = pd.DataFrame(
+            new_index.map(config["tech_colors"]), index=new_index, columns=["color"]
+        )
+        colors.fillna(NAN_COLOR, inplace=True)
+        df.loc[new_index].T.plot(
+            kind="bar",
+            ax=ax,
+            stacked=True,
+            color=colors["color"],
+        )
+
+        handles, labels = ax.get_legend_handles_labels()
+        handles.reverse()
+        labels.reverse()
+
+    ax.set_ylim([el_con.sum(axis=0).min() * 1.1, el_gen.sum(axis=0).max() * 1.1])
+    ax.set_ylabel("Energy [TWh/a]")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_dir is not None:
+        fig.savefig(os.path.join(fig_dir, "elec_balance.png"), transparent=True)
+
+    # =================     heat     =================
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    for df in [heat_gen, heat_con]:
+        preferred_order = pd.Index(config["preferred_order"])
+        new_index = preferred_order.intersection(df.index).append(
+            df.index.difference(preferred_order)
+        )
+        colors = pd.DataFrame(
+            new_index.map(config["tech_colors"]), index=new_index, columns=["color"]
+        )
+        colors.fillna(NAN_COLOR, inplace=True)
+        df.loc[new_index].T.plot(
+            kind="bar",
+            ax=ax,
+            stacked=True,
+            color=colors["color"],
+        )
+
+        handles, labels = ax.get_legend_handles_labels()
+        handles.reverse()
+        labels.reverse()
+
+    ax.set_ylim([heat_con.sum(axis=0).min() * 1.1, heat_gen.sum(axis=0).max() * 1.1])
+    ax.set_ylabel("Energy [TWh/a]")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_dir is not None:
+        fig.savefig(os.path.join(fig_dir, "heat_balance.png"), transparent=True)
 
 
 def plot_prices(file_list: list, config: dict, fig_name=None):
@@ -275,7 +402,7 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
         lw=3,
         label="Total",
     )
-    ax.set_ylabel("Mt CO2")
+    ax.set_ylabel(PLOT_CO2_LABEL)
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
@@ -294,17 +421,28 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
     co2_prices = {}
-
+    co2_budget = {}
     for i, results_file in enumerate(file_list):
         df_metrics = pd.read_csv(results_file, index_col=list(range(1)), header=[1])
         co2_prices.update(dict(df_metrics.loc["co2_shadow"]))
+        co2_budget.update(dict(df_metrics.loc["co2_budget"]))
 
     fig, ax = plt.subplots()
     fig.set_size_inches((12, 8))
 
-    ax.plot(co2_prices.keys(), co2_prices.values(), marker="o", color="black")
+    ax.plot(co2_prices.keys(), np.abs(list(co2_prices.values())), marker="o", color="black")
     ax.set_ylabel("CO2 Shadow price")
     ax.set_xlabel("Year")
+
+    ax2 = ax.twinx()
+    ax2.plot(
+        co2_budget.keys(),
+        [v / PLOT_CO2_UNITS for v in co2_budget.values()],
+        marker="D",
+        color="blue",
+    )
+    ax2.set_ylabel(f"CO2 Budget [{PLOT_CO2_LABEL}]")
+
     fig.tight_layout()
 
     if fig_name is not None:
@@ -354,6 +492,7 @@ if __name__ == "__main__":
         "co2_price": [os.path.join(p, "metrics.csv") for p in paths],
         "prices": [os.path.join(p, "prices.csv") for p in paths],
         "co2_balance": [os.path.join(p, "co2_balance.csv") for p in paths],
+        "energy_supply": [os.path.join(p, "supply_energy.csv") for p in paths],
     }
 
     sdr = float(config["costs"]["discountrate"])
@@ -364,6 +503,11 @@ if __name__ == "__main__":
         fig_name=output_paths.costs,
     )
     plot_energy(data_paths["energy"], config["plotting"], fig_name=output_paths.energy)
+    plot_electricty_heat_balance(
+        data_paths["energy_supply"],
+        config["plotting"],
+        fig_dir=os.path.dirname(output_paths.costs),
+    )
     plot_prices(
         data_paths["prices"],
         config,

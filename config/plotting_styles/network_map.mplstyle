@@ -5,8 +5,8 @@ axes.grid: True
 grid.linestyle: --
 grid.color: 0.6
 hatch.color: white
-patch.linewidth: 0.5
+patch.linewidth: 1
 font.size: 14
 legend.fontsize: medium
-lines.linewidth: 1.5
+lines.linewidth: 2
 pdf.fonttype: 42
