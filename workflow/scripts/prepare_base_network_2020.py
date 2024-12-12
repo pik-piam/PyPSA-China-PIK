@@ -77,7 +77,7 @@ def prepare_network(config):
 
     offwind_p_max_pu = ds_offwind["profile"].transpose("time", "bus").to_pandas()
     offwind_p_max_pu = shift_profile_to_planning_year(offwind_p_max_pu, planning_horizons)
-    offwind_p_max_pu = solar_p_max_pu.loc[snapshots]
+    offwind_p_max_pu = offwind_p_max_pu.loc[snapshots]
     offwind_p_max_pu.sort_index(axis=1, inplace=True)
 
     tech_costs = snakemake.input.tech_costs

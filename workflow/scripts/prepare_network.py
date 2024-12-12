@@ -649,6 +649,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             bus0=nodes,
             bus1=nodes + " H2",
             p_nom_extendable=True,
+            carrier="H2",
             efficiency=costs.at["electrolysis", "efficiency"],
             capital_cost=costs.at["electrolysis", "efficiency"]
             * costs.at["electrolysis", "capital_cost"],
@@ -685,6 +686,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             nodes + " Sabatier",
             bus0=nodes + " H2",
             bus1=nodes + " gas",
+            carrier="Sabatier",
             p_nom_extendable=True,
             efficiency=costs.at["methanation", "efficiency"],
             capital_cost=costs.at["methanation", "efficiency"]
@@ -722,6 +724,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             capital_cost=costs.at["battery inverter", "efficiency"]
             * costs.at["battery inverter", "capital_cost"],
             p_nom_extendable=True,
+            carrier="battery",
             lifetime=costs.at["battery inverter", "lifetime"],
         )
 
@@ -733,6 +736,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             efficiency=costs.at["battery inverter", "efficiency"] ** 0.5,
             marginal_cost=0.0,
             p_nom_extendable=True,
+            carrier="battery discharger",
         )
 
     # Sources:

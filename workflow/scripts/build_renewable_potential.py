@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from _helpers import configure_logging
 import progressbar as pgb
 
 import logging
@@ -16,7 +15,7 @@ import pandas as pd
 from atlite.gis import ExclusionContainer
 from os import PathLike
 
-from _helpers import mock_snakemake
+from _helpers import mock_snakemake, configure_logging
 from readers import read_province_shapes
 from constants import PROV_NAMES, CRS, OFFSHORE_WIND_NODES, DEFAULT_OFFSHORE_WIND_CORR_FACTOR
 

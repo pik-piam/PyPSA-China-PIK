@@ -63,7 +63,7 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         costs (pd.DataFrame): the costs dataframe
     """
     network.add("Carrier", "AC")
-    
+
     # add carriers
     if config["add_hydro"]:
         network.add("Carrier", "hydroelectricity")
@@ -165,7 +165,7 @@ def prepare_network(config: dict) -> pypsa.Network:
 
     offwind_p_max_pu = ds_offwind["profile"].transpose("time", "bus").to_pandas()
     offwind_p_max_pu = shift_profile_to_planning_year(offwind_p_max_pu, planning_horizons)
-    offwind_p_max_pu = solar_p_max_pu.loc[snapshots]
+    offwind_p_max_pu = offwind_p_max_pu.loc[snapshots]
     offwind_p_max_pu.sort_index(axis=1, inplace=True)
 
     tech_costs = snakemake.input.tech_costs
@@ -301,7 +301,8 @@ def prepare_network(config: dict) -> pypsa.Network:
         )
 
         network.add("Store", nodes + " CO2", bus=nodes + " CO2", carrier="CO2")
-
+        # normally taking away from carrier generates CO2, but here we are
+        # adding CO2 stored, so the emissions will point the other way ?
         network.add("Carrier", "CO2 capture", co2_emissions=1)
         network.add(
             "Bus",
