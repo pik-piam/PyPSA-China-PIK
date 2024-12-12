@@ -81,7 +81,7 @@ rule build_population:
 if config['enable'].get('retrieve_cutout', True):
     rule retrieve_cutout:
         input: storage.http("https://zenodo.org/record/8343761/files/China-2020.nc")
-        output: "cutouts/{cutout}.nc"
+        output: "resources/cutouts/{cutout}.nc"
         run: move(input[0], output[0])
 
 
@@ -90,7 +90,7 @@ if config['enable'].get('build_cutout', False):
         input:
             regions_onshore="resources/data/regions/regions_onshore.geojson",
             regions_offshore="resources/data/regions/regions_offshore.geojson"
-        output: "cutouts/{cutout}.nc"
+        output: "resources/cutouts/{cutout}.nc"
         log: "logs/build_cutout/{cutout}.log"
         benchmark: "benchmarks/build_cutout_{cutout}"
         threads: ATLITE_NPROCESSES
@@ -351,7 +351,7 @@ elif config["foresight"] == "myopic":
         script: "scripts/solve_network_myopic.py"
 
 
-# runme with snakemake --allowed-rules dag
+# runme with `snakemake --allowed-rules dag --forcerun dag `
 rule dag:
     message:
         "Creating DAG of workflow."
