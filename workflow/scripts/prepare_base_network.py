@@ -649,9 +649,9 @@ def prepare_network(config: dict) -> pypsa.Network:
         carrier="offwind",
         p_nom_extendable=True,
         p_nom_max=ds_offwind["p_nom_max"].to_pandas()[offwind_nodes],
+        p_max_pu=offwind_p_max_pu[offwind_nodes],
         capital_cost=costs.at["offwind", "capital_cost"],
         marginal_cost=costs.at["offwind", "marginal_cost"],
-        offwind_nodes=offwind_p_max_pu[offwind_nodes],
         lifetime=costs.at["offwind", "lifetime"],
     )
 
@@ -1166,12 +1166,13 @@ if __name__ == "__main__":
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
-            planning_horizons="2040",
+            planning_horizons="2030",
             heating_demand="positive",
         )
     configure_logging(snakemake)
 
     network = prepare_network(snakemake.config)
+
     sanitize_carriers(network, snakemake.config)
 
     network.export_to_netcdf(snakemake.output.network_name)
