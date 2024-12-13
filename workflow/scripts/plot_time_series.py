@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 from _plot_utilities import get_stat_colors, set_plot_style
 from _helpers import configure_logging, mock_snakemake
+from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ def plot_energy_balance(
         .dropna(how="all")
         .groupby("carrier")
         .sum()
-        .div(1e3)
+        .div(PLOT_CAP_UNITS)
         # .drop("-")
         .T
     )
@@ -80,7 +81,7 @@ def plot_energy_balance(
         charge.drop(columns="load_pos", inplace=True)
 
     ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
-    ax.set_ylabel("GW")
+    ax.set_ylabel(PLOT_CAP_LABEL)
     ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
     ax.grid(axis="y")
 
