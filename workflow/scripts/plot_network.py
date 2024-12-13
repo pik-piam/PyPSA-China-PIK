@@ -371,8 +371,10 @@ def plot_energy_map(
     # Location will be used to group nodes (gets first part of bus name)
     # more robust could be based on x,y
     assign_location(plot_ntwk)
+    energy_supply = plot_ntwk.statistics.supply(
+        groupby=pypsa.statistics.get_bus_and_carrier, bus_carrier=carrier, comps=["Generator"]
+    )
 
-    energy_supply = get_supply(plot_ntwk, bus_carrier=carrier, components_list=["Generator"])
     supply_pies = energy_supply.droplevel(0)
 
     # TODO aggregate costs below threshold into "other" -> requires messing with network

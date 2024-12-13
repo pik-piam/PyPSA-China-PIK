@@ -259,7 +259,7 @@ def calculate_co2_balance(
 
 
 def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFrame):
-    avail = (
+    p_avail_by_carr = (
         n.generators_t.p_max_pu.multiply(n.generators.p_nom_opt)
         .sum()
         .groupby(n.generators.carrier)
@@ -267,7 +267,9 @@ def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFram
     )
     used = n.generators_t.p.sum().groupby(n.generators.carrier).sum()
 
-    curtailment[label] = (((avail - used) / avail) * 100).round(3)
+    curtailment[label] = (
+        ((p_avail_by_carr - used).clip(0) / p_avail_by_carr).fillna(0) * 100
+    ).round(3)
 
     return curtailment
 
@@ -434,7 +436,7 @@ def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
     return metrics
 
 
-def calculate_prices(n: pypsa.Network, label: str, prices: pd.DataFrame):
+def calculate_t_avgd_prices(n: pypsa.Network, label: str, prices: pd.DataFrame):
     prices = prices.reindex(prices.index.union(n.buses.carrier.unique()))
 
     # WARNING: this is time-averaged, see weighted_prices for load-weighted average
@@ -443,81 +445,35 @@ def calculate_prices(n: pypsa.Network, label: str, prices: pd.DataFrame):
     return prices
 
 
-def calculate_weighted_prices(n: pypsa.Network, label: str, weighted_prices: pd.DataFrame):
-    # Warning: doesn't include storage units as loads
+def calculate_weighted_prices(
+    n: pypsa.Network, label: str, weighted_prices: pd.DataFrame
+) -> pd.DataFrame:
+    """Demand-weighed prices for stores and loads.
+        For stores if withdrawal is zero, use supply instead.
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label representing the pathway (not needed, refactor)
+        weighted_prices (pd.DataFrame): the dataframe to write to (not needed, refactor)
 
-    weighted_prices = weighted_prices.reindex(
-        pd.Index(
-            [
-                "electricity",
-                "heat",
-                "space heat",
-                "urban heat",
-                "space urban heat",
-                "gas",
-                "H2",
-            ]
-        )
+    Returns:
+        pd.DataFrame: updated weighted_prices
+    """
+    entries = pd.Index(["electricity", "heat", "H2", "CO2 capture", "gas", "biomass"])
+    weighted_prices = weighted_prices.reindex(entries)
+
+    # loads
+    loads = (
+        n.statistics.revenue(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
+        / n.statistics.withdrawal(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
+        * -1
     )
+    loads.rename(index={"AC": "electricity"}, inplace=True)
 
-    link_loads = {
-        "electricity": [
-            "heat pump",
-            "resistive heater",
-            "battery charger",
-            "H2 Electrolysis",
-        ],
-        "heat": ["water tanks charger"],
-        "urban heat": ["water tanks charger"],
-        "space heat": [],
-        "space urban heat": [],
-        "gas": ["OCGT", "gas boiler", "CHP electric", "CHP heat"],
-        "H2": ["Sabatier", "H2 Fuel Cell"],
-    }
-
-    for carrier in link_loads:
-        if carrier == "electricity":
-            suffix = ""
-        elif carrier[:5] == "space":
-            suffix = carrier[5:]
-        else:
-            suffix = " " + carrier
-
-        buses = n.buses.index[n.buses.index.str[2:] == suffix]
-
-        if buses.empty:
-            continue
-
-        # TODO fix undefined heat_demand_df
-        if carrier in ["H2", "gas"]:
-            load = pd.DataFrame(index=n.snapshots, columns=buses, data=0.0)
-        elif carrier[:5] == "space":
-            load = heat_demand_df[buses.str[:2]].rename(columns=lambda i: str(i) + suffix)
-        else:
-            load = n.loads_t.p_set[buses]
-
-        for tech in link_loads[carrier]:
-            names = n.links.index[n.links.index.to_series().str[-len(tech) :] == tech]
-
-            if names.empty:
-                continue
-
-            load += n.links_t.p0[names].groupby(n.links.loc[names, "bus0"], axis=1).sum()
-
-        # Add H2 Store when charging
-        # if carrier == "H2":
-        #    stores = n.stores_t.p[buses+ " Store"].groupby(n.stores.loc[buses+ " Store", "bus"],axis=1).sum(axis=1)
-        #    stores[stores > 0.] = 0.
-        #    load += -stores
-
-        weighted_prices.loc[carrier, label] = (
-            load * n.buses_t.marginal_price[buses]
-        ).sum().sum() / load.sum().sum()
-
-        # still have no idea what this is for, only for debug reasons.
-        if carrier[:5] == "space":
-            logger.debug(load * n.buses_t.marginal_price[buses])
-
+    # stores
+    w = n.statistics.withdrawal(comps="Store")
+    # biomass stores have no withdrawal for some reason
+    w[w == 0] = n.statistics.supply(comps="Store")[w == 0]
+    weighted_prices[label] = pd.concat([loads, n.statistics.revenue(comps="Store") / w])
     return weighted_prices
 
 
@@ -577,6 +533,18 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
 
 
 def calculate_price_statistics(n: pypsa.Network, label: str, price_statistics: pd.DataFrame):
+    """WARNING THIS FUNCTION DON#T HAVE ANY WIEGHTING FOR SUPPLY AND SHOULD NOT BE USED
+
+    Args:
+        n (pypsa.Network): _description_
+        label (str): _description_
+        price_statistics (pd.DataFrame): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    raise Warning("This function doesn't have any weighting for supply and should not be used")
+
     price_statistics = price_statistics.reindex(
         price_statistics.index.union(pd.Index(["zero_hours", "mean", "standard_deviation"]))
     )
@@ -589,12 +557,19 @@ def calculate_price_statistics(n: pypsa.Network, label: str, price_statistics: p
 
     df[n.buses_t.marginal_price[buses] < threshold] = 1.0
 
-    price_statistics.at["zero_hours", label] = df.sum().sum() / (df.shape[0] * df.shape[1])
+    price_statistics.at["zero_hours", label] = (
+        n.buses_t.marginal_price.apply(lambda x: (x <= 0).sum())
+        .groupby(n.buses.carrier)
+        .sum()
+        .loc["AC"]
+    )
 
-    price_statistics.at["mean", label] = n.buses_t.marginal_price[buses].unstack().mean()
-
+    price_statistics.at["mean", label] = (
+        n.buses_t.marginal_price.mean().groupby(n.buses.carrier).mean()["AC"]
+    )
+    # wrong maths.
     price_statistics.at["standard_deviation", label] = (
-        n.buses_t.marginal_price[buses].unstack().std()
+        n.buses_t.marginal_price.std().groupby(n.buses.carrier).mean()["AC"]
     )
 
     return price_statistics
@@ -609,13 +584,13 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         "costs": calculate_costs,
         "co2_balance": calculate_co2_balance,
         "capacities": calculate_capacities,
-        "curtailment": calculate_curtailment,
+        "curtailment_pc": calculate_curtailment,
         "energy": calculate_energy,
         "supply": calculate_supply,
         "supply_energy": calculate_supply_energy,
-        "prices": calculate_prices,
+        "time_averaged_prices": calculate_t_avgd_prices,
         "weighted_prices": calculate_weighted_prices,
-        "price_statistics": calculate_price_statistics,
+        # "price_statistics": calculate_price_statistics,
         "market_values": calculate_market_values,
         "metrics": calculate_metrics,
     }
@@ -623,9 +598,12 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
     columns = pd.MultiIndex.from_tuples(
         networks_dict.keys(), names=["pathway", "planning_horizons"]
     )
+    import time
 
+    start = time.time()
     dataframes_dict = {}
 
+    # TO DO: not needed, could be made by the functions
     for output in output_funcs.keys():
         dataframes_dict[output] = pd.DataFrame(columns=columns, dtype=float)
 
@@ -637,6 +615,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         assign_location(n)
 
         for output, output_fn in output_funcs.items():
+            print(output, time.time() - start)
             dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
 
     return dataframes_dict
