@@ -51,6 +51,8 @@ set-resources:
     mem_mb: 24000
   solve_networks:
     mem_mb: 50000
+    qos : short
+    partition: standard
   plot_network:
     mem_mb: 4000
     cores: 2
