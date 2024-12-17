@@ -8,18 +8,74 @@ import sys
 import subprocess
 import pandas as pd
 import logging
-import pypsa
 from pathlib import Path
 from types import SimpleNamespace
 
+import pypsa
 from pypsa.components import components, component_attrs
-from constants import NICE_NAMES_DEFAULT
+import importlib
 
 # from pypsa.descriptors import Dict
 
 # get root logger
 logger = logging.getLogger()
 DEFAULT_TUNNEL_PORT = 1080
+
+
+class PathManager:
+    def __init__(self, snmk_config):
+        self.config = snmk_config
+
+    def _get_version(self) -> str:
+        """Hacky solution to get version from workflow pseudo-package"""
+        spec = importlib.util.spec_from_file_location(
+            "workflow", os.path.abspath("./workflow/__init__.py")
+        )
+        workflow = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(workflow)
+        return workflow.__version__
+
+    def _join_scenario_vars(self) -> str:
+        # TODO make into a config
+        exclude = ["planning_horizons", "co2_reduction"]
+        short_names = {
+            "planning_horizons": "ph",
+            "co2_reduction": "co2",
+            "opts": "opts",
+            "topology": "topo",
+            "pathway": "pthw",
+            "heating_demand": "proj",
+        }
+        # remember need place holders for snakemake
+        return "_".join(
+            [
+                f"{short_names[k] if k in short_names else k}-{{{k}}}"
+                for k in self.config["scenario"]
+                if not k in exclude
+            ]
+        )
+
+    def results_dir(self, extra_opts: dict = None):
+        run, foresight = self.config["run"]["name"], self.config["foresight"]
+        base_dir = "/v-" + self._get_version() + "_" + run
+        sub_dir = foresight + "_" + self._join_scenario_vars()
+        if extra_opts:
+            sub_dir += "_" + "".join(extra_opts.values())
+        return os.path.join(self.config["results_dir"], base_dir, sub_dir)
+
+    def derived_data_dir(self, shared=False):
+        foresight = self.config["foresight"]
+        if not shared:
+            sub_dir = foresight + "_" + self._join_scenario_vars()
+            return os.path.join("resources/derived_data", sub_dir)
+        else:
+            return "resources/derived_data"
+
+    def logs_dir(self):
+        run, foresight = self.config["run"]["name"], self.config["foresight"]
+        base_dir = "/v-" + self._get_version() + "_" + run
+        sub_dir = foresight + "_" + self._join_scenario_vars()
+        return os.path.join("logs", base_dir, sub_dir)
 
 
 def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = None):
@@ -367,6 +423,9 @@ def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
     for old, new in rename_if_contains_dict.items():
         if old in label:
             label = new
+    # import here to not mess with snakemake
+    from constants import NICE_NAMES_DEFAULT
+
     names_new = NICE_NAMES_DEFAULT.copy()
     names_new.update(nice_names)
     for old, new in names_new.items():

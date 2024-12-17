@@ -1,5 +1,4 @@
-# SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
-#
+# SPDX-FileCopyrightText: : 2025 The PyPSA-China Authors
 # SPDX-License-Identifier: MIT
 
 from os.path import abspath, getctime
@@ -7,6 +6,7 @@ from shutil import move
 from pathlib import Path
 from snakemake.utils import min_version
 import logging
+from scripts._helpers import PathManager
 
 
 # NB: duplicated parameters will be overwritten by the last read cfg
@@ -14,33 +14,35 @@ configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
 
-# move to path_manager
-config["base_results_dir"] = config['results_dir'] + 'version-' + str(config['version'])
+# ====== get paths =======
+path_manager = PathManager(config)
+RESULTS_DIR = path_manager.results_dir()
+DERIVED_DATA = path_manager.derived_data_dir( shared=False)
+DERIVED_COMMON = path_manager.derived_data_dir( shared=True)
+LOG_DIR = path_manager.logs_dir()
+LOGS_COMMON = "logs"
 
+# ====== include rules ======= (after paths are set!)
 include: "rules/postprocess.smk"
 
+# ====== set global parameters =======
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 
+# ====== set up snakemake providers =======
 storage:
     provider="http",
 
-
-# PSEUDO RULE TO CALL WHOLE WORKFLOW
-if config["foresight"] == "steady-state":
-
+# ======= PSEUDO RULE TO CALL WHOLE WORKFLOW =========
+if config["foresight"] in ["None", "overnight", "non-pathway"]:
     rule plot_all:
         input:
-            # expand(
-            #     config["base_results_dir"]+ '/plots/summary/steady_state/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf',
-            #     **config["scenario"]
-            # ),
             expand(
-                config["base_results_dir"]+ '/plots/summary/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_costs.png',
+                RESULTS_DIR+ '/plots/summary/pathway_costs.png',
                 **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
         ),
             # network plot
             expand(
-                config["base_results_dir"]+"/plots/steady_state_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",      
+                RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.pdf",      
                 **config["scenario"]
             ),
 
@@ -48,32 +50,25 @@ elif config["foresight"] == "myopic":
 
     rule plot_all:
         input:
-            # expand(
-            #     config["base_results_dir"]+ '/plots/heatmap/water_tank/water_tank-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-            #     ** config["scenario"]
-            # ),
-            # expand(
-            #     config["base_results_dir"]+ '/plots/heatmap/water_tank/water_store-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-            #     ** config["scenario"]
-            # ),
             expand(
-                config["base_results_dir"]+ '/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_costs.png',
+                RESULTS_DIR+ '/plots/summary/pathway_costs.png',
                 **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
             ),
             # network plot
             expand(
-                config["base_results_dir"]+"/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",      
+                RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.pdf",      
                 **config["scenario"]
             ),
 else:
     raise ValueError("Invalid scenario config: {}".format(config["foresight"]))
 
+#    ======== Workflow ===========
 rule build_population:
     input:
         # https://www.stats.gov.cn/sj/ndsj/2023/indexeh.htm
         population="resources/data/population/population_from_national_data.csv"
     output:
-        population="resources/derived_data/population/population.h5"
+        population=DERIVED_COMMON+"/"+"population/population.h5"
     threads: 1
     resources: mem_mb=1000
     script: "scripts/build_population.py"
@@ -91,7 +86,7 @@ if config['enable'].get('build_cutout', False):
             regions_onshore="resources/data/regions/regions_onshore.geojson",
             regions_offshore="resources/data/regions/regions_offshore.geojson"
         output: "resources/cutouts/{cutout}.nc"
-        log: "logs/build_cutout/{cutout}.log"
+        log: LOG_DIR + "/build_cutout/{cutout}.log"
         benchmark: "benchmarks/build_cutout_{cutout}"
         threads: ATLITE_NPROCESSES
         resources: mem_mb=ATLITE_NPROCESSES * 1000
@@ -100,14 +95,14 @@ if config['enable'].get('build_cutout', False):
 rule build_population_gridcell_map:
     input:
         cutout="resources/cutouts/China-2020.nc",
-        province_populations="resources/derived_data/population/population.h5",
+        province_populations=DERIVED_COMMON+"/"+"population/population.h5",
         #
         population_density_grid="resources/data/population/CFSR_grid.nc",
         # admin 1 level = first administrative level within country
         province_shape="resources/data/province_shapes/CHN_adm1.shp"
     output:
-        population_map="resources/derived_data/population/population_gridcell_map.h5"
-    log: "logs/build_population_gridcell_map.log"
+        population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5"
+    log: LOGS_COMMON+"/build_population_gridcell_map.log"
     threads: 1
     resources: mem_mb=35000
     script: "scripts/build_population_gridcell_map.py"
@@ -115,32 +110,32 @@ rule build_population_gridcell_map:
 rule build_solar_thermal_profiles:
     input:
         cutout="resources/cutouts/China-2020.nc",
-        population_map="resources/derived_data/population/population_gridcell_map.h5"
+        population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5"
     output:
-        profile_solar_thermal = f"resources/derived_data/heating/solar_thermal-{config['solar_thermal_angle']}.h5"
-    log: "logs/build_solar_thermal_profiles.log"
+        profile_solar_thermal = DERIVED_DATA+"/"+f"heating/solar_thermal-{config['solar_thermal_angle']}.h5"
+    log: LOG_DIR + "/build_solar_thermal_profiles.log"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_solar_thermal_profiles.py"
 
 rule build_temp_profiles:
     input:
-        population_map="resources/derived_data/population/population_gridcell_map.h5",
+        population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout="resources/cutouts/China-2020.nc"
     output:
-        temp="resources/derived_data/heating/temp.h5"
-    log: "logs/build_temp_profiles.log"
+        temp=DERIVED_DATA+"/"+"heating/temp.h5"
+    log: LOG_DIR + "/build_temp_profiles.log"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_temp_profiles.py"
 
 rule build_cop_profiles:
     input:
-        population_map="resources/derived_data/population/population_gridcell_map.h5",
+        population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout="resources/cutouts/China-2020.nc",
-        temp="resources/derived_data/heating/temp.h5"
+        temp=DERIVED_DATA+"/"+"heating/temp.h5"
     output:
-        cop="resources/derived_data/heating/cop.h5"
+        cop=DERIVED_DATA+"/"+"heating/cop.h5"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_cop_profiles.py"
@@ -182,24 +177,24 @@ rule build_renewable_potential:
     output:
         solar_profile="resources/profile_solar.nc",
         onwind_profile="resources/profile_onwind.nc",
-        protected_areas_offshore = "resources/derived_data/landuse_availability/protected_areas_offshore.shp",
+        protected_areas_offshore = DERIVED_COMMON+"/"+"landuse_availability/protected_areas_offshore.shp",
         offwind_profile="resources/profile_offwind.nc"
-    log: "logs/build_renewable_potential.log"
+    log: LOGS_COMMON + "/build_renewable_potential.log"
     threads: ATLITE_NPROCESSES
     resources: mem_mb=ATLITE_NPROCESSES * 5000
     script: "scripts/build_renewable_potential.py"
 
 rule build_load_profiles:
     input:
-        population = "resources/derived_data/population/population.h5",
-        population_map = "resources/derived_data/population/population_gridcell_map.h5",
+        population = DERIVED_COMMON+"/"+"population/population.h5",
+        population_map = DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout = "resources/cutouts/China-2020.nc",
         intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
         space_heat_demand="resources/data/heating/SPH_2020.csv"
     output:
-        heat_demand_profile = "resources/derived_data/heating/heat_demand_profile_{heating_demand}_{planning_horizons}.h5",
-        energy_totals_name = "resources/derived_data/energy_totals_{heating_demand}_{planning_horizons}.h5"
-    log: "logs/build_load_profiles/build_{heating_demand}_{planning_horizons}.log"
+        heat_demand_profile = DERIVED_DATA + "/" + "heating/heat_demand_profile_{planning_horizons}.h5",
+        energy_totals_name = DERIVED_DATA + "/" +"energy_totals_{planning_horizons}.h5"
+    log: LOG_DIR + "/build_load_profiles/build_{planning_horizons}.log"
     threads: ATLITE_NPROCESSES
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_load_profiles.py"
@@ -209,23 +204,23 @@ rule build_biomass_potential:
         # from doi.org/10.1038/s41467-021-23282-x
         biomass_feedstocks = "resources/data/p_nom/41467_2021_23282_MOESM4_ESM.xlsx"
     log:
-        "logs/build_biomass_potential.log"
+        LOG_DIR + "/build_biomass_potential.log"
     output:
-        biomass_potential = "resources/derived_data/p_nom/biomass_potential.h5"
+        biomass_potential = DERIVED_DATA+"/"+"p_nom/biomass_potential.h5"
     threads: ATLITE_NPROCESSES
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
 
 
-if config["foresight"] == "steady-state":
+if config["foresight"] in ["None", "overnight", "non-pathway"]:
     rule prepare_networks:
         input:
-            population_name="resources/derived_data/population/population.h5",
-            solar_thermal_name="resources/derived_data/heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
-            heat_demand_name="resources/derived_data/heating/heat_demand_profile_{heating_demand}_{planning_horizons}.h5",
-            cop_name="resources/derived_data/heating/cop.h5",
-            energy_totals_name="resources/derived_data/energy_totals_{heating_demand}_{planning_horizons}.h5",
-            temp="resources/derived_data/heating/temp.h5",
+            population_name=DERIVED_COMMON+"/"+"population/population.h5",
+            solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
+            heat_demand_name=DERIVED_DATA+"/"+"heating/heat_demand_profile_{planning_horizons}.h5",
+            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
+            energy_totals_name=DERIVED_DATA+"/"+"energy_totals_{planning_horizons}.h5",
+            temp=DERIVED_DATA+"/"+"heating/temp.h5",
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
             tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
@@ -233,7 +228,7 @@ if config["foresight"] == "steady-state":
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
-            network_name=config["base_results_dir"]+ '/steady_state_{heating_demand}/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         threads: 1
         resources: mem_mb=10000
         script: "scripts/prepare_network.py"
@@ -242,11 +237,11 @@ if config["foresight"] == "steady-state":
         params:
             solving = config["solving"],
         input:
-            network_name=config["base_results_dir"]+ '/steady_state_{heating_demand}/prenetworks/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         output:
-            network_name=config["base_results_dir"]+ '/steady_state_{heating_demand}/postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc'
+            network_name=RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc'
         log:
-            solver = "logs/solve_network/steady_state_{heating_demand}_postnetworks/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log"
+            solver = LOG_DIR + "/solve_network_postnetworks/ntwk_{planning_horizons}.log"
         threads: 4
         resources: mem_mb=35000
         script: "scripts/solve_network.py"
@@ -257,18 +252,18 @@ elif config["foresight"] == "myopic":
             overrides = "resources/data/override_component_attrs",
             edges= "resources/data/grids/edges.txt",
             edges_ext = "resources/data/grids/edges_current.csv",
-            solar_thermal_name="resources/derived_data/heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
-            cop_name="resources/derived_data/heating/cop.h5",
+            solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
+            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
             elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
-            heat_demand_profile= "resources/derived_data/heating/heat_demand_profile_{heating_demand}_{planning_horizons}.h5",
+            heat_demand_profile= DERIVED_DATA+"/"+"heating/heat_demand_profile_{planning_horizons}.h5",
             # TODO: metadata for file, why does it need to be h5?
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
             tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
-            network_name=config["base_results_dir"]+ '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         wildcard_constraints:
             planning_horizons=2020 #only applies to baseyear
         threads: 1
@@ -279,18 +274,18 @@ elif config["foresight"] == "myopic":
         input:
             overrides = "resources/data/override_component_attrs",
             edges = "resources/data/grids/edges.txt",
-            solar_thermal_name="resources/derived_data/heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
-            cop_name="resources/derived_data/heating/cop.h5",
+            solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
+            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
             elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
-            heat_demand_profile= "resources/derived_data/heating/heat_demand_profile_{heating_demand}_{planning_horizons}.h5",
+            heat_demand_profile= DERIVED_DATA+"/"+"heating/heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
             tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
-            biomass_potental = "resources/derived_data/p_nom/biomass_potential.h5",
+            biomass_potental = DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
-            network_name=config["base_results_dir"]+ '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         threads: 1
         resources: mem_mb=10000
         script: "scripts/prepare_base_network.py"
@@ -300,12 +295,12 @@ elif config["foresight"] == "myopic":
     rule add_existing_baseyear:
         input:
             overrides="resources/data/override_component_attrs",
-            network=config["base_results_dir"]+ '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
-            cop_name="resources/derived_data/heating/cop.h5",
+            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
             **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
                for tech in config['existing_infrastructure']},
-        output: config["base_results_dir"]+ '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc'
+        output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         wildcard_constraints:
             planning_horizons=config['scenario']['planning_horizons'][0] #only applies to baseyear
         threads: 1
@@ -316,18 +311,18 @@ elif config["foresight"] == "myopic":
         planning_horizons = config["scenario"]["planning_horizons"]
         i = planning_horizons.index(int(wildcards.planning_horizons))
         planning_horizon_p = str(planning_horizons[i-1])
-        return config["base_results_dir"]+ "/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-" + planning_horizon_p + ".nc"
+        return RESULTS_DIR+ "/postnetworks/ntwk_" + planning_horizon_p + ".nc"
 
     rule add_brownfield:
         input:
             overrides="resources/data/override_component_attrs",
-            network=config["base_results_dir"]+ '/prenetworks/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             network_p=solved_previous_horizon,#solved network at previous time step
             costs="resources/data/costs/costs_{planning_horizons}.csv",
             **{f"profile_{tech}": f"resources/profile_{tech}.nc"
                 for tech in config['renewable']}
         output:
-            network_name = config["base_results_dir"]+ '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network_name = RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
         threads: 4
         resources: mem_mb=10000
         script: "scripts/add_brownfield.py"
@@ -339,13 +334,13 @@ elif config["foresight"] == "myopic":
             solving = config["solving"],
         input:
             overrides = "resources/data/override_component_attrs",
-            network=config["base_results_dir"]+ '/prenetworks-brownfield/{heating_demand}/prenetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
+            network=RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
             costs="resources/data/costs/costs_{planning_horizons}.csv",
-            biomass_potental= "resources/derived_data/p_nom/biomass_potential.h5",
+            biomass_potental= DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",
         output:
-            network_name = config["base_results_dir"]+ '/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc'
+            network_name = RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc'
         log:
-            solver = "logs/solve_network_myopic/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log"
+            solver = LOG_DIR + "/solve_network_myopic/{planning_horizons}.log"
         threads: 4
         resources: mem_mb = 80000
         script: "scripts/solve_network_myopic.py"
@@ -375,7 +370,7 @@ rule dag:
 def copy_sm_log():
     # Set the source and destination directories
     SOURCE_DIR = ".snakemake/logs"
-    DEST_DIR = "logs/"
+    DEST_DIR = LOG_DIR + "/"
     NEW_NAME = "latest_snakemake.log"  # The desired new filename
 
     try:
