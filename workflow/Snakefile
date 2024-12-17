@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: MIT
 
 from os.path import abspath, getctime
-from shutil import move
+import shutil
 from pathlib import Path
 from snakemake.utils import min_version
 import logging
 from scripts._helpers import PathManager
-
+import yaml
 
 # NB: duplicated parameters will be overwritten by the last read cfg
 configfile: "config/default_config.yaml"
@@ -25,6 +25,8 @@ LOGS_COMMON = "logs"
 # ====== include rules ======= (after paths are set!)
 include: "rules/postprocess.smk"
 
+localrules: plot_all
+
 # ====== set global parameters =======
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 
@@ -33,7 +35,7 @@ storage:
     provider="http",
 
 # ======= PSEUDO RULE TO CALL WHOLE WORKFLOW =========
-if config["foresight"] in ["None", "overnight", "non-pathway"]:
+if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
     rule plot_all:
         input:
             expand(
@@ -44,21 +46,8 @@ if config["foresight"] in ["None", "overnight", "non-pathway"]:
             expand(
                 RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.pdf",      
                 **config["scenario"]
-            ),
+            )
 
-elif config["foresight"] == "myopic":
-
-    rule plot_all:
-        input:
-            expand(
-                RESULTS_DIR+ '/plots/summary/pathway_costs.png',
-                **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
-            ),
-            # network plot
-            expand(
-                RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.pdf",      
-                **config["scenario"]
-            ),
 else:
     raise ValueError("Invalid scenario config: {}".format(config["foresight"]))
 
@@ -77,7 +66,7 @@ if config['enable'].get('retrieve_cutout', True):
     rule retrieve_cutout:
         input: storage.http("https://zenodo.org/record/8343761/files/China-2020.nc")
         output: "resources/cutouts/{cutout}.nc"
-        run: move(input[0], output[0])
+        run: shutil.move(input[0], output[0])
 
 
 if config['enable'].get('build_cutout', False):
@@ -144,19 +133,19 @@ if config['enable'].get('retrieve_raster', True):
     rule retrieve_build_up_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_BuiltUp-CoverFraction-layer_EPSG-4326.tif")
         output: "resources/data/regions/Build_up.tif"
-        run: move(input[0], output[0])
+        run: shutil.move(input[0], output[0])
     rule retrieve_Grass_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Grass-CoverFraction-layer_EPSG-4326.tif")
         output: "resources/data/regions/Grass.tif"
-        run: move(input[0], output[0])
+        run: shutil.move(input[0], output[0])
     rule retrieve_Bare_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Bare-CoverFraction-layer_EPSG-4326.tif")
         output: "resources/data/regions/Bare.tif"
-        run: move(input[0], output[0])
+        run: shutil.move(input[0], output[0])
     rule retrieve_Shrubland_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Shrub-CoverFraction-layer_EPSG-4326.tif")
         output: "resources/data/regions/Shrubland.tif"
-        run: move(input[0], output[0])
+        run: shutil.move(input[0], output[0])
 
 rule build_renewable_potential:
     input:
@@ -367,25 +356,17 @@ rule dag:
         dot -Tpng -o {output.rules_png} {output.rules_dot}
         """
 
-def copy_sm_log():
-    # Set the source and destination directories
-    SOURCE_DIR = ".snakemake/logs"
-    DEST_DIR = LOG_DIR + "/"
-    NEW_NAME = "latest_snakemake.log"  # The desired new filename
-
-    try:
-        logs_sm = Path(".snakemake/log").rglob("*.log")
-        newest_log = max(logs_sm, key=getctime)
-        destination_file = Path(DEST_DIR) / NEW_NAME
-        # Copy and rename the newest file to the destination directory
-        shutil.copy(newest_log, destination_file)
-    except FileNotFoundError as e:
-        pass
-    except Exception as e:
-        pass
-
 onerror:
-    copy_sm_log()
+    log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
+    res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
+    # log path is available as "log"
+    shutil.copy(log, log_out)
+    print(log_out)
+    yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
 
 onsuccess:
-    copy_sm_log()
+    log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
+    res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
+    # log path is available as "log"
+    shutil.copy(log, log_out)
+    yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
