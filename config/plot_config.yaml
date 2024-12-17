@@ -152,6 +152,7 @@ plotting:
     # power transmission
     lines: '#6c9459'
     transmission lines: '#6c9459'
+    transmission losses: '#6c9459'
     electricity distribution grid: '#97ad8c'
     low voltage: '#97ad8c'
     # electricity demand
@@ -352,6 +353,7 @@ plotting:
     heat pump: "Heat Pump"
     solar thermal: "Solar Thermal"
     uranium: "Nuclear"
+    hydroelectricity: "Hydroelectricity"
     energy:
       coal: "Coal"
       offwind: "Offshore Wind"
@@ -360,9 +362,13 @@ plotting:
       solar thermal: "Solar Thermal"
 
   preferred_order:
-  - transmission lines
-  - hydroelectricity
+  - Transmission Lines
+  - transmission losses
   - nuclear
+  - Nuclear
+  - hydroelectricity
+  - Hydroelectricity
+  - Coal
   - coal
   - coal carbon capture
   - coal power plant
@@ -378,17 +384,23 @@ plotting:
   - heat pump
   - resistive heater
   - methanation
+  - electric load
+  - heat load
+  - Load
   - H2
+  - Hydrogen Storage
   - H2 fuel cell
   - H2 CHP
   - hot water storage
   - hydrogen storage
   - solar thermal
-  - onshore wind
   - offshore wind
+  - Offshore Wind
+  - onshore wind
+  - Onshore Wind
+  - solar PV
+  - Solar
   - battery storage
   - battery discharger
-  - solar PV
   - battery
-  - electric load
-  - heat load
+  - Battery

@@ -209,23 +209,27 @@ def plot_electricty_heat_balance(file_list: list[os.PathLike], config: dict, fig
 
     for results_file in file_list:
         balance_df = pd.read_csv(results_file, index_col=list(range(2)), header=[1])
-        elec = balance_df.loc["AC"]
+        elec = balance_df.loc["AC"].copy()
         elec.set_index(elec.columns[0], inplace=True)
-        elec.index = elec.index.fillna("electric load")
+        elec.rename(index={"-": "electric load"}, inplace=True)
         elec.index.rename("carrier", inplace=True)
+        # this groups subgroups of the same carrier. For example, baseyar hydro = link from dams
+        # but new hydro is generator from province
+        elec = elec.groupby(elec.index).sum()
 
-        heat = balance_df.loc["heat"]
+        heat = balance_df.loc["heat"].copy()
         heat.set_index(heat.columns[0], inplace=True)
-        heat.index = heat.index.fillna("heat load")
+        heat.rename(index={"-": "heat load"}, inplace=True)
         heat.index.rename("carrier", inplace=True)
+        heat = heat.groupby(heat.index).sum()
 
         to_drop = elec.index[elec.max(axis=1).abs() < config["energy_threshold"]]
         elec.loc["Other"] = elec.loc[to_drop].sum(axis=0)
-        elec = elec.drop(to_drop)
+        elec.drop(to_drop, inplace=True)
 
         to_drop = heat.index[heat.max(axis=1).abs() < config["energy_threshold"]]
         heat.loc["Other"] = heat.loc[to_drop].sum(axis=0)
-        heat = heat.drop(to_drop)
+        heat.drop(to_drop, inplace=True)
 
         elec_df = pd.concat([elec, elec_df], axis=1)
         heat_df = pd.concat([heat, heat_df], axis=1)
@@ -244,9 +248,6 @@ def plot_electricty_heat_balance(file_list: list[os.PathLike], config: dict, fig
     heat_gen = heat_df.where(heat_df > 0).dropna(axis=0, how="all").fillna(0)
     heat_con = heat_df.where(heat_df < 0).dropna(axis=0, how="all").fillna(0)
 
-    # remove trailing digits from index, while keeping O and H (CO2,H2,CH4)
-    for df in [el_gen, el_con, heat_gen, heat_con]:
-        df.index = df.index.str.replace(r"(?<!O|H)\d+", "", regex=True).str.strip()
     # group identical values
     el_con = el_con.groupby(el_con.index).sum()
     el_gen = el_gen.groupby(el_gen.index).sum()
@@ -490,7 +491,8 @@ if __name__ == "__main__":
         "energy": [os.path.join(p, "energy.csv") for p in paths],
         "costs": [os.path.join(p, "costs.csv") for p in paths],
         "co2_price": [os.path.join(p, "metrics.csv") for p in paths],
-        "prices": [os.path.join(p, "prices.csv") for p in paths],
+        "time_averaged_prices": [os.path.join(p, "time_averaged_prices.csv") for p in paths],
+        "weighted_prices": [os.path.join(p, "weighted_prices.csv") for p in paths],
         "co2_balance": [os.path.join(p, "co2_balance.csv") for p in paths],
         "energy_supply": [os.path.join(p, "supply_energy.csv") for p in paths],
     }
@@ -509,9 +511,15 @@ if __name__ == "__main__":
         fig_dir=os.path.dirname(output_paths.costs),
     )
     plot_prices(
-        data_paths["prices"],
+        data_paths["time_averaged_prices"],
         config,
-        fig_name=os.path.dirname(output_paths.costs) + "/prices.png",
+        fig_name=os.path.dirname(output_paths.costs) + "/time_averaged_prices.png",
+    )
+
+    plot_prices(
+        data_paths["weighted_prices"],
+        config,
+        fig_name=os.path.dirname(output_paths.costs) + "/weighted_prices.png",
     )
     plot_co2_shadow_price(
         data_paths["co2_price"],

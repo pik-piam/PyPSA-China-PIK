@@ -61,6 +61,58 @@ def get_stat_colors(
 # x = get_stat_colors(p,n, config["plotting"], extra_colors={"Load":"black"})
 
 
+def rename_techs(label):
+    """From pypsa-Eur
+
+    Args:
+        label (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    prefix_to_remove = [
+        "central ",
+        "decentral ",
+    ]
+
+    rename_if_contains_dict = {"water tanks": "hot water storage", "H2": "H2", "coal cc": "CC"}
+
+    rename_if_contains = ["gas", "coal"]
+
+    rename = {
+        "solar": "solar PV",
+        "Sabatier": "methanation",
+        "offwind": "offshore wind",
+        "onwind": "onshore wind",
+        "ror": "hydroelectricity",
+        "hydro": "hydroelectricity",
+        "PHS": "hydroelectricity",
+        "hydro_inflow": "hydroelectricity",
+        "stations": "hydroelectricity",
+        "AC": "transmission lines",
+        "CO2 capture": "biomass carbon capture",
+        "CC": "coal carbon capture",
+        "battery": "battery",
+    }
+
+    for ptr in prefix_to_remove:
+        if label[: len(ptr)] == ptr:
+            label = label[len(ptr) :]
+
+    for old, new in rename_if_contains_dict.items():
+        if old in label:
+            label = new
+
+    for rif in rename_if_contains:
+        if rif in label:
+            label = rif
+
+    for old, new in rename.items():
+        if old == label:
+            label = new
+    return label
+
+
 def fix_network_names_colors(n: pypsa.Network, config: dict):
     """Add missing attributes to network for older versions of the code
     This ensures compatibility with the newer pypsa eur plot functions
