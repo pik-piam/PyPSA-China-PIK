@@ -276,11 +276,12 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_network_myopic",
-            opts="ll",
+            # opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
             co2_reduction="0.0",
             planning_horizons="2025",
+            heat_demand="positive",
         )
 
     configure_logging(snakemake)
@@ -292,7 +293,7 @@ if __name__ == "__main__":
     if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
         setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
 
-    opts = snakemake.wildcards.opts
+    opts = snakemake.wildcards.get("opts", "")
     if "sector_opts" in snakemake.wildcards.keys():
         opts += "-" + snakemake.wildcards.sector_opts
     opts = [o for o in opts.split("-") if o != ""]

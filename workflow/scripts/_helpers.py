@@ -15,6 +15,9 @@ import pypsa
 from pypsa.components import components, component_attrs
 import importlib
 
+import time
+from numpy.random import default_rng
+
 # from pypsa.descriptors import Dict
 
 # get root logger
@@ -94,6 +97,9 @@ def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = No
     port = tunnel_config.get("port", DEFAULT_TUNNEL_PORT)
     ssh_command = f"ssh -fN -D {port} {user}@login01"
 
+    # random sleep to avoid port conflicts with simultaneous connections
+    time.sleep(default_rng().uniform(0, 1))
+
     try:
         # Run SSH in the background to establish the tunnel
         subprocess.Popen(ssh_command, shell=True)
@@ -113,7 +119,9 @@ def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = No
     os.environ["LD_LIBRARY_PATH"] += f":{os.environ['GUROBI_HOME']}/lib"
     os.environ["GRB_LICENSE_FILE"] = "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
     os.environ["GRB_CURLVERBOSE"] = "1"
-
+    # os.environ["GRB_SERVER_TIMEOUT"] = "10"
+    # os.environ["https_timeout"] = "10"
+    # os.environ["proxy_timeout"] = "10"
     logger.info("Gurobi Environment variables & tunnel set up successfully.")
 
 

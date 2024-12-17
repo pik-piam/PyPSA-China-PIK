@@ -13,6 +13,7 @@ max-jobs-per-second: 10
 max-status-checks-per-second: 1
 # local-cores: 1
 latency-wait: 60
+# retries: 2
 keep-going: False
 rerun-incomplete: True
 printshellcmds: True
@@ -23,7 +24,7 @@ rerun-trigger:
 - input
 - mtime
 - params
-verbose: true
+verbose: false
 
 # define the cluster submission command (slurm wrapper)
 cluster-generic-submit-cmd:
@@ -33,7 +34,7 @@ cluster-generic-submit-cmd:
     --qos={resources.qos}
     --cpus-per-task={threads}
     --mem={resources.mem_mb}
-    --job-name=smk-{rule}-{wildcards}
+    --job-name={rule}-{wildcards}-smk
     --output=logs/logs_slurm/{rule}/%j-{rule}-{wildcards}.out
     --parsable
     --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
@@ -48,11 +49,13 @@ default-resources:
 
 set-resources:
   solve_network_myopic:
-    mem_mb: 24000
+    mem_mb: 80000
+    time: 300
   solve_networks:
-    mem_mb: 50000
+    mem_mb: 80000
     qos : short
     partition: standard
+    time : 300
   plot_network:
     mem_mb: 4000
     cores: 2
