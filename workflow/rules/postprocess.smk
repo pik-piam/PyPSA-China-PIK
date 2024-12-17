@@ -90,6 +90,16 @@ elif config["foresight"] == "myopic":
                 + "/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png",
                 **config["scenario"],
             ),
+            expand(
+                base_results_dir
+                + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",
+                **config["scenario"],
+            ),
+            # expand(
+            #     base_results_dir
+            #     + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf",
+            #     **config["scenario"],
+            # ),
             # expand(
             #     base_results_dir + '/plots/heatmap/water_tank/water_tank-{opts}-{topology}-{pathway}-{planning_horizons}.png',
             #     ** config["scenario"]
@@ -98,16 +108,6 @@ elif config["foresight"] == "myopic":
             #     base_results_dir + '/plots/heatmap/water_tank/water_store-{opts}-{topology}-{pathway}-{planning_horizons}.png',
             #     ** config["scenario"]
             # ),
-            expand(
-                base_results_dir
-                + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",
-                **config["scenario"],
-            ),
-            expand(
-                base_results_dir
-                + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf",
-                **config["scenario"],
-            ),
 
     # TODO fix paths
     rule plot_network:
