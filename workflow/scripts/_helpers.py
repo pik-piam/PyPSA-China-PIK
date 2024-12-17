@@ -57,7 +57,7 @@ class PathManager:
 
     def results_dir(self, extra_opts: dict = None):
         run, foresight = self.config["run"]["name"], self.config["foresight"]
-        base_dir = "/v-" + self._get_version() + "_" + run
+        base_dir = "v-" + self._get_version() + "_" + run
         sub_dir = foresight + "_" + self._join_scenario_vars()
         if extra_opts:
             sub_dir += "_" + "".join(extra_opts.values())
@@ -73,7 +73,7 @@ class PathManager:
 
     def logs_dir(self):
         run, foresight = self.config["run"]["name"], self.config["foresight"]
-        base_dir = "/v-" + self._get_version() + "_" + run
+        base_dir = "v-" + self._get_version() + "_" + run
         sub_dir = foresight + "_" + self._join_scenario_vars()
         return os.path.join("logs", base_dir, sub_dir)
 
