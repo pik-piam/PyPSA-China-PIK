@@ -181,18 +181,8 @@ def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame):
 
 def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: pd.DataFrame):
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
-    for c in n.iterate_components(
-        n.branch_components | n.controllable_one_port_components ^ {"Load"}
-    ):
-        nodal_capacities_c = c.df.groupby(["location", "carrier"])[
-            opt_name.get(c.name, "p") + "_nom_opt"
-        ].sum()
-        index = pd.MultiIndex.from_tuples(
-            [(c.list_name,) + t for t in nodal_capacities_c.index.to_list()]
-        )
-        nodal_capacities = nodal_capacities.reindex(index.union(nodal_capacities.index))
-        nodal_capacities.loc[index, label] = nodal_capacities_c.values
-
+    nodal_cap = n.statistics.optimal_capacity(groupby=pypsa.statistics.get_bus_and_carrier)
+    nodal_capacities[label] = nodal_cap.sort_index(level=0)
     return nodal_capacities
 
 
@@ -302,105 +292,51 @@ def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame):
     return energy
 
 
-def calculate_supply(n: pypsa.Network, label: str, supply: pd.DataFrame):
-    """
-    Calculate the max dispatch of each component at the buses aggregated by
+def calculate_peak_dispatch(n: pypsa.Network, label: str, supply: pd.DataFrame) -> pd.DataFrame:
+    """Calculate the MAX dispatch of each component at the buses aggregated by
     carrier.
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the labe representing the pathway
+        supply_energy (pd.DataFrame): supply energy balance (empty df)
+
+    Returns:
+        pd.DataFrame: updated supply DF
     """
-    bus_carriers = n.buses.carrier.unique()
 
-    for i in bus_carriers:
-        bus_map = n.buses.carrier == i
-        bus_map.at[""] = False
-
-        for c in n.iterate_components(n.one_port_components):
-            items = c.df.index[c.df.bus.map(bus_map).fillna(False)]
-
-            if len(items) == 0:
-                continue
-
-            s = (
-                c.pnl.p[items]
-                .max()
-                .multiply(c.df.loc[items, "sign"])
-                .groupby(c.df.loc[items, "carrier"])
-                .sum()
-            )
-            s = pd.concat([s], keys=[c.list_name])
-            s = pd.concat([s], keys=[i])
-
-            supply = supply.reindex(s.index.union(supply.index))
-            supply.loc[s.index, label] = s
-
-        for c in n.iterate_components(n.branch_components):
-            for end in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
-                items = c.df.index[c.df["bus" + end].map(bus_map).fillna(False)]
-
-                if len(items) == 0:
-                    continue
-
-                # lots of sign compensation for direction and to do maximums
-                s = (-1) ** (1 - int(end)) * (
-                    (-1) ** int(end) * c.pnl["p" + end][items]
-                ).max().groupby(c.df.loc[items, "carrier"]).sum()
-                s.index = s.index + end
-                s = pd.concat([s], keys=[c.list_name])
-                s = pd.concat([s], keys=[i])
-
-                supply = supply.reindex(s.index.union(supply.index))
-                supply.loc[s.index, label] = s
+    sup_ = n.statistics.supply(
+        groupby=pypsa.statistics.get_carrier_and_bus_carrier, aggregate_time="max"
+    )
+    supply_reordered = sup_.reorder_levels([2, 0, 1])
+    supply_reordered.sort_index(inplace=True)
+    supply[label] = supply_reordered
 
     return supply
 
 
-def calculate_supply_energy(n: pypsa.Network, label: str, supply_energy: pd.DataFrame):
-    """
-    Calculate the total energy supply/consuption of each component at the buses
+def calculate_supply_energy(
+    n: pypsa.Network, label: str, supply_energy: pd.DataFrame
+) -> pd.DataFrame:
+    """Calculate the total energy supply/consuption of each component at the buses
     aggregated by carrier.
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the labe representing the pathway
+        supply_energy (pd.DataFrame): supply energy balance (empty df)
+
+    Returns:
+        pd.DataFrame: updated supply energy balance
     """
-    bus_carriers = n.buses.carrier.unique()
 
-    for i in bus_carriers:
-        bus_map = n.buses.carrier == i
-        bus_map.at[""] = False
+    eb = n.statistics.energy_balance(groupby=pypsa.statistics.get_carrier_and_bus_carrier)
+    # fragile
+    eb_reordered = eb.reorder_levels([2, 0, 1])
+    eb_reordered.sort_index(inplace=True)
+    eb_reordered.rename(index={"AC": "transmission losses"}, level=2, inplace=True)
 
-        for c in n.iterate_components(n.one_port_components):
-            items = c.df.index[c.df.bus.map(bus_map).fillna(False)]
-
-            if len(items) == 0:
-                continue
-
-            s = (
-                c.pnl.p[items]
-                .multiply(n.snapshot_weightings.generators, axis=0)
-                .sum()
-                .multiply(c.df.loc[items, "sign"])
-                .groupby(c.df.loc[items, "carrier"])
-                .sum()
-            )
-            s = pd.concat([s], keys=[c.list_name])
-            s = pd.concat([s], keys=[i])
-
-            supply_energy = supply_energy.reindex(s.index.union(supply_energy.index))
-            supply_energy.loc[s.index, label] = s
-
-        for c in n.iterate_components(n.branch_components):
-            for end in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
-                items = c.df.index[c.df["bus" + str(end)].map(bus_map).fillna(False)]
-
-                if len(items) == 0:
-                    continue
-
-                s = (-1) * c.pnl["p" + end][items].multiply(
-                    n.snapshot_weightings.generators, axis=0
-                ).sum().groupby(c.df.loc[items, "carrier"]).sum()
-                s.index = s.index + end
-                s = pd.concat([s], keys=[c.list_name])
-                s = pd.concat([s], keys=[i])
-
-                supply_energy = supply_energy.reindex(s.index.union(supply_energy.index))
-
-                supply_energy.loc[s.index, label] = s
+    supply_energy[label] = eb_reordered
 
     return supply_energy
 
@@ -586,7 +522,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         "capacities": calculate_capacities,
         "curtailment_pc": calculate_curtailment,
         "energy": calculate_energy,
-        "supply": calculate_supply,
+        "peak_dispatch": calculate_peak_dispatch,
         "supply_energy": calculate_supply_energy,
         "time_averaged_prices": calculate_t_avgd_prices,
         "weighted_prices": calculate_weighted_prices,
@@ -598,9 +534,6 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
     columns = pd.MultiIndex.from_tuples(
         networks_dict.keys(), names=["pathway", "planning_horizons"]
     )
-    import time
-
-    start = time.time()
     dataframes_dict = {}
 
     # TO DO: not needed, could be made by the functions
@@ -615,7 +548,6 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         assign_location(n)
 
         for output, output_fn in output_funcs.items():
-            print(output, time.time() - start)
             dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
 
     return dataframes_dict

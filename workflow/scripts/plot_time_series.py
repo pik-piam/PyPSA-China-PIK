@@ -40,7 +40,7 @@ def plot_energy_balance(
         # .drop("-")
         .T
     )
-    p.rename(columns={"-": "Load"}, inplace=True)
+    p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
     p = p.loc[start_date:end_date]
 
     p["coal"] = p[[c for c in p.columns if c.find("coal") >= 0]].sum(axis=1)
@@ -51,22 +51,34 @@ def plot_energy_balance(
     color_series = get_stat_colors(
         p, n, plot_config, extra_colors={"Load": plot_config["tech_colors"]["electric load"]}
     )
+    # colors & names part 1
+    p.rename(plot_config["nice_names"], inplace=True)
     color_series.rename(plot_config["nice_names"], inplace=True)
+    color_series.index = color_series.index.str.strip()
 
+    # split into supply and wothdrawal
     supply = p.where(p >= 0).dropna(axis=1, how="all")
+    charge = p.where(p < 0).dropna(how="all", axis=1)
+
+    # fix names and order
+    charge.rename(columns={"Battery Storage": "Battery"}, inplace=True)
+    supply.rename(columns={"battery discharger": "Battery"}, inplace=True)
+    color_series.rename(
+        {"battery discharger ": "Battery", "Battery Storage": "Battery"}, inplace=True
+    )
+
     preferred_order = plot_config["preferred_order"]
     plot_order = (
         supply.columns.intersection(preferred_order).to_list()
         + supply.columns.difference(preferred_order).to_list()
     )
-    supply = supply.reindex(columns=plot_order)
 
-    charge = p.where(p < 0).dropna(how="all", axis=1)
-    # charge.rename(columns=tech_names_map, inplace=True)
-    plot_order = [name for name in preferred_order if name in charge.columns] + [
+    plot_order_charge = [name for name in preferred_order if name in charge.columns] + [
         name for name in charge.columns if name not in preferred_order
     ]
-    charge = charge.reindex(columns=plot_order)
+
+    supply = supply.reindex(columns=plot_order)
+    charge = charge.reindex(columns=plot_order_charge)
 
     if not charge.empty:
         charge.plot.area(ax=ax, linewidth=0, color=color_series.loc[charge.columns])
