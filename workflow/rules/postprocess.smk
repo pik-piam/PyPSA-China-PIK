@@ -13,6 +13,8 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
         output:
             cost_map=RESULTS_DIR + "/plots/networks/ntwk_{planning_horizons}-cost.pdf",
+            el_supply_map=RESULTS_DIR
+            + "/plots/networks/ntwk_{planning_horizons}-el_supply.pdf",
         log:
             LOG_DIR + "/plot_network/ntwk_{planning_horizons}.log",
         script:
