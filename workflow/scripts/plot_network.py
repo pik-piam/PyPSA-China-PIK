@@ -7,12 +7,12 @@ import os
 
 # from make_summary import assign_carriers
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
-from plot_summary import preferred_order, rename_techs
 from _plot_utilities import (
     assign_location,
     set_plot_style,
     fix_network_names_colors,
     get_stat_colors,
+    rename_techs,
 )
 from _helpers import configure_logging, get_supply, mock_snakemake, calc_component_capex
 from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS
@@ -21,7 +21,9 @@ from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS
 logger = logging.getLogger(__name__)
 
 
-def make_cost_pies(ntwk: pypsa.Network, cost_df: pd.DataFrame, tech_colors: dict) -> pd.DataFrame:
+def make_cost_pies(
+    ntwk: pypsa.Network, cost_df: pd.DataFrame, tech_colors: dict, preferred_order
+) -> pd.DataFrame:
     """Make cost pies for plotting
 
     Args:
@@ -269,9 +271,10 @@ def plot_capex_map(
         inplace=True,
     )
 
+    preferred_order = pd.Index(opts["preferred_order"])
     costs_pathway, costs_nom = annualised_network_capex(plot_ntwk, components)
-    cost_pie = make_cost_pies(plot_ntwk, costs_pathway, tech_colors)
-    cost_pie_nom = make_cost_pies(plot_ntwk, costs_nom, tech_colors)
+    cost_pie = make_cost_pies(plot_ntwk, costs_pathway, tech_colors, preferred_order)
+    cost_pie_nom = make_cost_pies(plot_ntwk, costs_nom, tech_colors, preferred_order)
 
     # TODO aggregate costs below threshold into "other" -> requires messing with network
 
