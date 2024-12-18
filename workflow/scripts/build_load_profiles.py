@@ -1,14 +1,11 @@
 import logging
-from _helpers import configure_logging, is_leap_year, mock_snakemake
-
 import atlite
-import pytz
-
 import pandas as pd
 import scipy as sp
 import numpy as np
 from scipy.optimize import curve_fit
 
+from _helpers import configure_logging, is_leap_year, mock_snakemake
 from constants import (
     PROV_NAMES,
     TIMEZONE,
@@ -24,9 +21,7 @@ from constants import (
 )
 
 logger = logging.getLogger(__name__)
-
 idx = pd.IndexSlice
-
 nodes = pd.Index(PROV_NAMES)
 
 
@@ -49,7 +44,6 @@ def generate_periodic_profiles(
         pd.DataFrame: _description_
     """
     # TODO fix this profile timezone
-
     weekly_profile = pd.Series(weekly_profile, range(24 * 7))
 
     week_df = pd.DataFrame(index=dt_index, columns=col_tzs.index)
@@ -59,7 +53,45 @@ def generate_periodic_profiles(
     return week_df
 
 
-# TODO REMIND
+def make_heat_demand_projections(
+    planning_year: int, projection_name: str, ref_year=REF_YEAR
+) -> float:
+    """Make projections for heating demand
+
+    Args:
+        projection_name (str): name of projection
+        planning_year (int): year to project to
+        ref_year (int, optional): reference year. Defaults to REF_YEAR.
+
+    Returns:
+        float: scaling factor relative to base year for heating demand
+    """
+    years = np.array([1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2060])
+
+    if projection_name == "positive":
+
+        def func(x, a, b, c, d):
+            """Cubic polynomial fit to proj"""
+            return a * x**3 + b * x**2 + c * x + d
+
+        # heated area projection in China
+        # 2060: 6.02 * 36.52 * 1e4 north population * floor_space_per_capita in city
+        heated_area = np.array(
+            [2742, 21263, 64645, 110766, 252056, 435668, 672205, 988209, 2198504]
+        )  # 10000 m2
+
+        # Perform curve fitting
+        popt, pcov = curve_fit(func, years, heated_area)
+        factor = func(int(planning_year), *popt) / func(REF_YEAR, *popt)
+
+    elif projection_name == "constant":
+        factor = 1.0
+
+    else:
+        raise ValueError(f"Invalid heating demand projection {projection_name}")
+    return factor
+
+
 def build_daily_heat_demand_profiles() -> pd.DataFrame:
     """build the heat demand profile according to forecast demans
 
@@ -147,7 +179,8 @@ def build_heat_demand_profile(
         planning_horizons (int | str): the planning year
 
     Returns:
-        tuple[pd.DataFrame, pd.DataFrame, object, pd.DataFrame]: heat, space_heat, space_heating_per_hdd, water_heat demands
+        tuple[pd.DataFrame, pd.DataFrame, object, pd.DataFrame]:
+            heat, space_heat, space_heating_per_hdd, water_heat demands
     """
 
     h = daily_hd
@@ -181,41 +214,9 @@ def build_heat_demand_profile(
     space_heat_demand_total = space_heat_demand_total * 1e6
     space_heat_demand_total = space_heat_demand_total.squeeze()
 
-    # TODO isolate and clarify the values
-    if snakemake.wildcards["heating_demand"] == "positive":
-
-        def func(x, a, b, c, d):
-            return a * x**3 + b * x**2 + c * x + d
-
-        # heated area in China
-        # 2060: 6.02 * 36.52 * 1e4 north population * floor_space_per_capita in city
-        x = np.array([1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2060])
-        y = np.array(
-            [2742, 21263, 64645, 110766, 252056, 435668, 672205, 988209, 2198504]
-        )  # 10000 m2
-
-        # Perform curve fitting
-        popt, pcov = curve_fit(func, x, y)
-        factor = func(int(planning_horizons), *popt) / func(2020, *popt)
-
-    if snakemake.wildcards["heating_demand"] == "constant":
-        factor = 1.0
-
-    if snakemake.wildcards["heating_demand"] == "mean":
-
-        def func(x, a, b, c, d):
-            return a * x**3 + b * x**2 + c * x + d
-
-        # heated area in China
-        # 2060: 6.02 * 36.52 * 1e4 north population * floor_space_per_capita in city
-        x = np.array([1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2060])
-        y = np.array(
-            [2742, 21263, 64645, 110766, 252056, 435668, 672205, 988209, 2198504]
-        )  # 10000 m2
-
-        # Perform curve fitting
-        popt, pcov = curve_fit(func, x, y)
-        factor = (func(int(planning_horizons), *popt) / func(2020, *popt) + 1.0) / 2
+    factor = make_heat_demand_projections(
+        planning_horizons, snakemake.wildcards["heating_demand"], ref_year=REF_YEAR
+    )
 
     space_heating_per_hdd = (space_heat_demand_total * factor) / (
         heat_demand_hdh.sum() * snakemake.config["frequency"]
@@ -233,7 +234,11 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
 
         snakemake = mock_snakemake(
-            "build_load_profiles", heating_demand="positive", planning_horizons="2020"
+            "build_load_profiles",
+            heating_demand="positive",
+            planning_horizons="2020",
+            pathway="exponential-175",
+            topology="Current+Neigbor",
         )
 
     configure_logging(snakemake, logger=logger)

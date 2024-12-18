@@ -27,7 +27,13 @@ from constants import (
     NUCLEAR_EXTENDABLE,
 )
 from functions import HVAC_cost_curve
-from _helpers import configure_logging, override_component_attrs, mock_snakemake, is_leap_year
+from _helpers import (
+    configure_logging,
+    override_component_attrs,
+    mock_snakemake,
+    is_leap_year,
+    shift_profile_to_planning_year,
+)
 from add_electricity import load_costs, sanitize_carriers
 from functions import haversine
 from readers import read_province_shapes
@@ -91,31 +97,6 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         )  # in t_CO2/MWht
     if config["add_coal"]:
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
-
-
-# TODO move to helpers?
-def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -> pd.DataFrame:
-    """Shift the profile to the planning year
-    Args:
-        data (pd.DataFrame): profile data, for 1 year
-        planning_yr (int): planning year
-    Returns:
-        pd.DataFrame: shifted profile data
-    Raises:
-        ValueError: if the profile data crosses years
-    """
-    years = data.index.year.unique()
-    if not len(years) == 1:
-        raise ValueError(f"Data should be for one year only but got {years}")
-
-    ref_year = years[0]
-    # remove all planning year leap days
-    if is_leap_year(ref_year):  # and not is_leap_year(planning_yr):
-        data = data.loc[~((data.index.month == 2) & (data.index.day == 29))]
-
-    data.index = data.index.map(lambda t: t.replace(year=int(planning_yr)))
-
-    return data
 
 
 def prepare_network(config: dict) -> pypsa.Network:
@@ -215,7 +196,7 @@ def prepare_network(config: dict) -> pypsa.Network:
         central_fraction = pd.read_hdf(snakemake.input.central_fraction)
         with pd.HDFStore(snakemake.input.heat_demand_profile, mode="r") as store:
             heat_demand = store["heat_demand_profiles"]
-            # TODO fix this not working
+            # TODO fix this possilby not working
             heat_demand.index = heat_demand.index.tz_localize(None)
             heat_demand = heat_demand.loc[network.snapshots]
 

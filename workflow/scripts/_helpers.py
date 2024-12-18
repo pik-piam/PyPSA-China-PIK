@@ -54,7 +54,7 @@ class PathManager:
             [
                 f"{short_names[k] if k in short_names else k}-{{{k}}}"
                 for k in self.config["scenario"]
-                if not k in exclude
+                if k not in exclude
             ]
         )
 
@@ -79,6 +79,12 @@ class PathManager:
         base_dir = "v-" + self._get_version() + "_" + run
         sub_dir = foresight + "_" + self._join_scenario_vars()
         return os.path.join("logs", base_dir, sub_dir)
+
+    def copy_metadata(self):
+        res_dir = self.results_dir()
+
+    def copy_log(self):
+        pass
 
 
 def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = None):
@@ -119,7 +125,7 @@ def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = No
     os.environ["LD_LIBRARY_PATH"] += f":{os.environ['GUROBI_HOME']}/lib"
     os.environ["GRB_LICENSE_FILE"] = "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
     os.environ["GRB_CURLVERBOSE"] = "1"
-    # os.environ["GRB_SERVER_TIMEOUT"] = "10"
+    os.environ["GRB_SERVER_TIMEOUT"] = "10"
     # os.environ["https_timeout"] = "10"
     # os.environ["proxy_timeout"] = "10"
     logger.info("Gurobi Environment variables & tunnel set up successfully.")
@@ -621,3 +627,27 @@ def get_supply(
     return n.statistics.supply(
         groupby=pypsa.statistics.get_bus_and_carrier, bus_carrier=bus_carrier, comps=components_list
     )
+
+
+def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -> pd.DataFrame:
+    """Shift the profile to the planning year
+    Args:
+        data (pd.DataFrame): profile data, for 1 year
+        planning_yr (int): planning year
+    Returns:
+        pd.DataFrame: shifted profile data
+    Raises:
+        ValueError: if the profile data crosses years
+    """
+    years = data.index.year.unique()
+    if not len(years) == 1:
+        raise ValueError(f"Data should be for one year only but got {years}")
+
+    ref_year = years[0]
+    # remove all planning year leap days
+    if is_leap_year(ref_year):  # and not is_leap_year(planning_yr):
+        data = data.loc[~((data.index.month == 2) & (data.index.day == 29))]
+
+    data.index = data.index.map(lambda t: t.replace(year=int(planning_yr)))
+
+    return data

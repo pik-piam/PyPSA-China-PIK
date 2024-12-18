@@ -15,13 +15,261 @@ import xarray as xr
 import logging
 
 
-from constants import PROV_NAMES, CRS, CO2_HEATING_2020, CO2_EL_2020
-from _helpers import configure_logging, mock_snakemake
+from constants import PROV_NAMES, CRS, CO2_HEATING_2020, CO2_EL_2020, LOAD_CONVERSION_FACTOR
+from _helpers import configure_logging, mock_snakemake, shift_profile_to_planning_year
 from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
 from readers import read_province_shapes
 
 logger = logging.getLogger(__name__)
+
+
+def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
+    """ad the various carriers to the network based on the config file
+
+    Args:
+        network (pypsa.Network): the pypsa network
+        config (dict): the config file
+        costs (pd.DataFrame): the costs dataframe
+    """
+
+    network.add("Carrier", "AC")
+    if config["heat_coupling"]:
+        network.add("Carrier", "heat")
+    for carrier in config["Techs"]["vre_techs"]:
+        network.add("Carrier", carrier)
+        if carrier == "hydroelectricity":
+            network.add("Carrier", "hydro_inflow")
+    for carrier in config["Techs"]["store_techs"]:
+        network.add("Carrier", carrier)
+        if carrier == "battery":
+            network.add("Carrier", "battery discharger")
+    for carrier in config["Techs"]["conv_techs"]:
+        # emissions in t_CO2/MWh
+        if "gas" in carrier:
+            network.add("Carrier", carrier, co2_emissions=costs.at["gas", "co2_emissions"])
+        if "coal" in carrier:
+            network.add("Carrier", carrier, co2_emissions=costs.at["coal", "co2_emissions"])
+    if config["add_gas"]:
+        network.add("Carrier", "gas", co2_emissions=costs.at["gas", "co2_emissions"])
+    if config["add_coal"]:
+        network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
+
+
+def add_heat_coupling(
+    network: pypsa.Network,
+    config: dict,
+    nodes: pd.Index,
+    prov_centroids: gpd.GeoDataFrame,
+    costs: pd.DataFrame,
+):
+    """add the heat-coupling links and generators to the network
+
+    Args:
+        network (pypsa.Network): the network object
+        config (dict): the config
+        nodes (pd.Index): the node names. Defaults to pd.Index.
+        prov_centroids (gpd.GeoDataFrame): the node locations.
+        costs (pd.DataFrame): the costs dataframe for emissions
+    """
+
+    central_fraction = pd.read_hdf(snakemake.input.central_fraction)
+    with pd.HDFStore(snakemake.input.heat_demand_profile, mode="r") as store:
+        heat_demand = store["heat_demand_profiles"]
+        # TODO fix this not working
+        heat_demand.index = heat_demand.index.tz_localize(None)
+        heat_demand = heat_demand.loc[network.snapshots]
+
+    network.add(
+        "Bus",
+        nodes,
+        suffix=" decentral heat",
+        x=prov_centroids.x,
+        y=prov_centroids.y,
+        carrier="heat",
+    )
+
+    network.add(
+        "Bus",
+        nodes,
+        suffix=" central heat",
+        x=prov_centroids.x,
+        y=prov_centroids.y,
+        carrier="heat",
+    )
+
+    network.add(
+        "Load",
+        nodes,
+        suffix=" decentral heat",
+        bus=nodes + " decentral heat",
+        p_set=heat_demand[nodes].multiply(1 - central_fraction),
+    )
+
+    network.add(
+        "Load",
+        nodes,
+        suffix=" central heat",
+        bus=nodes + " central heat",
+        p_set=heat_demand[nodes].multiply(central_fraction),
+    )
+
+    if "heat pump" in config["Techs"]["vre_techs"]:
+
+        with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
+            ashp_cop = store["ashp_cop_profiles"]
+            ashp_cop.index = ashp_cop.index.tz_localize(None)
+            ashp_cop = shift_profile_to_planning_year(
+                ashp_cop, snakemake.wildcards.planning_horizons
+            )
+            gshp_cop = store["gshp_cop_profiles"]
+            gshp_cop.index = gshp_cop.index.tz_localize(None)
+            gshp_cop = shift_profile_to_planning_year(
+                gshp_cop, snakemake.wildcards.planning_horizons
+            )
+
+        for cat in [" decentral ", " central "]:
+            network.add(
+                "Link",
+                nodes,
+                suffix=cat + "heat pump",
+                bus0=nodes,
+                bus1=nodes + cat + "heat",
+                carrier="heat pump",
+                efficiency=(
+                    ashp_cop[nodes]
+                    if config["time_dep_hp_cop"]
+                    else costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
+                ),
+                capital_cost=costs.at[cat.lstrip() + "air-sourced heat pump", "capital_cost"],
+                p_nom_extendable=True,
+                lifetime=costs.at[cat.lstrip() + "air-sourced heat pump", "lifetime"],
+            )
+
+        network.add(
+            "Link",
+            nodes,
+            suffix=" ground heat pump",
+            bus0=nodes,
+            bus1=nodes + " decentral heat",
+            carrier="heat pump",
+            efficiency=(
+                gshp_cop[nodes]
+                if config["time_dep_hp_cop"]
+                else costs.at["decentral ground-sourced heat pump", "efficiency"]
+            ),
+            capital_cost=costs.at["decentral ground-sourced heat pump", "capital_cost"],
+            p_nom_extendable=True,
+            lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
+        )
+
+    if config["add_thermal_storage"]:
+
+        for cat in [" decentral ", " central "]:
+            network.add(
+                "Bus",
+                nodes,
+                suffix=cat + "water tanks",
+                x=prov_centroids.x,
+                y=prov_centroids.y,
+                carrier="water tanks",
+            )
+
+            network.add(
+                "Link",
+                nodes + cat + "water tanks charger",
+                bus0=nodes + cat + "heat",
+                bus1=nodes + cat + "water tanks",
+                carrier="water tanks",
+                efficiency=costs.at["water tank charger", "efficiency"],
+                p_nom_extendable=True,
+            )
+
+            network.add(
+                "Link",
+                nodes + cat + "water tanks discharger",
+                bus0=nodes + cat + "water tanks",
+                bus1=nodes + cat + "heat",
+                carrier="water tanks",
+                efficiency=costs.at["water tank discharger", "efficiency"],
+                p_nom_extendable=True,
+            )
+
+            network.add(
+                "Store",
+                nodes + cat + "water tank",
+                bus=nodes + cat + "water tanks",
+                carrier="water tanks",
+                e_cyclic=True,
+                e_nom_extendable=True,
+                standing_loss=1
+                - np.exp(
+                    -1 / (24.0 * (config["tes_tau"] if cat == " decentral " else 180.0))
+                ),  # [HP] 180 day time constant for centralised, 3 day for decentralised
+                capital_cost=costs.at[cat.lstrip() + "water tank storage", "capital_cost"]
+                / (1.17e-3 * 40),
+                lifetime=costs.at[cat.lstrip() + "water tank storage", "lifetime"],
+            )  # conversion from EUR/m^3 to EUR/MWh for 40 K diff and 1.17 kWh/m^3/K
+
+    if config["add_boilers"]:
+        if config["add_resistive_heater"]:
+            network.add("Carrier", "resistive heater")
+
+            for cat in [" decentral ", " central "]:
+                network.add(
+                    "Link",
+                    nodes + cat + "resistive heater",
+                    bus0=nodes,
+                    bus1=nodes + cat + "heat",
+                    carrier="resistive heater",
+                    efficiency=costs.at[cat.lstrip() + "resistive heater", "efficiency"],
+                    capital_cost=costs.at[cat.lstrip() + "resistive heater", "efficiency"]
+                    * costs.at[cat.lstrip() + "resistive heater", "capital_cost"],
+                    p_nom_extendable=True,
+                    lifetime=costs.at[cat.lstrip() + "resistive heater", "lifetime"],
+                )
+
+        if config["add_gas"]:
+            for cat in [" decentral ", " central "]:
+                network.add(
+                    "Link",
+                    nodes + cat + "gas boiler",
+                    p_nom_extendable=True,
+                    bus0=nodes + " gas",
+                    bus1=nodes + cat + "heat",
+                    efficiency=costs.at[cat.lstrip() + "gas boiler", "efficiency"],
+                    marginal_cost=costs.at[cat.lstrip() + "gas boiler", "VOM"],
+                    capital_cost=costs.at[cat.lstrip() + "gas boiler", "efficiency"]
+                    * costs.at[cat.lstrip() + "gas boiler", "capital_cost"],
+                    lifetime=costs.at[cat.lstrip() + "gas boiler", "lifetime"],
+                )
+
+    if config["add_solar_thermal"]:
+
+        # this is the amount of heat collected in W per m^2, accounting
+        # for efficiency
+        with pd.HDFStore(snakemake.input.solar_thermal_name, mode="r") as store:
+            # 1e3 converts from W/m^2 to MW/(1000m^2) = kW/m^2
+            solar_thermal = config["solar_cf_correction"] * store["solar_thermal_profiles"] / 1e3
+
+        date_range = pd.date_range(
+            "2020-01-01 00:00", "2020-02-28 23:00", freq=config["freq"]
+        ).append(pd.date_range("2020-03-01 00:00", "2020-12-31 23:00", freq=config["freq"]))
+
+        solar_thermal = solar_thermal.loc[date_range].set_index(network.snapshots)
+
+        for cat in [" decentral "]:
+            network.add(
+                "Generator",
+                nodes,
+                suffix=cat + "solar thermal collector",
+                bus=nodes + cat + "heat",
+                carrier="solar thermal",
+                p_nom_extendable=True,
+                capital_cost=costs.at[cat.lstrip() + "solar thermal", "capital_cost"],
+                p_max_pu=solar_thermal[nodes].clip(1.0e-4),
+                lifetime=costs.at[cat.lstrip() + "solar thermal", "lifetime"],
+            )
 
 
 def generate_periodic_profiles(
@@ -40,60 +288,6 @@ def generate_periodic_profiles(
         week_df[ct] = [24 * dt.weekday() + dt.hour for dt in dt_index.tz_localize(None)]
         week_df[ct] = week_df[ct].map(weekly_profile)
     return week_df
-
-
-def prepare_data(
-    network: pypsa.Network, date_range: pd.date_range, planning_horizons: int
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, any, any, any]:
-    """prepare profiles
-
-    Args:
-        network (pypsa.Network): the network object
-        date_range (pd.date_range): the date range of the model
-        planning_horizons (int): the run year
-
-    Returns:
-        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, any, any, any]: the heat,
-          space heat, water heat demand, the cop, the cop, co2
-    """
-
-    ##############
-    # Heating
-    ##############
-
-    # copy forward the daily average heat demand into each hour, so it can be multipled by the
-    # intraday profile
-
-    with pd.HDFStore(snakemake.input.heat_demand_name, mode="r") as store:
-        # the ffill converts daily values into hourly values
-        h = store["heat_demand_profiles"]
-        h_n = h[~h.index.duplicated(keep="first")].iloc[:-1, :]
-        h_n = h_n.tz_localize(None)
-        heat_demand_hdh = h_n.reindex(index=network.snapshots, method="ffill")
-
-    with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
-        ashp_cop = store["ashp_cop_profiles"].loc[date_range].set_index(network.snapshots)
-        gshp_cop = store["gshp_cop_profiles"].loc[date_range].set_index(network.snapshots)
-
-    with pd.HDFStore(snakemake.input.energy_totals_name, mode="r") as store:
-        space_heating_per_hdd = store["space_heating_per_hdd"]
-        hot_water_per_day = store["hot_water_per_day"]
-
-    intraday_profiles = pd.read_csv(snakemake.input.intraday_profiles, index_col=0)
-    intraday_year_profiles = generate_periodic_profiles(
-        dt_index=heat_demand_hdh.index.tz_localize("UTC"),
-        weekly_profile=(
-            list(intraday_profiles["weekday"]) * 5 + list(intraday_profiles["weekend"]) * 2
-        ),
-    ).tz_localize(None)
-
-    space_heat_demand = intraday_year_profiles.mul(heat_demand_hdh).mul(space_heating_per_hdd)
-    water_heat_demand = intraday_year_profiles.mul(hot_water_per_day / 24.0)
-
-    # only consider heat demand at first
-    combined_heat_demand = space_heat_demand + water_heat_demand
-
-    return combined_heat_demand, space_heat_demand, water_heat_demand, ashp_cop, gshp_cop
 
 
 def prepare_network(config: dict) -> pypsa.Network:
@@ -140,6 +334,7 @@ def prepare_network(config: dict) -> pypsa.Network:
     edges_current = pd.read_csv("resources/data/grids/edges_current.csv", header=None)
     edges_current_FCG = pd.read_csv("resources/data/grids/edges_current_FCG.csv", header=None)
 
+    # TODO FIXME HARD CODED DATE RANGE
     # set times
     planning_horizons = snakemake.wildcards["planning_horizons"]
     if int(planning_horizons) % 4 != 0:
@@ -171,17 +366,10 @@ def prepare_network(config: dict) -> pypsa.Network:
     cost_year = snakemake.wildcards.planning_horizons
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
+    # TODO FIXME HARD CODED DATE RANGE
     date_range = pd.date_range("2020-01-01 00:00", "2020-02-28 23:00", freq=config["freq"]).append(
         pd.date_range("2020-03-01 00:00", "2020-12-31 23:00", freq=config["freq"])
     )
-    # TODO fix not used
-    (
-        heat_demand,
-        space_heat_demand,
-        water_heat_demand,
-        ashp_cop,
-        gshp_cop,
-    ) = prepare_data(network, date_range, planning_horizons)
 
     ds_solar = xr.open_dataset(snakemake.input.profile_solar)
     ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)
@@ -210,32 +398,18 @@ def prepare_network(config: dict) -> pypsa.Network:
     )
 
     prov_shapes = read_province_shapes(snakemake.input.province_shape)
+    # TODO check correct
     prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
 
     # add buses
     network.add("Bus", nodes, x=prov_centroids.x, y=prov_centroids.y)
 
     # add carriers
-    network.add("Carrier", "onwind")
-    network.add("Carrier", "offwind")
-    network.add("Carrier", "solar")
-    if config["add_solar_thermal"]:
-        network.add("Carrier", "solar thermal")
-    if config["add_PHS"]:
-        network.add("Carrier", "PHS")
-    if config["add_hydro"]:
-        network.add("Carrier", "hydro")
-    if config["add_H2_storage"]:
-        network.add("Carrier", "H2")
-    if config["add_battery_storage"]:
-        network.add("Carrier", "battery")
-    if config["heat_coupling"]:
-        network.add("Carrier", "heat")
-        network.add("Carrier", "water tanks")
+    add_carriers(network, config, costs)
 
+    # TODO SOFT CODE BASE YEAR
     if config["scenario"]["co2_reduction"] is None:
         pass
-    # TODO fix
     elif isinstance(config["scenario"]["co2_reduction"], dict):
         logger.info("Adding CO2 constraint based on scenario")
         pathway = snakemake.wildcards["pathway"]
@@ -243,7 +417,7 @@ def prepare_network(config: dict) -> pypsa.Network:
         co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (1 - reduction)
         network.add(
             "GlobalConstraint",
-            f"co2_limit_{planning_horizons}",
+            "co2_limit",
             type="primary_energy",
             carrier_attribute="co2_emissions",
             sense="<=",
@@ -271,11 +445,10 @@ def prepare_network(config: dict) -> pypsa.Network:
         raise ValueError(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}")
 
     # load demand data
-    with pd.HDFStore(
-        f"resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5", mode="r"
-    ) as store:
-        load = 1e6 * store["load"].loc[network.snapshots]
-
+    demand_path = snakemake.input.elec_load.replace("{planning_horizons}", f"{cost_year}")
+    with pd.HDFStore(demand_path, mode="r") as store:
+        load = LOAD_CONVERSION_FACTOR * store["load"]  # TODO add unit
+        load = load.loc[network.snapshots]
     load.columns = PROV_NAMES
 
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
@@ -387,7 +560,6 @@ def prepare_network(config: dict) -> pypsa.Network:
             )
 
     if config["add_coal"]:
-        network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
         network.add(
             "Generator",
             nodes,
@@ -439,7 +611,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             )
     # TODO fix max build limits
     if config["add_nuclear"]:
-        network.add("Carrier", "uranium")
+
         nuclear_p_nom = pd.read_csv("resources/data/p_nom/nuclear_p_nom.csv", index_col=0)
         nuclear_p_nom = pd.Series(nuclear_p_nom.squeeze())
         network.add(
@@ -451,7 +623,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             # p_nom_max=nuclear_p_nom * 2,
             # p_nom_min=nuclear_p_nom,
             bus=nodes,
-            carrier="uranium",
+            carrier="nuclear",
             efficiency=costs.at["nuclear", "efficiency"],
             capital_cost=costs.at["nuclear", "efficiency"]
             * costs.at["nuclear", "capital_cost"],  # NB: capital cost is per MWel
@@ -492,7 +664,9 @@ def prepare_network(config: dict) -> pypsa.Network:
         dams = gpd.GeoDataFrame(df, geometry=points)
         dams.crs = {"init": "epsg:4326"}
 
-        hourly_rng = pd.date_range("1979-01-01", "2017-01-01", freq="1H", inclusive="left")
+        hourly_rng = pd.date_range(
+            "1979-01-01", "2017-01-01", freq=config["freq"], inclusive="left"
+        )
         inflow = pd.read_pickle(
             "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
         ).reindex(hourly_rng, fill_value=0)
@@ -547,7 +721,6 @@ def prepare_network(config: dict) -> pypsa.Network:
             p_nom=10 * dams["installed_capacity_10MW"],
             efficiency=1,
         )
-        # p_nom * efficiency = 10 * dams['installed_capacity_10MW']
 
         # TODO fix hard coded
         # ===  add rivers to link station to station
@@ -589,7 +762,7 @@ def prepare_network(config: dict) -> pypsa.Network:
         inflow_stations = [dam for dam in range(len(dams.index)) if dam not in bus1s]
 
         for inflow_station in inflow_stations:
-
+            # TODO fix
             # p_nom = 1 and p_max_pu & p_min_pu = p_pu, compulsory inflow
             date_range = pd.date_range(
                 "2016-01-01 00:00", "2016-02-28 23:00", freq=config["freq"]
@@ -617,13 +790,13 @@ def prepare_network(config: dict) -> pypsa.Network:
         # ### add fake hydro just to introduce capital cost
         if config["add_hydro"] and config["hydro"]["hydro_capital_cost"]:
             hydro_cc = costs.at["hydro", "capital_cost"]
-
+            # TODO why dummy?
             network.add(
                 "StorageUnit",
                 dams.index,
                 suffix=" hydro dummy",
                 bus=dams["Province"],
-                carrier="hydro",
+                carrier="hydroelectricity",
                 p_nom=10 * dams["installed_capacity_10MW"],
                 p_max_pu=0.0,
                 p_min_pu=0.0,
@@ -739,202 +912,13 @@ def prepare_network(config: dict) -> pypsa.Network:
             carrier="battery discharger",
         )
 
+    # TODO understand/remove sources, data should not be in code
     # Sources:
     # [HP]: Henning, Palzer http://www.sciencedirect.com/science/article/pii/S1364032113006710
     # [B]: Budischak et al. http://www.sciencedirect.com/science/article/pii/S0378775312014759
 
     if config["heat_coupling"]:
-
-        # urban = nodes
-
-        # NB: must add costs of central heating afterwards
-        # (EUR 400 / kWpeak, 50a, 1% FOM from Fraunhofer ISE)
-
-        # central are urban nodes with district heating
-        # central = nodes ^ urban
-
-        central_fraction = pd.read_hdf(snakemake.input.central_fraction)
-
-        network.add(
-            "Bus",
-            nodes,
-            suffix=" decentral heat",
-            x=prov_centroids.x,
-            y=prov_centroids.y,
-            carrier="heat",
-        )
-
-        network.add(
-            "Bus",
-            nodes,
-            suffix=" central heat",
-            x=prov_centroids.x,
-            y=prov_centroids.y,
-            carrier="heat",
-        )
-
-        network.add(
-            "Load",
-            nodes,
-            suffix=" decentral heat",
-            bus=nodes + " decentral heat",
-            p_set=heat_demand[nodes].multiply(1 - central_fraction),
-        )
-
-        network.add(
-            "Load",
-            nodes,
-            suffix=" central heat",
-            bus=nodes + " central heat",
-            p_set=heat_demand[nodes].multiply(central_fraction),
-        )
-
-        if config["add_heat_pumps"]:
-
-            for cat in [" decentral ", " central "]:
-                network.add(
-                    "Link",
-                    nodes,
-                    suffix=cat + "heat pump",
-                    bus0=nodes,
-                    bus1=nodes + cat + "heat",
-                    carrier="heat pump",
-                    efficiency=(
-                        ashp_cop[nodes]
-                        if config["time_dep_hp_cop"]
-                        else costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
-                    ),
-                    capital_cost=costs.at[cat.lstrip() + "air-sourced heat pump", "capital_cost"],
-                    p_nom_extendable=True,
-                    lifetime=costs.at[cat.lstrip() + "air-sourced heat pump", "lifetime"],
-                )
-
-            network.add(
-                "Link",
-                nodes,
-                suffix=" ground heat pump",
-                bus0=nodes,
-                bus1=nodes + " decentral heat",
-                carrier="heat pump",
-                efficiency=(
-                    gshp_cop[nodes]
-                    if config["time_dep_hp_cop"]
-                    else costs.at["decentral ground-sourced heat pump", "efficiency"]
-                ),
-                capital_cost=costs.at["decentral ground-sourced heat pump", "capital_cost"],
-                p_nom_extendable=True,
-                lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
-            )
-
-        if config["add_thermal_storage"]:
-
-            for cat in [" decentral ", " central "]:
-                network.add(
-                    "Bus",
-                    nodes,
-                    suffix=cat + "water tanks",
-                    x=prov_centroids.x,
-                    y=prov_centroids.y,
-                    carrier="water tanks",
-                )
-
-                network.add(
-                    "Link",
-                    nodes + cat + "water tanks charger",
-                    bus0=nodes + cat + "heat",
-                    bus1=nodes + cat + "water tanks",
-                    carrier="water tanks",
-                    efficiency=costs.at["water tank charger", "efficiency"],
-                    p_nom_extendable=True,
-                )
-
-                network.add(
-                    "Link",
-                    nodes + cat + "water tanks discharger",
-                    bus0=nodes + cat + "water tanks",
-                    bus1=nodes + cat + "heat",
-                    carrier="water tanks",
-                    efficiency=costs.at["water tank discharger", "efficiency"],
-                    p_nom_extendable=True,
-                )
-
-                network.add(
-                    "Store",
-                    nodes + cat + "water tank",
-                    bus=nodes + cat + "water tanks",
-                    carrier="water tanks",
-                    e_cyclic=True,
-                    e_nom_extendable=True,
-                    standing_loss=1
-                    - np.exp(
-                        -1 / (24.0 * (config["tes_tau"] if cat == " decentral " else 180.0))
-                    ),  # [HP] 180 day time constant for centralised, 3 day for decentralised
-                    capital_cost=costs.at[cat.lstrip() + "water tank storage", "capital_cost"]
-                    / (1.17e-3 * 40),
-                    lifetime=costs.at[cat.lstrip() + "water tank storage", "lifetime"],
-                )  # conversion from EUR/m^3 to EUR/MWh for 40 K diff and 1.17 kWh/m^3/K
-
-        if config["add_boilers"]:
-            if config["add_resistive_heater"]:
-                network.add("Carrier", "resistive heater")
-
-                for cat in [" decentral ", " central "]:
-                    network.add(
-                        "Link",
-                        nodes + cat + "resistive heater",
-                        bus0=nodes,
-                        bus1=nodes + cat + "heat",
-                        carrier="resistive heater",
-                        efficiency=costs.at[cat.lstrip() + "resistive heater", "efficiency"],
-                        capital_cost=costs.at[cat.lstrip() + "resistive heater", "efficiency"]
-                        * costs.at[cat.lstrip() + "resistive heater", "capital_cost"],
-                        p_nom_extendable=True,
-                        lifetime=costs.at[cat.lstrip() + "resistive heater", "lifetime"],
-                    )
-
-            if config["add_gas"]:
-                for cat in [" decentral ", " central "]:
-                    network.add(
-                        "Link",
-                        nodes + cat + "gas boiler",
-                        p_nom_extendable=True,
-                        bus0=nodes + " gas",
-                        bus1=nodes + cat + "heat",
-                        efficiency=costs.at[cat.lstrip() + "gas boiler", "efficiency"],
-                        marginal_cost=costs.at[cat.lstrip() + "gas boiler", "VOM"],
-                        capital_cost=costs.at[cat.lstrip() + "gas boiler", "efficiency"]
-                        * costs.at[cat.lstrip() + "gas boiler", "capital_cost"],
-                        lifetime=costs.at[cat.lstrip() + "gas boiler", "lifetime"],
-                    )
-
-        if config["add_solar_thermal"]:
-
-            # this is the amount of heat collected in W per m^2, accounting
-            # for efficiency
-            with pd.HDFStore(snakemake.input.solar_thermal_name, mode="r") as store:
-                # 1e3 converts from W/m^2 to MW/(1000m^2) = kW/m^2
-                solar_thermal = (
-                    config["solar_cf_correction"] * store["solar_thermal_profiles"] / 1e3
-                )
-
-            date_range = pd.date_range(
-                "2020-01-01 00:00", "2020-02-28 23:00", freq=config["freq"]
-            ).append(pd.date_range("2020-03-01 00:00", "2020-12-31 23:00", freq=config["freq"]))
-
-            solar_thermal = solar_thermal.loc[date_range].set_index(network.snapshots)
-
-            for cat in [" decentral "]:
-                network.add(
-                    "Generator",
-                    nodes,
-                    suffix=cat + "solar thermal collector",
-                    bus=nodes + cat + "heat",
-                    carrier="solar thermal",
-                    p_nom_extendable=True,
-                    capital_cost=costs.at[cat.lstrip() + "solar thermal", "capital_cost"],
-                    p_max_pu=solar_thermal[nodes].clip(1.0e-4),
-                    lifetime=costs.at[cat.lstrip() + "solar thermal", "lifetime"],
-                )
+        add_heat_coupling(network, config, nodes, prov_centroids, costs)
 
     # add lines
 
@@ -1061,7 +1045,6 @@ if __name__ == "__main__":
             heating_demand="positive",
         )
     configure_logging(snakemake)
-    population = pd.read_hdf(snakemake.input.population_name)
 
     network = prepare_network(snakemake.config)
     sanitize_carriers(network, snakemake.config)

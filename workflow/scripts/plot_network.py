@@ -513,7 +513,7 @@ if __name__ == "__main__":
     plot_energy_map(
         n,
         opts=config["plotting"],
-        save_path=snakemake.output.el_suppy_map,
+        save_path=snakemake.output.el_supply_map,
         carrier="AC",
         energy_pannel=True,
     )
