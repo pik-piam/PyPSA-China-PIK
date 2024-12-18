@@ -1,4 +1,5 @@
-# TAKE CARE OF PLOTTING
+# Snakefile rules for postprocessing (plotting etc)
+
 from os.path import join
 
 if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
