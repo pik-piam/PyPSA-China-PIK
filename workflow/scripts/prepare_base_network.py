@@ -25,6 +25,10 @@ from constants import (
     CO2_HEATING_2020,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
+    NON_LIN_PATH_SCALING,
+    LINE_SECURITY_MARGIN,
+    FOM_LINES,
+    ECON_LIFETIME_LINES,
 )
 from functions import HVAC_cost_curve
 from _helpers import (
@@ -247,7 +251,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             carrier="coal",
             p_nom_extendable=False,
             p_nom=1e8,
-            marginal_cost=costs.at["coal", "fuel"],
+            marginal_cost=costs.at["coal", "marginal_cost"],
         )
 
     if config["add_biomass"]:
@@ -433,9 +437,8 @@ def prepare_network(config: dict) -> pypsa.Network:
         bus0s = [0, 21, 11, 19, 22, 29, 8, 40, 25, 1, 7, 4, 10, 15, 12, 20, 26, 6, 3, 39]
         bus1s = [5, 11, 19, 22, 32, 8, 40, 25, 35, 2, 4, 10, 9, 12, 20, 23, 6, 17, 14, 16]
 
+        # normal flow
         for bus0, bus2 in list(zip(dams.index[bus0s], dam_buses.iloc[bus1s].index)):
-
-            # normal flow
             network.links.at[bus0 + " turbines", "bus2"] = bus2
             network.links.at[bus0 + " turbines", "efficiency2"] = 1.0
 
@@ -550,6 +553,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             lifetime=costs.at["central hydrogen CHP", "lifetime"],
         )
 
+        # TODO fix hard coded
         H2_under_nodes = pd.Index(
             [
                 "Sichuan",
@@ -1030,7 +1034,7 @@ def prepare_network(config: dict) -> pypsa.Network:
     if not config["no_lines"]:
         edges = pd.read_csv(snakemake.input.edges, header=None)
 
-        lengths = 1.25 * np.array(
+        lengths = NON_LIN_PATH_SCALING * np.array(
             [
                 haversine(
                     [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
@@ -1042,10 +1046,10 @@ def prepare_network(config: dict) -> pypsa.Network:
 
         cc = (
             (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-            * 1.5
-            * 1.02
+            * LINE_SECURITY_MARGIN
+            * FOM_LINES
             * n_years
-            * annuity(40.0, config["costs"]["discountrate"])
+            * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
         )
 
         network.add(
@@ -1078,7 +1082,7 @@ def prepare_network(config: dict) -> pypsa.Network:
 
     if config["hydrogen_lines"]:
         edges = pd.read_csv(snakemake.input.edges, header=None)
-        lengths = 1.25 * np.array(
+        lengths = NON_LIN_PATH_SCALING * np.array(
             [
                 haversine(
                     [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],

@@ -43,6 +43,13 @@ NUCLEAR_EXTENDABLE = [
 LOAD_CONVERSION_FACTOR = 1e6  # convert from  ? to ?
 DEFAULT_OFFSHORE_WIND_CORR_FACTOR = 1.0
 
+# ====== Line COSTS =======
+# cannot take straightest path due to property and terrain
+NON_LIN_PATH_SCALING = 1.25
+LINE_SECURITY_MARGIN = 1.45
+FOM_LINES = 1.02  # of cap costs
+ECON_LIFETIME_LINES = 40  # years
+
 # ====== HEATING LINEAR MODEL (atlite cutout) ========
 HEATING_START_TEMP = 15.0  # C
 HEATING_HOUR_SHIFT = 8.0  # hrs, accounts for timezone

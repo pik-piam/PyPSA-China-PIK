@@ -15,13 +15,33 @@ import xarray as xr
 import logging
 
 
-from constants import PROV_NAMES, CRS, CO2_HEATING_2020, CO2_EL_2020, LOAD_CONVERSION_FACTOR
+from constants import (
+    PROV_NAMES,
+    CRS,
+    CO2_HEATING_2020,
+    CO2_EL_2020,
+    LOAD_CONVERSION_FACTOR,
+    INFLOW_DATA_YR,
+    NUCLEAR_EXTENDABLE,
+    NON_LIN_PATH_SCALING,
+    LINE_SECURITY_MARGIN,
+    ECON_LIFETIME_LINES,
+    FOM_LINES,
+)
 from _helpers import configure_logging, mock_snakemake, shift_profile_to_planning_year
 from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
 from readers import read_province_shapes
 
 logger = logging.getLogger(__name__)
+
+
+# TODO make part of config
+EDGE_PATHS = {
+    "current": "resources/data/grids/edges_current.csv",
+    "current+FCG": "resources/data/grids/edges_current_FCG.csv",
+    "current+Neighbor": "resources/data/grids/edges_current_neighbor.csv",
+}
 
 
 def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
@@ -50,10 +70,6 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
             network.add("Carrier", carrier, co2_emissions=costs.at["gas", "co2_emissions"])
         if "coal" in carrier:
             network.add("Carrier", carrier, co2_emissions=costs.at["coal", "co2_emissions"])
-    if config["add_gas"]:
-        network.add("Carrier", "gas", co2_emissions=costs.at["gas", "co2_emissions"])
-    if config["add_coal"]:
-        network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
 
 
 def add_heat_coupling(
@@ -330,9 +346,6 @@ def prepare_network(config: dict) -> pypsa.Network:
 
     # load graph
     nodes = pd.Index(PROV_NAMES)
-    edges = pd.read_csv("resources/data/grids/edges.txt", sep=",", header=None)
-    edges_current = pd.read_csv("resources/data/grids/edges_current.csv", header=None)
-    edges_current_FCG = pd.read_csv("resources/data/grids/edges_current_FCG.csv", header=None)
 
     # TODO FIXME HARD CODED DATE RANGE
     # set times
@@ -501,9 +514,6 @@ def prepare_network(config: dict) -> pypsa.Network:
     if config["add_gas"]:
         # add converter from fuel source
         network.add(
-            "Carrier", "gas", co2_emissions=costs.at["gas", "co2_emissions"]
-        )  # in t_CO2/MWht
-        network.add(
             "Bus",
             nodes,
             suffix=" gas",
@@ -519,11 +529,18 @@ def prepare_network(config: dict) -> pypsa.Network:
             bus=nodes,
             carrier="gas",
             p_nom_extendable=True,
+            p_nom=1e7,
             marginal_cost=costs.at["OCGT", "fuel"],
         )
 
         network.add(
-            "Store", nodes + " gas Store", bus=nodes + " gas", e_nom_extendable=True, carrier="gas"
+            "Store",
+            nodes + " gas Store",
+            bus=nodes + " gas",
+            e_nom_extendable=True,
+            carrier="gas",
+            e_nom=1e7,
+            e_cyclic=True,
         )
 
         network.add(
@@ -568,7 +585,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             carrier="coal",
             p_nom_extendable=True,
             efficiency=costs.at["coal", "efficiency"],
-            marginal_cost=costs.at["coal", "efficiency"] * costs.at["coal", "marginal_cost"],
+            marginal_cost=costs.at["coal", "marginal_cost"],
             capital_cost=costs.at["coal", "efficiency"]
             * costs.at["coal", "capital_cost"],  # NB: capital cost is per MWel
             lifetime=costs.at["coal", "lifetime"],
@@ -586,16 +603,16 @@ def prepare_network(config: dict) -> pypsa.Network:
 
             network.add(
                 "Generator",
-                nodes + " CHP coal fuel",
+                name=nodes + " CHP coal",
                 bus=nodes + " CHP coal",
                 carrier="coal",
                 p_nom_extendable=True,
-                marginal_cost=costs.at["coal", "fuel"],
+                marginal_cost=costs.at["coal", "marginal_cost"],
             )
 
             network.add(
                 "Link",
-                nodes,
+                name=nodes,
                 suffix=" CHP coal",
                 bus0=nodes + " CHP coal",
                 bus1=nodes,
@@ -611,23 +628,37 @@ def prepare_network(config: dict) -> pypsa.Network:
             )
     # TODO fix max build limits
     if config["add_nuclear"]:
-
         nuclear_p_nom = pd.read_csv("resources/data/p_nom/nuclear_p_nom.csv", index_col=0)
         nuclear_p_nom = pd.Series(nuclear_p_nom.squeeze())
+
+        # network.add(
+        #     "Generator",
+        #     nodes,
+        #     suffix=" nuclear",
+        #     p_nom_extendable=True,
+        #     # p_nom=nuclear_p_nom,
+        #     # p_nom_max=nuclear_p_nom * 2,
+        #     # p_nom_min=nuclear_p_nom,
+        #     bus=nodes,
+        #     carrier="nuclear",
+        #     efficiency=costs.at["nuclear", "efficiency"],
+        #     # NB: capital cost is per MWel, for nuclear already per MWel
+        #     capital_cost=costs.at["nuclear", "capital_cost"],
+        #     marginal_cost=costs.at["nuclear", "marginal_cost"],
+        # )
+        nuclear_nodes = pd.Index(NUCLEAR_EXTENDABLE)
         network.add(
             "Generator",
-            nodes,
+            nuclear_nodes,
             suffix=" nuclear",
             p_nom_extendable=True,
-            # p_nom=nuclear_p_nom,
-            # p_nom_max=nuclear_p_nom * 2,
-            # p_nom_min=nuclear_p_nom,
-            bus=nodes,
+            p_min_pu=0.7,
+            bus=nuclear_nodes,
             carrier="nuclear",
             efficiency=costs.at["nuclear", "efficiency"],
-            capital_cost=costs.at["nuclear", "efficiency"]
-            * costs.at["nuclear", "capital_cost"],  # NB: capital cost is per MWel
-            marginal_cost=costs.at["nuclear", "efficiency"] * costs.at["nuclear", "marginal_cost"],
+            capital_cost=costs.at["nuclear", "capital_cost"],  # NB: capital cost is per MWel
+            marginal_cost=costs.at["nuclear", "marginal_cost"],
+            lifetime=costs.at["nuclear", "lifetime"],
         )
 
     if config["add_PHS"]:
@@ -661,8 +692,7 @@ def prepare_network(config: dict) -> pypsa.Network:
         #######
         df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
         points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
-        dams = gpd.GeoDataFrame(df, geometry=points)
-        dams.crs = {"init": "epsg:4326"}
+        dams = gpd.GeoDataFrame(df, geometry=points, crs=CRS)
 
         hourly_rng = pd.date_range(
             "1979-01-01", "2017-01-01", freq=config["freq"], inclusive="left"
@@ -671,10 +701,11 @@ def prepare_network(config: dict) -> pypsa.Network:
             "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
         ).reindex(hourly_rng, fill_value=0)
         inflow.columns = dams.index
+        inflow = inflow.loc[str(INFLOW_DATA_YR)]
+        inflow = shift_profile_to_planning_year(inflow, INFLOW_DATA_YR)
 
-        water_consumption_factor = (
-            dams.loc[:, "Water_consumption_factor_avg"] * 1e3
-        )  # m^3/KWh -> m^3/MWh
+        # m^3/KWh -> m^3/MWh
+        water_consumption_factor = dams.loc[:, "Water_consumption_factor_avg"] * 1e3
 
         #######
         # ### Add hydro stations as buses
@@ -683,13 +714,13 @@ def prepare_network(config: dict) -> pypsa.Network:
             dams.index,
             suffix=" station",
             carrier="stations",
-            x=dams["geometry"].centroid.x,
-            y=dams["geometry"].centroid.y,
+            x=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(prov_shapes.crs).x,
+            y=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(prov_shapes.crs).y,
         )
 
         dam_buses = network.buses[network.buses.carrier == "stations"]
 
-        # ### add hydro reservoirs as stores
+        # ===== add hydro reservoirs as stores ======
 
         initial_capacity = pd.read_pickle("resources/data/hydro/reservoir_initial_capacity.pickle")
         effective_capacity = pd.read_pickle(
@@ -718,7 +749,9 @@ def prepare_network(config: dict) -> pypsa.Network:
             suffix=" turbines",
             bus0=dam_buses.index,
             bus1=dams["Province"],
+            carrier="hydroelectricity",
             p_nom=10 * dams["installed_capacity_10MW"],
+            capital_cost=costs.at["hydro", "capital_cost"],
             efficiency=1,
         )
 
@@ -727,9 +760,8 @@ def prepare_network(config: dict) -> pypsa.Network:
         bus0s = [0, 21, 11, 19, 22, 29, 8, 40, 25, 1, 7, 4, 10, 15, 12, 20, 26, 6, 3, 39]
         bus1s = [5, 11, 19, 22, 32, 8, 40, 25, 35, 2, 4, 10, 9, 12, 20, 23, 6, 17, 14, 16]
 
+        # normal flow
         for bus0, bus2 in list(zip(dams.index[bus0s], dam_buses.iloc[bus1s].index)):
-
-            # normal flow
             network.links.at[bus0 + " turbines", "bus2"] = bus2
             network.links.at[bus0 + " turbines", "efficiency2"] = 1.0
 
@@ -743,37 +775,31 @@ def prepare_network(config: dict) -> pypsa.Network:
                 p_nom_extendable=True,
             )
 
-        # dam_ends = [
-        #     dam
-        #     for dam in range(len(dams.index))
-        #     if (dam in bus1s and dam not in bus0s) or (dam not in bus0s + bus1s)
-        # ]
+        dam_ends = [
+            dam
+            for dam in range(len(dams.index))
+            if (dam in bus1s and dam not in bus0s) or (dam not in bus0s + bus1s)
+        ]
 
-        # for bus0 in dam_buses.iloc[dam_ends].index:
-        #     network.add('Link',
-        #                 bus0 + ' spillage',
-        #                 bus0=bus0,
-        #                 bus1='Tibet',
-        #                 p_nom_extendable=True,
-        #                 efficiency=0.0)
+        for bus0 in dam_buses.iloc[dam_ends].index:
+            network.add(
+                "Link",
+                bus0 + " spillage",
+                bus0=bus0,
+                bus1="Tibet",
+                p_nom_extendable=True,
+                efficiency=0.0,
+            )
 
         # add inflow as generators
         # only feed into hydro stations which are the first of a cascade
         inflow_stations = [dam for dam in range(len(dams.index)) if dam not in bus1s]
 
         for inflow_station in inflow_stations:
-            # TODO fix
-            # p_nom = 1 and p_max_pu & p_min_pu = p_pu, compulsory inflow
-            date_range = pd.date_range(
-                "2016-01-01 00:00", "2016-02-28 23:00", freq=config["freq"]
-            ).append(pd.date_range("2016-03-01 00:00", "2016-12-31 23:00", freq=config["freq"]))
 
-            p_nom = (
-                (inflow.loc[date_range] / water_consumption_factor).iloc[:, inflow_station].max()
-            )
-            p_pu = (inflow.loc[date_range] / water_consumption_factor).iloc[
-                :, inflow_station
-            ] / p_nom
+            # p_nom = 1 and p_max_pu & p_min_pu = p_pu, compulsory inflow
+            p_nom = (inflow / water_consumption_factor).iloc[:, inflow_station].max()
+            p_pu = (inflow / water_consumption_factor).iloc[:, inflow_station] / p_nom
             p_pu.index = network.snapshots
             network.add(
                 "Generator",
@@ -781,11 +807,34 @@ def prepare_network(config: dict) -> pypsa.Network:
                 bus=dam_buses.iloc[inflow_station].name,
                 carrier="hydro_inflow",
                 p_max_pu=p_pu.clip(1.0e-6),
-                # p_min_pu=p_pu.clip(1.e-6),
+                # p_min_pu=p_pu.clip(1.0e-6),
                 p_nom=p_nom,
             )
 
             # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
+
+        # ====== add other existing hydro power =======
+        hydro_p_nom = pd.read_hdf("resources/data/p_nom/hydro_p_nom.h5")
+        hydro_p_max_pu = pd.read_hdf(
+            "resources/data/p_nom/hydro_p_max_pu.h5", key="hydro_p_max_pu"
+        ).tz_localize(None)
+
+        hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
+        # sort buses (columns) otherwise stuff will break
+        hydro_p_max_pu.sort_index(axis=1, inplace=True)
+        # TODO check this respects hours/is still needed
+        hydro_p_max_pu = hydro_p_max_pu.loc[snapshots]
+        hydro_p_max_pu.index = network.snapshots
+        network.add(
+            "Generator",
+            nodes,
+            suffix=" hydroelectricity",
+            bus=nodes,
+            carrier="hydroelectricity",
+            p_nom=hydro_p_nom,
+            capital_cost=costs.at["hydro", "capital_cost"],
+            p_max_pu=hydro_p_max_pu,
+        )
 
         # ### add fake hydro just to introduce capital cost
         if config["add_hydro"] and config["hydro"]["hydro_capital_cost"]:
@@ -805,12 +854,23 @@ def prepare_network(config: dict) -> pypsa.Network:
 
         # else: hydro_cc=0.
 
-    if config["add_H2_storage"]:
+    if config["add_H2"]:
 
+        network.add(
+            "Bus", nodes, suffix=" H2", x=prov_centroids.x, y=prov_centroids.y, carrier="H2"
+        )
         network.add(
             "Bus",
             nodes,
-            suffix=" H2",
+            suffix=" H2 Electrolysis",
+            x=prov_centroids.x,
+            y=prov_centroids.y,
+            carrier="H2",
+        )
+        network.add(
+            "Bus",
+            nodes,
+            suffix=" central H2 CHP",
             x=prov_centroids.x,
             y=prov_centroids.y,
             carrier="H2",
@@ -818,20 +878,21 @@ def prepare_network(config: dict) -> pypsa.Network:
 
         network.add(
             "Link",
-            nodes + " H2 Electrolysis",
+            name=nodes + " H2 Electrolysis",
             bus0=nodes,
             bus1=nodes + " H2",
+            bus2=nodes + " central heat",
             p_nom_extendable=True,
             carrier="H2",
             efficiency=costs.at["electrolysis", "efficiency"],
-            capital_cost=costs.at["electrolysis", "efficiency"]
-            * costs.at["electrolysis", "capital_cost"],
+            efficiency2=costs.at["electrolysis", "efficiency-heat"],
+            capital_cost=costs.at["electrolysis", "capital_cost"],
             lifetime=costs.at["electrolysis", "lifetime"],
         )
 
         network.add(
             "Link",
-            nodes + " H2 Fuel Cell",
+            name=nodes + " H2 Fuel Cell",
             bus0=nodes + " H2",
             bus1=nodes,
             p_nom_extendable=True,
@@ -842,9 +903,51 @@ def prepare_network(config: dict) -> pypsa.Network:
         )
 
         network.add(
+            "Link",
+            name=nodes + " central H2 CHP",
+            bus0=nodes + " H2",
+            bus1=nodes,
+            bus2=nodes + " central heat",
+            p_nom_extendable=True,
+            carrier="H2 CHP",
+            efficiency=costs.at["central hydrogen CHP", "efficiency"],
+            efficiency2=costs.at["central hydrogen CHP", "efficiency"]
+            / costs.at["central hydrogen CHP", "c_b"],
+            capital_cost=costs.at["central hydrogen CHP", "efficiency"]
+            * costs.at["central hydrogen CHP", "capital_cost"],
+            lifetime=costs.at["central hydrogen CHP", "lifetime"],
+        )
+
+        # TODO fix hard coded
+        H2_under_nodes = pd.Index(
+            [
+                "Sichuan",
+                "Chongqing",
+                "Hubei",
+                "Jiangxi",
+                "Anhui",
+                "Jiangsu",
+                "Shandong",
+                "Guangdong",
+            ]
+        )
+
+        H2_type1_nodes = nodes.difference(H2_under_nodes)
+
+        network.add(
             "Store",
-            nodes + " H2 Store",
-            bus=nodes + " H2",
+            H2_under_nodes + " H2 Store",
+            bus=H2_under_nodes + " H2",
+            e_nom_extendable=True,
+            e_cyclic=True,
+            capital_cost=costs.at["hydrogen storage underground", "capital_cost"],
+            lifetime=costs.at["hydrogen storage underground", "lifetime"],
+        )
+
+        network.add(
+            "Store",
+            H2_type1_nodes + " H2 Store",
+            bus=H2_type1_nodes + " H2",
             e_nom_extendable=True,
             e_cyclic=True,
             capital_cost=costs.at[
@@ -867,7 +970,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             lifetime=costs.at["methanation", "lifetime"],
         )
 
-    if config["add_battery_storage"]:
+    if "battery" in config["Techs"]["store_techs"]:
 
         network.add(
             "Bus",
@@ -921,112 +1024,48 @@ def prepare_network(config: dict) -> pypsa.Network:
         add_heat_coupling(network, config, nodes, prov_centroids, costs)
 
     # add lines
-
+    # TODO make not lossless
     if not config["no_lines"]:
 
-        if config["scenario"]["topology"] == "FCG":
-            lengths = 1.25 * np.array(
-                [
-                    haversine(
-                        [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
-                        [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
-                    )
-                    for name0, name1 in edges.values
-                ]
-            )
+        edge_path = EDGE_PATHS.get(config["scenario"]["topology"], None)
+        if edge_path is None:
+            raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
+        else:
+            edges = pd.read_csv(
+                edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
+            ).fillna(0)
 
-            # if config['line_volume_limit_max'] is not None:
-            #     cc = n_years * 0.01  # Set line costs to ~zero because we already restrict the line volume
-            # else:
-            cc = (
-                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-                * 1.5
-                * 1.02
-                * n_years
-                * annuity(40.0, config["costs"]["discountrate"])
-            )
+        # fix this to use map with x.y
+        lengths = NON_LIN_PATH_SCALING * np.array(
+            [
+                haversine(
+                    [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
+                    [network.buses.at[bus1, "x"], network.buses.at[bus1, "y"]],
+                )
+                for bus0, bus1 in edges[["bus0", "bus1"]].values
+            ]
+        )
+        # TODO FIX HARDCODED FACTORS AND DISCOUNT PERIOD
+        cc = (
+            (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
+            * LINE_SECURITY_MARGIN
+            * FOM_LINES
+            * n_years
+            * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
+        )
 
-            network.add(
-                "Link",
-                edges[0] + "-" + edges[1],
-                bus0=edges[0].values,
-                bus1=edges[1].values,
-                p_nom_extendable=True,
-                p_min_pu=-1,
-                length=lengths,
-                capital_cost=cc,
-            )
-
-        elif config["scenario"]["topology"] == "current":
-            lengths = 1.25 * np.array(
-                [
-                    haversine(
-                        [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
-                        [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
-                    )
-                    for name0, name1 in edges_current[[0, 1]].values
-                ]
-            )
-
-            # if config['line_volume_limit_max'] is not None:
-            #     cc = n_years * 0.01  # Set line costs to ~zero because we already restrict the line volume
-            # else:
-            cc = (
-                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-                * 1.5
-                * 1.02
-                * n_years
-                * annuity(40.0, config["costs"]["discountrate"])
-            )
-
-            network.add(
-                "Link",
-                edges_current[0] + "-" + edges_current[1],
-                bus0=edges_current[0].values,
-                bus1=edges_current[1].values,
-                p_nom_extendable=True,
-                p_min_pu=-1,
-                p_nom=edges_current[2].values,
-                p_nom_min=edges_current[2].values,
-                length=lengths,
-                capital_cost=cc,
-            )
-
-        elif config["scenario"]["topology"] == "current+FCG":
-            lengths = 1.25 * np.array(
-                [
-                    haversine(
-                        [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
-                        [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
-                    )
-                    for name0, name1 in edges_current_FCG[[0, 1]].values
-                ]
-            )
-
-            # Set line costs to ~zero because we already restrict the line volume
-            # if config['line_volume_limit_max'] is not None:
-            #     cc = n_years * 0.01
-            # else:
-            cc = (
-                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-                * 1.5
-                * 1.02
-                * n_years
-                * annuity(40.0, config["costs"]["discountrate"])
-            )
-
-            network.add(
-                "Link",
-                edges_current_FCG[0] + "-" + edges_current_FCG[1],
-                bus0=edges_current_FCG[0].values,
-                bus1=edges_current_FCG[1].values,
-                p_nom_extendable=True,
-                p_min_pu=-1,
-                p_nom=edges_current_FCG[2].values,
-                p_nom_min=edges_current_FCG[2].values,
-                length=lengths,
-                capital_cost=cc,
-            )
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"],
+            p_nom=edges["p_nom"].values,
+            p_nom_min=edges["p_nom"].values,
+            bus0=edges["bus0"].values,
+            bus1=edges["bus1"].values,
+            p_nom_extendable=True,
+            p_min_pu=-1,
+            length=lengths,
+            capital_cost=cc,
+        )
 
     return network
 
@@ -1038,7 +1077,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_networks",
             opts="ll",
-            topology="current+FCG",
+            topology="current+Neighbor",
             pathway="exponential175",
             co2_reduction="0.0",
             planning_horizons=2060,

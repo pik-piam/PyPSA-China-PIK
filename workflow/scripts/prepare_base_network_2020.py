@@ -13,7 +13,17 @@ import numpy as np
 import xarray as xr
 
 
-from constants import PROV_NAMES, CRS, YEAR_HRS, LOAD_CONVERSION_FACTOR, INFLOW_DATA_YR
+from constants import (
+    PROV_NAMES,
+    CRS,
+    YEAR_HRS,
+    LOAD_CONVERSION_FACTOR,
+    INFLOW_DATA_YR,
+    LINE_SECURITY_MARGIN,
+    FOM_LINES,
+    NON_LIN_PATH_SCALING,
+    ECON_LIFETIME_LINES,
+)
 from functions import HVAC_cost_curve
 from readers import read_province_shapes
 from add_electricity import load_costs
@@ -183,6 +193,11 @@ def prepare_network(config):
             carrier="coal",
             p_nom_extendable=True,
             marginal_cost=costs.at["coal", "fuel"],
+            efficiency=costs.at["coal", "efficiency"],
+            marginal_cost=costs.at["coal", "marginal_cost"],
+            capital_cost=costs.at["coal", "efficiency"]
+            * costs.at["coal", "capital_cost"],  # NB: capital cost is per MWel
+            lifetime=costs.at["coal", "lifetime"],
         )
 
     if config["add_hydro"]:
@@ -571,7 +586,7 @@ def prepare_network(config):
 
         edges_ext = pd.read_csv(snakemake.input.edges_ext, header=None)
 
-        lengths = 1.25 * np.array(
+        lengths = NON_LIN_PATH_SCALING * np.array(
             [
                 haversine(
                     [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
@@ -583,10 +598,10 @@ def prepare_network(config):
 
         cc = (
             (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-            * 1.5
-            * 1.02
+            * LINE_SECURITY_MARGIN
+            * FOM_LINES
             * n_years
-            * annuity(40.0, config["costs"]["discountrate"])
+            * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
         )
 
         network.add(
@@ -627,7 +642,7 @@ def prepare_network(config):
 
         edges = pd.read_csv(snakemake.input.edges, header=None)
 
-        lengths = 1.25 * np.array(
+        lengths = NON_LIN_PATH_SCALING * np.array(
             [
                 haversine(
                     [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
@@ -639,10 +654,10 @@ def prepare_network(config):
 
         cc = (
             (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-            * 1.5
-            * 1.02
+            * LINE_SECURITY_MARGIN
+            * FOM_LINES
             * n_years
-            * annuity(40.0, config["costs"]["discountrate"])
+            * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
         )
 
         network.add(
