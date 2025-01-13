@@ -3,16 +3,16 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'China-175'
+  name: 'IRtest005'
 
-foresight: "myopic"
-# foresight: "steady-state"
+foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
 
 scenario:
   pathway: ['exponential175'] # ,'beta25175']
-  topology: "current+Neighbor" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
+  topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
+  # relative CO2 reduction, TODO soft code base year (ideally also fetch data)
   co2_reduction:
     exponential175:
       '2020': 0.0
@@ -143,7 +143,6 @@ add_H2: True
 add_methanation: True
 # only for non-pathwya right now
 add_solar_thermal: True
-add_H2_storage: True
 add_battery_storage: True
 add_PHS: True
 add_chp: True
@@ -152,6 +151,24 @@ add_heat_pumps: True
 add_thermal_storage: True
 add_resistive_heater: True
 add_boilers: True
+
+hydro:
+  dams_path: "resources/data/hydro/dams_large.csv"
+  inflow_path: "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
+  inflow_date_start: "1979-01-01"
+  inflow_date_end: "2017-01-01" # uses left for inclusive
+  reservoir_initial_capacity_path: "resources/data/hydro/reservoir_initial_capacity.pickle"
+  reservoir_effective_capacity_path: "resources/data/hydro/reservoir_effective_capacity.pickle"
+  river_links_stations : "" # TODO
+  p_nom_path: "resources/data/p_nom/hydro_p_nom.h5"
+  p_max_pu_path: ""resources/data/p_nom/hydro_p_max_pu.h5""
+  p_max_pu_key : "hydro_p_max_pu"
+H2:
+  geo_storage_nodes: [ "Sichuan", "Chongqing", "Hubei", "Jiangxi", "Anhui", "Jiangsu", "Shandong", "Guangdong" ]
+edge_paths:
+  current: "resources/data/grids/edges_current.csv"
+  current+FCG: "resources/data/grids/edges_current_FCG.csv"
+  current+Neighbor: "resources/data/grids/edges_current_neighbor.csv"
 
 solving:
   options:

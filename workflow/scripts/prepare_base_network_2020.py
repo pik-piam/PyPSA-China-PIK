@@ -23,6 +23,8 @@ from constants import (
     FOM_LINES,
     NON_LIN_PATH_SCALING,
     ECON_LIFETIME_LINES,
+    CO2_EL_2020,
+    CO2_HEATING_2020,
 )
 from functions import HVAC_cost_curve
 from readers import read_province_shapes
@@ -111,14 +113,8 @@ def prepare_network(config):
         if config["scenario"]["co2_reduction"] is not None:
 
             # extra co2
-            # 791 TWh extra space heating demand + 286 Twh extra hot water demand
-            # 60% CHP efficiency 0.468 40% coal boiler efficiency 0.97
-            # (((791+286) * 0.6 /0.468) + ((791+286) * 0.4 /0.97))  * 0.34 * 1e6 = 0.62 * 1e9
-
-            co2_limit = (
-                (5.288987673 + 0.628275682)
-                * 1e9
-                * (1 - config["scenario"]["co2_reduction"][pathway][planning_horizons])
+            co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (
+                1 - config["scenario"]["co2_reduction"][pathway][planning_horizons]
             )  # Chinese 2020 CO2 emissions of electric and heating sector
 
             network.add(
@@ -202,17 +198,19 @@ def prepare_network(config):
 
     if config["add_hydro"]:
 
-        ###
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
+        # load dams
+        df = pd.read_csv(config["hydro"]["dams_path"], index_col=0)
         points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
-        dams = gpd.GeoDataFrame(df, geometry=points, crs=4236)
+        dams = gpd.GeoDataFrame(df, geometry=points, crs=CRS)
 
-        hourly_rng = pd.date_range("1979-01-01", "2017-01-01", freq="1H", inclusive="left")
-        inflow = pd.read_pickle(
-            "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
-        ).reindex(hourly_rng, fill_value=0)
+        hourly_rng = pd.date_range(
+            config["hydro"]["inflow_date_start_path"],
+            config["hydro"]["inflow_date_end_path"],
+            freq=config["freq"],
+            inclusive="left",
+        )
+        inflow = pd.read_pickle(config["hydro"]["inflow_path"]).reindex(hourly_rng, fill_value=0)
         inflow.columns = dams.index
-        # remove leap year by abusing shift_profile_to_planning_year
         inflow = inflow.loc[str(INFLOW_DATA_YR)]
         inflow = shift_profile_to_planning_year(inflow, INFLOW_DATA_YR)
 
@@ -233,14 +231,9 @@ def prepare_network(config):
 
         dam_buses = network.buses[network.buses.carrier == "stations"]
 
-        # # add hydro reservoirs as stores
-
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
-        initial_capacity = pd.read_pickle("resources/data/hydro/reservoir_initial_capacity.pickle")
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
-        effective_capacity = pd.read_pickle(
-            "resources/data/hydro/reservoir_effective_capacity.pickle"
-        )
+        # ===== add hydro reservoirs as stores ======
+        initial_capacity = pd.read_pickle(config["hydro"]["reservoir_initial_capacity_path"])
+        effective_capacity = pd.read_pickle(config["hydro"]["reservoir_effective_capacity_path"])
         initial_capacity.index = dams.index
         effective_capacity.index = dams.index
         initial_capacity = initial_capacity / water_consumption_factor
@@ -329,13 +322,10 @@ def prepare_network(config):
 
             # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
-        # ======= add otehr existing hydro power
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
-        hydro_p_nom = pd.read_hdf("resources/data/p_nom/hydro_p_nom.h5")
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
-        hydro_p_max_pu = pd.read_hdf("resources/data/p_nom/hydro_p_max_pu.h5", key="hydro_p_max_pu")
+        # ======= add other existing hydro power
+        hydro_p_nom = pd.read_hdf(config["hydro"]["p_nom_path"]).tz_localize(None)
         hydro_p_max_pu = pd.read_hdf(
-            "resources/data/p_nom/hydro_p_max_pu.h5", key="hydro_p_max_pu"
+            config["hydro"]["p_max_pu_path"], key=config["hydro"]["p_max_pu_key"]
         ).tz_localize(None)
 
         hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
@@ -554,7 +544,6 @@ def prepare_network(config):
 
     if "PHS" in config["Techs"]["store_techs"]:
         # pure pumped hydro storage, fixed, 6h energy by default, no inflow
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
         hydrocapa_df = pd.read_csv("resources/data/hydro/PHS_p_nom.csv", index_col=0)
         phss = hydrocapa_df.index[hydrocapa_df["MW"] > 0].intersection(nodes)
         if config["hydro"]["hydro_capital_cost"]:

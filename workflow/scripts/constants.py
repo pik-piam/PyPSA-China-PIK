@@ -26,7 +26,10 @@ END_YEAR = 2060
 CRS = 4326  # WGS84
 
 # ===== CHINA ======
-CO2_EL_2020 = 5.288987673 * 1e9  # tCO2 # TODO verify unit
+# 791 TWh extra space heating demand + 286 Twh extra hot water demand
+# 60% CHP efficiency 0.468 40% coal boiler efficiency 0.97
+# (((791+286) * 0.6 /0.468) + ((791+286) * 0.4 /0.97))  * 0.34 * 1e6 = 0.62 * 1e9
+CO2_EL_2020 = 5.288987673 * 1e9  # tCO2
 CO2_HEATING_2020 = 0.628275682 * 1e9  # tCO2
 
 NUCLEAR_EXTENDABLE = [
