@@ -1,10 +1,12 @@
 # PyPSA-China：An Open Optimisation model of the Chinese Energy System
 
-This is the PIK implementation of the PyPSA-China power model, first published by Xiaowei Zhou et al for their  "Multi-energy system horizon planning: Early decarbonisation in China avoids stranded assets" (doi.org/10.1049/ein2.12011). It is adapted from the original by the PIK RD3 team, with the aim of coupling it to the [REMIND](https://www.pik-potsdam.de/en/institute/departments/transformation-pathways/models/remind) integrated assessment model.
+This is the PIK implementation of the PyPSA-China power model, first published by Hailiang Liu et al for their study of [hydro-power in china](https://doi.org/10.1016/j.apenergy.2019.02.009) and extended by Xiaowei Zhou et al for their  ["Multi-energy system horizon planning: Early decarbonisation in China avoids stranded assets"](doi.org/10.1049/ein2.12011) paper. It is adapted from the Zhou version by the PIK RD3-ETL team, with the aim of coupling it to the [REMIND](https://www.pik-potsdam.de/en/institute/departments/transformation-pathways/models/remind) integrated assessment model.
 
 PyPSA-China should be understood as a modelling worklow, using snakemake as workflow manager, around the [PyPSA python power system analysis](https://pypsa.org/) package. The workflow collects data, builds the power system network and plots the results. It is akin to its more mature sister project, [PyPSA-EUR](https://github.com/PyPSA/pypsa-eur), from which it is derived.
 
 Unlike PyPSA-EUR, which simplifies high resolution data into a user-defined network size, the PyPSA-China network is currently fixed to one node per province. This is in large part due to data availability issues.
+
+The PyPSA can perform a number of different study types (investment decision, operational decisions, simulate AC power flows). Currently only capacity expansion problems are explicitly implemented in PyPSA-China.
 
 The PyPSA-CHINA-PIK is currently under development. Please contact us if you
 
