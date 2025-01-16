@@ -76,15 +76,17 @@ scenario:
     - 2060
   heating_demand: ['positive']
 
+# TODO Need to test timezones and functionality of end_year_plus1
 snapshots:
-  start: "2020-01-01"
-  end: "2021-01-01"
-  inclusive: 'left'
-
-tmin: '-01-01 00:00'
-tmax: '-12-31 23:00'
-freq: '1h'
-frequency: 1.
+  start: "01-01 00:00"
+  end: "12-31 23:00"
+  bounds: 'both'
+  freq: '1h'
+  timezone : null
+  # for weighings -> to be improved
+  frequency: 1.
+  # in case snapshots cross the planning horizon year
+  end_year_plus1: false
 
 logging_level: INFO
 logging:
@@ -92,19 +94,33 @@ logging:
   format: '%(levelname)s:%(name)s:%(message)s'
 
 enable:
-  build_cutout: false
+  build_cutout: true
   retrieve_cutout: false
   retrieve_raster: false
 
 atlite:
+  weather_year: 2020
+  freq: "h"
   nprocesses: 4
   show_progress: true
+  # accounts for tz, which is missing in atlite
+  hour_shift_heating: 8
   cutouts:
-   China-2020:
+    China-2020:
+     module: era5
+     dx: 0.25
+     dy: 0.25
+    China-2020-updated-sett-test:
      module: era5
      dx: 0.25
      dy: 0.25
 
+heat_demand:
+  start_day : "01-04" # dd-mm
+  end_day : "30-09" # dd-mm
+  heating_start_temp : 15.0  # c
+  heating_lin_slope : 1  # slope
+  heating_offet : 0  # linear model offset
 solar_thermal_angle: 45
 
 Technique:
@@ -152,7 +168,7 @@ add_thermal_storage: True
 add_resistive_heater: True
 add_boilers: True
 
-hydro:
+hydro_dams:
   dams_path: "resources/data/hydro/dams_large.csv"
   inflow_path: "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
   inflow_date_start: "1979-01-01"
@@ -161,8 +177,9 @@ hydro:
   reservoir_effective_capacity_path: "resources/data/hydro/reservoir_effective_capacity.pickle"
   river_links_stations : "" # TODO
   p_nom_path: "resources/data/p_nom/hydro_p_nom.h5"
-  p_max_pu_path: ""resources/data/p_nom/hydro_p_max_pu.h5""
+  p_max_pu_path: "resources/data/p_nom/hydro_p_max_pu.h5"
   p_max_pu_key : "hydro_p_max_pu"
+  damn_flows_path: "resources/data/hydro/dam_flow_links.csv"
 H2:
   geo_storage_nodes: [ "Sichuan", "Chongqing", "Hubei", "Jiangxi", "Anhui", "Jiangsu", "Shandong", "Guangdong" ]
 edge_paths:

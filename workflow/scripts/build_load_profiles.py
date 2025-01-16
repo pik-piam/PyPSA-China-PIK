@@ -10,7 +10,6 @@ from constants import (
     PROV_NAMES,
     TIMEZONE,
     HEATING_START_TEMP,
-    HEATING_HOUR_SHIFT,
     HEATING_LIN_SLOPE,
     HEATING_OFFET,
     UNIT_HOT_WATER_START_YEAR,
@@ -92,9 +91,16 @@ def make_heat_demand_projections(
     return factor
 
 
-def build_daily_heat_demand_profiles() -> pd.DataFrame:
+def build_daily_heat_demand_profiles(
+    atlite_heating_hr_shift: int, heat_demand_config: dict, switch_month_day: bool = True
+) -> pd.DataFrame:
     """build the heat demand profile according to forecast demans
 
+    Args:
+        atlite_heating_hr_shift (int): the hour shift for heating demand, needed due to imperfect
+            timezone handling in atlite
+        heat_demand_config (dict): the heat demand configuration
+        switch_month_day (bool, optional): whether to switch month and day in the heat_demand_config. Defaults to True.
     Returns:
         pd.DataFrame: daily heating demand with April to Sept forced to 0
     """
@@ -110,14 +116,21 @@ def build_daily_heat_demand_profiles() -> pd.DataFrame:
     hd = cutout.heat_demand(
         matrix=pop_matrix,
         index=index,
-        threshold=HEATING_START_TEMP,
-        a=HEATING_LIN_SLOPE,
-        constant=HEATING_OFFET,
-        hour_shift=HEATING_HOUR_SHIFT,
+        threshold=heat_demand_config["heating_start_temp"],
+        a=heat_demand_config["heating_lin_slope"],
+        constant=heat_demand_config["heating_offet"],
+        hour_shift=atlite_heating_hr_shift,
     )
 
     daily_hd = hd.to_pandas().divide(pop_map.sum())
-    daily_hd.loc[f"{REF_YEAR}-04-01":f"{REF_YEAR}-09-30"] = 0
+    # input given as dd-mm but loc as yyyy-mm-dd
+    if switch_month_day:
+        start_day = "{}-{}".format(*heat_demand_config["start_day"].split("-")[::-1])
+        end_day = "{}-{}".format(*heat_demand_config["end_day"].split("-")[::-1])
+    else:
+        start_day = heat_demand_config["start_day"]
+        end_day = heat_demand_config["end_day"]
+    daily_hd.loc[f"{REF_YEAR}-{start_day}":f"{REF_YEAR}-{end_day}"] = 0
 
     return daily_hd
 
@@ -243,7 +256,10 @@ if __name__ == "__main__":
 
     configure_logging(snakemake, logger=logger)
 
-    daily_hd = build_daily_heat_demand_profiles()
+    atlite_hour_shift = snakemake.config["atlite"]["hour_shift_heating"]
+    start_day = snakemake.config["heat_demand"]["start_day"]
+    end_day
+    daily_hd = build_daily_heat_demand_profiles(atlite_heating_hr_shift=atlite_hour_shift)
 
     config = snakemake.config
     planning_horizons = snakemake.wildcards["planning_horizons"]

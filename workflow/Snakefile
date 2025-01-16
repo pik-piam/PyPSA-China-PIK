@@ -1,13 +1,15 @@
 # SPDX-FileCopyrightText: : 2025 The PyPSA-China Authors
 # SPDX-License-Identifier: MIT
 
-from os.path import abspath, getctime
+import yaml
 import shutil
 from pathlib import Path
 from snakemake.utils import min_version
 import logging
+import os.path
+
+from os.path import abspath, getctime
 from scripts._helpers import PathManager
-import yaml
 
 # NB: duplicated parameters will be overwritten by the last read cfg
 configfile: "config/default_config.yaml"
@@ -26,7 +28,7 @@ LOGS_COMMON = "logs"
 include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
 
-localrules: plot_all
+localrules: plot_all, build_population, dag
 
 # ====== set global parameters =======
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
@@ -69,7 +71,7 @@ if config['enable'].get('build_cutout', False):
             regions_onshore="resources/data/regions/regions_onshore.geojson",
             regions_offshore="resources/data/regions/regions_offshore.geojson"
         output: "resources/cutouts/{cutout}.nc"
-        log: LOG_DIR + "/build_cutout/{cutout}.log"
+        log: LOGS_COMMON + "/build_cutout/{cutout}.log"
         benchmark: "benchmarks/build_cutout_{cutout}"
         threads: ATLITE_NPROCESSES
         resources: mem_mb=ATLITE_NPROCESSES * 1000
@@ -337,9 +339,12 @@ rule dag:
 onerror:
     log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
-    # log path is available as "log"
-    shutil.copy(log, log_out)
-    print(log_out)
+    if not os.path.exists(res_dir):
+        os.makedirs(res_dir)
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR)
+    # log path is available from snakemake as "log"
+    shutil.copy(log, os.path.dirname(log_out))
     yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
 
 onsuccess:

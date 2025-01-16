@@ -6,22 +6,53 @@ import logging
 import atlite
 import geopandas as gpd
 import pandas as pd
-from _helpers import configure_logging, mock_snakemake
+from _helpers import configure_logging, mock_snakemake, make_periodic_snapshots
 
 logger = logging.getLogger(__name__)
 
+
+# TODO figureout the timezone story here
+def cutout_timespan(config: dict) -> list:
+    """build the cutout timespan
+
+    Args:
+        config (dict): the snakemake config
+
+    Returns:
+        tuple: end and start of the cutout timespan
+    """
+
+    snapshot_cfg = config["snapshots"]
+    snapshots = make_periodic_snapshots(
+        year=config["atlite"]["weather_year"],
+        freq=snapshot_cfg["freq"],
+        start_day_hour=snapshot_cfg["start"],
+        end_day_hour=snapshot_cfg["end"],
+        bounds=snapshot_cfg["bounds"],
+        tz=None,
+        end_year=(
+            None if not snapshot_cfg["end_year_plus1"] else config["atlite"]["weather_year"] + 1
+        ),
+    )
+
+    return [snapshots[0], snapshots[-1]]
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        snakemake = mock_snakemake("build_cutout", cutout="China-2020")
+        snakemake = mock_snakemake("build_cutout", cutout="China-2020-updated-sett")
     configure_logging(snakemake, logger=logger)
 
-    cutout_params = snakemake.config["atlite"]["cutouts"][snakemake.wildcards.cutout]
-    snapshots = pd.date_range(freq="h", tz="Asia/shanghai", **snakemake.config["snapshots"])
-    snapshots = snapshots.tz_convert("UTC")
-    snapshots = snapshots.tz_localize(None)
-    time = [snapshots[0], snapshots[-1]]
+    cutout_params = snakemake.config["atlite"]["cutouts"].get(snakemake.wildcards.cutout, None)
+    if cutout_params is None:
+        raise ValueError(
+            f"No cutout parameters found for {snakemake.wildcards.cutout} in config['atlite']['cutouts'] config."
+        )
+
+    time = cutout_timespan(snakemake.config)
     cutout_params["time"] = slice(*cutout_params.get("time", time))
 
+    # determine bounds for cutout
     if {"x", "y", "bounds"}.isdisjoint(cutout_params):
         # Determine the bounds from bus regions with a buffer of two grid cells
         onshore = gpd.read_file(snakemake.input.regions_onshore)
@@ -30,6 +61,7 @@ if __name__ == "__main__":
 
         d = max(cutout_params.get("dx", 0.25), cutout_params.get("dy", 0.25)) * 2
         cutout_params["bounds"] = regions.total_bounds + [-d, -d, d, d]
+    # if specified x,y (else use bounds directly)
     elif {"x", "y"}.issubset(cutout_params):
         cutout_params["x"] = slice(*cutout_params["x"])
         cutout_params["y"] = slice(*cutout_params["y"])

@@ -53,11 +53,6 @@ LINE_SECURITY_MARGIN = 1.45
 FOM_LINES = 1.02  # of cap costs
 ECON_LIFETIME_LINES = 40  # years
 
-# ====== HEATING LINEAR MODEL (atlite cutout) ========
-HEATING_START_TEMP = 15.0  # C
-HEATING_HOUR_SHIFT = 8.0  # hrs, accounts for timezone
-HEATING_LIN_SLOPE = 1  # slope
-HEATING_OFFET = 0  # linear model offset
 
 # ===== YEARLY HEAT DEMAND INCREASE MODEL ======
 # In 2008 China 228.4 Twh for urban residential DHW

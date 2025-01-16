@@ -18,14 +18,15 @@ import importlib
 import time
 from numpy.random import default_rng
 
-# from pypsa.descriptors import Dict
-
 # get root logger
 logger = logging.getLogger()
+
 DEFAULT_TUNNEL_PORT = 1080
 
 
 class PathManager:
+    """A class to manage paths for the snakemake workflow"""
+
     def __init__(self, snmk_config):
         self.config = snmk_config
 
@@ -80,11 +81,11 @@ class PathManager:
         sub_dir = foresight + "_" + self._join_scenario_vars()
         return os.path.join("logs", base_dir, sub_dir)
 
-    def copy_metadata(self):
-        res_dir = self.results_dir()
-
     def copy_log(self):
         pass
+
+
+# ============== HPC helpers ==================
 
 
 def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = None):
@@ -131,6 +132,9 @@ def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = No
     logger.info("Gurobi Environment variables & tunnel set up successfully.")
 
 
+# =========== PyPSA Helpers =============
+
+
 def override_component_attrs(directory: os.PathLike) -> dict:
     """Tell PyPSA that links can have multiple outputs by
     overriding the component_attrs. This can be done for
@@ -157,218 +161,15 @@ def override_component_attrs(directory: os.PathLike) -> dict:
     return attrs
 
 
-def configure_logging(
-    snakemake: object, logger: logging.Logger = None, skip_handlers=False, level="INFO"
-):
-    """Configure the logger or the  behaviour for the logging module.
-
-    Note: Must only be called once from the __main__ section of a script.
-    The setup includes printing log messages to STDERR and to a log file defined
-    by either (in priority order): snakemake.log.python, snakemake.log[0] or "logs/{rulename}.log".
-    Additional keywords from logging.basicConfig are accepted via the snakemake configuration
-    file under snakemake.config.logging.
-
-    ISSUE: may not work properly with snakemake logging yaml config [to be solved]
+def aggregate_p(n: pypsa.Network) -> pd.Series:
+    """Make a single series for generators, storage units, loads, and stores power, summed over all carriers
 
     Args:
-        snakemake (object):  snakemake script object
-        logger (Logger, optional): the script logger. Defaults to None (Root logger).
-            Passing a local logger will apply the configuration to the logger instead of root.
-        skip_handlers (bool, optional): Do (not) skip the default handlers
-            redirecting output to STDERR and file. Defaults to False.
-        level (str, optional): the logging level. Defaults to "INFO".
-    """
-
-    if not logger:
-        logger = logging.getLogger()
-        logger.info("Configuring logging")
-
-    kwargs = snakemake.config.get("logging", dict())
-    kwargs.setdefault("level", level)
-
-    if skip_handlers is False:
-        fallback_path = Path(__file__).parent.joinpath("../..", "logs", f"{snakemake.rule}.log")
-        default_logfile = snakemake.log[0] if snakemake.log else fallback_path
-        logfile = snakemake.log.get("python", default_logfile)
-        logger.setLevel(kwargs["level"])
-
-        formatter = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s - %(message)s")
-
-        if not os.path.exists(logfile):
-            with open(logfile, "a"):
-                pass
-        file_handler = logging.FileHandler(logfile)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-
-        # make running log easier to read
-        logger.info("=========== NEW RUN ===========")
-
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
-
-    def handle_exception(exc_type, exc_value, exc_traceback):
-        # Log the exception
-        logger = logging.getLogger()
-        logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
-        sys.excepthook = handle_exception
-
-    sys.excepthook = handle_exception
-
-
-def is_leap_year(year: int) -> bool:
-    """Determine whether a year is a leap year."""
-    year = int(year)
-    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
-
-
-def mock_snakemake(
-    rulename: str,
-    configfiles: list | str = None,
-    snakefile_path: os.PathLike = None,
-    **wildcards,
-):
-    """A function to enable scripts to run as standalone, giving them access to
-     the snakefile rule input, outputs etc
-
-    Args:
-        rulename (str): the name of the rule
-        configfiles (list or str, optional): the config file or config file list. Defaults to None.
-        wildcards (optional):  keyword arguments fixing the wildcards (if any needed)
-
-    Raises:
-
-        FileNotFoundError: Config file not found
+        n (pypsa.Network): the network object
 
     Returns:
-        snakemake.script.Snakemake: an object storing all the rule inputs/outputs etc
+        pd.Series: the aggregated p data
     """
-
-    import snakemake as sm
-    from snakemake.api import Workflow
-    from snakemake.common import SNAKEFILE_CHOICES
-    from snakemake.script import Snakemake
-    from snakemake.settings.types import (
-        ConfigSettings,
-        DAGSettings,
-        ResourceSettings,
-        StorageSettings,
-        WorkflowSettings,
-    )
-
-    # horrible hack
-    curr_path = os.getcwd()
-    if snakefile_path:
-        os.chdir(os.path.dirname(snakefile_path))
-    try:
-        snakefile = None
-        for p in SNAKEFILE_CHOICES:
-            if os.path.exists(p):
-                snakefile = p
-                break
-
-        if snakefile is None:
-            raise FileNotFoundError("Snakefile not found.")
-
-        if configfiles is None:
-            configfiles = []
-        elif isinstance(configfiles, str):
-            configfiles = [configfiles]
-
-        resource_settings = ResourceSettings()
-        config_settings = ConfigSettings(configfiles=map(Path, configfiles))
-        workflow_settings = WorkflowSettings()
-        storage_settings = StorageSettings()
-        dag_settings = DAGSettings(rerun_triggers=[])
-        workflow = Workflow(
-            config_settings,
-            resource_settings,
-            workflow_settings,
-            storage_settings,
-            dag_settings,
-            storage_provider_settings=dict(),
-        )
-        workflow.include(snakefile)
-
-        if configfiles:
-            for f in configfiles:
-                if not os.path.exists(f):
-                    raise FileNotFoundError(f"Config file {f} does not exist.")
-                workflow.configfile(f)
-
-        workflow.global_resources = {}
-        rule = workflow.get_rule(rulename)
-        dag = sm.dag.DAG(workflow, rules=[rule])
-        wc = wildcards
-        job = sm.jobs.Job(rule, dag, wc)
-
-        def make_accessable(*ios):
-            for io in ios:
-                for i, _ in enumerate(io):
-                    io[i] = os.path.abspath(io[i])
-
-        make_accessable(job.input, job.output, job.log)
-        snakemake = Snakemake(
-            job.input,
-            job.output,
-            job.params,
-            job.wildcards,
-            job.threads,
-            job.resources,
-            job.log,
-            job.dag.workflow.config,
-            job.rule.name,
-            None,
-        )
-        # create log and output dir if not existent
-        for path in list(snakemake.log) + list(snakemake.output):
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
-        raise e
-    finally:
-        os.chdir(curr_path)
-
-    return snakemake
-
-
-def load_network_for_plots(
-    network_file: os.PathLike,
-    tech_costs: os.PathLike,
-    config: dict,
-    cost_year: int,
-    combine_hydro_ps=True,
-) -> pypsa.Network:
-
-    from add_electricity import update_transmission_costs, load_costs
-
-    n = pypsa.Network(network_file)
-
-    n.loads["carrier"] = n.loads.bus.map(n.buses.carrier) + " load"
-    n.stores["carrier"] = n.stores.bus.map(n.buses.carrier)
-
-    n.links["carrier"] = n.links.bus0.map(n.buses.carrier) + "-" + n.links.bus1.map(n.buses.carrier)
-    n.lines["carrier"] = "AC line"
-    n.transformers["carrier"] = "AC transformer"
-
-    # n.lines['s_nom'] = n.lines['s_nom_min']
-    # n.links['p_nom'] = n.links['p_nom_min']
-
-    if combine_hydro_ps:
-        n.storage_units.loc[n.storage_units.carrier.isin({"PHS", "hydro"}), "carrier"] = "hydro+PHS"
-
-    # if the carrier was not set on the heat storage units
-    # bus_carrier = n.storage_units.bus.map(n.buses.carrier)
-    # n.storage_units.loc[bus_carrier == "heat","carrier"] = "water tanks"
-
-    Nyears = n.snapshot_weightings.objective.sum() / 8760.0
-    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, Nyears)
-    update_transmission_costs(n, costs)
-
-    return n
-
-
-def aggregate_p(n: pypsa.Network) -> pd.Series:
     return pd.concat(
         [
             n.generators_t.p.sum().groupby(n.generators.carrier).sum(),
@@ -492,13 +293,26 @@ def aggregate_costs(
     return costs
 
 
-def update_p_nom_max(n: pypsa.Network) -> None:
-    # if extendable carriers (solar/onwind/...) have capacity >= 0,
-    # e.g. existing assets from the OPSD project are included to the network,
-    # the installed capacity might exceed the expansion limit.
-    # Hence, we update the assumptions.
+def calc_component_capex(comp_df: pd.DataFrame, capacity_name="p_nom_opt") -> pd.DataFrame:
+    """Annualise the capex costs of the components
 
-    n.generators.p_nom_max = n.generators[["p_nom_min", "p_nom_max"]].max(1)
+    Args:
+        comp_df (pd.DataFrame): the component dataframe (from n.itercomponents() or getattr)
+        capacity_name (str, optional): the capacity (power, energy,..). Defaults to "p_nom_opt".
+
+    Returns:
+        pd.Dataframe: annualised capex
+    """
+
+    costs_a = (
+        (comp_df.capital_cost * comp_df[capacity_name])
+        .groupby([comp_df.location, comp_df.nice_group])
+        .sum()
+        .unstack()
+        .fillna(0.0)
+    )
+
+    return costs_a
 
 
 def define_spatial(nodes, options):
@@ -589,28 +403,6 @@ def define_spatial(nodes, options):
     return spatial
 
 
-def calc_component_capex(comp_df: pd.DataFrame, capacity_name="p_nom_opt") -> pd.DataFrame:
-    """Annualise the capex costs of the components
-
-    Args:
-        comp_df (pd.DataFrame): the component dataframe (from n.itercomponents() or getattr)
-        capacity_name (str, optional): the capacity (power, energy,..). Defaults to "p_nom_opt".
-
-    Returns:
-        pd.Dataframe: annualised capex
-    """
-
-    costs_a = (
-        (comp_df.capital_cost * comp_df[capacity_name])
-        .groupby([comp_df.location, comp_df.nice_group])
-        .sum()
-        .unstack()
-        .fillna(0.0)
-    )
-
-    return costs_a
-
-
 def get_supply(
     n: pypsa.Network, bus_carrier: str = None, components_list=["Generator"]
 ) -> pd.DataFrame:
@@ -627,6 +419,101 @@ def get_supply(
     return n.statistics.supply(
         groupby=pypsa.statistics.get_bus_and_carrier, bus_carrier=bus_carrier, comps=components_list
     )
+
+
+def is_leap_year(year: int) -> bool:
+    """Determine whether a year is a leap year.
+    Args:
+        year (int): the year"""
+    year = int(year)
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+
+
+def load_network_for_plots(
+    network_file: os.PathLike,
+    tech_costs: os.PathLike,
+    config: dict,
+    cost_year: int,
+    combine_hydro_ps=True,
+) -> pypsa.Network:
+    """load network object
+
+    Args:
+        network_file (os.PathLike): the path to the network file
+        tech_costs (os.PathLike): the path to the costs file
+        config (dict): the snamekake config
+        cost_year (int): the year for the costs
+        combine_hydro_ps (bool, optional): combine the hydro & PHS carriers. Defaults to True.
+
+    Returns:
+        pypsa.Network: the network object
+    """
+
+    from add_electricity import update_transmission_costs, load_costs
+
+    n = pypsa.Network(network_file)
+
+    n.loads["carrier"] = n.loads.bus.map(n.buses.carrier) + " load"
+    n.stores["carrier"] = n.stores.bus.map(n.buses.carrier)
+
+    n.links["carrier"] = n.links.bus0.map(n.buses.carrier) + "-" + n.links.bus1.map(n.buses.carrier)
+    n.lines["carrier"] = "AC line"
+    n.transformers["carrier"] = "AC transformer"
+
+    # n.lines['s_nom'] = n.lines['s_nom_min']
+    # n.links['p_nom'] = n.links['p_nom_min']
+
+    if combine_hydro_ps:
+        n.storage_units.loc[n.storage_units.carrier.isin({"PHS", "hydro"}), "carrier"] = "hydro+PHS"
+
+    # if the carrier was not set on the heat storage units
+    # bus_carrier = n.storage_units.bus.map(n.buses.carrier)
+    # n.storage_units.loc[bus_carrier == "heat","carrier"] = "water tanks"
+
+    Nyears = n.snapshot_weightings.objective.sum() / 8760.0
+    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, Nyears)
+    update_transmission_costs(n, costs)
+
+    return n
+
+
+def make_periodic_snapshots(
+    year: int,
+    freq: int,
+    start_day_hour="01-01 00:00:00",
+    end_day_hour="12-31 23:00",
+    bounds="both",
+    end_year: int = None,
+    tz: str = None,
+):
+    """Centralised function to make regular snapshots.
+    REMOVES LEAP DAYS
+
+    Args:
+        year (int): start time stamp year (end year if end_year None)
+        freq (int): snapshot frequency in hours
+        start_day_hour (str, optional): Day and hour. Defaults to "01-01 00:00:00".
+        end_day_hour (str, optional): _description_. Defaults to "12-31 23:00".
+        bounds (str, optional):  bounds behaviour (pd.data_range) . Defaults to "both".
+        tz (str, optional): timezone (UTC, None or a timezone). Defaults to None (naive).
+        end_year (int, optional): end time stamp year. Defaults to None (use year).
+
+    Returns:
+        _type_: _description_
+    """
+    if not end_year:
+        end_year = year
+    snapshots = pd.date_range(
+        f"{int(year)}-{start_day_hour}",
+        f"{int(end_year)}-{end_day_hour}",
+        freq=freq,
+        inclusive=bounds,
+        tz=tz,
+    )
+
+    if is_leap_year(int(year)):
+        snapshots = snapshots[~((snapshots.month == 2) & (snapshots.day == 29))]
+    return snapshots
 
 
 def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -> pd.DataFrame:
@@ -651,3 +538,184 @@ def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -
     data.index = data.index.map(lambda t: t.replace(year=int(planning_yr)))
 
     return data
+
+
+def update_p_nom_max(n: pypsa.Network) -> None:
+    # if extendable carriers (solar/onwind/...) have capacity >= 0,
+    # e.g. existing assets from the OPSD project are included to the network,
+    # the installed capacity might exceed the expansion limit.
+    # Hence, we update the assumptions.
+
+    n.generators.p_nom_max = n.generators[["p_nom_min", "p_nom_max"]].max(1)
+
+
+# ====== SNAKEMAKE HELPERS =========
+
+
+def configure_logging(
+    snakemake: object, logger: logging.Logger = None, skip_handlers=False, level="INFO"
+):
+    """Configure the logger or the  behaviour for the logging module.
+
+    Note: Must only be called once from the __main__ section of a script.
+    The setup includes printing log messages to STDERR and to a log file defined
+    by either (in priority order): snakemake.log.python, snakemake.log[0] or "logs/{rulename}.log".
+    Additional keywords from logging.basicConfig are accepted via the snakemake configuration
+    file under snakemake.config.logging.
+
+    ISSUE: may not work properly with snakemake logging yaml config [to be solved]
+
+    Args:
+        snakemake (object):  snakemake script object
+        logger (Logger, optional): the script logger. Defaults to None (Root logger).
+            Passing a local logger will apply the configuration to the logger instead of root.
+        skip_handlers (bool, optional): Do (not) skip the default handlers
+            redirecting output to STDERR and file. Defaults to False.
+        level (str, optional): the logging level. Defaults to "INFO".
+    """
+
+    if not logger:
+        logger = logging.getLogger()
+        logger.info("Configuring logging")
+
+    kwargs = snakemake.config.get("logging", dict())
+    kwargs.setdefault("level", level)
+
+    if skip_handlers is False:
+        fallback_path = Path(__file__).parent.joinpath("../..", "logs", f"{snakemake.rule}.log")
+        default_logfile = snakemake.log[0] if snakemake.log else fallback_path
+        logfile = snakemake.log.get("python", default_logfile)
+        logger.setLevel(kwargs["level"])
+
+        formatter = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s - %(message)s")
+
+        if not os.path.exists(logfile):
+            with open(logfile, "a"):
+                pass
+        file_handler = logging.FileHandler(logfile)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        # make running log easier to read
+        logger.info("=========== NEW RUN ===========")
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+    def handle_exception(exc_type, exc_value, exc_traceback):
+        # Log the exception
+        logger = logging.getLogger()
+        logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        sys.excepthook = handle_exception
+
+    sys.excepthook = handle_exception
+
+
+def mock_snakemake(
+    rulename: str,
+    configfiles: list | str = None,
+    snakefile_path: os.PathLike = None,
+    **wildcards,
+):
+    """A function to enable scripts to run as standalone, giving them access to
+     the snakefile rule input, outputs etc
+
+    Args:
+        rulename (str): the name of the rule
+        configfiles (list or str, optional): the config file or config file list. Defaults to None.
+        wildcards (optional):  keyword arguments fixing the wildcards (if any needed)
+
+    Raises:
+
+        FileNotFoundError: Config file not found
+
+    Returns:
+        snakemake.script.Snakemake: an object storing all the rule inputs/outputs etc
+    """
+
+    import snakemake as sm
+    from snakemake.api import Workflow
+    from snakemake.common import SNAKEFILE_CHOICES
+    from snakemake.script import Snakemake
+    from snakemake.settings.types import (
+        ConfigSettings,
+        DAGSettings,
+        ResourceSettings,
+        StorageSettings,
+        WorkflowSettings,
+    )
+
+    # horrible hack
+    curr_path = os.getcwd()
+    if snakefile_path:
+        os.chdir(os.path.dirname(snakefile_path))
+    try:
+        snakefile = None
+        for p in SNAKEFILE_CHOICES:
+            if os.path.exists(p):
+                snakefile = p
+                break
+
+        if snakefile is None:
+            raise FileNotFoundError("Snakefile not found.")
+
+        if configfiles is None:
+            configfiles = []
+        elif isinstance(configfiles, str):
+            configfiles = [configfiles]
+
+        resource_settings = ResourceSettings()
+        config_settings = ConfigSettings(configfiles=map(Path, configfiles))
+        workflow_settings = WorkflowSettings()
+        storage_settings = StorageSettings()
+        dag_settings = DAGSettings(rerun_triggers=[])
+        workflow = Workflow(
+            config_settings,
+            resource_settings,
+            workflow_settings,
+            storage_settings,
+            dag_settings,
+            storage_provider_settings=dict(),
+        )
+        workflow.include(snakefile)
+
+        if configfiles:
+            for f in configfiles:
+                if not os.path.exists(f):
+                    raise FileNotFoundError(f"Config file {f} does not exist.")
+                workflow.configfile(f)
+
+        workflow.global_resources = {}
+        rule = workflow.get_rule(rulename)
+        dag = sm.dag.DAG(workflow, rules=[rule])
+        wc = wildcards
+        job = sm.jobs.Job(rule, dag, wc)
+
+        def make_accessible(*ios):
+            for io in ios:
+                for i, _ in enumerate(io):
+                    io[i] = os.path.abspath(io[i])
+
+        make_accessible(job.input, job.output, job.log)
+        snakemake = Snakemake(
+            job.input,
+            job.output,
+            job.params,
+            job.wildcards,
+            job.threads,
+            job.resources,
+            job.log,
+            job.dag.workflow.config,
+            job.rule.name,
+            None,
+        )
+        # create log and output dir if not existent
+        for path in list(snakemake.log) + list(snakemake.output):
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        raise e
+    finally:
+        os.chdir(curr_path)
+
+    return snakemake
