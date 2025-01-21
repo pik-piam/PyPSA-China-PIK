@@ -1,22 +1,23 @@
 # SPDX-FileCopyrightText: : 2022 The PyPSA-Eur Authors
 # SPDX-License-Identifier: MIT
 
-# DO NOT IMPORT SNAKEMAKE pure
+# WARNING: DO NOT DO "import snakemake"
 
 import os
 import sys
 import subprocess
 import pandas as pd
 import logging
+import importlib
+import time
+import pytz
 from pathlib import Path
 from types import SimpleNamespace
+from numpy.random import default_rng
 
 import pypsa
 from pypsa.components import components, component_attrs
-import importlib
-
-import time
-from numpy.random import default_rng
+from constants import TIMEZONE
 
 # get root logger
 logger = logging.getLogger()
@@ -162,7 +163,8 @@ def override_component_attrs(directory: os.PathLike) -> dict:
 
 
 def aggregate_p(n: pypsa.Network) -> pd.Series:
-    """Make a single series for generators, storage units, loads, and stores power, summed over all carriers
+    """Make a single series for generators, storage units, loads, and stores power,
+    summed over all carriers
 
     Args:
         n (pypsa.Network): the network object
@@ -313,6 +315,59 @@ def calc_component_capex(comp_df: pd.DataFrame, capacity_name="p_nom_opt") -> pd
     )
 
     return costs_a
+
+
+def calc_atlite_heating_timeshift(date_range: pd.date_range, use_last_ts=False) -> int:
+    """Imperfect function to calculate the heating time shift for atlite
+    Atlite is in xarray, which does not have timezone handling. Adapting the UTC ERA5 data
+    to the network local time, is therefore limited to a single shift, which is based on the first
+    entry of the time range. For a whole year, in the northern Hemisphere -> winter
+
+    Args:
+        date_range (pd.date_range): the date range for which the shift is calc
+        use_last_ts (bool, optional): use last instead of first. Defaults to False.
+
+    Returns:
+        int: a single timezone shift to utc in hours
+    """
+    idx = 0 if not use_last_ts else -1
+    return pytz.timezone(TIMEZONE).utcoffset(date_range[idx]).total_seconds() / 3600
+
+
+def calc_utc_timeshift(snapshot_config: dict, weather_year: int) -> pd.TimedeltaIndex:
+    """calculate the timeshift to UTC based on the TIMEZONE constant. This is needed
+    to bring the atlite UTC times in line with the network ones.
+
+    A complication is that the planning and weather years are not identical
+
+    Args:
+        snapshot_config (dict): the snapshots config from snakemake
+
+    Returns:
+        pd.TimedeltaIndex: the shifts to UTC
+    """
+    weather_snapshots = make_periodic_snapshots(
+        year=weather_year,
+        freq=snapshot_config["freq"],
+        start_day_hour=snapshot_config["start"],
+        end_day_hour=snapshot_config["end"],
+        bounds=snapshot_config["bounds"],
+        tz=TIMEZONE,
+        end_year=(None if not snapshot_config["end_year_plus1"] else weather_year + 1),
+    )
+    # for some reason convert to utc messes up the time delta
+    utc_snapshots = make_periodic_snapshots(
+        year=weather_year,
+        freq=snapshot_config["freq"],
+        start_day_hour=snapshot_config["start"],
+        end_day_hour=snapshot_config["end"],
+        bounds=snapshot_config["bounds"],
+        tz="UTC",
+        end_year=(None if not snapshot_config["end_year_plus1"] else weather_year + 1),
+    )
+
+    # time delta will be added to the utc snapshots from atlite
+    return utc_snapshots - weather_snapshots
 
 
 def define_spatial(nodes, options):
@@ -485,7 +540,7 @@ def make_periodic_snapshots(
     bounds="both",
     end_year: int = None,
     tz: str = None,
-):
+) -> pd.date_range:
     """Centralised function to make regular snapshots.
     REMOVES LEAP DAYS
 
@@ -499,7 +554,7 @@ def make_periodic_snapshots(
         end_year (int, optional): end time stamp year. Defaults to None (use year).
 
     Returns:
-        _type_: _description_
+        pd.date_range: the snapshots for the network
     """
     if not end_year:
         end_year = year
@@ -517,7 +572,8 @@ def make_periodic_snapshots(
 
 
 def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -> pd.DataFrame:
-    """Shift the profile to the planning year
+    """Shift the profile to the planning year - this harmonises weather and network timestamps
+       which is needed for pandas loc operations
     Args:
         data (pd.DataFrame): profile data, for 1 year
         planning_yr (int): planning year

@@ -5,13 +5,16 @@ import scipy as sp
 import numpy as np
 from scipy.optimize import curve_fit
 
-from _helpers import configure_logging, is_leap_year, mock_snakemake
+from _helpers import (
+    configure_logging,
+    is_leap_year,
+    mock_snakemake,
+    make_periodic_snapshots,
+    calc_atlite_heating_timeshift,
+)
 from constants import (
     PROV_NAMES,
     TIMEZONE,
-    HEATING_START_TEMP,
-    HEATING_LIN_SLOPE,
-    HEATING_OFFET,
     UNIT_HOT_WATER_START_YEAR,
     UNIT_HOT_WATER_END_YEAR,
     START_YEAR,
@@ -73,6 +76,7 @@ def make_heat_demand_projections(
             """Cubic polynomial fit to proj"""
             return a * x**3 + b * x**2 + c * x + d
 
+        # TODO soft code
         # heated area projection in China
         # 2060: 6.02 * 36.52 * 1e4 north population * floor_space_per_capita in city
         heated_area = np.array(
@@ -256,23 +260,25 @@ if __name__ == "__main__":
 
     configure_logging(snakemake, logger=logger)
 
-    atlite_hour_shift = snakemake.config["atlite"]["hour_shift_heating"]
+    planning_horizons = snakemake.wildcards["planning_horizons"]
+    config = snakemake.config
+
+    date_range = make_periodic_snapshots(
+        year=planning_horizons,
+        freq=config["snapshots"]["freq"],
+        start_day_hour=config["snapshots"]["start"],
+        end_day_hour=config["snapshots"]["end"],
+        bounds=config["snapshots"]["bounds"],
+        tz=config["snapshots"]["timezone"],
+        end_year=(None if not config["snapshots"]["end_year_plus1"] else planning_horizons + 1),
+    )
+
+    atlite_hour_shift = calc_atlite_heating_timeshift(date_range, use_last_ts=False)
     start_day = snakemake.config["heat_demand"]["start_day"]
-    end_day
+    end_day = snakemake.config["heat_demand"]["end_day"]
     daily_hd = build_daily_heat_demand_profiles(atlite_heating_hr_shift=atlite_hour_shift)
 
-    config = snakemake.config
-    planning_horizons = snakemake.wildcards["planning_horizons"]
     hot_water_per_day = build_hot_water_per_day(planning_horizons)
-
-    # why?
-    # TODO cebtralise and align with settings
-    date_range = pd.date_range(
-        f"{planning_horizons}-01-01 00:00",
-        f"{planning_horizons}-12-31 23:00",
-        freq=snakemake.config["freq"],
-        tz=TIMEZONE,
-    )
 
     heat_demand, space_heat_demand, space_heating_per_hdd, water_heat_demand = (
         build_heat_demand_profile(

@@ -15,7 +15,7 @@ import pandas as pd
 from atlite.gis import ExclusionContainer
 from os import PathLike
 
-from _helpers import mock_snakemake, configure_logging
+from _helpers import mock_snakemake, configure_logging, calc_utc_timeshift
 from readers import read_province_shapes
 from constants import PROV_NAMES, CRS, OFFSHORE_WIND_NODES, DEFAULT_OFFSHORE_WIND_CORR_FACTOR
 
@@ -23,14 +23,20 @@ logger = logging.getLogger(__name__)
 
 
 def make_solar_profile(
-    solar_config: dict, cutout: atlite.Cutout, path_build_up_raster: PathLike, outp_path: PathLike
+    solar_config: dict,
+    cutout: atlite.Cutout,
+    outp_path: PathLike,
+    delta_t: pd.Timedelta,
 ):
-    """_summary_
+    """Make the solar geographical potentials and per unit availability time series for each
+    raster cell
+    ! Somewhat compute intensive !
 
     Args:
         onwind_config (dict): the solar configuration (from the yaml config read by snakemake)
         cutout (atlite.Cutout): the atlite cutout
-        outp_path (PathLike): the output path for the raster dat
+        outp_path (PathLike): the output path for the raster data
+        delta_t (pd.Timedelta): the time delta to convert to ntwk time
     """
 
     logger.info("Making solar profile ")
@@ -41,6 +47,7 @@ def make_solar_profile(
     if solar_correction_factor != 1.0:
         logger.info(f"solar_correction_factor is set as {solar_correction_factor}")
 
+    # TODO not hardcoded res
     excluder_solar = ExclusionContainer(crs=3035, res=500)
     excluder_build_up = ExclusionContainer(crs=3035, res=500)
 
@@ -110,18 +117,24 @@ def make_solar_profile(
         min_p_max_pu = solar_config["clip_p_max_pu"]
         solar_ds["profile"] = solar_ds["profile"].where(solar_ds["profile"] >= min_p_max_pu, 0)
 
-    solar_ds["time"] = solar_ds["time"].values + pd.Timedelta(8, unit="h")  # UTC-8 instead of UTC
+    # shift back from UTC to network time
+    solar_ds["time"] = solar_ds["time"].values + delta_t
 
     solar_ds.to_netcdf(outp_path)
 
 
-def make_onshore_wind_profile(onwind_config: dict, cutout: atlite.Cutout, outp_path: PathLike):
-    """_summary_
+def make_onshore_wind_profile(
+    onwind_config: dict, cutout: atlite.Cutout, outp_path: PathLike, delta_t: pd.Timedelta
+):
+    """Make the onwind geographical potentials and per unit availability time series for
+    each raster cell
+    ! Somewhat compute intensive !
 
     Args:
         onwind_config (dict): the onshore wind config (from the yaml config read by snakemake)
         cutout (atlite.Cutout): the atlite cutout
         outp_path (PathLike): the output path for the raster data
+        delta_t (pd.Timedelta): the time delta to convert to ntwk time
     """
 
     logger.info("Making onshore wind profile ")
@@ -189,20 +202,24 @@ def make_onshore_wind_profile(onwind_config: dict, cutout: atlite.Cutout, outp_p
         min_p_max_pu = onwind_config["clip_p_max_pu"]
         onwind_ds["profile"] = onwind_ds["profile"].where(onwind_ds["profile"] >= min_p_max_pu, 0)
 
-    onwind_ds["time"] = onwind_ds["time"].values + pd.Timedelta(8, unit="h")  # UTC-8 instead of UTC
+    # shift back from UTC to network time
+    onwind_ds["time"] = onwind_ds["time"].values + delta_t
     onwind_ds.to_netcdf(outp_path)
 
 
 def make_offshore_wind_profile(
-    offwind_config: dict, cutout: atlite.Cutout, gebco_path: PathLike, outp_path: PathLike
+    offwind_config: dict, cutout: atlite.Cutout, outp_path: PathLike, delta_t: pd.Timedelta
 ):
-    """_summary_
+    """Make the offwind geographical potentials and per unit availability time series for
+      each raster cell
+    ! Somewhat compute intensive !
+
 
     Args:
         offwind_config (dict): the configuration for the offshore wind
         cutout (atlite.Cutout): the atlite cutout
-        gebco_path (PathLike): the path to the gebco bathymetry raster
         outp_path (PathLike): the output path for the raster date
+        delta_t (pd.Timedelta): the time delta to convert to ntwk time
     """
     offwind_resource = offwind_config["resource"]
     offwind_correction_factor = offwind_config.get(
@@ -289,10 +306,8 @@ def make_offshore_wind_profile(
         offwind_ds["profile"] = offwind_ds["profile"].where(
             offwind_ds["profile"] >= min_p_max_pu, 0
         )
-
-    offwind_ds["time"] = offwind_ds["time"].values + pd.Timedelta(
-        8, unit="h"
-    )  # UTC-8 instead of UTC
+    # shift back from UTC to network time
+    offwind_ds["time"] = offwind_ds["time"].values + delta_t
     offwind_ds.to_netcdf(outp_path)
 
 
@@ -322,12 +337,18 @@ if __name__ == "__main__":
     area = cutout.grid.to_crs(3035).area / 1e6
     area = xr.DataArray(area.values.reshape(cutout.shape), [cutout.coords["y"], cutout.coords["x"]])
 
+    # atlite to network timedelta
+    delta_t = calc_utc_timeshift(
+        snakemake.config["snapshots"], snakemake.config["atlite"]["weather_year"]
+    )
+
     if snakemake.config["Technique"]["solar"]:
         make_solar_profile(
             solar_config=snakemake.config["renewable"]["solar"],
             cutout=cutout,
             path_build_up_raster=snakemake.input.Build_up_raster,
             outp_path=snakemake.output.solar_profile,
+            delta_t=delta_t,
         )
 
     if snakemake.config["Technique"]["onwind"]:
@@ -335,15 +356,16 @@ if __name__ == "__main__":
             onwind_config=snakemake.config["renewable"]["onwind"],
             cutout=cutout,
             outp_path=snakemake.output.onwind_profile,
+            delta_t=delta_t,
         )
 
     if snakemake.config["Technique"]["offwind"]:
         offwind_config = snakemake.config["renewable"]["offwind"]
         make_offshore_wind_profile(
             offwind_config=offwind_config,
-            gebco_path=snakemake.input.gebco,
             cutout=cutout,
             outp_path=snakemake.output.offwind_profile,
+            delta_t=delta_t,
         )
 
     logger.info("Renewable potential profiles successfully built.")
