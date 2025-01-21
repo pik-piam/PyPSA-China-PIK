@@ -14,7 +14,11 @@ chp_parameters:
 
 solar_cf_correction: 0.85
 time_dep_hp_cop: True
-tes_tau: 3.
+# standing losses for thermal storage
+water_tanks:
+  tes_tau:
+    decentral: 3. # days
+    central: 180 # days
 
 renewable:
   onwind:
@@ -89,3 +93,4 @@ costs:
   USD2013_to_EUR2013: 0.9189 # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
   marginal_cost: # EUR/MWh
     hydro: 0.
+  pv_utility_fraction: 0.5 # the fraction that will not be residential

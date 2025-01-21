@@ -26,10 +26,15 @@ from constants import (
     CO2_EL_2020,
     CO2_HEATING_2020,
 )
+from _helpers import (
+    configure_logging,
+    override_component_attrs,
+    mock_snakemake,
+    make_periodic_snapshots,
+)
 from functions import HVAC_cost_curve
 from readers import read_province_shapes
 from add_electricity import load_costs
-from _helpers import configure_logging, override_component_attrs, is_leap_year, mock_snakemake
 from functions import haversine
 from prepare_base_network import add_buses, shift_profile_to_planning_year, add_carriers
 
@@ -49,14 +54,21 @@ def prepare_network(config):
 
     # set times
     planning_horizons = snakemake.wildcards["planning_horizons"]
-    snapshots = pd.date_range(
-        f"{int(planning_horizons)}-01-01 00:00",
-        f"{int(planning_horizons)}-12-31 23:00",
-        freq=config["freq"],
-        # tz=TIMEZONE,
+    # make snapshots (drop leap days)
+    snapshot_cfg = config["snapshots"]
+    snapshots = make_periodic_snapshots(
+        year=snakemake.wildcards.planning_horizons,
+        freq=snapshot_cfg["freq"],
+        start_day_hour=snapshot_cfg["start"],
+        end_day_hour=snapshot_cfg["end"],
+        bounds=snapshot_cfg["bounds"],
+        tz=snapshot_cfg["timezone"],
+        end_year=(
+            None
+            if not snapshot_cfg["end_year_plus1"]
+            else snakemake.wildcards.planning_horizons + 1
+        ),
     )
-    if is_leap_year(int(planning_horizons)):
-        snapshots = snapshots[~((snapshots.month == 2) & (snapshots.day == 29))]
 
     network.set_snapshots(snapshots.values)
     network.snapshot_weightings[:] = config["frequency"]
@@ -181,6 +193,7 @@ def prepare_network(config):
             carrier="biogas",
         )
 
+    # TODO Clarify this
     if config["add_coal"]:
         network.add(
             "Generator",
@@ -195,6 +208,23 @@ def prepare_network(config):
             * costs.at["coal", "capital_cost"],  # NB: capital cost is per MWel
             lifetime=costs.at["coal", "lifetime"],
         )
+
+    # TODO decide readd?
+    # network.add(
+    #     "Generator",
+    #     nodes,
+    #     suffix=" nuclear",
+    #     p_nom_extendable=True,
+    #     # p_nom=nuclear_p_nom,
+    #     # p_nom_max=nuclear_p_nom * 2,
+    #     # p_nom_min=nuclear_p_nom,
+    #     bus=nodes,
+    #     carrier="nuclear",
+    #     efficiency=costs.at["nuclear", "efficiency"],
+    #     # NB: capital cost is per MWel, for nuclear already per MWel
+    #     capital_cost=costs.at["nuclear", "capital_cost"],
+    #     marginal_cost=costs.at["nuclear", "marginal_cost"],
+    # )
 
     if config["add_hydro"]:
 
@@ -322,8 +352,9 @@ def prepare_network(config):
 
             # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
+        # TODO clarify what this is and where it comes from
         # ======= add other existing hydro power
-        hydro_p_nom = pd.read_hdf(config["hydro"]["p_nom_path"]).tz_localize(None)
+        hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"]).tz_localize(None)
         hydro_p_max_pu = pd.read_hdf(
             config["hydro"]["p_max_pu_path"], key=config["hydro"]["p_max_pu_key"]
         ).tz_localize(None)
@@ -568,12 +599,16 @@ def prepare_network(config):
             marginal_cost=0.0,
         )
 
-    # add lines
+    # ============= add lines =========
+    # The lines are implemented according to the transport model (no KVL) with losses.
+    # This requires two directions
+    # see Neumann et al 10.1016/j.apenergy.2022.118859
+    # TODO make lossless optional (speed up)
 
     if not config["no_lines"]:
         "Split bidirectional links into two unidirectional links to include transmission losses."
 
-        edges_ext = pd.read_csv(snakemake.input.edges_ext, header=None)
+        edges_existing = pd.read_csv(snakemake.input.edges_existing, header=None)
 
         lengths = NON_LIN_PATH_SCALING * np.array(
             [
@@ -581,7 +616,7 @@ def prepare_network(config):
                     [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
                     [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
                 )
-                for name0, name1 in edges_ext[[0, 1]].values
+                for name0, name1 in edges_existing[[0, 1]].values
             ]
         )
 
@@ -595,13 +630,13 @@ def prepare_network(config):
 
         network.add(
             "Link",
-            edges_ext[0] + "-" + edges_ext[1],
-            bus0=edges_ext[0].values,
-            bus1=edges_ext[1].values,
+            edges_existing[0] + "-" + edges_existing[1],
+            bus0=edges_existing[0].values,
+            bus1=edges_existing[1].values,
             suffix=" ext positive",
             p_nom_extendable=False,
-            p_nom=edges_ext[2].values,
-            p_nom_min=edges_ext[2].values,
+            p_nom=edges_existing[2].values,
+            p_nom_min=edges_existing[2].values,
             p_min_pu=0,
             efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
             * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
@@ -613,13 +648,13 @@ def prepare_network(config):
 
         network.add(
             "Link",
-            edges_ext[1] + "-" + edges_ext[0],
-            bus0=edges_ext[1].values,
-            bus1=edges_ext[0].values,
+            edges_existing[1] + "-" + edges_existing[0],
+            bus0=edges_existing[1].values,
+            bus1=edges_existing[0].values,
             suffix=" ext reversed",
             p_nom_extendable=False,
-            p_nom=edges_ext[2].values,
-            p_nom_min=edges_ext[2].values,
+            p_nom=edges_existing[2].values,
+            p_nom_min=edges_existing[2].values,
             p_min_pu=0,
             efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
             * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),

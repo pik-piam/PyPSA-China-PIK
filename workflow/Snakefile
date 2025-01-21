@@ -219,7 +219,7 @@ elif config["foresight"] == "myopic":
         input:
             overrides = "resources/data/override_component_attrs",
             edges= "resources/data/grids/edges.txt",
-            edges_ext = "resources/data/grids/edges_current.csv",
+            edges_existing = "resources/data/grids/edges_current.csv",
             heat_demand_profile= DERIVED_DATA+"/"+"heating/heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
             solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),

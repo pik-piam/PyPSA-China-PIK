@@ -42,8 +42,8 @@ cluster-generic-cancel-cmd: scancel
 
 # now define the resources
 default-resources:
-  partition: priority
-  qos: priority
+  partition: standard
+  qos: short
   mem_mb: 2000
   cores: 8
 
@@ -53,8 +53,8 @@ set-resources:
     time: 300
   solve_networks:
     mem_mb: 80000
-    qos : short
-    partition: standard
+    # qos : short
+    # partition: standard
     time : 300
   plot_network:
     mem_mb: 4000

@@ -82,6 +82,7 @@ snapshots:
   end: "12-31 23:00"
   bounds: 'both'
   freq: '1h'
+  # naive timezone (but not for cutout)
   timezone : null
   # for weighings -> to be improved
   frequency: 1.
@@ -94,7 +95,7 @@ logging:
   format: '%(levelname)s:%(name)s:%(message)s'
 
 enable:
-  build_cutout: true
+  build_cutout: false
   retrieve_cutout: false
   retrieve_raster: false
 
@@ -103,14 +104,10 @@ atlite:
   freq: "h"
   nprocesses: 4
   show_progress: true
-  # accounts for tz, which is missing in atlite
+  # accounts for tz, which is missing in atlite. This could be done via constants.TIMEZONE
   hour_shift_heating: 8
   cutouts:
     China-2020:
-     module: era5
-     dx: 0.25
-     dy: 0.25
-    China-2020-updated-sett-test:
      module: era5
      dx: 0.25
      dy: 0.25
@@ -128,9 +125,6 @@ Technique:
   onwind: true
   offwind: true
 
-coal_cc: true
-hydrogen_lines: false
-
 existing_infrastructure: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
 bus_suffix: [""," central heat"," decentral heat"," gas"," coal"]
@@ -143,30 +137,19 @@ bus_carrier: {
 }
 
 Techs:
-  ## for add carriers
+  ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
   vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","heat pump","resistive heater","Sabatier","H2 CHP"]
   conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
+  coal_cc: true # currently myopic pathway only.  CC = co2 cap 
+  hydrogen_lines: false # currently myopic pathway only
 
-
-## add components
+## add components (overwrites vre tech choice)
 heat_coupling: True
-add_gas: True
-add_coal: True
 add_biomass: True
 add_hydro: True
 add_H2: True
 add_methanation: True
-# only for non-pathwya right now
-add_solar_thermal: True
-add_battery_storage: True
-add_PHS: True
-add_chp: True
-add_nuclear: True
-add_heat_pumps: True
-add_thermal_storage: True
-add_resistive_heater: True
-add_boilers: True
 
 hydro_dams:
   dams_path: "resources/data/hydro/dams_large.csv"
@@ -180,6 +163,8 @@ hydro_dams:
   p_max_pu_path: "resources/data/p_nom/hydro_p_max_pu.h5"
   p_max_pu_key : "hydro_p_max_pu"
   damn_flows_path: "resources/data/hydro/dam_flow_links.csv"
+nuclear_reactors:
+  pp_path: "resources/data/p_nom/nuclear_p_nom.csv"
 H2:
   geo_storage_nodes: [ "Sichuan", "Chongqing", "Hubei", "Jiangxi", "Anhui", "Jiangsu", "Shandong", "Guangdong" ]
 edge_paths:
