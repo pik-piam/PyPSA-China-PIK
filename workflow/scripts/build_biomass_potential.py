@@ -40,3 +40,4 @@ if __name__ == "__main__":
     configure_logging(snakemake)
 
     build_biomass_potential(biomass_potentials_path=snakemake.input.biomass_feedstocks)
+    logger.info("Biomass potentials successfully built")

@@ -9,16 +9,18 @@ capacity factors, curtailment, energy balances, prices and other metrics.
 
 import logging
 
-logger = logging.getLogger(__name__)
-
 import sys
 import os
 
-import numpy as np
 import pandas as pd
 import pypsa
-from add_electricity import load_costs, update_transmission_costs
 
+from _helpers import mock_snakemake, configure_logging
+
+# import numpy as np
+# from add_electricity import load_costs, update_transmission_costs
+
+logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
 
 opt_name = {"Store": "e", "Line": "s", "Transformer": "s"}
@@ -41,7 +43,8 @@ def assign_locations(n):
 
 
 def calculate_nodal_cfs(n, label, nodal_cfs):
-    # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
+    # Beware this also has extraneous locations for country (e.g. biomass)
+    # or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         (n.branch_components ^ {"Line", "Transformer"})
         | n.controllable_one_port_components ^ {"Load", "StorageUnit"}
@@ -98,7 +101,8 @@ def calculate_cfs(n, label, cfs):
 
 
 def calculate_nodal_costs(n, label, nodal_costs):
-    # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
+    # Beware this also has extraneous locations for country (e.g. biomass)
+    #  or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
@@ -448,6 +452,7 @@ def calculate_weighted_prices(n, label, weighted_prices):
         if buses.empty:
             continue
 
+        # TODO fix undefined heat_demand_df
         if carrier in ["H2", "gas"]:
             load = pd.DataFrame(index=n.snapshots, columns=buses, data=0.0)
         elif carrier[:5] == "space":
@@ -487,7 +492,7 @@ def calculate_market_values(n, label, market_values):
 
     buses = n.buses.index[n.buses.carrier == carrier]
 
-    ## First do market value of generators ##
+    # === First do market value of generators  ===
 
     generators = n.generators.index[n.buses.loc[n.generators.bus, "carrier"] == carrier]
 
@@ -509,7 +514,7 @@ def calculate_market_values(n, label, market_values):
 
         market_values.at[tech, label] = revenue.sum().sum() / dispatch.sum().sum()
 
-    ## Now do market value of links ##
+    # === Now do market value of links  ===
 
     for i in ["0", "1"]:
         all_links = n.links.index[n.buses.loc[n.links["bus" + i], "carrier"] == carrier]
@@ -601,9 +606,14 @@ def make_summaries(networks_dict):
     return df
 
 
+# TODO move to helper?
+def expand_from_wildcard(key, config):
+    w = getattr(wildcards, key)
+    return config["scenario"][key] if w == "all" else [w]
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
 
         snakemake = mock_snakemake(
             "make_summary",
@@ -613,17 +623,14 @@ if __name__ == "__main__":
             planning_horizons=["2020"],
         )
 
-    logging.basicConfig(level=snakemake.config["logging"]["level"])
+    configure_logging(snakemake)
+
     config = snakemake.config
     wildcards = snakemake.wildcards
 
-    def expand_from_wildcard(key, config):
-        w = getattr(wildcards, key)
-        return config["scenario"][key] if w == "all" else [w]
-
+    # TODO : make readable
     networks_dict = {
-        (pathway, planning_horizons): "results/version-"
-        + config["version"]
+        (pathway, planning_horizons): config["base_results_dir"]
         + f"/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc"
         for opts in expand_from_wildcard("opts", config)
         for planning_horizons in expand_from_wildcard("planning_horizons", config)

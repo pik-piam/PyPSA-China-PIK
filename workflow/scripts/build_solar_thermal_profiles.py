@@ -1,5 +1,5 @@
 import logging
-from _helpers import configure_logging
+from _helpers import configure_logging, mock_snakemake
 
 import atlite
 import pandas as pd
@@ -33,9 +33,10 @@ def build_solar_thermal_profiles():
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
-
         snakemake = mock_snakemake("build_solar_thermal_profiles")
-    configure_logging(snakemake)
+
+    configure_logging(snakemake, logger=logger)
 
     build_solar_thermal_profiles()
+
+    logger.info("Solar thermal profiles successfully built")

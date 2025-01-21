@@ -3,8 +3,13 @@
 # SPDX-License-Identifier: CC0-1.0
 .snakemake*
 __pycache__
-.DS_Store
-.idea/
+
+**.log
+**.out
+**.er
+**.DS_Store
+**.idea/
+.vscode
 
 /resources/**/*
 !/resources/data/shapefiles/
@@ -17,4 +22,7 @@ __pycache__
 /cutouts
 /logs
 /benchmarks
+
+!**.gitkeep
+.vscode/launch.json
 /workflow/logs/*

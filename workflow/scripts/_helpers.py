@@ -5,15 +5,61 @@
 
 import os
 import sys
+import subprocess
+import json
 import pandas as pd
 from pathlib import Path
 from types import SimpleNamespace
+import logging
+import matplotlib.pyplot as plt
+from pypsa.components import components, component_attrs
+import pypsa
 
-# from constants import SNAKEFILE_CHOICES
+from constants import NICE_NAMES
 
 # from pypsa.descriptors import Dict
-import pypsa
-from pypsa.components import components, component_attrs
+
+# get root logger
+logger = logging.getLogger()
+DEFAULT_TUNNEL_PORT = 1080
+
+
+def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = None):
+    """A utility function to set up the Gurobi environment variables and establish an SSH tunnel on HPCs
+    Otherwise the license check will fail if the compute nodes do not have internet access or a token server isn't set up
+
+    Args:
+        config (dict): the snakemake pypsa-china configuration
+        logger (logging.Logger, optional): Logger. Defaults to None.
+    """
+    if tunnel_config.get("use_tunnel", False) is False:
+        return
+    logger.info("setting up tunnel")
+    user = os.getenv("USER")  # User is pulled from the environment
+    port = tunnel_config.get("port", DEFAULT_TUNNEL_PORT)
+    ssh_command = f"ssh -fN -D {port} {user}@login01"
+
+    try:
+        # Run SSH in the background to establish the tunnel
+        subprocess.Popen(ssh_command, shell=True)
+        logger.info(f"SSH tunnel established on port {port}")
+    # TODO don't handle unless neeeded
+    except Exception as e:
+        logger.error(f"Error starting SSH tunnel: {e}")
+        sys.exit(1)
+
+    os.environ["https_proxy"] = f"socks5://127.0.0.1:{port}"
+    os.environ["SSL_CERT_FILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+    os.environ["GRB_CAFILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+
+    # Set up Gurobi environment variables
+    os.environ["GUROBI_HOME"] = "/p/projects/rd3mod/gurobi1103/linux64"
+    os.environ["PATH"] += f":{os.environ['GUROBI_HOME']}/bin"
+    os.environ["LD_LIBRARY_PATH"] += f":{os.environ['GUROBI_HOME']}/lib"
+    os.environ["GRB_LICENSE_FILE"] = "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
+    os.environ["GRB_CURLVERBOSE"] = "1"
+
+    logger.info("Gurobi Environment variables & tunnel set up successfully.")
 
 
 def override_component_attrs(directory: os.PathLike) -> dict:
@@ -42,49 +88,61 @@ def override_component_attrs(directory: os.PathLike) -> dict:
     return attrs
 
 
-def configure_logging(snakemake, skip_handlers=False, level="INFO"):
-    """
-    Configure the basic behaviour for the logging module.
+def configure_logging(
+    snakemake: object, logger: logging.Logger = None, skip_handlers=False, level="INFO"
+):
+    """Configure the logger or the  behaviour for the logging module.
+
     Note: Must only be called once from the __main__ section of a script.
     The setup includes printing log messages to STDERR and to a log file defined
     by either (in priority order): snakemake.log.python, snakemake.log[0] or "logs/{rulename}.log".
     Additional keywords from logging.basicConfig are accepted via the snakemake configuration
     file under snakemake.config.logging.
-    Parameters
-    ----------
-    snakemake : snakemake object
-        Your snakemake object containing a snakemake.config and snakemake.log.
-    skip_handlers : True | False (default)
-        Do (not) skip the default handlers created for redirecting output to STDERR and file.
+
+    ISSUE: may not work properly with snakemake logging yaml config [to be solved]
+
+    Args:
+        snakemake (object):  snakemake script object
+        logger (Logger, optional): the script logger. Defaults to None (Root logger).
+            Passing a local logger will apply the configuration to the logger instead of root.
+        skip_handlers (bool, optional): Do (not) skip the default handlers redirecting output to STDERR and file. Defaults to False.
+        level (str, optional): the logging level. Defaults to "INFO".
     """
 
-    import logging
-
-    if "snakemake" not in globals():
-        return
+    if not logger:
+        logger = logging.getLogger()
+        logger.info("Configuring logging")
 
     kwargs = snakemake.config.get("logging", dict())
     kwargs.setdefault("level", level)
 
     if skip_handlers is False:
-        fallback_path = Path(__file__).parent.joinpath("..", "logs", f"{snakemake.rule}.log")
-        logfile = snakemake.log.get("python", snakemake.log[0] if snakemake.log else fallback_path)
-        kwargs.update(
-            {
-                "handlers": [
-                    # Prefer the 'python' log, otherwise take the first log for each
-                    # Snakemake rule
-                    logging.FileHandler(logfile),
-                    logging.StreamHandler(),
-                ]
-            }
-        )
-    logging.basicConfig(**kwargs)
+        fallback_path = Path(__file__).parent.joinpath("../..", "logs", f"{snakemake.rule}.log")
+        default_logfile = snakemake.log[0] if snakemake.log else fallback_path
+        logfile = snakemake.log.get("python", default_logfile)
+        logger.setLevel(kwargs["level"])
+
+        formatter = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s - %(message)s")
+
+        if not os.path.exists(logfile):
+            with open(logfile, "a"):
+                pass
+        file_handler = logging.FileHandler(logfile)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+        # make running log easier to read
+        logger.info("=========== NEW RUN ===========")
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
 
     def handle_exception(exc_type, exc_value, exc_traceback):
         # Log the exception
         logger = logging.getLogger()
         logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        sys.excepthook = handle_exception
 
     sys.excepthook = handle_exception
 
@@ -189,10 +247,17 @@ def mock_snakemake(
     return snakemake
 
 
-def load_network_for_plots(fn, tech_costs, config, cost_year, combine_hydro_ps=True):
+def load_network_for_plots(
+    network_file: os.PathLike,
+    tech_costs: os.PathLike,
+    config: dict,
+    cost_year: int,
+    combine_hydro_ps=True,
+) -> pypsa.Network:
+
     from add_electricity import update_transmission_costs, load_costs
 
-    n = pypsa.Network(fn)
+    n = pypsa.Network(network_file)
 
     n.loads["carrier"] = n.loads.bus.map(n.buses.carrier) + " load"
     n.stores["carrier"] = n.stores.bus.map(n.buses.carrier)
@@ -218,7 +283,7 @@ def load_network_for_plots(fn, tech_costs, config, cost_year, combine_hydro_ps=T
     return n
 
 
-def aggregate_p(n):
+def aggregate_p(n: pypsa.Network) -> pd.Series:
     return pd.concat(
         [
             n.generators_t.p.sum().groupby(n.generators.carrier).sum(),
@@ -229,7 +294,75 @@ def aggregate_p(n):
     )
 
 
-def aggregate_costs(n, flatten=False, opts=None, existing_only=False):
+# TODO make a standard apply/str op instead ofmap in add_electricity.sanitize_carriers
+def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
+    """Rename technology labels for better readability. Removes some prefixes
+        and renames if certain conditions  defined in function body are met.
+
+    Args:
+        label (str): original technology label
+        nice_names (dict, optional): nice names that will overwrite defaults
+
+    Returns:
+        str: renamed tech label
+    """
+
+    prefix_to_remove = [
+        "residential ",
+        "services ",
+        "urban ",
+        "rural ",
+        "central ",
+        "decentral ",
+    ]
+
+    rename_if_contains = [
+        "CHP",
+        "gas boiler",
+        "biogas",
+        "solar thermal",
+        "air heat pump",
+        "ground heat pump",
+        "resistive heater",
+        "Fischer-Tropsch",
+    ]
+
+    rename_if_contains_dict = {
+        "water tanks": "hot water storage",
+        "retrofitting": "building retrofitting",
+        # "H2 Electrolysis": "hydrogen storage",
+        # "H2 Fuel Cell": "hydrogen storage",
+        # "H2 pipeline": "hydrogen storage",
+        "battery": "battery storage",
+        "H2 for industry": "H2 for industry",
+        "land transport fuel cell": "land transport fuel cell",
+        "land transport oil": "land transport oil",
+        "oil shipping": "shipping oil",
+        # "CC": "CC"
+    }
+
+    for ptr in prefix_to_remove:
+        if label[: len(ptr)] == ptr:
+            label = label[len(ptr) :]
+
+    for rif in rename_if_contains:
+        if rif in label:
+            label = rif
+
+    for old, new in rename_if_contains_dict.items():
+        if old in label:
+            label = new
+    names_new = NICE_NAMES.copy()
+    names_new.update(nice_names)
+    for old, new in names_new.items():
+        if old == label:
+            label = new
+    return label
+
+
+def aggregate_costs(
+    n: pypsa.Network, flatten=False, opts: dict = None, existing_only=False
+) -> pd.Series | pd.DataFrame:
 
     components = dict(
         Link=("p_nom", "p0"),
@@ -270,7 +403,7 @@ def aggregate_costs(n, flatten=False, opts=None, existing_only=False):
     return costs
 
 
-def update_p_nom_max(n):
+def update_p_nom_max(n: pypsa.Network) -> None:
     # if extendable carriers (solar/onwind/...) have capacity >= 0,
     # e.g. existing assets from the OPSD project are included to the network,
     # the installed capacity might exceed the expansion limit.
@@ -365,3 +498,14 @@ def define_spatial(nodes, options):
     spatial.lignite.locations = ["China"]
 
     return spatial
+
+
+def load_plot_style(plot_config: os.PathLike):
+    """load a matplotlib style from a json file
+
+    Args:
+        plot_config (os.Pathlike): the json config
+    """
+
+    cfg = json.load(plot_config)
+    plt.style.use(cfg)

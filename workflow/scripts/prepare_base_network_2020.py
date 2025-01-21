@@ -693,3 +693,5 @@ if __name__ == "__main__":
     network = prepare_network(snakemake.config)
 
     network.export_to_netcdf(snakemake.output.network_name)
+
+    logger.info(f"Network prepared and saved to {snakemake.output.network_name}")

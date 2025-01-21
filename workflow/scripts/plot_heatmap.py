@@ -1,8 +1,12 @@
-from _helpers import configure_logging
 import seaborn as sns
 import pandas as pd
 import pypsa
+import logging
 import matplotlib.pyplot as plt
+
+from _helpers import configure_logging, mock_snakemake
+
+logger = logging.getLogger(__name__)
 
 
 def set_plot_style():
@@ -78,8 +82,6 @@ def plot_water_store(n):
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
-
         snakemake = mock_snakemake(
             "plot_heatmap",
             opts="ll",
@@ -87,7 +89,7 @@ if __name__ == "__main__":
             pathway="exponential175",
             planning_horizons="2020",
         )
-    configure_logging(snakemake)
+    configure_logging(snakemake, logger=logger)
 
     set_plot_style()
     config = snakemake.config
@@ -99,3 +101,5 @@ if __name__ == "__main__":
 
     plot_heatmap(n, config)
     plot_water_store(n)
+
+    logger.info("Heatmap successfully plotted")
