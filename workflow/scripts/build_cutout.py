@@ -6,14 +6,15 @@ import logging
 import atlite
 import geopandas as gpd
 import pandas as pd
+
 from _helpers import configure_logging, mock_snakemake, make_periodic_snapshots
+from constants import TIMEZONE
 
 logger = logging.getLogger(__name__)
 
 
-# TODO figureout the timezone story here
 def cutout_timespan(config: dict) -> list:
-    """build the cutout timespan
+    """build the cutout timespan. Note that the coutout requests are in UTC (TBC)
 
     Args:
         config (dict): the snakemake config
@@ -21,18 +22,22 @@ def cutout_timespan(config: dict) -> list:
     Returns:
         tuple: end and start of the cutout timespan
     """
-
     snapshot_cfg = config["snapshots"]
-    snapshots = make_periodic_snapshots(
-        year=config["atlite"]["weather_year"],
-        freq=snapshot_cfg["freq"],
-        start_day_hour=snapshot_cfg["start"],
-        end_day_hour=snapshot_cfg["end"],
-        bounds=snapshot_cfg["bounds"],
-        tz=None,
-        end_year=(
-            None if not snapshot_cfg["end_year_plus1"] else config["atlite"]["weather_year"] + 1
-        ),
+    # make snapshots for TZ and then convert to naive UTC for atlite
+    snapshots = (
+        make_periodic_snapshots(
+            year=config["atlite"]["weather_year"],
+            freq=snapshot_cfg["freq"],
+            start_day_hour=snapshot_cfg["start"],
+            end_day_hour=snapshot_cfg["end"],
+            bounds=snapshot_cfg["bounds"],
+            tz=TIMEZONE,
+            end_year=(
+                None if not snapshot_cfg["end_year_plus1"] else config["atlite"]["weather_year"] + 1
+            ),
+        )
+        .tz_convert("UTC")
+        .tz_localize(None)
     )
 
     return [snapshots[0], snapshots[-1]]
@@ -40,14 +45,13 @@ def cutout_timespan(config: dict) -> list:
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        snakemake = mock_snakemake("build_cutout", cutout="China-2020-updated-sett")
+        snakemake = mock_snakemake("build_cutout", cutout="China-2020-updated-sett-test")
     configure_logging(snakemake, logger=logger)
 
     cutout_params = snakemake.config["atlite"]["cutouts"].get(snakemake.wildcards.cutout, None)
     if cutout_params is None:
-        raise ValueError(
-            f"No cutout parameters found for {snakemake.wildcards.cutout} in config['atlite']['cutouts'] config."
-        )
+        err = f"No cutout parameters found for {snakemake.wildcards.cutout}"
+        raise ValueError(err + " in config['atlite']['cutouts'].")
 
     time = cutout_timespan(snakemake.config)
     cutout_params["time"] = slice(*cutout_params.get("time", time))
