@@ -31,7 +31,7 @@ def fetch_natural_earth_records(country_iso2_code="CN") -> object:
         resolution=NATURAL_EARTH_RESOLUTION, category="cultural", name=NATURAL_EARTH_DATA_SET
     )
     reader = shpreader.Reader(shpfilename)
-    print("downloaded succesfully")
+    logger.info("Succesfully downloaded natural earth shapefiles")
     provinces_states = reader.records()
 
     def filter_country_code(records: object, target_iso_a2_code="CN") -> list:

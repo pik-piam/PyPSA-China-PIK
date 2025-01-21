@@ -40,21 +40,20 @@ def calculate_annuity(lifetime: int, discount_rate: float) -> float:
 def load_costs(
     tech_costs: PathLike, cost_config: dict, elec_config: dict, cost_year: int, n_years: int
 ) -> pd.DataFrame:
-    """_summary_
+    """Calculate the anualised capex costs and OM costs for the technologies based on the input data
 
     Args:
         tech_costs (PathLike): the csv containing the costs
         cost_config (dict): the snakemake pypsa-china cost config
         elec_config (dict): the snakemake pypsa-china electricity config
         cost_year (int): the year for which the costs are retrived
-        n_years (int): _description_
+        n_years (int): the # of years over which the investment is annuitised
 
     Returns:
-        pd.DataFrame: costs dataframe
+        pd.DataFrame: costs dataframe in [CURRENCY] per MW_ ... or per MWh_ ...
     """
 
     # set all asset costs and other parameters
-    # tech_costs = tech_costs.replace("{planning_horizons}", str(cost_year))
     costs = pd.read_csv(tech_costs, index_col=list(range(3))).sort_index()
 
     # correct units to MW and EUR
@@ -69,6 +68,7 @@ def load_costs(
         .sum(min_count=1)
     )
 
+    # TODO set default lifetime as option
     costs = costs.fillna(
         {
             "CO2 intensity": 0,
@@ -98,8 +98,12 @@ def load_costs(
     costs.at["OCGT", "co2_emissions"] = costs.at["gas", "co2_emissions"]
     costs.at["CCGT", "co2_emissions"] = costs.at["gas", "co2_emissions"]
 
-    costs.at["solar", "capital_cost"] = 0.5 * (
-        costs.at["solar-rooftop", "capital_cost"] + costs.at["solar-utility", "capital_cost"]
+    if not 0 <= cost_config["pv_utility_fraction"] <= 1:
+        raise ValueError("pv_utility_fraction must be between 0 and 1 in cost config")
+    f_util = cost_config["pv_utility_fraction"]
+    costs.at["solar", "capital_cost"] = (
+        f_util * costs.at["solar-utility", "capital_cost"]
+        + (1 - f_util) * costs.at["solar-rooftop", "capital_cost"]
     )
 
     def costs_for_storage(store, link1, link2=None, max_hours=1.0):

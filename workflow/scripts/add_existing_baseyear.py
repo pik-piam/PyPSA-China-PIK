@@ -96,7 +96,7 @@ def add_power_capacities_installed_before_baseyear(
         to read lifetime to estimate YearDecomissioning
     baseyear : int
     """
-    print("adding power capacities installed before baseyear")
+    logger.info("adding power capacities installed before baseyear")
 
     df_agg = pd.DataFrame()
 
