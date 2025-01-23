@@ -15,6 +15,41 @@ COST_UNIT = 1
 YEARBOOK_DATA2POP = 1e4
 POP_YEAR = "2020"
 TIMEZONE = "Asia/Shanghai"
+# THIS is used to heating demand and is a bit of a problem since currently all are set to
+# the administrative timezone and not the geo timezoones
+REGIONAL_GEO_TIMEZONES = {
+    "Anhui": TIMEZONE,
+    "Beijing": TIMEZONE,
+    "Chongqing": TIMEZONE,
+    "Fujian": TIMEZONE,
+    "Gansu": TIMEZONE,
+    "Guangdong": TIMEZONE,
+    "Guangxi": TIMEZONE,
+    "Guizhou": TIMEZONE,
+    "Hainan": TIMEZONE,
+    "Hebei": TIMEZONE,
+    "Heilongjiang": TIMEZONE,
+    "Henan": TIMEZONE,
+    "Hubei": TIMEZONE,
+    "Hunan": TIMEZONE,
+    "InnerMongolia": TIMEZONE,
+    "Jiangsu": TIMEZONE,
+    "Jiangxi": TIMEZONE,
+    "Jilin": TIMEZONE,
+    "Liaoning": TIMEZONE,
+    "Ningxia": TIMEZONE,
+    "Qinghai": TIMEZONE,
+    "Shaanxi": TIMEZONE,
+    "Shandong": TIMEZONE,
+    "Shanghai": TIMEZONE,
+    "Shanxi": TIMEZONE,
+    "Sichuan": TIMEZONE,
+    "Tianjin": TIMEZONE,
+    "Tibet": TIMEZONE,
+    "Xinjiang": TIMEZONE,
+    "Yunnan": TIMEZONE,
+    "Zhejiang": TIMEZONE,
+}
 INFLOW_DATA_YR = 2016
 
 # TIME RANGE
@@ -53,11 +88,11 @@ LINE_SECURITY_MARGIN = 1.45
 FOM_LINES = 1.02  # of cap costs
 ECON_LIFETIME_LINES = 40  # years
 
-
+# TODO fix mismatch in ref year, move to config
 # ===== YEARLY HEAT DEMAND INCREASE MODEL ======
 # In 2008 China 228.4 Twh for urban residential DHW
 # MWh/capita/year = 228.4 * 1e6 / 62403/1e4 = 0.366008
-UNIT_HOT_WATER_START_YEAR = 0.366008  # MWh/capita/yr 202
+UNIT_HOT_WATER_START_YEAR = 0.366008  # MWh/capita/yr 2020 [!! INCONSISTENT]
 # We can consider that, on average,
 # the 52 M in developed countries is around 1000 kWh per person
 # http://www.estif.org/fileadmin/estif/content/publications/downloads/UNEP_2015/factsheet_single_family_houses_v05.pdf

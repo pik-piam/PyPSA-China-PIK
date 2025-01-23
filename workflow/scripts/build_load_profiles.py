@@ -3,23 +3,27 @@ import atlite
 import pandas as pd
 import scipy as sp
 import numpy as np
+from collections.abc import Iterable
 from scipy.optimize import curve_fit
 
 from _helpers import (
     configure_logging,
-    is_leap_year,
     mock_snakemake,
     make_periodic_snapshots,
     calc_atlite_heating_timeshift,
+    shift_profile_to_planning_year,
 )
+
+# TODO switch from hardocded REF_YEAR to a base year?
 from constants import (
     PROV_NAMES,
-    TIMEZONE,
     UNIT_HOT_WATER_START_YEAR,
     UNIT_HOT_WATER_END_YEAR,
     START_YEAR,
     END_YEAR,
     REF_YEAR,
+    REGIONAL_GEO_TIMEZONES,
+    TIMEZONE,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,32 +31,40 @@ idx = pd.IndexSlice
 nodes = pd.Index(PROV_NAMES)
 
 
-# TODO check this is compatible w naive timestamps!
-def generate_periodic_profiles(
-    dt_index: pd.DatetimeIndex = None,
-    col_tzs=pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]),
-    weekly_profile=range(24 * 7),
+# TODO this is really stupid since there are 5 hours shits on the heating demand due to sun time
+def downscale_time_data(
+    dt_index: pd.DatetimeIndex,
+    weekly_profile: Iterable,
+    regional_tzs=pd.Series(index=PROV_NAMES, data=list(REGIONAL_GEO_TIMEZONES.values())),
 ) -> pd.DataFrame:
-    """Give a 24*7 long list of weekly hourly profiles, generate this
-    for each country for the period dt_index, taking account of time
-    zones and Summer Time.
+    """Make hourly resolved data profiles based on exogenous weekdays and weekend profiles.
+    This fn takes into account that the profiles are in local time and that regions may
+     have different timezones.
 
     Args:
-        dt_index (DatetimeIndex, optional): _description_. Defaults to None.
-        col_tzs (pd.Series, optional): _description_. Defaults to pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]).
-        weekly_profile (_type_, optional): _description_. Defaults to range(24 * 7).
+        dt_index (DatetimeIndex): the snapshots (in network local naive time) but hourly res.
+        weekly_profile (Iterable): the weekly profile as a list of 7*24 entries.
+        regional_tzs (pd.Series, optional): regional geographical timezones for profiles.
+            Defaults to pd.Series(index=PROV_NAMES, data=list(REGIONAL_GEO_TIMEZONES.values())).
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: Regionally resolved profiles for each snapshot hour rperesented by dt_index
     """
-    # TODO fix this profile timezone
     weekly_profile = pd.Series(weekly_profile, range(24 * 7))
-
-    week_df = pd.DataFrame(index=dt_index, columns=col_tzs.index)
-    for ct in col_tzs.index:
-        week_df[ct] = [24 * dt.weekday() + dt.hour for dt in dt_index.tz_localize(None)]
-        week_df[ct] = week_df[ct].map(weekly_profile)
-    return week_df
+    # make a dataframe with timestamps localized to the network TIMEZONE timestamps
+    all_times = pd.DataFrame(
+        dict(zip(PROV_NAMES, [dt_index.tz_localize(TIMEZONE)] * len(PROV_NAMES))),
+        index=dt_index.tz_localize(TIMEZONE),
+        columns=PROV_NAMES,
+    )
+    # then localize to regional time. _dt ensures index is not changed
+    week_hours = all_times.apply(
+        lambda col: col.dt.tz_convert(regional_tzs[col.name]).tz_localize(None)
+    )
+    # then convert into week hour & map to the intraday heat demand profile (based on local time)
+    return week_hours.apply(lambda col: col.dt.weekday * 24 + col.dt.hour).apply(
+        lambda col: col.map(weekly_profile)
+    )
 
 
 def make_heat_demand_projections(
@@ -96,37 +108,42 @@ def make_heat_demand_projections(
 
 
 def build_daily_heat_demand_profiles(
-    atlite_heating_hr_shift: int, heat_demand_config: dict, switch_month_day: bool = True
+    heat_demand_config: dict, atlite_heating_hr_shift: int, switch_month_day: bool = True
 ) -> pd.DataFrame:
     """build the heat demand profile according to forecast demans
 
     Args:
+        heat_demand_config (dict): the heat demand configuration
         atlite_heating_hr_shift (int): the hour shift for heating demand, needed due to imperfect
             timezone handling in atlite
-        heat_demand_config (dict): the heat demand configuration
-        switch_month_day (bool, optional): whether to switch month and day in the heat_demand_config. Defaults to True.
+        switch_month_day (bool, optional): whether to switch month & day from heat_demand_config.
+            Defaults to True.
     Returns:
-        pd.DataFrame: daily heating demand with April to Sept forced to 0
+        pd.DataFrame: regional daily heating demand with April to Sept forced to 0
     """
     with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
         pop_map = store["population_gridcell_map"]
 
     cutout = atlite.Cutout(snakemake.input.cutout)
+    atlite_year = snakemake.config["atlite"]["weather_year"]
 
     pop_matrix = sp.sparse.csr_matrix(pop_map.T)
     index = pop_map.columns
     index.name = "provinces"
 
-    hd = cutout.heat_demand(
+    # TODO clarify a bit here, maybe the po_matrix should be normalised earlier?
+    # unclear whether it's per cap or not
+    total_hd = cutout.heat_demand(
         matrix=pop_matrix,
         index=index,
         threshold=heat_demand_config["heating_start_temp"],
         a=heat_demand_config["heating_lin_slope"],
         constant=heat_demand_config["heating_offet"],
+        # hack to bring it back to local from UTC
         hour_shift=atlite_heating_hr_shift,
     )
 
-    daily_hd = hd.to_pandas().divide(pop_map.sum())
+    regonal_daily_hd = total_hd.to_pandas().divide(pop_map.sum())
     # input given as dd-mm but loc as yyyy-mm-dd
     if switch_month_day:
         start_day = "{}-{}".format(*heat_demand_config["start_day"].split("-")[::-1])
@@ -134,13 +151,26 @@ def build_daily_heat_demand_profiles(
     else:
         start_day = heat_demand_config["start_day"]
         end_day = heat_demand_config["end_day"]
-    daily_hd.loc[f"{REF_YEAR}-{start_day}":f"{REF_YEAR}-{end_day}"] = 0
+    regonal_daily_hd.loc[f"{atlite_year}-{start_day}":f"{atlite_year}-{end_day}"] = 0
 
-    return daily_hd
+    return regonal_daily_hd
 
 
-# TODO separate the two functions (day and yearly)
-def build_hot_water_per_day(planning_horizons: int | str) -> np.array:
+# TODO rename to make_hot_water_projections
+# TODO FIX VALUES -> ref value is 2008 not 2020 :|
+def build_hot_water_per_day(planning_horizons: int | str) -> pd.Series:
+    """Make projections for the hot water demand increase and scale the ref year value
+    NB: the ref year value is for 2008 not 2020 -> incorrect
+
+    Args:
+        planning_horizons (int | str): the planning year to which demand will be projected
+
+    Raises:
+        ValueError: if the config projection type is not supported
+
+    Returns:
+        pd.Series: regional hot water demand per day
+    """
 
     with pd.HDFStore(snakemake.input.population, mode="r") as store:
         population_count = store["population"]
@@ -174,72 +204,69 @@ def build_hot_water_per_day(planning_horizons: int | str) -> np.array:
         unit_hot_water = (lin_func(int(planning_horizons), *popt) + UNIT_HOT_WATER_START_YEAR) / 2
     else:
         raise ValueError(f"Invalid heating demand type {snakemake.wildcards['heating_demand']}")
-        # MWh per day
+    # MWh per day per region
     hot_water_per_day = unit_hot_water * population_count / 365.0
 
     return hot_water_per_day
 
 
-# TODO make indep of model years
+# TODO return dict would be nice
+# TODO separate the projection and move it ot the main
 def build_heat_demand_profile(
     daily_hd: pd.DataFrame,
     hot_water_per_day: pd.DataFrame,
-    date_range,
+    snapshots: pd.date_range,
     planning_horizons: int | str,
 ) -> tuple[pd.DataFrame, pd.DataFrame, object, pd.DataFrame]:
-    """_summary_
+    """Downscale the daily heat demand to hourly heat demand using pre-defined intraday profiles
+    THIS FUNCTION ALSO MAKES PROJECTIONS FOR HEATING DEMAND - WHICH IS NOT THE CORRECT PLACE
 
     Args:
-        daily_hd (DataFrame): _description_
-        hot_water_per_day (DataFrame): _description_
-        date_range (_type_): _description_
+        daily_hd (DataFrame): the day resolved heat demand for each region (atlite time axis)
+        hot_water_per_day (DataFrame): the day resolved hot water demand for each region
+        snapshots (pd.date_range): the snapshots for the planning year
         planning_horizons (int | str): the planning year
 
     Returns:
         tuple[pd.DataFrame, pd.DataFrame, object, pd.DataFrame]:
             heat, space_heat, space_heating_per_hdd, water_heat demands
     """
+    # TODO - very strange, why would this be needed unless atlite is buggy
+    daily_hd_uniq = daily_hd[~daily_hd.index.duplicated(keep="first")]
+    # hourly resolution regional demand (but wrong data, it's just ffill)
+    heat_demand_hourly = shift_profile_to_planning_year(
+        daily_hd_uniq, planning_yr=planning_horizons
+    ).reindex(index=snapshots, method="ffill")
 
-    h = daily_hd
-    h_n = h[~h.index.duplicated(keep="first")].iloc[:-1, :]
-    h_n.index = h_n.index.tz_localize(TIMEZONE)
-
-    date_range_ref_yr = pd.date_range(
-        f"{REF_YEAR}-01-01 00:00", f"{REF_YEAR}-12-31 23:00", freq=date_range.freq, tz=TIMEZONE
-    )
-
-    heat_demand_hdh = h_n.reindex(index=date_range_ref_yr, method="ffill")
-    planning_year = date_range.year[0]
-    if not is_leap_year(int(planning_year)):
-        heat_demand_hdh = heat_demand_hdh.loc[
-            ~((heat_demand_hdh.index.month == 2) & (heat_demand_hdh.index.day == 29))
-        ]
-    elif is_leap_year(int(planning_year)) and not is_leap_year(REF_YEAR):
-        logger.warning("Leap year detected in planning year, but not in reference year")
-
-    heat_demand_hdh.index = date_range
-
+    # ===== downscale to hourly =======
     intraday_profiles = pd.read_csv(snakemake.input.intraday_profiles, index_col=0)
-    intraday_year_profiles = generate_periodic_profiles(
-        dt_index=heat_demand_hdh.index,
+
+    # TODO, does this work with variable frequency?
+    intraday_year_profiles = downscale_time_data(
+        dt_index=heat_demand_hourly.index,
         weekly_profile=(
             list(intraday_profiles["weekday"]) * 5 + list(intraday_profiles["weekend"]) * 2
         ),
     )
 
-    space_heat_demand_total = pd.read_csv(snakemake.input.space_heat_demand, index_col=0)
-    space_heat_demand_total = space_heat_demand_total * 1e6
+    # TWh -> MWh
+    space_heat_demand_total = pd.read_csv(snakemake.input.space_heat_demand, index_col=0) * 1e6
     space_heat_demand_total = space_heat_demand_total.squeeze()
 
+    # ==== SCALE TO FUTURE DEMAND ======
+    # TODO soft-code ref/base year or find a better variable name
+    # TODO remind coupling: fix this kind of stuff or make separate fn
+    # Belongs outside of this function really and in main
     factor = make_heat_demand_projections(
         planning_horizons, snakemake.wildcards["heating_demand"], ref_year=REF_YEAR
     )
-
+    # WOULD BE NICER TO SUM THAN TO WEIGH OR TO directly build the profile with the freq
+    # TODO, does this work with variable frequency?
     space_heating_per_hdd = (space_heat_demand_total * factor) / (
-        heat_demand_hdh.sum() * snakemake.config["frequency"]
+        heat_demand_hourly.sum() * snakemake.config["snapshots"]["frequency"]
     )
 
-    space_heat_demand = intraday_year_profiles.mul(heat_demand_hdh).mul(space_heating_per_hdd)
+    space_heat_demand = intraday_year_profiles.mul(heat_demand_hourly).mul(space_heating_per_hdd)
     water_heat_demand = intraday_year_profiles.mul(hot_water_per_day / 24.0)
 
     heat_demand = space_heat_demand + water_heat_demand
@@ -274,15 +301,15 @@ if __name__ == "__main__":
     )
 
     atlite_hour_shift = calc_atlite_heating_timeshift(date_range, use_last_ts=False)
-    start_day = snakemake.config["heat_demand"]["start_day"]
-    end_day = snakemake.config["heat_demand"]["end_day"]
-    daily_hd = build_daily_heat_demand_profiles(atlite_heating_hr_shift=atlite_hour_shift)
+    reg_daily_hd = build_daily_heat_demand_profiles(
+        config["heat_demand"], atlite_heating_hr_shift=atlite_hour_shift, switch_month_day=True
+    )
 
     hot_water_per_day = build_hot_water_per_day(planning_horizons)
 
     heat_demand, space_heat_demand, space_heating_per_hdd, water_heat_demand = (
         build_heat_demand_profile(
-            daily_hd,
+            reg_daily_hd,
             hot_water_per_day,
             date_range,
             planning_horizons,
