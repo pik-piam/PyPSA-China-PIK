@@ -17,7 +17,7 @@ latency-wait: 60
 keep-going: False
 rerun-incomplete: True
 printshellcmds: True
-scheduler: greedy
+# scheduler: greedy
 # use-conda: True
 rerun-trigger:
 - code
@@ -42,8 +42,8 @@ cluster-generic-cancel-cmd: scancel
 
 # now define the resources
 default-resources:
-  partition: standard
-  qos: short
+  partition: priority
+  qos: priority
   mem_mb: 2000
   cores: 8
 
@@ -53,14 +53,12 @@ set-resources:
     time: 300
   solve_networks:
     mem_mb: 80000
-    # qos : short
-    # partition: standard
+    qos : short
+    partition: standard
     time : 300
   plot_network:
-    mem_mb: 4000
+    mem_mb: 8000
     cores: 2
-    # partition: io
-    # qos: io
   retrieve_build_up_raster:
     time: 300
     cores: 1

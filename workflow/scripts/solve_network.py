@@ -203,7 +203,7 @@ if __name__ == "__main__":
     gurobi_license_config = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
     logger.info(f"Solver config {solver_config} and license cfg {gurobi_license_config}")
     if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
-        setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
+        tunnel = setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
 
     opts = snakemake.wildcards.get("opts", "")
     if "sector_opts" in snakemake.wildcards.keys():
@@ -218,7 +218,8 @@ if __name__ == "__main__":
         n = pypsa.Network(snakemake.input.network_name)
 
     n = prepare_network(n, solve_opts)
-
+    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
+        logger.info(f"tunnel process alive? {tunnel.poll()}")
     n = solve_network(
         n,
         config=snakemake.config,
@@ -232,3 +233,8 @@ if __name__ == "__main__":
     n.export_to_netcdf(snakemake.output[0])
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
+    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
+        logger.info(f"tunnel alive? {tunnel.poll()}")
+
+        tunnel.kill()
+        logger.info(f"tunnel alive after kill? {tunnel.poll()}")

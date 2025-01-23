@@ -17,7 +17,7 @@ from numpy.random import default_rng
 
 import pypsa
 from pypsa.components import components, component_attrs
-from constants import TIMEZONE
+
 
 # get root logger
 logger = logging.getLogger()
@@ -89,7 +89,9 @@ class PathManager:
 # ============== HPC helpers ==================
 
 
-def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = None):
+def setup_gurobi_tunnel_and_env(
+    tunnel_config: dict, logger: logging.Logger = None
+) -> subprocess.Popen:
     """A utility function to set up the Gurobi environment variables and establish an
     SSH tunnel on HPCs. Otherwise the license check will fail if the compute nodes do
      not have internet access or a token server isn't set up
@@ -103,14 +105,15 @@ def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = No
     logger.info("setting up tunnel")
     user = os.getenv("USER")  # User is pulled from the environment
     port = tunnel_config.get("port", DEFAULT_TUNNEL_PORT)
-    ssh_command = f"ssh -fN -D {port} {user}@login01"
+    random_port = default_rng().integers(1, 5)
+    ssh_command = f"ssh -fN -v -D {port} {user}@login0{random_port}"
 
     # random sleep to avoid port conflicts with simultaneous connections
-    time.sleep(default_rng().uniform(0, 1))
 
     try:
         # Run SSH in the background to establish the tunnel
-        subprocess.Popen(ssh_command, shell=True)
+        socks_proc = subprocess.Popen(ssh_command, shell=True)
+        time.sleep(default_rng().uniform(0, 0.2))
         logger.info(f"SSH tunnel established on port {port}")
     # TODO don't handle unless neeeded
     except Exception as e:
@@ -131,6 +134,8 @@ def setup_gurobi_tunnel_and_env(tunnel_config: dict, logger: logging.Logger = No
     # os.environ["https_timeout"] = "10"
     # os.environ["proxy_timeout"] = "10"
     logger.info("Gurobi Environment variables & tunnel set up successfully.")
+
+    return socks_proc
 
 
 # =========== PyPSA Helpers =============
@@ -330,6 +335,9 @@ def calc_atlite_heating_timeshift(date_range: pd.date_range, use_last_ts=False) 
     Returns:
         int: a single timezone shift to utc in hours
     """
+    # import constants here to not interfere with snakemake
+    from constants import TIMEZONE
+
     idx = 0 if not use_last_ts else -1
     return pytz.timezone(TIMEZONE).utcoffset(date_range[idx]).total_seconds() / 3600
 
@@ -346,6 +354,9 @@ def calc_utc_timeshift(snapshot_config: dict, weather_year: int) -> pd.Timedelta
     Returns:
         pd.TimedeltaIndex: the shifts to UTC
     """
+    # import constants here to not interfere with snakemake
+    from constants import TIMEZONE
+
     weather_snapshots = make_periodic_snapshots(
         year=weather_year,
         freq=snapshot_config["freq"],
@@ -582,6 +593,7 @@ def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -
     Raises:
         ValueError: if the profile data crosses years
     """
+
     years = data.index.year.unique()
     if not len(years) == 1:
         raise ValueError(f"Data should be for one year only but got {years}")
@@ -591,6 +603,7 @@ def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -
     if is_leap_year(ref_year):  # and not is_leap_year(planning_yr):
         data = data.loc[~((data.index.month == 2) & (data.index.day == 29))]
 
+    # TODO CONSIDER CHANGING METHOD TO REINDEX inex = daterange w new year method = FORWARDFILL
     data.index = data.index.map(lambda t: t.replace(year=int(planning_yr)))
 
     return data
