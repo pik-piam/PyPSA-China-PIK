@@ -134,7 +134,7 @@ def prepare_network(config: dict) -> pypsa.Network:
 
     network.set_snapshots(snapshots.values)
 
-    network.snapshot_weightings[:] = config["frequency"]
+    network.snapshot_weightings[:] = config["snapshots"]["frequency"]
     represented_hours = network.snapshot_weightings.sum()[0]
     # TODO: what about leap years?
     n_years = represented_hours / YEAR_HRS
@@ -543,17 +543,19 @@ def prepare_network(config: dict) -> pypsa.Network:
     if config["add_hydro"]:
 
         # load dams
-        df = pd.read_csv(config["hydro"]["dams_path"], index_col=0)
+        df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
         points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
         dams = gpd.GeoDataFrame(df, geometry=points, crs=CRS)
 
         hourly_rng = pd.date_range(
-            config["hydro"]["inflow_date_start_path"],
-            config["hydro"]["inflow_date_end_path"],
-            freq=config["freq"],
+            config["hydro_dams"]["inflow_date_start"],
+            config["hydro_dams"]["inflow_date_end"],
+            freq=config["snapshots"]["freq"],
             inclusive="left",
         )
-        inflow = pd.read_pickle(config["hydro"]["inflow_path"]).reindex(hourly_rng, fill_value=0)
+        inflow = pd.read_pickle(config["hydro_dams"]["inflow_path"]).reindex(
+            hourly_rng, fill_value=0
+        )
         inflow.columns = dams.index
         inflow = inflow.loc[str(INFLOW_DATA_YR)]
         inflow = shift_profile_to_planning_year(inflow, INFLOW_DATA_YR)
@@ -576,8 +578,10 @@ def prepare_network(config: dict) -> pypsa.Network:
         dam_buses = network.buses[network.buses.carrier == "stations"]
 
         # ===== add hydro reservoirs as stores ======
-        initial_capacity = pd.read_pickle(config["hydro"]["reservoir_initial_capacity_path"])
-        effective_capacity = pd.read_pickle(config["hydro"]["reservoir_effective_capacity_path"])
+        initial_capacity = pd.read_pickle(config["hydro_dams"]["reservoir_initial_capacity_path"])
+        effective_capacity = pd.read_pickle(
+            config["hydro_dams"]["reservoir_effective_capacity_path"]
+        )
         initial_capacity.index = dams.index
         effective_capacity.index = dams.index
         initial_capacity = initial_capacity / water_consumption_factor
@@ -667,9 +671,9 @@ def prepare_network(config: dict) -> pypsa.Network:
             # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
         # ======= add other existing hydro power
-        hydro_p_nom = pd.read_hdf(config["hydro"]["p_nom_path"]).tz_localize(None)
+        hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
         hydro_p_max_pu = pd.read_hdf(
-            config["hydro"]["p_max_pu_path"], key=config["hydro"]["p_max_pu_key"]
+            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
         ).tz_localize(None)
 
         hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)

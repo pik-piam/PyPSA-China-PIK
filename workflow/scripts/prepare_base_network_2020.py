@@ -46,6 +46,14 @@ logger.setLevel(DEBUG)
 
 def prepare_network(config):
 
+    # derive from the config
+    config["add_gas"] = (
+        True if [tech for tech in config["Techs"]["conv_techs"] if "gas" in tech] else False
+    )
+    config["add_coal"] = (
+        True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False
+    )
+
     if "overrides" in snakemake.input.keys():
         overrides = override_component_attrs(snakemake.input.overrides)
         network = pypsa.Network(override_component_attrs=overrides)
@@ -71,7 +79,7 @@ def prepare_network(config):
     )
 
     network.set_snapshots(snapshots.values)
-    network.snapshot_weightings[:] = config["frequency"]
+    network.snapshot_weightings[:] = config["snapshots"]["frequency"]
     represented_hours = network.snapshot_weightings.sum()[0]
     n_years = represented_hours / YEAR_HRS
 
@@ -201,7 +209,6 @@ def prepare_network(config):
             bus=nodes + " coal",
             carrier="coal",
             p_nom_extendable=True,
-            marginal_cost=costs.at["coal", "fuel"],
             efficiency=costs.at["coal", "efficiency"],
             marginal_cost=costs.at["coal", "marginal_cost"],
             capital_cost=costs.at["coal", "efficiency"]
@@ -229,17 +236,19 @@ def prepare_network(config):
     if config["add_hydro"]:
 
         # load dams
-        df = pd.read_csv(config["hydro"]["dams_path"], index_col=0)
+        df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
         points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
         dams = gpd.GeoDataFrame(df, geometry=points, crs=CRS)
 
         hourly_rng = pd.date_range(
-            config["hydro"]["inflow_date_start_path"],
-            config["hydro"]["inflow_date_end_path"],
-            freq=config["freq"],
+            config["hydro_dams"]["inflow_date_start"],
+            config["hydro_dams"]["inflow_date_end"],
+            freq=config["snapshots"]["freq"],
             inclusive="left",
         )
-        inflow = pd.read_pickle(config["hydro"]["inflow_path"]).reindex(hourly_rng, fill_value=0)
+        inflow = pd.read_pickle(config["hydro_dams"]["inflow_path"]).reindex(
+            hourly_rng, fill_value=0
+        )
         inflow.columns = dams.index
         inflow = inflow.loc[str(INFLOW_DATA_YR)]
         inflow = shift_profile_to_planning_year(inflow, INFLOW_DATA_YR)
@@ -262,8 +271,10 @@ def prepare_network(config):
         dam_buses = network.buses[network.buses.carrier == "stations"]
 
         # ===== add hydro reservoirs as stores ======
-        initial_capacity = pd.read_pickle(config["hydro"]["reservoir_initial_capacity_path"])
-        effective_capacity = pd.read_pickle(config["hydro"]["reservoir_effective_capacity_path"])
+        initial_capacity = pd.read_pickle(config["hydro_dams"]["reservoir_initial_capacity_path"])
+        effective_capacity = pd.read_pickle(
+            config["hydro_dams"]["reservoir_effective_capacity_path"]
+        )
         initial_capacity.index = dams.index
         effective_capacity.index = dams.index
         initial_capacity = initial_capacity / water_consumption_factor
@@ -354,9 +365,9 @@ def prepare_network(config):
 
         # TODO clarify what this is and where it comes from
         # ======= add other existing hydro power
-        hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"]).tz_localize(None)
+        hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
         hydro_p_max_pu = pd.read_hdf(
-            config["hydro"]["p_max_pu_path"], key=config["hydro"]["p_max_pu_key"]
+            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
         ).tz_localize(None)
 
         hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
@@ -448,7 +459,10 @@ def prepare_network(config):
             solar_thermal = config["solar_cf_correction"] * store["solar_thermal_profiles"] / 1e3
 
         date_range = pd.date_range(
-            "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz="Asia/shanghai"
+            "2025-01-01 00:00",
+            "2025-12-31 23:00",
+            freq=config["snapshots"]["freq"],
+            tz="Asia/shanghai",
         )
         date_range = date_range.map(lambda t: t.replace(year=2020))
 
