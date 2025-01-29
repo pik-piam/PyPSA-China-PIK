@@ -3,18 +3,18 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'IRtest005'
+  name: 'Debug_gas_1hr_res_H2_pipelines_nocc'
 
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
 
 scenario:
-  pathway: ['exponential175'] # ,'beta25175']
+  pathway: ['exp175'] # ,'beta25175']
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   # relative CO2 reduction, TODO soft code base year (ideally also fetch data)
   co2_reduction:
-    exponential175:
+    exp175:
       '2020': 0.0
       '2025': 0.22623418
       '2030': 0.41175086
@@ -142,14 +142,14 @@ Techs:
   conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
   coal_cc: true # currently myopic pathway only.  CC = co2 cap 
-  hydrogen_lines: false # currently myopic pathway only
+  hydrogen_lines: true # currently myopic pathway only
 
 ## add components (overwrites vre tech choice)
 heat_coupling: True
-add_biomass: True
+add_biomass: False
 add_hydro: True
 add_H2: True
-add_methanation: True
+add_methanation: False
 
 hydro_dams:
   dams_path: "resources/data/hydro/dams_large.csv"

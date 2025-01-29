@@ -347,7 +347,7 @@ plotting:
     stations-AC: "Reservoir & Dam"
     hydro: "Reservoir & Dam"
     battery: "Battery Storage"
-    H2: "Hydrogen Storage"
+    # H2: "Hydrogen Power"
     lines: "Transmission Lines"
     ror: "Run of River"
     AC-heat: "Heat Pump"
