@@ -100,7 +100,7 @@ def add_conventional_generators(
             "Generator",
             nodes,
             suffix=" gas fuel",
-            bus=nodes,
+            bus=nodes + " gas",
             carrier="gas",
             p_nom_extendable=True,
             p_nom=1e7,
@@ -131,6 +131,7 @@ def add_conventional_generators(
             p_nom_extendable=True,
             efficiency=costs.at["OCGT", "efficiency"],
             lifetime=costs.at["OCGT", "lifetime"],
+            carrier="gas",
         )
 
     if config["add_coal"]:
@@ -139,7 +140,7 @@ def add_conventional_generators(
         network.add(
             "Generator",
             nodes,
-            suffix=" coal",
+            suffix=" coal power",
             bus=nodes,
             carrier="coal",
             p_nom_extendable=True,
@@ -166,10 +167,9 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         name=nodes + " H2 Electrolysis",
         bus0=nodes,
         bus1=nodes + " H2",
-        # TODO not defined
         bus2=nodes + " central heat",
         p_nom_extendable=True,
-        carrier="H2",
+        carrier="H2 Electrolysis",
         efficiency=costs.at["electrolysis", "efficiency"],
         efficiency2=costs.at["electrolysis", "efficiency-heat"],
         capital_cost=costs.at["electrolysis", "capital_cost"],
@@ -210,8 +210,8 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         capital_cost=costs.at["hydrogen storage tank type 1 including compressor", "capital_cost"],
         lifetime=costs.at["hydrogen storage tank type 1 including compressor", "lifetime"],
     )
-
     if config["add_methanation"]:
+        cost_year = snakemake.wildcards["planning_horizons"]
         network.add(
             "Link",
             nodes + " Sabatier",
@@ -221,8 +221,15 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
             p_nom_extendable=True,
             efficiency=costs.at["methanation", "efficiency"],
             capital_cost=costs.at["methanation", "efficiency"]
-            * costs.at["methanation", "capital_cost"],
+            * costs.at["methanation", "capital_cost"]
+            + costs.at["direct air capture", "capital_cost"]
+            * costs.at["gas", "co2_emissions"]
+            * costs.at["methanation", "efficiency"],
+            # TODO fix me
             lifetime=costs.at["methanation", "lifetime"],
+            marginal_cost=(400 - 5 * (int(cost_year) - 2020))
+            * costs.at["gas", "co2_emissions"]
+            * costs.at["methanation", "efficiency"],
         )
 
 
@@ -313,6 +320,9 @@ def add_heat_coupling(
                     else costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
                 ),
                 capital_cost=costs.at[cat.lstrip() + "air-sourced heat pump", "capital_cost"],
+                *costs.at[cat.lstrip() + "air-sourced heat pump", "capital_cost"],
+                marginal_cost=costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
+                * costs.at[cat.lstrip() + "air-sourced heat pump", "marginal_cost"],
                 p_nom_extendable=True,
                 lifetime=costs.at[cat.lstrip() + "air-sourced heat pump", "lifetime"],
             )
@@ -329,6 +339,8 @@ def add_heat_coupling(
                 if config["time_dep_hp_cop"]
                 else costs.at["decentral ground-sourced heat pump", "efficiency"]
             ),
+            marginal_cost=costs.at[cat.lstrip() + "ground-sourced heat pump", "efficiency"]
+            * costs.at[cat.lstrip() + "ground-sourced heat pump", "marginal_cost"],
             capital_cost=costs.at["decentral ground-sourced heat pump", "capital_cost"],
             p_nom_extendable=True,
             lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
@@ -391,6 +403,8 @@ def add_heat_coupling(
                 efficiency=costs.at[cat.lstrip() + "resistive heater", "efficiency"],
                 capital_cost=costs.at[cat.lstrip() + "resistive heater", "efficiency"]
                 * costs.at[cat.lstrip() + "resistive heater", "capital_cost"],
+                marginal_cost=costs.at[cat.lstrip() + "resistive heater", "efficiency"]
+                * costs.at[cat.lstrip() + "resistive heater", "marginal_cost"],
                 p_nom_extendable=True,
                 lifetime=costs.at[cat.lstrip() + "resistive heater", "lifetime"],
             )
@@ -628,13 +642,23 @@ def add_hydro(
     # ===  add rivers to link station to station
     dam_edges = pd.read_csv(config["hydro_dams"]["damn_flows_path"], delimiter=",")
 
-    # normal flow
+    # === normal flow ====
     for row in dam_edges.iterrows():
         bus0 = row[1].bus0 + " turbines"
         bus2 = row[1].end_bus + " station"
         network.links.at[bus0, "bus2"] = bus2
         network.links.at[bus0, "efficiency2"] = 1.0
-    # spillage
+
+    #  ==== spillage =====
+    # TODO consider adding to remove warning
+    # network.add(
+    #     "bus",
+    #     nodes + " spillage",
+    #     carrier="spillage",
+    #     x=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(prov_shapes.crs).x,
+    #     y=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(prov_shapes.crs).y,
+    # )
+
     # TODO WHY EXTENDABLE - weather year?
     for row in dam_edges.iterrows():
         bus0 = row[1].bus0 + " station"
@@ -695,7 +719,7 @@ def add_hydro(
     # ===  add "fake" hydro at network node (and not real location) ===
     # this allows to introduce capital cost in relevant bus
     # WARNING NOT ROBUST if nodes not the same as province
-    if config["add_hydro"] and config["hydro"]["hydro_capital_cost"]:
+    if config["hydro"]["hydro_capital_cost"]:
         hydro_cc = costs.at["hydro", "capital_cost"]
         network.add(
             "StorageUnit",
@@ -1075,64 +1099,64 @@ def prepare_network(config: dict) -> pypsa.Network:
             capital_cost=cc,
         )
 
-    # TODO add
-    # if config["Techs"]["hydrogen_lines"]:
-    #     edges = pd.read_csv(snakemake.input.edges, header=None)
-    #     lengths = NON_LIN_PATH_SCALING * np.array(
-    #         [
-    #             haversine(
-    #                 [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
-    #                 [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
-    #             )
-    #             for name0, name1 in edges[[0, 1]].values
-    #         ]
-    #     )
+    if config["Techs"]["hydrogen_lines"]:
+        edges = pd.read_csv(snakemake.input.edges, header=None)
+        lengths = NON_LIN_PATH_SCALING * np.array(
+            [
+                haversine(
+                    [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
+                    [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
+                )
+                for name0, name1 in edges[[0, 1]].values
+            ]
+        )
 
-    #     cc = costs.at["H2 (g) pipeline", "capital_cost"] * lengths
+        cc = costs.at["H2 (g) pipeline", "capital_cost"] * lengths
 
-    #     network.add(
-    #         "Link",
-    #         edges[0] + "-" + edges[1] + " H2 pipeline",
-    #         suffix=" positive",
-    #         bus0=edges[0].values + " H2",
-    #         bus1=edges[1].values + " H2",
-    #         bus2=edges[0].values,
-    #         p_nom_extendable=True,
-    #         p_nom=0,
-    #         p_nom_min=0,
-    #         p_min_pu=0,
-    #         efficiency=config["transmission_efficiency"]["H2 pipeline"]["efficiency_static"]
-    #         * config["transmission_efficiency"]["H2 pipeline"]["efficiency_per_1000km"]
-    #         ** (lengths / 1000),
-    #         efficiency2=-config["transmission_efficiency"]["H2 pipeline"]["compression_per_1000km"]
-    #         * lengths
-    #         / 1e3,
-    #         length=lengths,
-    #         lifetime=costs.at["H2 (g) pipeline", "lifetime"],
-    #         capital_cost=cc,
-    #     )
+        # h2 pipeline with losses
+        network.add(
+            "Link",
+            edges[0] + "-" + edges[1] + " H2 pipeline",
+            suffix=" positive",
+            bus0=edges[0].values + " H2",
+            bus1=edges[1].values + " H2",
+            bus2=edges[0].values,
+            p_nom_extendable=True,
+            p_nom=0,
+            p_nom_min=0,
+            p_min_pu=0,
+            efficiency=config["transmission_efficiency"]["H2 pipeline"]["efficiency_static"]
+            * config["transmission_efficiency"]["H2 pipeline"]["efficiency_per_1000km"]
+            ** (lengths / 1000),
+            efficiency2=-config["transmission_efficiency"]["H2 pipeline"]["compression_per_1000km"]
+            * lengths
+            / 1e3,
+            length=lengths,
+            lifetime=costs.at["H2 (g) pipeline", "lifetime"],
+            capital_cost=cc,
+        )
 
-    #     network.add(
-    #         "Link",
-    #         edges[1] + "-" + edges[0] + " H2 pipeline",
-    #         suffix=" reversed",
-    #         bus0=edges[1].values + " H2",
-    #         bus1=edges[0].values + " H2",
-    #         bus2=edges[1].values,
-    #         p_nom_extendable=True,
-    #         p_nom=0,
-    #         p_nom_min=0,
-    #         p_min_pu=0,
-    #         efficiency=config["transmission_efficiency"]["H2 pipeline"]["efficiency_static"]
-    #         * config["transmission_efficiency"]["H2 pipeline"]["efficiency_per_1000km"]
-    #         ** (lengths / 1000),
-    #         efficiency2=-config["transmission_efficiency"]["H2 pipeline"]["compression_per_1000km"]
-    #         * lengths
-    #         / 1e3,
-    #         length=lengths,
-    #         lifetime=costs.at["H2 (g) pipeline", "lifetime"],
-    #         capital_cost=0,
-    #     )
+        network.add(
+            "Link",
+            edges[1] + "-" + edges[0] + " H2 pipeline",
+            suffix=" reversed",
+            bus0=edges[1].values + " H2",
+            bus1=edges[0].values + " H2",
+            bus2=edges[1].values,
+            p_nom_extendable=True,
+            p_nom=0,
+            p_nom_min=0,
+            p_min_pu=0,
+            efficiency=config["transmission_efficiency"]["H2 pipeline"]["efficiency_static"]
+            * config["transmission_efficiency"]["H2 pipeline"]["efficiency_per_1000km"]
+            ** (lengths / 1000),
+            efficiency2=-config["transmission_efficiency"]["H2 pipeline"]["compression_per_1000km"]
+            * lengths
+            / 1e3,
+            length=lengths,
+            lifetime=costs.at["H2 (g) pipeline", "lifetime"],
+            capital_cost=0,
+        )
 
     return network
 
