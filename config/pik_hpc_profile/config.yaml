@@ -38,12 +38,13 @@ cluster-generic-submit-cmd:
     --output=logs/logs_slurm/{rule}/%j-{rule}-{wildcards}.out
     --parsable
     --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
+    --exclude=csl14c17[8-9]
 cluster-generic-cancel-cmd: scancel
 
 # now define the resources
 default-resources:
-  partition: priority
-  qos: priority
+  partition: standard
+  qos: short
   mem_mb: 2000
   cores: 8
 
@@ -62,7 +63,7 @@ set-resources:
   retrieve_build_up_raster:
     time: 300
     cores: 1
-    partition: io
+    partition: io # login
     qos: io
   retrieve_Grass_raster:
     time: 300
