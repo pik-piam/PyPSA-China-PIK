@@ -140,12 +140,14 @@ rule build_renewable_potential:
         provinces_shp="resources/data/province_shapes/CHN_adm1.shp",
         offshore_province_shapes="resources/data/regions/regions_offshore_province.geojson",
         offshore_shapes="resources/data/regions/regions_offshore.geojson",
+    # TODO get cutout from config
         cutout= "resources/cutouts/China-2020.nc"
+    # TODO make profile path cutout dependent
     output:
         solar_profile="resources/profile_solar.nc",
         onwind_profile="resources/profile_onwind.nc",
-        protected_areas_offshore = DERIVED_COMMON+"/"+"landuse_availability/protected_areas_offshore.shp",
-        offwind_profile="resources/profile_offwind.nc"
+        offwind_profile="resources/profile_offwind.nc",
+        protected_areas_offshore = DERIVED_COMMON+"/"+"landuse_availability/protected_areas_offshore.shp"
     log: LOGS_COMMON + "/build_renewable_potential.log"
     threads: ATLITE_NPROCESSES
     resources: mem_mb=ATLITE_NPROCESSES * 5000

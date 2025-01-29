@@ -1,6 +1,7 @@
 # snakemake rules for data fetch operations
 
-
+# TODO build actual fetch rules with the sentinel/copernicus APIs. 
+# TODO See if there are datasets succeeding the S2 LC100 cover to get newer data
 if config['enable'].get('retrieve_raster', True):
     rule retrieve_build_up_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_BuiltUp-CoverFraction-layer_EPSG-4326.tif")

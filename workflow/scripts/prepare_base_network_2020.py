@@ -529,6 +529,8 @@ def prepare_network(config):
                 p_nom_extendable=True,
             )
 
+            # [HP] 180 day time constant for centralised, 3 day for decentralised
+            tes_tau = config["water_tanks"]["tes_tau"][cat.strip()]
             network.add(
                 "Store",
                 nodes + cat + "water tank",
@@ -536,10 +538,7 @@ def prepare_network(config):
                 carrier="water tanks",
                 e_cyclic=True,
                 e_nom_extendable=True,
-                standing_loss=1
-                - np.exp(
-                    -1 / (24.0 * (config["tes_tau"] if cat == " decentral " else 180.0))
-                ),  # [HP] 180 day time constant for centralised
+                standing_loss=1 - np.exp(-1 / (24.0 * tes_tau)),
                 capital_cost=costs.at[cat.lstrip() + "water tank storage", "capital_cost"],
                 lifetime=costs.at[cat.lstrip() + "water tank storage", "lifetime"],
             )
