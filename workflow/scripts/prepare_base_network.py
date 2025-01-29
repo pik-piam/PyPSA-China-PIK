@@ -783,6 +783,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             + costs.at["direct air capture", "capital_cost"]
             * costs.at["gas", "co2_emissions"]
             * costs.at["methanation", "efficiency"],
+            # TODO fix hardcoded
             marginal_cost=(400 - 5 * (int(cost_year) - 2020))
             * costs.at["gas", "co2_emissions"]
             * costs.at["methanation", "efficiency"],
@@ -879,7 +880,7 @@ def prepare_network(config: dict) -> pypsa.Network:
                 p_nom_extendable=True,
                 lifetime=costs.at[cat.lstrip() + "air-sourced heat pump", "lifetime"],
             )
-
+            # TODO not valid for decentral
             network.add(
                 "Link",
                 nodes,

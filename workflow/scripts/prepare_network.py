@@ -319,8 +319,8 @@ def add_heat_coupling(
                     if config["time_dep_hp_cop"]
                     else costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
                 ),
-                capital_cost=costs.at[cat.lstrip() + "air-sourced heat pump", "capital_cost"],
-                *costs.at[cat.lstrip() + "air-sourced heat pump", "capital_cost"],
+                capital_cost=costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
+                * costs.at[cat.lstrip() + "air-sourced heat pump", "capital_cost"],
                 marginal_cost=costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
                 * costs.at[cat.lstrip() + "air-sourced heat pump", "marginal_cost"],
                 p_nom_extendable=True,
@@ -341,7 +341,8 @@ def add_heat_coupling(
             ),
             marginal_cost=costs.at[cat.lstrip() + "ground-sourced heat pump", "efficiency"]
             * costs.at[cat.lstrip() + "ground-sourced heat pump", "marginal_cost"],
-            capital_cost=costs.at["decentral ground-sourced heat pump", "capital_cost"],
+            capital_cost=costs.at[cat.lstrip() + "ground-sourced heat pump", "efficiency"]
+            * costs.at["decentral ground-sourced heat pump", "capital_cost"],
             p_nom_extendable=True,
             lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
         )
@@ -1100,14 +1101,22 @@ def prepare_network(config: dict) -> pypsa.Network:
         )
 
     if config["Techs"]["hydrogen_lines"]:
-        edges = pd.read_csv(snakemake.input.edges, header=None)
+        edge_path = config["edge_paths"].get(config["scenario"]["topology"], None)
+        if edge_path is None:
+            raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
+        else:
+            edges = pd.read_csv(
+                edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
+            ).fillna(0)
+
+        # fix this to use map with x.y
         lengths = NON_LIN_PATH_SCALING * np.array(
             [
                 haversine(
-                    [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
-                    [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
+                    [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
+                    [network.buses.at[bus1, "x"], network.buses.at[bus1, "y"]],
                 )
-                for name0, name1 in edges[[0, 1]].values
+                for bus0, bus1 in edges[["bus0", "bus1"]].values
             ]
         )
 
@@ -1116,11 +1125,11 @@ def prepare_network(config: dict) -> pypsa.Network:
         # h2 pipeline with losses
         network.add(
             "Link",
-            edges[0] + "-" + edges[1] + " H2 pipeline",
+            edges["bus0"] + "-" + edges["bus1"] + " H2 pipeline",
             suffix=" positive",
-            bus0=edges[0].values + " H2",
-            bus1=edges[1].values + " H2",
-            bus2=edges[0].values,
+            bus0=edges["bus0"].values + " H2",
+            bus1=edges["bus1"].values + " H2",
+            bus2=edges["bus0"].values,
             p_nom_extendable=True,
             p_nom=0,
             p_nom_min=0,
@@ -1138,11 +1147,11 @@ def prepare_network(config: dict) -> pypsa.Network:
 
         network.add(
             "Link",
-            edges[1] + "-" + edges[0] + " H2 pipeline",
+            edges["bus1"] + "-" + edges["bus0"] + " H2 pipeline",
             suffix=" reversed",
-            bus0=edges[1].values + " H2",
-            bus1=edges[0].values + " H2",
-            bus2=edges[1].values,
+            bus0=edges["bus1"].values + " H2",
+            bus1=edges["bus0"].values + " H2",
+            bus2=edges["bus1"].values,
             p_nom_extendable=True,
             p_nom=0,
             p_nom_min=0,
