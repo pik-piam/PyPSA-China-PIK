@@ -3,6 +3,7 @@ import pandas as pd
 import os.path
 import matplotlib.pyplot as plt
 from os import PathLike
+from constants import PROV_NAMES
 
 
 def make_nice_tech_colors(tech_colors: dict, nice_names: dict) -> dict:
@@ -181,7 +182,18 @@ def aggregate_small_values(df: pd.DataFrame, threshold: float, column_name=None)
     return df_
 
 
-def assign_location(n: pypsa.Network):
+# TODO assign location in prep_network
+def assign_location(n: pypsa.Network, valid_locations: list = PROV_NAMES):
+    """Add the node location name as a column to the component dataframes.
+    This is needed because the bus names are of style LOCATION TYPE and cannot be directly grouped
+    by province/location otherwise
+
+    Args:
+        n (pypsa.Network): the pypsa network object
+    """
+
+
+def assign_location(n: pypsa.Network, valid_locations: list = PROV_NAMES):
     """Add the node location name as a column to the component dataframes.
     This is needed because the bus names are of style LOCATION TYPE and cannot be directly grouped
     by province/location otherwise
@@ -191,6 +203,17 @@ def assign_location(n: pypsa.Network):
     """
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         c.df["location"] = c.df.index.str.split(" ", expand=True).get_level_values(0)
+        c.df.loc[~c.df.location.isin(valid_locations), "location"] = pd.NA
+
+    # identify links that are not to a region (e.g. hydro)
+    for c in n.iterate_components(n.branch_components):
+        c.df["plottable"] = c.df.apply(
+            lambda row: row.bus0.split(" ")[0] in PROV_NAMES
+            and row.bus1.split(" ")[0] in PROV_NAMES,
+            axis=1,
+        )
+    for c in n.iterate_components(n.one_port_components):
+        c.df["plottable"] = c.df.location.notna()
 
 
 def set_plot_style(
@@ -214,6 +237,25 @@ def set_plot_style(
     # plt.style.use only overwrites the specified parts of the previous style -> possible to combine
     plt.style.use(base_styles)
     plt.style.use(style_config_file)
+
+
+def aggregate_small_pie_vals(pie: pd.Series, threshold: float) -> pd.Series:
+    """Aggregate small pie values into the "Other" category
+
+    Args:
+        pie (pd.Series): pies for netwrk plotting with (Bus, Carrier) index
+        threshold (float): the cutoff
+
+    Returns:
+        pd.Series: carriers below threshold per Bus merged into "Other"
+    """
+
+    pie_df = pie.to_frame()
+    pie_df["new_carrier"] = pie_df.apply(
+        lambda x: "Other" if x.values < threshold else x.name[1], axis=1
+    )
+    pie_df["location"] = pie_df.index.get_level_values(0)
+    return pie_df.set_index(["location", "new_carrier"]).groupby(level=[0, 1]).sum().squeeze()
 
 
 if __name__ == "__main__":

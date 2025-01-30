@@ -5,7 +5,8 @@ plotting:
   cost_panel:
     y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
   cost_map:
-    figsize: [14, 8]
+    figsize: [10, 8]
+    figsize_w_additions: [14, 8]
     boundaries: [71, 135., 10, 56.]
     bus_size_factor: 1.e+10
     linewidth_factor: 6.e+3
@@ -30,8 +31,8 @@ plotting:
     ref_bus_sizes : [5e7, 1e8, 2e9] # MWh
     bus_ref_title : "Electricity supply"
 
-  costs_threshold: 10
-  energy_threshold: 50.
+  costs_threshold: 1.e+8
+  energy_threshold: 1.e+6
 
   loads: ['electricity', 'decentral heat', 'central heat']
   vre_techs: [ "onwind", "offwind", "solar"]
@@ -46,8 +47,11 @@ plotting:
     wind: "#235ebc"
     onwind: "#235ebc"
     onshore wind: "#235ebc"
+    Onshore Wind: "#235ebc"
     offwind: "#6895dd"
     offshore wind: "#6895dd"
+    Offshore Wind: "#6895dd"
+    Offshore waste:ind: "#6895dd"
     offwind-ac: "#6895dd"
     offshore wind (AC): "#6895dd"
     offshore wind ac: "#6895dd"
