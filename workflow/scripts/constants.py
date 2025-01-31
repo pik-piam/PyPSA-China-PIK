@@ -11,6 +11,8 @@ PLOT_CO2_UNITS = 1e6  # tCO2->MtCO2
 PLOT_CO2_LABEL = "Mt CO2"
 COST_UNIT = 1
 
+CURRENCY = "Eur"
+
 # ==== data inputs ====
 YEARBOOK_DATA2POP = 1e4
 POP_YEAR = "2020"
