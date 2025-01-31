@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from os import PathLike
 from constants import PROV_NAMES
 
+import logging
+
 
 def make_nice_tech_colors(tech_colors: dict, nice_names: dict) -> dict:
     """add the nice names to the tech_colors dict keys
@@ -36,30 +38,17 @@ def get_stat_colors(
         extra_colors (dict, optional): Additional args for color. Defaults to None.
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: the colors
     """
-    color_series = n.carriers.color.copy().drop_duplicates(ignore_index=False)
-    tech_colors = plot_config["tech_colors"].copy()
-    nice_names = plot_config["nice_names"]
-    if extra_colors:
-        tech_colors.update(extra_colors)
-    # fill in with tech colors
-    missing_colors = df_stats.columns.difference(color_series).to_frame()
-    missing_colors["color"] = missing_colors.index.map(tech_colors).values
-    missing_colors.loc[missing_colors.color.isna(), "color"] = (
-        missing_colors.loc[missing_colors.color.isna()].index.str.lower().map(tech_colors)
+
+    # carrier colors with either nice or internal name
+    carrier_colors = pd.concat(
+        [n.carriers["color"], n.carriers[["nice_name", "color"]].set_index("nice_name")]
     )
-    # in case the carrier has the nicename in index
-    nice_n_colors = {v: tech_colors[k] for k, v in nice_names.items() if k in tech_colors}
-    missing_colors.loc[missing_colors.color.isna(), "color"] = missing_colors.loc[
-        missing_colors.color.isna()
-    ].index.map(nice_n_colors)
-    # fillna & add to
-    missing_colors.fillna(value={"color": nan_color}, inplace=True)
-    return pd.concat([color_series, missing_colors.color]).drop_duplicates(ignore_index=False)
-
-
-# x = get_stat_colors(p,n, config["plotting"], extra_colors={"Load":"black"})
+    carrier_colors = carrier_colors.groupby(level=0).first()
+    extra_colors = pd.DataFrame(extra_colors.values(), index=extra_colors.keys(), columns=["color"])
+    carrier_colors = pd.concat([carrier_colors, extra_colors])
+    return carrier_colors.squeeze()
 
 
 def rename_techs(label):
@@ -176,23 +165,13 @@ def aggregate_small_values(df: pd.DataFrame, threshold: float, column_name=None)
     else:
         to_drop = df_.where(df_ < threshold).isna()
 
-    df_.loc["other"] = df_.loc[to_drop].sum()
+    df_.loc["other"] = df_.loc[to_drop == False].sum()
     drop_index = to_drop[to_drop == True]
     df_.drop(drop_index.index, inplace=True)
     return df_
 
 
 # TODO assign location in prep_network
-def assign_location(n: pypsa.Network, valid_locations: list = PROV_NAMES):
-    """Add the node location name as a column to the component dataframes.
-    This is needed because the bus names are of style LOCATION TYPE and cannot be directly grouped
-    by province/location otherwise
-
-    Args:
-        n (pypsa.Network): the pypsa network object
-    """
-
-
 def assign_location(n: pypsa.Network, valid_locations: list = PROV_NAMES):
     """Add the node location name as a column to the component dataframes.
     This is needed because the bus names are of style LOCATION TYPE and cannot be directly grouped

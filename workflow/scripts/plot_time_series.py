@@ -53,7 +53,6 @@ def plot_energy_balance(
     )
     # colors & names part 1
     p.rename(plot_config["nice_names"], inplace=True)
-    color_series.rename(plot_config["nice_names"], inplace=True)
     color_series.index = color_series.index.str.strip()
 
     # split into supply and wothdrawal
@@ -79,9 +78,9 @@ def plot_energy_balance(
 
     supply = supply.reindex(columns=plot_order)
     charge = charge.reindex(columns=plot_order_charge)
-
     if not charge.empty:
         charge.plot.area(ax=ax, linewidth=0, color=color_series.loc[charge.columns])
+
     supply.plot.area(
         ax=ax,
         linewidth=0,
@@ -103,10 +102,16 @@ def plot_energy_balance(
 if __name__ == "__main__":
 
     # Detect running outside of snakemake and mock snakemake for testing
+    YEAR = "2060"
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "plot_time_series",
+            "plot_network",
+            topology="current+FCG",
+            pathway="exp175",
+            planning_horizons=YEAR,
+            heating_demand="positive",
         )
+
     configure_logging(snakemake)
 
     set_plot_style(
@@ -120,13 +125,21 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots(figsize=(16, 8))
     plot_energy_balance(
-        n, config["plotting"], start_date="2060-03-31 21:00", end_date="2060-04-06 12:00:00", ax=ax
+        n,
+        config["plotting"],
+        start_date=f"{YEAR}-03-31 21:00",
+        end_date=f"{YEAR}-04-06 12:00:00",
+        ax=ax,
     )
     fig.savefig(snakemake.output.el_spring)
 
     fig, ax = plt.subplots(figsize=(16, 8))
     plot_energy_balance(
-        n, config["plotting"], start_date="2060-12-10 21:00", end_date="2060-12-17 12:00:00", ax=ax
+        n,
+        config["plotting"],
+        start_date=f"{YEAR}-12-10 21:00",
+        end_date=f"{YEAR}-12-17 12:00:00",
+        ax=ax,
     )
     fig.savefig(snakemake.output.el_winter)
 

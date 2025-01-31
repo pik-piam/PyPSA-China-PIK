@@ -84,7 +84,7 @@ def plot_pathway_costs(
         # TODO centralise unit
         df_ = df_ * COST_UNIT / PLOT_COST_UNITS
         df_ = df_.groupby(df_.index.map(rename_techs)).sum()
-        to_drop = df_.index[df_.max(axis=1) < config["costs_threshold"]]
+        to_drop = df_.index[df_.max(axis=1) < config["costs_threshold"] / PLOT_COST_UNITS]
         df_.loc["Other"] = df_.loc[to_drop].sum(axis=0)
         df_ = df_.drop(to_drop)
         df = pd.concat([df_, df], axis=1)
@@ -153,7 +153,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
         # convert MWh to TWh
         df_ = df_ / PLOT_SUPPLY_UNITS
         df_ = df_.groupby(df_.index.map(rename_techs)).sum()
-        to_drop = df_.index[df_.max(axis=1) < config["energy_threshold"]]
+        to_drop = df_.index[df_.max(axis=1) < config["energy_threshold"] / PLOT_SUPPLY_UNITS]
         df_.loc["Other"] = df_.loc[to_drop].sum(axis=0)
         df_ = df_.drop(to_drop)
 
@@ -223,11 +223,15 @@ def plot_electricty_heat_balance(file_list: list[os.PathLike], config: dict, fig
         heat.index.rename("carrier", inplace=True)
         heat = heat.groupby(heat.index).sum()
 
-        to_drop = elec.index[elec.max(axis=1).abs() < config["energy_threshold"]]
+        to_drop = elec.index[
+            elec.max(axis=1).abs() < config["energy_threshold"] / PLOT_SUPPLY_UNITS
+        ]
         elec.loc["Other"] = elec.loc[to_drop].sum(axis=0)
         elec.drop(to_drop, inplace=True)
 
-        to_drop = heat.index[heat.max(axis=1).abs() < config["energy_threshold"]]
+        to_drop = heat.index[
+            heat.max(axis=1).abs() < config["energy_threshold"] / PLOT_SUPPLY_UNITS
+        ]
         heat.loc["Other"] = heat.loc[to_drop].sum(axis=0)
         heat.drop(to_drop, inplace=True)
 
@@ -455,9 +459,8 @@ if __name__ == "__main__":
 
         snakemake = mock_snakemake(
             "plot_summary",
-            opts="ll",
             topology="current+Neighbor",
-            pathway="exponential175",
+            pathway="ex175",
             heating_demand="positive",
             planning_horizons=[
                 "2020",
