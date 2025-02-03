@@ -11,9 +11,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # from make_summary import assign_carriers
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 from _plot_utilities import (
-    assign_location,
     set_plot_style,
     fix_network_names_colors,
+    determine_plottable,
+    make_nice_tech_colors,
     # aggregate_small_pie_vals,
 )
 from _helpers import configure_logging, mock_snakemake
@@ -178,6 +179,7 @@ def add_cost_pannel(
     fig.tight_layout()
 
 
+# TODO fix args unused
 def plot_cost_map(
     network: pypsa.Network,
     planning_horizon: int,
@@ -211,39 +213,45 @@ def plot_cost_map(
     if plot_additions and not capex_only:
         raise ValueError("Cannot plot additions without capex only")
 
-    tech_colors = opts["tech_colors"]
-    plot_ntwk = network.copy()
-    # add regions & flag buses not assigned to a region/provinced as not plottable
-    assign_location(plot_ntwk)
+    tech_colors = make_nice_tech_colors(opts["tech_colors"], opts["nice_names"])
 
-    # calc costs & sum over component types to keep bus & carrier
-    costs = plot_ntwk.statistics.capex(groupby=["location", "carrier"])
-    costs = costs.groupby(level=[1, 2]).sum()
+    # TODO scale edges by cost from capex summary
+    def calc_link_plot_width(row, carrier="AC", additions=False):
+        if row.length == 0 or row.carrier != carrier or not row.plottable:
+            return 0
+        elif additions:
+            return row.p_nom
+        else:
+            return row.p_nom_opt
+
+    # === Stats by bus ===
+    # calc costs & sum over component types to keep bus & carrier (remove no loc)
+    costs = network.statistics.capex(groupby=["location", "carrier"])
+    costs = costs.groupby(level=[1, 2]).sum().drop("")
+    # we miss some buses by grouping epr location, fill w 0s
+    bus_idx = pd.MultiIndex.from_product([network.buses.index, ["AC"]])
+    costs = costs.reindex(bus_idx.union(costs.index), fill_value=0)
     # add marginal (excluding quasi fixed) to costs if desired
     if not capex_only:
-        opex = (
-            plot_ntwk.statistics.opex(groupby=["location", "carrier"]).groupby(level=[1, 2]).sum()
-        )
+        opex = network.statistics.opex(groupby=["location", "carrier"])
+        opex = opex.groupby(level=[1, 2]).sum()
         cost_pies = costs + opex.reindex(costs.index, fill_value=0)
-
+    # === make map components ====
+    # bus pies
     cost_pies = costs.fillna(0)
     cost_pies.index.names = ["bus", "carrier"]
     carriers = cost_pies.index.get_level_values(1).unique()
+    # map edges
+    link_plot_w = network.links.apply(lambda row: calc_link_plot_width(row, carrier="AC"), axis=1)
+    edges = pd.concat([network.lines.s_nom_opt, link_plot_w]).groupby(level=0).sum()
+    line_lower_threshold = opts.get("min_edge_capacity", 0)
+    edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
 
-    # TODO fix or delete
-    # cost_pies = aggregate_small_pie_vals(cost_pies, opts["costs_threshold"])
-    # plot_ntwk.add("Carrier", "Other")
-    # plot_ntwk.add("Generator", [" ".join(x) for x in cost_pies.index.to_flat_index()])
-    # reordered = preferred_order.intersection(cost_pies.columns).append(
-    #     costs.columns.difference(preferred_order)
-    # )
-    # cost_pies = cost_pies.loc[(slice(None), reordered)]
-
-    preferred_order = pd.Index(opts["preferred_order"])
-
+    # === Additions ===
+    # for pathways sometimes interested in additions from last time step
     if plot_additions:
         installed = (
-            plot_ntwk.statistics.installed_capex(groupby=["location", "carrier"])
+            network.statistics.installed_capex(groupby=["location", "carrier"])
             .groupby(level=[1, 2])
             .sum()
         )
@@ -251,21 +259,20 @@ def plot_cost_map(
         cost_pies_additional = costs_additional.fillna(0)
         cost_pies_additional.index.names = ["bus", "carrier"]
 
-        # get all carrier types
+        link_additions = network.links.apply(
+            lambda row: calc_link_plot_width(row, carrier="AC", additions=True), axis=1
+        )
+        added_links = link_plot_w - link_additions.reindex(link_plot_w.index, fill_value=0)
+        added_lines = network.lines.s_nom_opt - network.lines.s_nom.reindex(
+            network.lines.index, fill_value=0
+        )
+        edge_widths_added = pd.concat([added_links, added_lines]).groupby(level=0).sum()
+
+        # add to carrier types
         carriers = carriers.union(cost_pies_additional.index.get_level_values(1).unique())
 
+    preferred_order = pd.Index(opts["preferred_order"])
     carriers = carriers.tolist()
-
-    # TODO more robust to calc edge width as in energy map
-    plot_ntwk.links.drop(
-        plot_ntwk.links.index[plot_ntwk.links.length == 0],
-        inplace=True,
-    )
-    plot_ntwk.links.drop(
-        plot_ntwk.links.index[plot_ntwk.links.carrier != "AC"],
-        inplace=True,
-    )
-    line_lower_threshold = opts.get("min_edge_capacity", 0)
 
     # Make figure with right number of pannels
     if plot_additions:
@@ -275,15 +282,11 @@ def plot_cost_map(
         fig, ax1 = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
         fig.set_size_inches(opts["cost_map"]["figsize"])
 
-    # TODO scale edges by cost from capex summary
-
     # Add the total costs
     bus_size_factor = opts["cost_map"]["bus_size_factor"]
     linewidth_factor = opts["cost_map"]["linewidth_factor"]
-    edges = pd.concat([plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt])
-    edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
     plot_map(
-        plot_ntwk,
+        network,
         tech_colors=tech_colors,
         edge_widths=edge_widths / linewidth_factor,
         bus_colors=tech_colors,
@@ -294,14 +297,12 @@ def plot_cost_map(
         bus_ref_title=f"System costs{' (CAPEX)'if capex_only else ''}",
         **opts["cost_map"],
     )
+
     # TODO check edges is working
     # Add the added pathway costs
     if plot_additions:
-        edge_widths_added = pd.concat(
-            [plot_ntwk.lines.s_nom_opt, plot_ntwk.links.p_nom_opt]
-        ) - pd.concat([plot_ntwk.lines.s_nom, plot_ntwk.links.p_nom])
         plot_map(
-            plot_ntwk,
+            network,
             tech_colors=tech_colors,
             edge_widths=edge_widths_added / linewidth_factor,
             bus_colors=tech_colors,
@@ -314,7 +315,6 @@ def plot_cost_map(
         )
 
     # Add the optional cost pannel
-    # TODO fix with opex
     if cost_pannel:
         df = pd.DataFrame(columns=["total"])
         df["total"] = network.statistics.capex(nice_names=False).groupby(level=1).sum()
@@ -329,6 +329,7 @@ def plot_cost_map(
 
         df.fillna(0, inplace=True)
         df = df / PLOT_COST_UNITS
+        # TODO decide discount
         # df = df / (1 + discount_rate) ** (int(planning_horizon) - base_year)
         add_cost_pannel(
             df, fig, preferred_order, tech_colors, plot_additions, ax_loc=[-0.09, 0.28, 0.09, 0.45]
@@ -365,32 +366,30 @@ def plot_energy_map(
     if carrier not in ["AC", "heat"]:
         raise ValueError("Carrier must be either 'AC' or 'heat'")
 
-    # THIS IS INEFFICIENT (3s copy), is there a better way?
-    plot_ntwk = network.copy()
-
-    # add regions & flag buses not assigned to a region/provinced as not plottable
-    assign_location(plot_ntwk)
-
     # make the statistics. Buses not assigned to a region will be included
     # if they are linked to a region (e.g. turbine link w carrier = hydroelectricity)
-    energy_supply = plot_ntwk.statistics.supply(
+    energy_supply = network.statistics.supply(
         groupby=pypsa.statistics.get_bus_and_carrier,
         bus_carrier=carrier,
         comps=components,
     )
-    supply_pies = energy_supply.droplevel(0)
+    # get rid of components
+    supply_pies = energy_supply.groupby(level=[1, 2]).sum()
+
+    # TODO fix  this for heat
+    # # calc costs & sum over component types to keep bus & carrier (remove no loc)
+    # energy_supply = network.statistics.capex(groupby=["location", "carrier"])
+    # energy_supply = energy_supply.groupby(level=[1, 2]).sum().drop("")
+    # # we miss some buses by grouping epr location, fill w 0s
+    # bus_idx = pd.MultiIndex.from_product([network.buses.index, ["AC"]])
+    # supply_pies = energy_supply.reindex(bus_idx.union(energy_supply.index), fill_value=0)
 
     # remove imports from supply pies
     if carrier == "AC" and not plot_ac_imports:
         supply_pies = supply_pies.loc[supply_pies.index.get_level_values(1) != "AC"]
-    if "plottable" in plot_ntwk.links.columns:
-        plot_ntwk.links.drop(
-            plot_ntwk.links.index[plot_ntwk.links.plottable == False],
-            inplace=True,
-        )
 
     # TODO aggregate costs below threshold into "other" -> requires messing with network
-    plot_ntwk.add("Carrier", "Other")
+    network.add("Carrier", "Other")
 
     # get all carrier types
     carriers_list = supply_pies.index.get_level_values(1).unique()
@@ -402,7 +401,7 @@ def plot_energy_map(
     fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
     fig.set_size_inches(opts["energy_map"]["figsize"])
     # get colors
-    bus_colors = plot_ntwk.carriers.loc[plot_ntwk.carriers.nice_name.isin(carriers_list), "color"]
+    bus_colors = network.carriers.loc[network.carriers.nice_name.isin(carriers_list), "color"]
     bus_colors.rename(opts["nice_names"], inplace=True)
 
     # Add the total costs
@@ -415,27 +414,26 @@ def plot_energy_map(
     reordered = preferred_order.intersection(bus_colors.index).append(
         bus_colors.index.difference(preferred_order)
     )
-
-    colors = plot_ntwk.carriers.color.copy()
+    # TODO there'sa  problem with network colors when using heat, pies aren't grouped by location
+    colors = network.carriers.color.copy()
     colors.index = colors.index.map(opts["nice_names"])
+    tech_colors = make_nice_tech_colors(opts["tech_colors"], opts["nice_names"])
 
     # make sure plot isnt overpopulated
-    def calc_plot_width(row, carrier="AC"):
-        if row.length == 0:
-            return 0
-        elif row.carrier != carrier:
+    def calc_link_plot_width(row, carrier="AC"):
+        if row.length == 0 or row.carrier != carrier or not row.plottable:
             return 0
         else:
             return row.p_nom_opt
 
     edge_carrier = "H2" if carrier == "heat" else "AC"
-    link_plot_w = plot_ntwk.links.apply(lambda row: calc_plot_width(row, edge_carrier), axis=1)
-    edges = pd.concat([plot_ntwk.lines.s_nom_opt, link_plot_w])
+    link_plot_w = network.links.apply(lambda row: calc_link_plot_width(row, edge_carrier), axis=1)
+    edges = pd.concat([network.lines.s_nom_opt, link_plot_w])
     edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
 
     plot_map(
-        plot_ntwk,
-        tech_colors=colors.to_dict(),
+        network,
+        tech_colors=tech_colors,  # colors.to_dict(),
         edge_widths=edge_widths / linewidth_factor,
         bus_colors=bus_colors.loc[reordered],
         bus_sizes=supply_pies / bus_size_factor,
@@ -562,7 +560,6 @@ def plot_nodal_prices(
     edge_carrier = "H2" if carrier == "heat" else "AC"
     link_plot_w = network.links.apply(lambda row: calc_plot_width(row, edge_carrier), axis=1)
     edges = pd.concat([network.lines.s_nom_opt, link_plot_w])
-    # TODO check
     edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
 
     bus_size_factor = opts["price_map"]["bus_size_factor"]
@@ -600,7 +597,7 @@ if __name__ == "__main__":
             "plot_network",
             topology="current+FCG",
             pathway="exp175",
-            planning_horizons="2045",
+            planning_horizons="2060",
             heating_demand="positive",
         )
 
@@ -614,6 +611,12 @@ if __name__ == "__main__":
     config = snakemake.config
 
     n = pypsa.Network(snakemake.input.network)
+    # determine whether links correspond to network nodes
+    determine_plottable(n)
+    # from _helpers import assign_locations
+    # assign_locations(n)
+
+    # TODO remove
     # backward compatibility for old network files
     fix_network_names_colors(n, config)
 
@@ -624,14 +627,15 @@ if __name__ == "__main__":
             "Network timespan is not one year, this may cause issues with the CAPEX calculation,"
             + " which is referenced to the time period and not directly annualised"
         )
+    additions = True if config["foresight"] != "overnight" else False
     plot_cost_map(
         n,
         planning_horizon=snakemake.wildcards.planning_horizons,
         discount_rate=config["costs"]["discountrate"],
         opts=config["plotting"],
         save_path=snakemake.output.cost_map,
-        capex_only=False,
-        plot_additions=False,
+        capex_only=not additions,
+        plot_additions=additions,
     )
     p = snakemake.output.cost_map.replace(".pdf", "_additions.pdf")
     plot_cost_map(
@@ -640,8 +644,8 @@ if __name__ == "__main__":
         discount_rate=config["costs"]["discountrate"],
         opts=config["plotting"],
         save_path=p,
-        capex_only=False,
-        plot_additions=False,
+        capex_only=not additions,
+        plot_additions=additions,
     )
     plot_energy_map(
         n,
@@ -649,6 +653,7 @@ if __name__ == "__main__":
         save_path=snakemake.output.el_supply_map,
         carrier="AC",
         energy_pannel=True,
+        components=["Generator", "Link"],
     )
 
     p = snakemake.output.cost_map.replace("el_supply.pdf", "heat_supply.pdf")
@@ -658,6 +663,7 @@ if __name__ == "__main__":
         save_path=snakemake.output.el_supply_map,
         carrier="AC",
         energy_pannel=True,
+        components=["Generator", "Link"],
     )
 
     p = snakemake.output.cost_map.replace("cost.pdf", "nodal_prices.pdf")

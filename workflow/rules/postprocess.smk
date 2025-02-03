@@ -2,6 +2,19 @@
 
 from os.path import join
 
+STATISTICS_BARPLOTS = [
+    "capacity_factor",
+    "installed_capacity",
+    "optimal_capacity",
+    "capital_expenditure",
+    "operational_expenditure",
+    "curtailment",
+    "supply",
+    "withdrawal",
+    "market_value",
+]
+
+
 if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
 
     rule plot_network:
@@ -54,6 +67,22 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
             LOG_DIR + "/plot/summary_plot_ntwk_summary.log",
         script:
             "../scripts/plot_summary_all.py"
+
+    rule plot_statistics:
+        input:
+            network=join(
+                RESULTS_DIR,
+                "postnetworks/ntwk_{planning_horizons}.nc",
+            ),
+        params:
+            stat_types=STATISTICS_BARPLOTS,
+            carrier="AC",
+        output:
+            stats_dir=directory(RESULTS_DIR + "/plots/statistics_{planning_horizons}"),
+        log:
+            LOG_DIR + "/plot_statistics_ntwk_{planning_horizons}.log",
+        script:
+            "../scripts/plot_statistics.py"
 
 else:
     raise NotImplementedError(
