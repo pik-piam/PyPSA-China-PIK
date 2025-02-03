@@ -14,22 +14,24 @@ plotting:
     bus_size_factor_heat: 5.e+4
     linewidth_factor_heat: 5.e+4
     min_edge_capacity : 1.e+4
-    ref_edge_sizes : [5e3,10e3,30e3] # MW
-    ref_bus_sizes : [20e9, 10e9, 5e9] # eur/currnecy
+    ref_edge_sizes : [5.e+3,10.e+3,30.e+3] # MW
+    ref_bus_sizes : [20.e+9, 10.e+9, 5.e+9] # eur/currnecy
     ref_bus_unit: "bn €/a"
     edge_color: "indigo"
   energy_map:
     figsize: [9, 8]
     boundaries: [71, 135., 0, 56.]
     bus_size_factor: 4.e+8
-    linewidth_factor: 1.e+4
-    linewidth_factor_heat: 8.e+7
+    bus_size_factor_heat: 2.e+8
+    linewidth_factor: 7.5e+3
+    linewidth_factor_heat: 5.e+3
     bus_size_factor_demand: 2.e+7
-    bus_size_factor_heat: 5.e+4
-    min_edge_capacity : 1.e+4
+    min_edge_capacity : 5.e+2 # MW
     ref_bus_unit: "TWh"
-    ref_edge_sizes : [10e3,50e3,100e3]  # in MW
-    ref_bus_sizes : [5e7, 1e8, 2e9] # MWh
+    ref_edge_sizes : [5.e+3,10.e+3,30.e+3] # MW
+    ref_edge_sizes_heat : [1.e+3,10.e+3,50.e+3]  # in MW
+    ref_bus_sizes : [5.e+7, 1.e+8, 2.e+9] # MWh
+    ref_bus_sizes_heat : [10.e+6, 100.e+6, 500.e+6] # MWh
     bus_ref_title : "Electricity supply"
     edge_color: "indigo"
   price_map:

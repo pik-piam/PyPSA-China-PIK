@@ -13,16 +13,15 @@ import time
 import pytz
 from pathlib import Path
 from types import SimpleNamespace
-from numpy.random import default_rng
 
 import pypsa
-from pypsa.components import components, component_attrs
 
 
 # get root logger
 logger = logging.getLogger()
 
 DEFAULT_TUNNEL_PORT = 1080
+LOGIN_NODE = "01"
 
 
 class PathManager:
@@ -90,7 +89,7 @@ class PathManager:
 
 
 def setup_gurobi_tunnel_and_env(
-    tunnel_config: dict, logger: logging.Logger = None
+    tunnel_config: dict, logger: logging.Logger = None, attempts=4
 ) -> subprocess.Popen:
     """A utility function to set up the Gurobi environment variables and establish an
     SSH tunnel on HPCs. Otherwise the license check will fail if the compute nodes do
@@ -99,26 +98,34 @@ def setup_gurobi_tunnel_and_env(
     Args:
         config (dict): the snakemake pypsa-china configuration
         logger (logging.Logger, optional): Logger. Defaults to None.
+        attempts (int, optional): ssh connection attemps. Defaults to 4.
     """
     if tunnel_config.get("use_tunnel", False) is False:
         return
     logger.info("setting up tunnel")
     user = os.getenv("USER")  # User is pulled from the environment
     port = tunnel_config.get("port", DEFAULT_TUNNEL_PORT)
-    random_port = default_rng().integers(1, 5)
-    ssh_command = f"ssh -fN -v -D {port} {user}@login0{random_port}"
 
-    # random sleep to avoid port conflicts with simultaneous connections
+    # bash commands for tunnel: reduce pipe err severity (too high from snakemake)
+    pipe_err = "set -o pipefail; "
 
+    ssh_command = f"ssh-add -l;ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
+    logger.info(f"Attempting ssh tunnel to login node {LOGIN_NODE}")
+    # Run SSH in the background to establish the tunnel
+    socks_proc = subprocess.Popen(pipe_err + ssh_command, shell=True, stderr=subprocess.PIPE)
     try:
-        # Run SSH in the background to establish the tunnel
-        socks_proc = subprocess.Popen(ssh_command, shell=True)
-        time.sleep(default_rng().uniform(0, 0.2))
-        logger.info(f"SSH tunnel established on port {port}")
-    # TODO don't handle unless neeeded
-    except Exception as e:
-        logger.error(f"Error starting SSH tunnel: {e}")
-        sys.exit(1)
+        time.sleep(0.2)
+        # [-1] because ssh is last command
+        err = socks_proc.communicate(timeout=2)[-1].decode()
+        logger.info(f"ssh err returns {str(err)}")
+        if err.find("Permission") != -1 or err.find("Could not resolve hostname") != -1:
+            socks_proc.kill()
+        else:
+            logger.info("Gurobi Environment variables & tunnel set up successfully at attempt {i}.")
+    except subprocess.TimeoutExpired:
+        logger.info(
+            f"SSH tunnel established on port {port} with possible errors (err check timedout)."
+        )
 
     os.environ["https_proxy"] = f"socks5://127.0.0.1:{port}"
     os.environ["SSL_CERT_FILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
@@ -131,9 +138,6 @@ def setup_gurobi_tunnel_and_env(
     os.environ["GRB_LICENSE_FILE"] = "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
     os.environ["GRB_CURLVERBOSE"] = "1"
     os.environ["GRB_SERVER_TIMEOUT"] = "10"
-    # os.environ["https_timeout"] = "10"
-    # os.environ["proxy_timeout"] = "10"
-    logger.info("Gurobi Environment variables & tunnel set up successfully.")
 
     return socks_proc
 
@@ -141,30 +145,48 @@ def setup_gurobi_tunnel_and_env(
 # =========== PyPSA Helpers =============
 
 
-def override_component_attrs(directory: os.PathLike) -> dict:
-    """Tell PyPSA that links can have multiple outputs by
-    overriding the component_attrs. This can be done for
-    as many buses as you need with format busi for i = 2,3,4,5,....
-    See https://pypsa.org/doc/components.html#link-with-multiple-outputs-or-inputs
-    Parameters
-    ----------
-    directory : string
-        Folder where component attributes to override are stored
-        analogous to ``pypsa/component_attrs``, e.g. `links.csv`.
-    Returns
-    -------
-    Dictionary of overriden component attributes.
+def get_location_and_carrier(
+    n: pypsa.Network, c: str, port: str = "", nice_names: bool = True
+) -> list[pd.Series]:
+    """Get component location and carrier.
+
+    Args:
+        n (pypsa.Network): the network object
+        c (str): component name
+        port (str, optional): port name. Defaults to "".
+        nice_names (bool, optional): use nice names. Defaults to True.
+
+    Returns:
+        list[pd.Series]: list of location and carrier series
     """
 
-    attrs = {k: v.copy() for k, v in component_attrs.items()}
+    # bus = f"bus{port}"
+    bus, carrier = pypsa.statisticsget_bus_and_carrier(n, c, port, nice_names=nice_names)
+    country = bus.map(n.buses.location).rename("country")
+    return [country, carrier]
 
-    for component, list_name in components.list_name.items():
-        fn = f"{directory}/{list_name}.csv"
-        if os.path.isfile(fn):
-            overrides = pd.read_csv(fn, index_col=0, na_values="n/a")
-            attrs[component] = overrides.combine_first(attrs[component])
 
-    return attrs
+def assign_locations(n: pypsa.Network):
+    """Assign location based on the node location
+
+    Args:
+        n (pypsa.Network): the pypsa network object
+    """
+    for c in n.iterate_components(n.one_port_components):
+        c.df["location"] = c.df.bus.map(n.buses.location)
+
+    for c in n.iterate_components(n.branch_components):
+        # use bus1 and bus2
+        c.df["_loc1"] = c.df.bus0.map(n.buses.location)
+        c.df["_loc2"] = c.df.bus1.map(n.buses.location)
+        # if only one of buses is in the ntwk node list, make it a loop to the location
+        c.df["_loc2"] = c.df.apply(lambda row: row._loc1 if row._loc2 == "" else row._loc2, axis=1)
+        c.df["_loc1"] = c.df.apply(lambda row: row._loc2 if row._loc1 == "" else row._loc1, axis=1)
+        # add location to loops. Links between nodes have ambiguos location
+        c.df["location"] = c.df.apply(
+            lambda row: row._loc1 if row._loc1 == row._loc2 else "", axis=1
+        )
+        c.df.drop(columns=["_loc1", "_loc2"], inplace=True)
 
 
 def aggregate_p(n: pypsa.Network) -> pd.Series:
@@ -187,6 +209,7 @@ def aggregate_p(n: pypsa.Network) -> pd.Series:
     )
 
 
+# TODO is thsi really goo? useful?
 # TODO make a standard apply/str op instead ofmap in add_electricity.sanitize_carriers
 def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
     """Rename technology labels for better readability. Removes some prefixes
@@ -298,28 +321,6 @@ def aggregate_costs(
         )
 
     return costs
-
-
-def calc_component_capex(comp_df: pd.DataFrame, capacity_name="p_nom_opt") -> pd.DataFrame:
-    """Annualise the capex costs of the components
-
-    Args:
-        comp_df (pd.DataFrame): the component dataframe (from n.itercomponents() or getattr)
-        capacity_name (str, optional): the capacity (power, energy,..). Defaults to "p_nom_opt".
-
-    Returns:
-        pd.Dataframe: annualised capex
-    """
-
-    costs_a = (
-        (comp_df.capital_cost * comp_df[capacity_name])
-        .groupby([comp_df.location, comp_df.nice_group])
-        .sum()
-        .unstack()
-        .fillna(0.0)
-    )
-
-    return costs_a
 
 
 def calc_atlite_heating_timeshift(date_range: pd.date_range, use_last_ts=False) -> int:
@@ -467,24 +468,6 @@ def define_spatial(nodes, options):
     spatial.lignite.locations = ["China"]
 
     return spatial
-
-
-def get_supply(
-    n: pypsa.Network, bus_carrier: str = None, components_list=["Generator"]
-) -> pd.DataFrame:
-    """Get the period supply for all or a certain carrier from the network buses
-
-    Args:
-        n (pypsa.Network): the network object
-        bus_carrier (str, optional): the carrier for the buses. Defaults to None.
-        components_list (list, optional): the list of components. Defaults to ['Generator'].
-
-    Returns:
-        pd.DataFrame: the supply for each bus and component type
-    """
-    return n.statistics.supply(
-        groupby=pypsa.statistics.get_bus_and_carrier, bus_carrier=bus_carrier, comps=components_list
-    )
 
 
 def is_leap_year(year: int) -> bool:

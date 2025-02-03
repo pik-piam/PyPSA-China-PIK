@@ -3,7 +3,6 @@ import pandas as pd
 import os.path
 import matplotlib.pyplot as plt
 from os import PathLike
-from constants import PROV_NAMES
 
 import logging
 
@@ -18,7 +17,9 @@ def make_nice_tech_colors(tech_colors: dict, nice_names: dict) -> dict:
     Returns:
         dict: dict with names & nice names as keys
     """
-    return {nice: tech_colors[n] for n, nice in nice_names.items() if n in tech_colors}
+    nn_colors = {nice: tech_colors[n] for n, nice in nice_names.items() if n in tech_colors}
+    tech_colors.update(nn_colors)
+    return tech_colors
 
 
 def get_stat_colors(
@@ -171,28 +172,21 @@ def aggregate_small_values(df: pd.DataFrame, threshold: float, column_name=None)
     return df_
 
 
-# TODO assign location in prep_network
-def assign_location(n: pypsa.Network, valid_locations: list = PROV_NAMES):
-    """Add the node location name as a column to the component dataframes.
-    This is needed because the bus names are of style LOCATION TYPE and cannot be directly grouped
-    by province/location otherwise
+def determine_plottable(n: pypsa.Network) -> pd.Series:
+    """Determine whether links should be plotted
 
     Args:
         n (pypsa.Network): the pypsa network object
     """
-    for c in n.iterate_components(n.one_port_components | n.branch_components):
-        c.df["location"] = c.df.index.str.split(" ", expand=True).get_level_values(0)
-        c.df.loc[~c.df.location.isin(valid_locations), "location"] = pd.NA
-
-    # identify links that are not to a region (e.g. hydro)
     for c in n.iterate_components(n.branch_components):
-        c.df["plottable"] = c.df.apply(
-            lambda row: row.bus0.split(" ")[0] in PROV_NAMES
-            and row.bus1.split(" ")[0] in PROV_NAMES,
-            axis=1,
+        c.df["plottable"] = c.df.bus0.map(n.buses.location != "") & c.df.bus1.map(
+            n.buses.location != ""
         )
+    # n.links["plottable"] = n.links.bus0.map(n.buses.location != "") & n.links.bus1.map(
+    #     n.buses.location != ""
+    # )
     for c in n.iterate_components(n.one_port_components):
-        c.df["plottable"] = c.df.location.notna()
+        c.df["plottable"] = n.buses.location != ""
 
 
 def set_plot_style(

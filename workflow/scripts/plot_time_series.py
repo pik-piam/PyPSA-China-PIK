@@ -49,7 +49,13 @@ def plot_energy_balance(
     p.drop(columns=[c for c in p.columns if c.find("gas") >= 0], inplace=True)
 
     color_series = get_stat_colors(
-        p, n, plot_config, extra_colors={"Load": plot_config["tech_colors"]["electric load"]}
+        p,
+        n,
+        plot_config,
+        extra_colors={
+            "Load": plot_config["tech_colors"]["electric load"],
+            "transmission losses": plot_config["tech_colors"]["transmission losses"],
+        },
     )
     # colors & names part 1
     p.rename(plot_config["nice_names"], inplace=True)

@@ -15,7 +15,7 @@ import numpy as np
 import pypsa
 
 from _helpers import mock_snakemake, configure_logging
-from _plot_utilities import assign_location
+from _helpers import assign_locations
 
 # import numpy as np
 # from add_electricity import load_costs, update_transmission_costs
@@ -445,14 +445,14 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
     # === Now do market value of links  ===
 
     for i in ["0", "1"]:
-        all_links = n.links.index[n.buses.loc[n.links["bus" + i], "carrier"] == carrier]
+        carrier_links = n.links[n.links["bus" + i].isin(buses)].index
 
-        techs = n.links.loc[all_links, "carrier"].value_counts().index
+        techs = n.links.loc[carrier_links, "carrier"].value_counts().index
 
         market_values = market_values.reindex(market_values.index.union(techs))
 
         for tech in techs:
-            links = all_links[n.links.loc[all_links, "carrier"] == tech]
+            links = carrier_links[n.links.loc[carrier_links, "carrier"] == tech]
 
             dispatch = (
                 n.links_t["p" + i][links]
@@ -545,7 +545,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
 
         n = pypsa.Network(filename)
         assign_carriers(n)
-        assign_location(n)
+        assign_locations(n)
 
         for output, output_fn in output_funcs.items():
             dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
@@ -565,9 +565,9 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "make_summary",
             opts="ll",
-            topology="current+Neighbor",
+            topology="current+FCG",
             pathway="exponential175",
-            planning_horizons="2035",
+            planning_horizons="2030",
             heating_demand="positive",
         )
 

@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import numpy as np
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # from make_summary import assign_carriers
 from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
@@ -17,7 +16,7 @@ from _plot_utilities import (
     make_nice_tech_colors,
     # aggregate_small_pie_vals,
 )
-from _helpers import configure_logging, mock_snakemake
+from _helpers import configure_logging, mock_snakemake, get_location_and_carrier
 from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, CURRENCY
 
 
@@ -369,7 +368,7 @@ def plot_energy_map(
     # make the statistics. Buses not assigned to a region will be included
     # if they are linked to a region (e.g. turbine link w carrier = hydroelectricity)
     energy_supply = network.statistics.supply(
-        groupby=pypsa.statistics.get_bus_and_carrier,
+        groupby=get_location_and_carrier,
         bus_carrier=carrier,
         comps=components,
     )
@@ -389,7 +388,7 @@ def plot_energy_map(
         supply_pies = supply_pies.loc[supply_pies.index.get_level_values(1) != "AC"]
 
     # TODO aggregate costs below threshold into "other" -> requires messing with network
-    network.add("Carrier", "Other")
+    # network.add("Carrier", "Other")
 
     # get all carrier types
     carriers_list = supply_pies.index.get_level_values(1).unique()
@@ -403,12 +402,6 @@ def plot_energy_map(
     # get colors
     bus_colors = network.carriers.loc[network.carriers.nice_name.isin(carriers_list), "color"]
     bus_colors.rename(opts["nice_names"], inplace=True)
-
-    # Add the total costs
-    bus_size_factor = opts["energy_map"]["bus_size_factor"]
-    linewidth_factor = float(
-        opts["energy_map"][f"linewidth_factor{"_heat" if carrier == 'heat' else ''}"]
-    )
 
     preferred_order = pd.Index(opts["preferred_order"])
     reordered = preferred_order.intersection(bus_colors.index).append(
@@ -426,23 +419,29 @@ def plot_energy_map(
         else:
             return row.p_nom_opt
 
-    edge_carrier = "H2" if carrier == "heat" else "AC"
+    edge_carrier = "H2 pipeline" if carrier == "heat" else "AC"
     link_plot_w = network.links.apply(lambda row: calc_link_plot_width(row, edge_carrier), axis=1)
     edges = pd.concat([network.lines.s_nom_opt, link_plot_w])
     edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
 
+    opts_plot = opts["energy_map"].copy()
+    if carrier == "heat":
+        opts_plot["ref_bus_sizes"] = opts_plot["ref_bus_sizes_heat"]
+        opts_plot["ref_edge_sizes"] = opts_plot["ref_edge_sizes_heat"]
+        opts_plot["linewidth_factor"] = opts_plot["linewidth_factor_heat"]
+        opts_plot["bus_size_factor"] = opts_plot["bus_size_factor_heat"]
     plot_map(
         network,
         tech_colors=tech_colors,  # colors.to_dict(),
-        edge_widths=edge_widths / linewidth_factor,
+        edge_widths=edge_widths / opts_plot["linewidth_factor"],
         bus_colors=bus_colors.loc[reordered],
-        bus_sizes=supply_pies / bus_size_factor,
-        edge_colors=opts["energy_map"]["edge_color"],
+        bus_sizes=supply_pies / opts_plot["bus_size_factor"],
+        edge_colors=opts_plot["edge_color"],
         ax=ax,
         edge_unit_conv=PLOT_CAP_UNITS,
         bus_unit_conv=PLOT_SUPPLY_UNITS,
         add_legend=True,
-        **opts["energy_map"],
+        **opts_plot,
     )
     # # Add the optional cost pannel
     if energy_pannel:
