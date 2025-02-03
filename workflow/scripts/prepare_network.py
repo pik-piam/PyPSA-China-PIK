@@ -19,6 +19,7 @@ from _helpers import (
     mock_snakemake,
     shift_profile_to_planning_year,
     make_periodic_snapshots,
+    assign_locations,
 )
 from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
@@ -94,6 +95,7 @@ def add_conventional_generators(
             x=prov_centroids.x,
             y=prov_centroids.y,
             carrier="gas",
+            location=nodes,
         )
 
         network.add(
@@ -177,6 +179,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
     )
 
     # TODO consider switching to turbines and making a switch for off
+    # TODO understand MVs
     network.add(
         "Link",
         name=nodes + " H2 Fuel Cell",
@@ -186,6 +189,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         efficiency=costs.at["fuel cell", "efficiency"],
         capital_cost=costs.at["fuel cell", "efficiency"] * costs.at["fuel cell", "capital_cost"],
         lifetime=costs.at["fuel cell", "lifetime"],
+        carrier="H2 fuel cell",
     )
 
     H2_under_nodes = pd.Index(config["H2"]["geo_storage_nodes"])
@@ -232,6 +236,169 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
             * costs.at["methanation", "efficiency"],
         )
 
+    if config["Techs"]["hydrogen_lines"]:
+        edge_path = config["edge_paths"].get(config["scenario"]["topology"], None)
+        if edge_path is None:
+            raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
+        else:
+            edges = pd.read_csv(
+                edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
+            ).fillna(0)
+
+        # fix this to use map with x.y
+        lengths = NON_LIN_PATH_SCALING * np.array(
+            [
+                haversine(
+                    [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
+                    [network.buses.at[bus1, "x"], network.buses.at[bus1, "y"]],
+                )
+                for bus0, bus1 in edges[["bus0", "bus1"]].values
+            ]
+        )
+
+        cc = costs.at["H2 (g) pipeline", "capital_cost"] * lengths
+
+        # === h2 pipeline with losses ====
+        # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"] + " H2 pipeline",
+            suffix=" positive",
+            bus0=edges["bus0"].values + " H2",
+            bus1=edges["bus1"].values + " H2",
+            bus2=edges["bus0"].values,
+            carrier="H2 pipeline",
+            p_nom_extendable=True,
+            p_nom=0,
+            p_nom_min=0,
+            p_min_pu=0,
+            efficiency=config["transmission_efficiency"]["H2 pipeline"]["efficiency_static"]
+            * config["transmission_efficiency"]["H2 pipeline"]["efficiency_per_1000km"]
+            ** (lengths / 1000),
+            efficiency2=-config["transmission_efficiency"]["H2 pipeline"]["compression_per_1000km"]
+            * lengths
+            / 1e3,
+            length=lengths,
+            lifetime=costs.at["H2 (g) pipeline", "lifetime"],
+            capital_cost=cc,
+        )
+
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"] + " H2 pipeline",
+            suffix=" reversed",
+            carrier="H2 pipeline",
+            bus0=edges["bus1"].values + " H2",
+            bus1=edges["bus0"].values + " H2",
+            bus2=edges["bus1"].values,
+            p_nom_extendable=True,
+            p_nom=0,
+            p_nom_min=0,
+            p_min_pu=0,
+            efficiency=config["transmission_efficiency"]["H2 pipeline"]["efficiency_static"]
+            * config["transmission_efficiency"]["H2 pipeline"]["efficiency_per_1000km"]
+            ** (lengths / 1000),
+            efficiency2=-config["transmission_efficiency"]["H2 pipeline"]["compression_per_1000km"]
+            * lengths
+            / 1e3,
+            length=lengths,
+            lifetime=costs.at["H2 (g) pipeline", "lifetime"],
+            capital_cost=0,
+        )
+
+
+def add_voltage_links(network: pypsa.Network, config: dict):
+    """add HVDC/AC links (no KVL)
+
+    Args:
+        network (pypsa.Network): the network object
+        config (dict): the snakemake config
+
+    Raises:
+        ValueError: Invalid Edge path in config options
+    """
+
+    represented_hours = network.snapshot_weightings.sum()[0]
+    n_years = represented_hours / 8760.0
+
+    # determine topology
+    edge_path = config["edge_paths"].get(config["scenario"]["topology"], None)
+    if edge_path is None:
+        raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
+    else:
+        edges = pd.read_csv(
+            edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
+        ).fillna(0)
+
+    # fix this to use map with x.y
+    lengths = NON_LIN_PATH_SCALING * np.array(
+        [
+            haversine(
+                [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
+                [network.buses.at[bus1, "x"], network.buses.at[bus1, "y"]],
+            )
+            for bus0, bus1 in edges[["bus0", "bus1"]].values
+        ]
+    )
+
+    cc = (
+        (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
+        * LINE_SECURITY_MARGIN
+        * FOM_LINES
+        * n_years
+        * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
+    )
+
+    # ==== lossy transport model (split into 2) ====
+    # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk
+    if config["line_losses"]:
+
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"],
+            bus0=edges["bus0"].values,
+            bus1=edges["bus1"].values,
+            suffix=" positive",
+            p_nom_extendable=True,
+            p_nom=edges["p_nom"].values,
+            p_nom_min=edges["p_nom"].values,
+            p_min_pu=0,
+            efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
+            * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
+            length=lengths,
+            capital_cost=cc,
+        )
+        # 0 len for reversed in case line limits are specified in km
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"],
+            bus0=edges["bus1"].values,
+            bus1=edges["bus0"].values,
+            suffix=" reversed",
+            p_nom_extendable=True,
+            p_nom=edges["p_nom"].values,
+            p_nom_min=edges["p_nom"].values,
+            p_min_pu=0,
+            efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
+            * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
+            length=0,
+            capital_cost=0,
+        )
+    # lossless transport model
+    else:
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"],
+            p_nom=edges["p_nom"].values,
+            p_nom_min=edges["p_nom"].values,
+            bus0=edges["bus0"].values,
+            bus1=edges["bus1"].values,
+            p_nom_extendable=True,
+            p_min_pu=-1,
+            length=lengths,
+            capital_cost=cc,
+        )
+
 
 def add_heat_coupling(
     network: pypsa.Network,
@@ -265,6 +432,7 @@ def add_heat_coupling(
         x=prov_centroids.x,
         y=prov_centroids.y,
         carrier="heat",
+        location=nodes,
     )
 
     network.add(
@@ -274,6 +442,7 @@ def add_heat_coupling(
         x=prov_centroids.x,
         y=prov_centroids.y,
         carrier="heat",
+        location=nodes,
     )
 
     network.add(
@@ -357,6 +526,7 @@ def add_heat_coupling(
                 x=prov_centroids.x,
                 y=prov_centroids.y,
                 carrier="water tanks",
+                location=nodes,
             )
 
             network.add(
@@ -418,6 +588,7 @@ def add_heat_coupling(
             x=prov_centroids.x,
             y=prov_centroids.y,
             carrier="H2",
+            location=nodes,
         )
         network.add(
             "Link",
@@ -458,6 +629,7 @@ def add_heat_coupling(
             x=prov_centroids.x,
             y=prov_centroids.y,
             carrier="gas",
+            location=nodes,
         )
 
         network.add(
@@ -498,6 +670,7 @@ def add_heat_coupling(
             x=prov_centroids.x,
             y=prov_centroids.y,
             carrier="coal",
+            location=nodes,
         )
 
         network.add(
@@ -636,8 +809,12 @@ def add_hydro(
         bus1=dams["Province"],
         carrier="hydroelectricity",
         p_nom=10 * dams["installed_capacity_10MW"],
-        capital_cost=costs.at["hydro", "capital_cost"],
+        capital_cost=(
+            costs.at["hydro", "capital_cost"] if config["hydro"]["hydro_capital_cost"] else 0
+        ),
         efficiency=1,
+        location=dams["Province"],
+        p_nom_extendable=False,
     )
 
     # ===  add rivers to link station to station
@@ -649,16 +826,6 @@ def add_hydro(
         bus2 = row[1].end_bus + " station"
         network.links.at[bus0, "bus2"] = bus2
         network.links.at[bus0, "efficiency2"] = 1.0
-
-    #  ==== spillage =====
-    # TODO consider adding to remove warning
-    # network.add(
-    #     "bus",
-    #     nodes + " spillage",
-    #     carrier="spillage",
-    #     x=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(prov_shapes.crs).x,
-    #     y=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(prov_shapes.crs).y,
-    # )
 
     # TODO WHY EXTENDABLE - weather year?
     for row in dam_edges.iterrows():
@@ -679,12 +846,14 @@ def add_hydro(
         or dam not in dam_edges["end_bus"]
         or (dam in dam_edges["end_bus"].values & dam not in dam_edges["bus0"])
     ]
-    # TODO WHY DO DAM ENDS FLOW TO TIBET?
+    # need some kind of sink to absorb spillage (e,g ocean).
+    # here hack by flowing to existing bus with 0 efficiency (lose)
+    # TODO make more transparent -> generator with neg sign and 0 c0st
     for bus0 in dam_ends:
         network.add(
             "Link",
             bus0 + " spillage",
-            bus0=bus0,
+            bus0=bus0 + " station",
             bus1="Tibet",
             p_nom_extendable=True,
             efficiency=0.0,
@@ -714,25 +883,7 @@ def add_hydro(
 
         # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
-    # TODO clarify what the additional hydro is in the base_network_2020 is
-
-    # TODO CHECK THIS ISNT DOUBLE COUNTING
-    # ===  add "fake" hydro at network node (and not real location) ===
-    # this allows to introduce capital cost in relevant bus
-    # WARNING NOT ROBUST if nodes not the same as province
-    if config["hydro"]["hydro_capital_cost"]:
-        hydro_cc = costs.at["hydro", "capital_cost"]
-        network.add(
-            "StorageUnit",
-            dams.index,
-            suffix=" hydro dummy",
-            bus=dams["Province"],
-            carrier="hydroelectricity",
-            p_nom=10 * dams["installed_capacity_10MW"],
-            p_max_pu=0.0,
-            p_min_pu=0.0,
-            capital_cost=hydro_cc,
-        )
+    # TODO clarify that accounting for hydro is working
 
 
 # TODO fix timezones/centralsie, think Shanghai won't work on its own
@@ -765,31 +916,6 @@ def prepare_network(config: dict) -> pypsa.Network:
     Returns:
         pypsa.Network: the pypsa network object
     """
-    # TODO !! update the override due to latest pypsa (check history and also base_network)
-    override_component_attrs = dict(
-        {k: v.copy() for k, v in pypsa.components.component_attrs.items()}
-    )
-    override_component_attrs["Link"].loc["bus2"] = [
-        "string",
-        np.nan,
-        np.nan,
-        "2nd bus",
-        "Input (optional)",
-    ]
-    override_component_attrs["Link"].loc["efficiency2"] = [
-        "static or series",
-        "per unit",
-        1.0,
-        "2nd bus efficiency",
-        "Input (optional)",
-    ]
-    override_component_attrs["Link"].loc["p2"] = [
-        "series",
-        "MW",
-        0.0,
-        "2nd bus output",
-        "Output",
-    ]
 
     # determine whether gas/coal to be added depending on specified conv techs
     config["add_gas"] = (
@@ -802,8 +928,7 @@ def prepare_network(config: dict) -> pypsa.Network:
     planning_horizons = snakemake.wildcards["planning_horizons"]
 
     # Build the Network object, which stores all other objects
-    network = pypsa.Network(override_component_attrs=override_component_attrs)
-
+    network = pypsa.Network()
     # load graph
     nodes = pd.Index(PROV_NAMES)
 
@@ -834,8 +959,8 @@ def prepare_network(config: dict) -> pypsa.Network:
     prov_shapes = read_province_shapes(snakemake.input.province_shape)
     prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
 
-    # add buses
-    network.add("Bus", nodes, x=prov_centroids.x, y=prov_centroids.y)
+    # add AC buses
+    network.add("Bus", nodes, x=prov_centroids.x, y=prov_centroids.y, location=nodes)
 
     # add carriers
     add_carriers(network, config, costs)
@@ -845,7 +970,7 @@ def prepare_network(config: dict) -> pypsa.Network:
     ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)
     ds_offwind = xr.open_dataset(snakemake.input.profile_offwind)
 
-    # == shift datasets  from reference to planning year, sort columns to match network bus order ==
+    # == shift datasets from reference to planning year, sort columns to match network bus order ==
     solar_p_max_pu = calc_renewable_pu_avail(ds_solar, planning_horizons, snapshots)
     onwind_p_max_pu = calc_renewable_pu_avail(ds_onwind, planning_horizons, snapshots)
     offwind_p_max_pu = calc_renewable_pu_avail(ds_offwind, planning_horizons, snapshots)
@@ -994,7 +1119,13 @@ def prepare_network(config: dict) -> pypsa.Network:
     if config["add_H2"]:
         # do beore heat coupling to avoid warning
         network.add(
-            "Bus", nodes, suffix=" H2", x=prov_centroids.x, y=prov_centroids.y, carrier="H2"
+            "Bus",
+            nodes,
+            suffix=" H2",
+            x=prov_centroids.x,
+            y=prov_centroids.y,
+            carrier="H2",
+            location=nodes,
         )
 
     if config["heat_coupling"]:
@@ -1012,6 +1143,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             x=prov_centroids.x,
             y=prov_centroids.y,
             carrier="battery",
+            location=nodes,
         )
 
         # TODO Why no standing loss?
@@ -1060,113 +1192,9 @@ def prepare_network(config: dict) -> pypsa.Network:
     # TODO make not lossless optional (? - increases computing cost)
 
     if not config["no_lines"]:
-        edge_path = config["edge_paths"].get(config["scenario"]["topology"], None)
-        if edge_path is None:
-            raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
-        else:
-            edges = pd.read_csv(
-                edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
-            ).fillna(0)
+        add_voltage_links(network, config)
 
-        # fix this to use map with x.y
-        lengths = NON_LIN_PATH_SCALING * np.array(
-            [
-                haversine(
-                    [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
-                    [network.buses.at[bus1, "x"], network.buses.at[bus1, "y"]],
-                )
-                for bus0, bus1 in edges[["bus0", "bus1"]].values
-            ]
-        )
-
-        cc = (
-            (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-            * LINE_SECURITY_MARGIN
-            * FOM_LINES
-            * n_years
-            * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
-        )
-
-        network.add(
-            "Link",
-            edges["bus0"] + "-" + edges["bus1"],
-            p_nom=edges["p_nom"].values,
-            p_nom_min=edges["p_nom"].values,
-            bus0=edges["bus0"].values,
-            bus1=edges["bus1"].values,
-            p_nom_extendable=True,
-            p_min_pu=-1,
-            length=lengths,
-            capital_cost=cc,
-        )
-
-    if config["Techs"]["hydrogen_lines"]:
-        edge_path = config["edge_paths"].get(config["scenario"]["topology"], None)
-        if edge_path is None:
-            raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
-        else:
-            edges = pd.read_csv(
-                edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
-            ).fillna(0)
-
-        # fix this to use map with x.y
-        lengths = NON_LIN_PATH_SCALING * np.array(
-            [
-                haversine(
-                    [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
-                    [network.buses.at[bus1, "x"], network.buses.at[bus1, "y"]],
-                )
-                for bus0, bus1 in edges[["bus0", "bus1"]].values
-            ]
-        )
-
-        cc = costs.at["H2 (g) pipeline", "capital_cost"] * lengths
-
-        # h2 pipeline with losses
-        network.add(
-            "Link",
-            edges["bus0"] + "-" + edges["bus1"] + " H2 pipeline",
-            suffix=" positive",
-            bus0=edges["bus0"].values + " H2",
-            bus1=edges["bus1"].values + " H2",
-            bus2=edges["bus0"].values,
-            p_nom_extendable=True,
-            p_nom=0,
-            p_nom_min=0,
-            p_min_pu=0,
-            efficiency=config["transmission_efficiency"]["H2 pipeline"]["efficiency_static"]
-            * config["transmission_efficiency"]["H2 pipeline"]["efficiency_per_1000km"]
-            ** (lengths / 1000),
-            efficiency2=-config["transmission_efficiency"]["H2 pipeline"]["compression_per_1000km"]
-            * lengths
-            / 1e3,
-            length=lengths,
-            lifetime=costs.at["H2 (g) pipeline", "lifetime"],
-            capital_cost=cc,
-        )
-
-        network.add(
-            "Link",
-            edges["bus1"] + "-" + edges["bus0"] + " H2 pipeline",
-            suffix=" reversed",
-            bus0=edges["bus1"].values + " H2",
-            bus1=edges["bus0"].values + " H2",
-            bus2=edges["bus1"].values,
-            p_nom_extendable=True,
-            p_nom=0,
-            p_nom_min=0,
-            p_min_pu=0,
-            efficiency=config["transmission_efficiency"]["H2 pipeline"]["efficiency_static"]
-            * config["transmission_efficiency"]["H2 pipeline"]["efficiency_per_1000km"]
-            ** (lengths / 1000),
-            efficiency2=-config["transmission_efficiency"]["H2 pipeline"]["compression_per_1000km"]
-            * lengths
-            / 1e3,
-            length=lengths,
-            lifetime=costs.at["H2 (g) pipeline", "lifetime"],
-            capital_cost=0,
-        )
-
+    assign_locations(network)
     return network
 
 
@@ -1176,9 +1204,8 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "prepare_networks",
-            opts="ll",
-            topology="current+Neighbor",
-            pathway="exponential175",
+            topology="current+FCG",
+            pathway="exp175",
             co2_reduction="0.0",
             planning_horizons=2060,
             heating_demand="positive",
@@ -1190,6 +1217,5 @@ if __name__ == "__main__":
 
     network.export_to_netcdf(snakemake.output.network_name)
 
-    logger.info(
-        f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {snakemake.output.network_name}"
-    )
+    outp = {snakemake.output.network_name}
+    logger.info(f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {outp}")

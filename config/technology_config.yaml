@@ -84,6 +84,7 @@ electricity:
   #   Wind: [onwind, offwind-ac, offwind-dc]
   #   Solar: [solar]
 
+# TODO move to brownfield
 hydro:
   hydro_capital_cost: True
   PHS_max_hours: 24.

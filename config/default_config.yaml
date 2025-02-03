@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'Debug_gas_1hr_res_H2_pipelines_nocc'
+  name: 'Debug_overnight_1hr_res'
 
 foresight: "overnight"
 results_dir: 'results/'
@@ -125,6 +125,12 @@ Technique:
   onwind: true
   offwind: true
 
+# TODO implement consistent accounting 
+# brownfield_capex:
+#   existing_hydro: False
+#   existing_nuclear: False
+#   existing_PHS: False
+
 existing_infrastructure: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
 bus_suffix: [""," central heat"," decentral heat"," gas"," coal"]
@@ -146,10 +152,12 @@ Techs:
 
 ## add components (overwrites vre tech choice)
 heat_coupling: True
-add_biomass: False
+add_biomass: True
 add_hydro: True
 add_H2: True
-add_methanation: False
+add_methanation: True
+line_losses: True
+no_lines: False
 
 hydro_dams:
   dams_path: "resources/data/hydro/dams_large.csv"
@@ -264,7 +272,7 @@ solving:
 
   mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
 
-no_lines: False
+
 line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max
 line_cost_factor: 1
 
