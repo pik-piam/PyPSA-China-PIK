@@ -33,7 +33,6 @@ from constants import (
 from functions import HVAC_cost_curve
 from _helpers import (
     configure_logging,
-    override_component_attrs,
     mock_snakemake,
     make_periodic_snapshots,
     shift_profile_to_planning_year,
@@ -61,6 +60,7 @@ def add_buses(
         x=prov_centroids.x,
         y=prov_centroids.y,
         carrier=carrier,
+        location=nodes,
     )
 
 
@@ -72,27 +72,18 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         config (dict): the config file
         costs (pd.DataFrame): the costs dataframe
     """
-    network.add("Carrier", "AC")
 
-    # add carriers
-    if config["add_hydro"]:
-        network.add("Carrier", "hydroelectricity")
-        network.add("Carrier", "hydro_inflow")
+    network.add("Carrier", "AC")
     if config["heat_coupling"]:
         network.add("Carrier", "heat")
     for carrier in config["Techs"]["vre_techs"]:
         network.add("Carrier", carrier)
+        if carrier == "hydroelectricity":
+            network.add("Carrier", "hydro_inflow")
     for carrier in config["Techs"]["store_techs"]:
+        network.add("Carrier", carrier)
         if carrier == "battery":
-            network.add("Carrier", "battery")
             network.add("Carrier", "battery discharger")
-        else:
-            network.add("Carrier", carrier)
-    # add fuel carriers
-    if config["add_gas"]:
-        network.add("Carrier", "gas", co2_emissions=costs.at["gas", "co2_emissions"])
-    if config["add_coal"]:
-        network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
 
     if "coal power plant" in config["Techs"]["conv_techs"] and config["Techs"]["coal_cc"]:
         network.add("Carrier", "coal cc", co2_emissions=0.034)
@@ -108,14 +99,13 @@ def prepare_network(config: dict) -> pypsa.Network:
         True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False
     )
 
-    if "overrides" in snakemake.input.keys():
-        overrides = override_component_attrs(snakemake.input.overrides)
-        network = pypsa.Network(override_component_attrs=overrides)
-    else:
-        network = pypsa.Network()
+    planning_horizons = snakemake.wildcards["planning_horizons"]
+    # empty network object
+    network = pypsa.Network()
+    # load graph
+    nodes = pd.Index(PROV_NAMES)
 
     # set times
-    planning_horizons = snakemake.wildcards["planning_horizons"]
     # make snapshots (drop leap days)
     snapshot_cfg = config["snapshots"]
     snapshots = make_periodic_snapshots(
@@ -131,7 +121,6 @@ def prepare_network(config: dict) -> pypsa.Network:
             else snakemake.wildcards.planning_horizons + 1
         ),
     )
-
     network.set_snapshots(snapshots.values)
 
     network.snapshot_weightings[:] = config["snapshots"]["frequency"]
@@ -139,16 +128,22 @@ def prepare_network(config: dict) -> pypsa.Network:
     # TODO: what about leap years?
     n_years = represented_hours / YEAR_HRS
 
-    # load graph
-    nodes = pd.Index(PROV_NAMES)
     pathway = snakemake.wildcards["pathway"]
+
+    # load costs
+    tech_costs = snakemake.input.tech_costs
+    cost_year = snakemake.wildcards["planning_horizons"]
+    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
+
+    prov_shapes = read_province_shapes(snakemake.input.province_shape)
+    prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
 
     # load data sets calculated in previous steps
     ds_solar = xr.open_dataset(snakemake.input.profile_solar)
     ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)
     ds_offwind = xr.open_dataset(snakemake.input.profile_offwind)
 
-    # == shift datasets  from reference to planning year, sort columns to match network bus order ==
+    # == shift datasets from reference to planning year, sort columns to match network bus order ==
     solar_p_max_pu = ds_solar["profile"].transpose("time", "bus").to_pandas()
     solar_p_max_pu = shift_profile_to_planning_year(solar_p_max_pu, planning_horizons)
     solar_p_max_pu = solar_p_max_pu.loc[snapshots]
@@ -164,13 +159,7 @@ def prepare_network(config: dict) -> pypsa.Network:
     offwind_p_max_pu = offwind_p_max_pu.loc[snapshots]
     offwind_p_max_pu.sort_index(axis=1, inplace=True)
 
-    tech_costs = snakemake.input.tech_costs
-    cost_year = snakemake.wildcards["planning_horizons"]
-    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
-
-    prov_shapes = read_province_shapes(snakemake.input.province_shape)
-    prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
-
+    # TODO split by carrier, make transparent
     # add buses
     for suffix in config["bus_suffix"]:
         carrier = config["bus_carrier"][suffix]
@@ -573,6 +562,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             carrier="stations",
             x=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(CRS).x,
             y=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(CRS).y,
+            location=dams["Province"],
         )
 
         dam_buses = network.buses[network.buses.carrier == "stations"]
