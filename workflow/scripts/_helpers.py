@@ -161,9 +161,9 @@ def get_location_and_carrier(
     """
 
     # bus = f"bus{port}"
-    bus, carrier = pypsa.statisticsget_bus_and_carrier(n, c, port, nice_names=nice_names)
-    country = bus.map(n.buses.location).rename("country")
-    return [country, carrier]
+    bus, carrier = pypsa.statistics.get_bus_and_carrier(n, c, port, nice_names=nice_names)
+    location = bus.map(n.buses.location).rename("location")
+    return [location, carrier]
 
 
 def assign_locations(n: pypsa.Network):
