@@ -23,9 +23,14 @@ ssh-keygen -t ed25519 -f ~/.ssh/id_rsa.cluster_internal_exchange -C "$USER@clust
 # leave the compute nodes
 exit
 ```
-You will then need to add the contents of the public key `~/.ssh/id_rsa.cluster_internal_exchange.pub` to your authorised `~/.ssh/authorized_keys`
+You will then need to add the contents of the public key `~/.ssh/id_rsa.cluster_internal_exchange.pub` to your authorised `~/.ssh/authorized_keys`, eg. with `cat <key_name> >> authorized_keys`
 
-In addition you should have your .profile setup as per https://gitlab.pik-potsdam.de/rse/rsewiki/-/wikis/Cluster-Access
+> TROUBLE SHOOTING
+> you may have some issues with the solver tunnel failing (permission denied). One of these two steps should solve it
+> option 1: name the exchange key `id_rsa`.
+> option 2: copy the contents to authorized_keys from the compute nodes (from the ssh_dir `srun --qos=priority --pty bash; cat <key_name> >> authorized_keys;exit`)
+
+In addition you should have your .profile & .bashrc setup as per https://gitlab.pik-potsdam.de/rse/rsewiki/-/wikis/Cluster-Access
 and add `module load anaconda/2024.10` (or latest) to it
 
 ## General installation
