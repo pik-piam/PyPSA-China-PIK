@@ -1,0 +1,12 @@
+#### MATPLOTLIBRC FORMAT
+# https://github.com/matplotlib/matplotlib/blob/v3.9.2/lib/matplotlib/mpl-data/matplotlibrc
+
+axes.grid: True
+grid.linestyle: --
+grid.color: 0.6
+hatch.color: white
+patch.linewidth: 1
+font.size: 14
+legend.fontsize: medium
+lines.linewidth: 2
+pdf.fonttype: 42

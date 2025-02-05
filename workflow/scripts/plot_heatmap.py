@@ -1,15 +1,19 @@
-from _helpers import configure_logging
 import seaborn as sns
 import pandas as pd
 import pypsa
+import logging
 import matplotlib.pyplot as plt
+
+from _helpers import configure_logging, mock_snakemake
+
+logger = logging.getLogger(__name__)
 
 
 def set_plot_style():
     plt.style.use(
         [
             "classic",
-            "seaborn-white",
+            "seaborn-v0_8-white",
             {
                 "axes.grid": False,
                 "grid.linestyle": "--",
@@ -34,7 +38,7 @@ def creat_df(n, tech):
     df.rename(columns=renames, inplace=True)
     date = n.stores_t.p.filter(like="water").index
     date = date.tz_localize("utc")
-    date = date.tz_convert("Asia/Shanghai")
+    # date = date.tz_convert("Asia/Shanghai")
     df["Hour"] = date.hour
     df["Day"] = date.strftime("%m-%d")
     summary = pd.pivot_table(data=df, index="Hour", columns="Day", values="p_store")
@@ -71,23 +75,22 @@ def plot_water_store(n):
         n.stores_t.e.filter(like="water").sum(axis=1)
         / n.stores.e_nom_opt.filter(like="water").sum()
     ).plot(ax=ax)
-    ax.set_ylim(0, 1.0, 0.1)
+    ax.set_ylim(0, 1.0)
     ax.set_title(" water tank storage in " + planning_horizon)
     fig.savefig(snakemake.output["water_store"], dpi=150, bbox_inches="tight")
 
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
-
         snakemake = mock_snakemake(
             "plot_heatmap",
             opts="ll",
             topology="current+Neighbor",
             pathway="exponential175",
             planning_horizons="2020",
+            heating_demand="positive",
         )
-    configure_logging(snakemake)
+    configure_logging(snakemake, logger=logger)
 
     set_plot_style()
     config = snakemake.config
@@ -99,3 +102,5 @@ if __name__ == "__main__":
 
     plot_heatmap(n, config)
     plot_water_store(n)
+
+    logger.info("Heatmap successfully plotted")

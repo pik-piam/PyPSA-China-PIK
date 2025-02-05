@@ -206,7 +206,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake("build_population_gridcell_map")
 
-    configure_logging(snakemake)
+    configure_logging(snakemake, logger=logger)
 
     build_population_map(
         prov_pop_path=snakemake.input.province_populations,
@@ -223,3 +223,5 @@ if __name__ == "__main__":
     #     snakemake.input.province_shape,
     #     "/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population_gridcell_map_2.h5",
     # )
+
+    logger.info("Population map successfully built")

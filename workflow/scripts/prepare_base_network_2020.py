@@ -13,11 +13,28 @@ import numpy as np
 import xarray as xr
 
 
-from constants import PROV_NAMES, CRS, YEAR_HRS, LOAD_CONVERSION_FACTOR, INFLOW_DATA_YR
+from constants import (
+    PROV_NAMES,
+    CRS,
+    YEAR_HRS,
+    LOAD_CONVERSION_FACTOR,
+    INFLOW_DATA_YR,
+    LINE_SECURITY_MARGIN,
+    FOM_LINES,
+    NON_LIN_PATH_SCALING,
+    ECON_LIFETIME_LINES,
+    CO2_EL_2020,
+    CO2_HEATING_2020,
+)
+from _helpers import (
+    configure_logging,
+    override_component_attrs,
+    mock_snakemake,
+    make_periodic_snapshots,
+)
 from functions import HVAC_cost_curve
 from readers import read_province_shapes
 from add_electricity import load_costs
-from _helpers import configure_logging, override_component_attrs, is_leap_year, mock_snakemake
 from functions import haversine
 from prepare_base_network import add_buses, shift_profile_to_planning_year, add_carriers
 
@@ -29,6 +46,14 @@ logger.setLevel(DEBUG)
 
 def prepare_network(config):
 
+    # derive from the config
+    config["add_gas"] = (
+        True if [tech for tech in config["Techs"]["conv_techs"] if "gas" in tech] else False
+    )
+    config["add_coal"] = (
+        True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False
+    )
+
     if "overrides" in snakemake.input.keys():
         overrides = override_component_attrs(snakemake.input.overrides)
         network = pypsa.Network(override_component_attrs=overrides)
@@ -37,17 +62,24 @@ def prepare_network(config):
 
     # set times
     planning_horizons = snakemake.wildcards["planning_horizons"]
-    snapshots = pd.date_range(
-        f"{int(planning_horizons)}-01-01 00:00",
-        f"{int(planning_horizons)}-12-31 23:00",
-        freq=config["freq"],
-        # tz=TIMEZONE,
+    # make snapshots (drop leap days)
+    snapshot_cfg = config["snapshots"]
+    snapshots = make_periodic_snapshots(
+        year=snakemake.wildcards.planning_horizons,
+        freq=snapshot_cfg["freq"],
+        start_day_hour=snapshot_cfg["start"],
+        end_day_hour=snapshot_cfg["end"],
+        bounds=snapshot_cfg["bounds"],
+        tz=snapshot_cfg["timezone"],
+        end_year=(
+            None
+            if not snapshot_cfg["end_year_plus1"]
+            else snakemake.wildcards.planning_horizons + 1
+        ),
     )
-    if is_leap_year(int(planning_horizons)):
-        snapshots = snapshots[~((snapshots.month == 2) & (snapshots.day == 29))]
 
     network.set_snapshots(snapshots.values)
-    network.snapshot_weightings[:] = config["frequency"]
+    network.snapshot_weightings[:] = config["snapshots"]["frequency"]
     represented_hours = network.snapshot_weightings.sum()[0]
     n_years = represented_hours / YEAR_HRS
 
@@ -77,7 +109,7 @@ def prepare_network(config):
 
     offwind_p_max_pu = ds_offwind["profile"].transpose("time", "bus").to_pandas()
     offwind_p_max_pu = shift_profile_to_planning_year(offwind_p_max_pu, planning_horizons)
-    offwind_p_max_pu = solar_p_max_pu.loc[snapshots]
+    offwind_p_max_pu = offwind_p_max_pu.loc[snapshots]
     offwind_p_max_pu.sort_index(axis=1, inplace=True)
 
     tech_costs = snakemake.input.tech_costs
@@ -101,14 +133,8 @@ def prepare_network(config):
         if config["scenario"]["co2_reduction"] is not None:
 
             # extra co2
-            # 791 TWh extra space heating demand + 286 Twh extra hot water demand
-            # 60% CHP efficiency 0.468 40% coal boiler efficiency 0.97
-            # (((791+286) * 0.6 /0.468) + ((791+286) * 0.4 /0.97))  * 0.34 * 1e6 = 0.62 * 1e9
-
-            co2_limit = (
-                (5.288987673 + 0.628275682)
-                * 1e9
-                * (1 - config["scenario"]["co2_reduction"][pathway][planning_horizons])
+            co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (
+                1 - config["scenario"]["co2_reduction"][pathway][planning_horizons]
             )  # Chinese 2020 CO2 emissions of electric and heating sector
 
             network.add(
@@ -175,6 +201,7 @@ def prepare_network(config):
             carrier="biogas",
         )
 
+    # TODO Clarify this
     if config["add_coal"]:
         network.add(
             "Generator",
@@ -182,22 +209,47 @@ def prepare_network(config):
             bus=nodes + " coal",
             carrier="coal",
             p_nom_extendable=True,
-            marginal_cost=costs.at["coal", "fuel"],
+            efficiency=costs.at["coal", "efficiency"],
+            marginal_cost=costs.at["coal", "marginal_cost"],
+            capital_cost=costs.at["coal", "efficiency"]
+            * costs.at["coal", "capital_cost"],  # NB: capital cost is per MWel
+            lifetime=costs.at["coal", "lifetime"],
         )
+
+    # TODO decide readd?
+    # network.add(
+    #     "Generator",
+    #     nodes,
+    #     suffix=" nuclear",
+    #     p_nom_extendable=True,
+    #     # p_nom=nuclear_p_nom,
+    #     # p_nom_max=nuclear_p_nom * 2,
+    #     # p_nom_min=nuclear_p_nom,
+    #     bus=nodes,
+    #     carrier="nuclear",
+    #     efficiency=costs.at["nuclear", "efficiency"],
+    #     # NB: capital cost is per MWel, for nuclear already per MWel
+    #     capital_cost=costs.at["nuclear", "capital_cost"],
+    #     marginal_cost=costs.at["nuclear", "marginal_cost"],
+    # )
 
     if config["add_hydro"]:
 
-        ###
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
+        # load dams
+        df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
         points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
-        dams = gpd.GeoDataFrame(df, geometry=points, crs=4236)
+        dams = gpd.GeoDataFrame(df, geometry=points, crs=CRS)
 
-        hourly_rng = pd.date_range("1979-01-01", "2017-01-01", freq="1H", inclusive="left")
-        inflow = pd.read_pickle(
-            "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
-        ).reindex(hourly_rng, fill_value=0)
+        hourly_rng = pd.date_range(
+            config["hydro_dams"]["inflow_date_start"],
+            config["hydro_dams"]["inflow_date_end"],
+            freq=config["snapshots"]["freq"],
+            inclusive="left",
+        )
+        inflow = pd.read_pickle(config["hydro_dams"]["inflow_path"]).reindex(
+            hourly_rng, fill_value=0
+        )
         inflow.columns = dams.index
-        # remove leap year by abusing shift_profile_to_planning_year
         inflow = inflow.loc[str(INFLOW_DATA_YR)]
         inflow = shift_profile_to_planning_year(inflow, INFLOW_DATA_YR)
 
@@ -218,13 +270,10 @@ def prepare_network(config):
 
         dam_buses = network.buses[network.buses.carrier == "stations"]
 
-        # # add hydro reservoirs as stores
-
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
-        initial_capacity = pd.read_pickle("resources/data/hydro/reservoir_initial_capacity.pickle")
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
+        # ===== add hydro reservoirs as stores ======
+        initial_capacity = pd.read_pickle(config["hydro_dams"]["reservoir_initial_capacity_path"])
         effective_capacity = pd.read_pickle(
-            "resources/data/hydro/reservoir_effective_capacity.pickle"
+            config["hydro_dams"]["reservoir_effective_capacity_path"]
         )
         initial_capacity.index = dams.index
         effective_capacity.index = dams.index
@@ -314,13 +363,11 @@ def prepare_network(config):
 
             # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
-        # ======= add otehr existing hydro power
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
-        hydro_p_nom = pd.read_hdf("resources/data/p_nom/hydro_p_nom.h5")
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
-        hydro_p_max_pu = pd.read_hdf("resources/data/p_nom/hydro_p_max_pu.h5", key="hydro_p_max_pu")
+        # TODO clarify what this is and where it comes from
+        # ======= add other existing hydro power
+        hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
         hydro_p_max_pu = pd.read_hdf(
-            "resources/data/p_nom/hydro_p_max_pu.h5", key="hydro_p_max_pu"
+            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
         ).tz_localize(None)
 
         hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
@@ -412,7 +459,10 @@ def prepare_network(config):
             solar_thermal = config["solar_cf_correction"] * store["solar_thermal_profiles"] / 1e3
 
         date_range = pd.date_range(
-            "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz="Asia/shanghai"
+            "2025-01-01 00:00",
+            "2025-12-31 23:00",
+            freq=config["snapshots"]["freq"],
+            tz="Asia/shanghai",
         )
         date_range = date_range.map(lambda t: t.replace(year=2020))
 
@@ -479,6 +529,8 @@ def prepare_network(config):
                 p_nom_extendable=True,
             )
 
+            # [HP] 180 day time constant for centralised, 3 day for decentralised
+            tes_tau = config["water_tanks"]["tes_tau"][cat.strip()]
             network.add(
                 "Store",
                 nodes + cat + "water tank",
@@ -486,10 +538,7 @@ def prepare_network(config):
                 carrier="water tanks",
                 e_cyclic=True,
                 e_nom_extendable=True,
-                standing_loss=1
-                - np.exp(
-                    -1 / (24.0 * (config["tes_tau"] if cat == " decentral " else 180.0))
-                ),  # [HP] 180 day time constant for centralised
+                standing_loss=1 - np.exp(-1 / (24.0 * tes_tau)),
                 capital_cost=costs.at[cat.lstrip() + "water tank storage", "capital_cost"],
                 lifetime=costs.at[cat.lstrip() + "water tank storage", "lifetime"],
             )
@@ -539,7 +588,6 @@ def prepare_network(config):
 
     if "PHS" in config["Techs"]["store_techs"]:
         # pure pumped hydro storage, fixed, 6h energy by default, no inflow
-        df = pd.read_csv("resources/data/hydro/dams_large.csv", index_col=0)
         hydrocapa_df = pd.read_csv("resources/data/hydro/PHS_p_nom.csv", index_col=0)
         phss = hydrocapa_df.index[hydrocapa_df["MW"] > 0].intersection(nodes)
         if config["hydro"]["hydro_capital_cost"]:
@@ -564,40 +612,44 @@ def prepare_network(config):
             marginal_cost=0.0,
         )
 
-    # add lines
+    # ============= add lines =========
+    # The lines are implemented according to the transport model (no KVL) with losses.
+    # This requires two directions
+    # see Neumann et al 10.1016/j.apenergy.2022.118859
+    # TODO make lossless optional (speed up)
 
     if not config["no_lines"]:
         "Split bidirectional links into two unidirectional links to include transmission losses."
 
-        edges_ext = pd.read_csv(snakemake.input.edges_ext, header=None)
+        edges_existing = pd.read_csv(snakemake.input.edges_existing, header=None)
 
-        lengths = 1.25 * np.array(
+        lengths = NON_LIN_PATH_SCALING * np.array(
             [
                 haversine(
                     [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
                     [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
                 )
-                for name0, name1 in edges_ext[[0, 1]].values
+                for name0, name1 in edges_existing[[0, 1]].values
             ]
         )
 
         cc = (
             (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-            * 1.5
-            * 1.02
+            * LINE_SECURITY_MARGIN
+            * FOM_LINES
             * n_years
-            * annuity(40.0, config["costs"]["discountrate"])
+            * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
         )
 
         network.add(
             "Link",
-            edges_ext[0] + "-" + edges_ext[1],
-            bus0=edges_ext[0].values,
-            bus1=edges_ext[1].values,
+            edges_existing[0] + "-" + edges_existing[1],
+            bus0=edges_existing[0].values,
+            bus1=edges_existing[1].values,
             suffix=" ext positive",
             p_nom_extendable=False,
-            p_nom=edges_ext[2].values,
-            p_nom_min=edges_ext[2].values,
+            p_nom=edges_existing[2].values,
+            p_nom_min=edges_existing[2].values,
             p_min_pu=0,
             efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
             * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
@@ -609,13 +661,13 @@ def prepare_network(config):
 
         network.add(
             "Link",
-            edges_ext[1] + "-" + edges_ext[0],
-            bus0=edges_ext[1].values,
-            bus1=edges_ext[0].values,
+            edges_existing[1] + "-" + edges_existing[0],
+            bus0=edges_existing[1].values,
+            bus1=edges_existing[0].values,
             suffix=" ext reversed",
             p_nom_extendable=False,
-            p_nom=edges_ext[2].values,
-            p_nom_min=edges_ext[2].values,
+            p_nom=edges_existing[2].values,
+            p_nom_min=edges_existing[2].values,
             p_min_pu=0,
             efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
             * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
@@ -627,7 +679,7 @@ def prepare_network(config):
 
         edges = pd.read_csv(snakemake.input.edges, header=None)
 
-        lengths = 1.25 * np.array(
+        lengths = NON_LIN_PATH_SCALING * np.array(
             [
                 haversine(
                     [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
@@ -639,10 +691,10 @@ def prepare_network(config):
 
         cc = (
             (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-            * 1.5
-            * 1.02
+            * LINE_SECURITY_MARGIN
+            * FOM_LINES
             * n_years
-            * annuity(40.0, config["costs"]["discountrate"])
+            * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
         )
 
         network.add(
@@ -693,3 +745,5 @@ if __name__ == "__main__":
     network = prepare_network(snakemake.config)
 
     network.export_to_netcdf(snakemake.output.network_name)
+
+    logger.info(f"Network prepared and saved to {snakemake.output.network_name}")

@@ -1,7 +1,7 @@
 # TODO: is this actually used?
 import logging
 from _helpers import configure_logging, mock_snakemake
-
+from constants import REF_YEAR
 import atlite
 
 import pandas as pd
@@ -25,16 +25,19 @@ def build_heat_demand_profiles():
         matrix=pop_matrix, index=index, threshold=15.0, a=1.0, constant=0.0, hour_shift=8.0
     )
 
-    Hd_2020 = hd.to_pandas().divide(pop_map.sum())
-    Hd_2020.loc["2020-04-01":"2020-09-30"] = 0
+    hd_baseyear = hd.to_pandas().divide(pop_map.sum())
+    # TODO fix hardcoded range
+    hd_baseyear.loc[f"{REF_YEAR}-04-01":f"{REF_YEAR}-09-30"] = 0
 
     with pd.HDFStore(snakemake.output.daily_heat_demand, mode="w", complevel=4) as store:
-        store["heat_demand_profiles"] = Hd_2020
+        store["heat_demand_profiles"] = hd_baseyear
 
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        snakemake = mock_snakemake("build_heat_demand_profiles")
-    configure_logging(snakemake)
+        snakemake = mock_snakemake("build_daily_heat_demand_profile")
+    configure_logging(snakemake, logger=logger)
 
-    df = build_heat_demand_profiles()
+    build_heat_demand_profiles()
+
+    logger.info("Heat demand profiles successfully built")

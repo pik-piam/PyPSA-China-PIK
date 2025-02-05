@@ -6,9 +6,9 @@ import pandas as pd
 import pypsa
 
 from types import SimpleNamespace
-from constants import YEAR_HRS
+from constants import YEAR_HRS, CARRIERS
 from add_electricity import load_costs
-from _helpers import override_component_attrs, mock_snakemake
+from _helpers import override_component_attrs, mock_snakemake, configure_logging
 
 logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
@@ -50,7 +50,7 @@ def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
 
 
 def add_existing_capacities(df_agg):
-
+    # TODO fix/centralise ()
     carrier = {
         "coal": "coal power plant",
         "CHP coal": "CHP coal",
@@ -64,20 +64,8 @@ def add_existing_capacities(df_agg):
         "ground heat pump": "heat pump",
         "nuclear": "nuclear",
     }
-
-    for tech in [
-        "coal",
-        "CHP coal",
-        "CHP gas",
-        "OCGT",
-        "solar",
-        "solar thermal",
-        "onwind",
-        "offwind",
-        "coal boiler",
-        "ground heat pump",
-        "nuclear",
-    ]:
+    # TODO fix centralise (make a dict from start?)
+    for tech in CARRIERS:
 
         df = pd.read_csv(snakemake.input[f"existing_{tech}"], index_col=0).fillna(0.0)
         df.columns = df.columns.astype(int)
@@ -95,7 +83,9 @@ def add_existing_capacities(df_agg):
                     df_agg.at[name, "cluster_bus"] = node
 
 
-def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear, config):
+def add_power_capacities_installed_before_baseyear(
+    n: pypsa.Network, grouping_years, costs, baseyear, config
+):
     """
     Parameters
     ----------
@@ -106,7 +96,7 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
         to read lifetime to estimate YearDecomissioning
     baseyear : int
     """
-    print("adding power capacities installed before baseyear")
+    logger.info("adding power capacities installed before baseyear")
 
     df_agg = pd.DataFrame()
 
@@ -340,10 +330,13 @@ def add_power_capacities_installed_before_baseyear(n, grouping_years, costs, bas
                     build_year=grouping_year,
                     lifetime=costs.at[cat.lstrip() + generator, "lifetime"],
                 )
-
+        # TODO fix centralise
         if generator == "ground heat pump":
             date_range = pd.date_range(
-                "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz="Asia/shanghai"
+                "2025-01-01 00:00",
+                "2025-12-31 23:00",
+                freq=config["snapshots"]["freq"],
+                tz="Asia/shanghai",
             )
             date_range = date_range.map(lambda t: t.replace(year=2020))
 
@@ -386,8 +379,7 @@ if __name__ == "__main__":
             planning_horizons="2020",
         )
 
-    logging.basicConfig(level=snakemake.config["logging"]["level"])
-
+    configure_logging(snakemake, logger=logger)
     # options = snakemake.config["sector"]
     # sector_opts = '168H-T-H-B-I-solar+p3-dist1'
     # opts = sector_opts.split('-')
@@ -429,3 +421,5 @@ if __name__ == "__main__":
     #             ].p_nom.sum()
 
     n.export_to_netcdf(snakemake.output[0])
+
+    logger.info("Existing capacities successfully added to network")
