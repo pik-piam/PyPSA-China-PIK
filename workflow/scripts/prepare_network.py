@@ -4,8 +4,10 @@
 
 # for non-pathway network
 # TODO fix timezones
+# TODO fix timezones
 
 import pypsa
+from vresutils.costdata import annuity
 from vresutils.costdata import annuity
 from shapely.geometry import Point
 import geopandas as gpd
@@ -99,6 +101,7 @@ def add_conventional_generators(
         )
 
         network.add(
+        network.add(
             "Generator",
             nodes,
             suffix=" gas fuel",
@@ -120,6 +123,7 @@ def add_conventional_generators(
             e_cyclic=True,
         )
 
+        network.add(
         network.add(
             "Link",
             nodes,
@@ -1213,6 +1217,7 @@ if __name__ == "__main__":
     configure_logging(snakemake)
 
     network = prepare_network(snakemake.config)
+    sanitize_carriers(network, snakemake.config)
     sanitize_carriers(network, snakemake.config)
 
     network.export_to_netcdf(snakemake.output.network_name)

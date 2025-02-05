@@ -90,6 +90,7 @@ snapshots:
   end_year_plus1: false
 
 logging_level: INFO
+logging_level: INFO
 logging:
   level: INFO
   format: '%(levelname)s:%(name)s:%(message)s'
@@ -203,6 +204,9 @@ solving:
   solver:
     name: gurobi
     options: gurobi-default
+  gurobi_hpc_tunnel:
+    use_tunnel: True
+    tunnel_port: 1080
   gurobi_hpc_tunnel:
     use_tunnel: True
     tunnel_port: 1080

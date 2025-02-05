@@ -1,6 +1,7 @@
 import logging
 import pandas as pd
 import pypsa
+import pypsa
 from os import PathLike
 
 from _helpers import rename_techs
@@ -11,7 +12,19 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_annuity(lifetime: int, discount_rate: float) -> float:
+def calculate_annuity(lifetime: int, discount_rate: float) -> float:
     """Calculate the annuity factor for an asset with lifetime n years and
+    discount rate of r, e.g. annuity(20, 0.05) * 20 = 1.6
+
+    Args:
+        lifetime (int): _description_
+        discount_rate (float): _description_
+
+    Returns:
+        float: the annuity factor
+    """
+    r = discount_rate
+    n = lifetime
     discount rate of r, e.g. annuity(20, 0.05) * 20 = 1.6
 
     Args:
@@ -27,7 +40,11 @@ def calculate_annuity(lifetime: int, discount_rate: float) -> float:
     if isinstance(r, pd.Series):
         if r.any() < 0:
             raise ValueError("Discount rate must be positive")
+        if r.any() < 0:
+            raise ValueError("Discount rate must be positive")
         return pd.Series(1 / n, index=r.index).where(r == 0, r / (1.0 - 1.0 / (1.0 + r) ** n))
+    elif r < 0:
+        raise ValueError("Discount rate must be positive")
     elif r < 0:
         raise ValueError("Discount rate must be positive")
     elif r > 0:
@@ -38,6 +55,7 @@ def calculate_annuity(lifetime: int, discount_rate: float) -> float:
 
 # TODO fix docstring and change file + IO
 def load_costs(
+    tech_costs: PathLike, cost_config: dict, elec_config: dict, cost_year: int, n_years: int
     tech_costs: PathLike, cost_config: dict, elec_config: dict, cost_year: int, n_years: int
 ) -> pd.DataFrame:
     """Calculate the anualised capex costs and OM costs for the technologies based on the input data
@@ -59,6 +77,7 @@ def load_costs(
     # correct units to MW and EUR
     costs.loc[costs.unit.str.contains("/kW"), "value"] *= 1e3
     costs.loc[costs.unit.str.contains("USD"), "value"] *= cost_config["USD2013_to_EUR2013"]
+    costs.loc[costs.unit.str.contains("USD"), "value"] *= cost_config["USD2013_to_EUR2013"]
 
     cost_year = float(cost_year)
     costs = (
@@ -74,6 +93,7 @@ def load_costs(
             "CO2 intensity": 0,
             "FOM": 0,
             "VOM": 0,
+            "discount rate": cost_config["discountrate"],
             "discount rate": cost_config["discountrate"],
             "efficiency": 1,
             "fuel": 0,
@@ -125,6 +145,7 @@ def load_costs(
 
     for attr in ("marginal_cost", "capital_cost"):
         overwrites = cost_config.get(attr)
+        overwrites = cost_config.get(attr)
         if overwrites is not None:
             overwrites = pd.Series(overwrites)
             costs.loc[overwrites.index, attr] = overwrites
@@ -132,6 +153,7 @@ def load_costs(
     return costs
 
 
+# TODO understand why this is in make_summary but not in the main optimisation
 # TODO understand why this is in make_summary but not in the main optimisation
 def update_transmission_costs(n, costs, length_factor=1.0):
     # TODO: line length factor of lines is applied to lines and links.

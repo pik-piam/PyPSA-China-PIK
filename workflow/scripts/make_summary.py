@@ -21,6 +21,7 @@ from _helpers import assign_locations
 # from add_electricity import load_costs, update_transmission_costs
 
 logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
 
 opt_name = {"Store": "e", "Line": "s", "Transformer": "s"}
@@ -421,6 +422,7 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
     buses = n.buses.index[n.buses.carrier == carrier]
 
     # === First do market value of generators  ===
+    # === First do market value of generators  ===
 
     generators = n.generators.index[n.buses.loc[n.generators.bus, "carrier"] == carrier]
 
@@ -442,6 +444,7 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
 
         market_values.at[tech, label] = revenue.sum().sum() / dispatch.sum().sum()
 
+    # === Now do market value of links  ===
     # === Now do market value of links  ===
 
     for i in ["0", "1"]:
@@ -569,6 +572,8 @@ if __name__ == "__main__":
             planning_horizons="2030",
             heating_demand="positive",
         )
+
+    configure_logging(snakemake)
 
     configure_logging(snakemake)
 

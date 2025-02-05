@@ -195,10 +195,12 @@ def build_hot_water_per_day(planning_horizons: int | str) -> pd.Series:
     elif snakemake.wildcards["heating_demand"] == "mean":
 
         def lin_func(x: np.array, a: float, b: float) -> np.array:
+        def lin_func(x: np.array, a: float, b: float) -> np.array:
             return a * x + b
 
         x = np.array([START_YEAR, END_YEAR])
         y = np.array([unit_hot_water_start_yr, unit_hot_water_end_yr])
+        popt, pcov = curve_fit(lin_func, x, y)
         popt, pcov = curve_fit(lin_func, x, y)
 
         unit_hot_water = (lin_func(int(planning_horizons), *popt) + UNIT_HOT_WATER_START_YEAR) / 2

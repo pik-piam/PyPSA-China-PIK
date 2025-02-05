@@ -75,3 +75,5 @@ if __name__ == "__main__":
     cutout.prepare()
 
     logger.info(f"Cutout successfully built at {snakemake.output[0]}.")
+
+    logger.info(f"Cutout successfully built at {snakemake.output[0]}.")

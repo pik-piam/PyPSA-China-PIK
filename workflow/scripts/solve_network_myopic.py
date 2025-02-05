@@ -16,6 +16,8 @@ from _helpers import (
     override_component_attrs,
     mock_snakemake,
     setup_gurobi_tunnel_and_env,
+    mock_snakemake,
+    setup_gurobi_tunnel_and_env,
 )
 
 logger = logging.getLogger(__name__)
@@ -160,6 +162,7 @@ def add_transimission_constraints(n):
 
 
 def add_retrofit_constraints(n):
+    p_nom_max = pd.read_csv("resources/data/p_nom/p_nom_max_cc.csv", index_col=0)
     p_nom_max = pd.read_csv("resources/data/p_nom/p_nom_max_cc.csv", index_col=0)
     planning_horizon = snakemake.wildcards.planning_horizons
     for year in range(int(planning_horizon) - 40, 2021, 5):
@@ -320,5 +323,7 @@ if __name__ == "__main__":
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
     n.export_to_netcdf(snakemake.output.network_name)
+
+    logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
