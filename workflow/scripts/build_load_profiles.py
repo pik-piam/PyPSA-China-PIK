@@ -195,7 +195,6 @@ def build_hot_water_per_day(planning_horizons: int | str) -> pd.Series:
     elif snakemake.wildcards["heating_demand"] == "mean":
 
         def lin_func(x: np.array, a: float, b: float) -> np.array:
-        def lin_func(x: np.array, a: float, b: float) -> np.array:
             return a * x + b
 
         x = np.array([START_YEAR, END_YEAR])

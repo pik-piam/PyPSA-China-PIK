@@ -1,3 +1,4 @@
+# TODO add docu
 import logging
 from _helpers import configure_logging, mock_snakemake
 

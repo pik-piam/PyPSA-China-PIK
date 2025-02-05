@@ -1,3 +1,7 @@
+"""
+Soft coded centalized `constants`
+"""
+
 import numpy as np
 
 SNAKEFILE_CHOICES = ["Snakefile", "snakefile"]

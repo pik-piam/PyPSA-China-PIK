@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 # coding: utf-8
-
+""" Functions to add constraints and prepare the network for the solver. 
+Associated with the `solve_network_myopic` rule in the Snakefile.
+To be merged/consolidated with the `solve_network` script.
+"""
 import logging
 import re
 

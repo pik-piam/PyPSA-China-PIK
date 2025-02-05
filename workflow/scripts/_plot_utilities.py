@@ -1,3 +1,7 @@
+""" 
+Helper/utility functions for plotting, including legacy functions yet to be removed
+"""
+
 import pypsa
 import pandas as pd
 import os.path

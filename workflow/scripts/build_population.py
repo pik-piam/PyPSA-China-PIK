@@ -1,3 +1,7 @@
+""" 
+Rules for building the population data by region
+"""
+
 import logging
 from _helpers import configure_logging, mock_snakemake
 
@@ -32,7 +36,7 @@ def load_pop_csv(csv_path: os.PathLike) -> pd.DataFrame:
 
 
 def build_population(data_path: os.PathLike = None):
-    """read the population csv, ocnvert to unit pop (head count) and make an hdf5 file
+    """Build the population data by region
 
     Args:
         data_path (os.PathLike, optional): the path to the pop csv. Defaults to None.

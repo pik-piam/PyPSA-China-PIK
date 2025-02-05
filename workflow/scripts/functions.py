@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: CC0-1.0
-
+""" 
+MAths calculations """
 import numpy as np
 from scipy import interpolate
 import pyproj
@@ -9,23 +10,7 @@ import pyproj
 from math import radians, cos, sin, asin, sqrt
 from functools import partial
 
-offwind_nodes = np.array(
-    [
-        "Fujian",
-        "Guangdong",
-        "Guangxi",
-        "Hainan",
-        "Hebei",
-        "Jiangsu",
-        "Liaoning",
-        "Shandong",
-        "Shanghai",
-        "Tianjin",
-        "Zhejiang",
-    ],
-    dtype=str,
-)
-
+# TODO make function
 # polynomial centroid for plotting
 get_poly_center = lambda poly: (poly.centroid.xy[0][0], poly.centroid.xy[1][0])
 
@@ -62,7 +47,7 @@ def area_from_lon_lat_poly(geometry):
     project = partial(
         pyproj.transform, pyproj.Proj(init="epsg:4326"), pyproj.Proj(proj="aea")  # Source: Lon-Lat
     )  # Target: Albers Equal Area Conical https://en.wikipedia.org/wiki/Albers_projection
-
+    # TODO fix
     new_geometry = transform(project, geometry)
 
     # default area is in m^2

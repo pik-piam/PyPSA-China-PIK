@@ -3,6 +3,12 @@
 
 # WARNING: DO NOT DO "import snakemake"
 
+""" 
+Helper functions for the PyPSA China workflow including
+- HPC helpers (gurobi tunnel setup)
+- PyPSA helpers (legacy, time handling, ntwk relabeling)
+- Snakemake helpers (logging, path management and emulators for testing)
+"""
 import os
 import sys
 import subprocess

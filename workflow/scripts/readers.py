@@ -1,7 +1,9 @@
+"""File reading support functions"""
+
 import rioxarray
 import geopandas as gpd
 import os.path
-
+from xarray import DataArray
 from constants import CRS, PROV_NAMES
 
 
@@ -11,7 +13,7 @@ def read_raster(
     var_name="var",
     chunks=60,
     plot=False,
-):
+) -> DataArray:
     """Read raster data and optionally clip it to a given shape.
 
     Args:

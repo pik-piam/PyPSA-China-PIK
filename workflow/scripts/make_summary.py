@@ -172,6 +172,7 @@ def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame):
 
         costs.loc[marginal_costs_grouped.index, label] = marginal_costs_grouped
 
+    # TODO remove/see if needed, and if yes soft-code
     # add back in all hydro
     # costs.loc[("storage_units", "capital", "hydro"),label] = (0.01)*2e6*n.storage_units.loc[n.storage_units.group=="hydro", "p_nom"].sum()
     # costs.loc[("storage_units", "capital", "PHS"),label] = (0.01)*2e6*n.storage_units.loc[n.storage_units.group=="PHS", "p_nom"].sum()
@@ -181,7 +182,8 @@ def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame):
 
 
 def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: pd.DataFrame):
-    # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
+    # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide
+    #  (e.g. fossil gas/oil) stuff
     nodal_cap = n.statistics.optimal_capacity(groupby=pypsa.statistics.get_bus_and_carrier)
     nodal_capacities[label] = nodal_cap.sort_index(level=0)
     return nodal_capacities
@@ -300,7 +302,7 @@ def calculate_peak_dispatch(n: pypsa.Network, label: str, supply: pd.DataFrame) 
     Args:
         n (pypsa.Network): the network object
         label (str): the labe representing the pathway
-        supply_energy (pd.DataFrame): supply energy balance (empty df)
+        supply (pd.DataFrame): supply energy balance (empty df)
 
     Returns:
         pd.DataFrame: updated supply DF
@@ -469,49 +471,6 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
             market_values.at[tech, label] = revenue.sum().sum() / dispatch.sum().sum()
 
     return market_values
-
-
-def calculate_price_statistics(n: pypsa.Network, label: str, price_statistics: pd.DataFrame):
-    """WARNING THIS FUNCTION DON#T HAVE ANY WIEGHTING FOR SUPPLY AND SHOULD NOT BE USED
-
-    Args:
-        n (pypsa.Network): _description_
-        label (str): _description_
-        price_statistics (pd.DataFrame): _description_
-
-    Returns:
-        _type_: _description_
-    """
-    raise Warning("This function doesn't have any weighting for supply and should not be used")
-
-    price_statistics = price_statistics.reindex(
-        price_statistics.index.union(pd.Index(["zero_hours", "mean", "standard_deviation"]))
-    )
-
-    buses = n.buses.index[n.buses.carrier == "AC"]
-
-    threshold = 0.1  # higher than phoney marginal_cost of wind/solar
-
-    df = pd.DataFrame(data=0.0, columns=buses, index=n.snapshots)
-
-    df[n.buses_t.marginal_price[buses] < threshold] = 1.0
-
-    price_statistics.at["zero_hours", label] = (
-        n.buses_t.marginal_price.apply(lambda x: (x <= 0).sum())
-        .groupby(n.buses.carrier)
-        .sum()
-        .loc["AC"]
-    )
-
-    price_statistics.at["mean", label] = (
-        n.buses_t.marginal_price.mean().groupby(n.buses.carrier).mean()["AC"]
-    )
-    # wrong maths.
-    price_statistics.at["standard_deviation", label] = (
-        n.buses_t.marginal_price.std().groupby(n.buses.carrier).mean()["AC"]
-    )
-
-    return price_statistics
 
 
 def make_summaries(networks_dict: dict[tuple, os.PathLike]):

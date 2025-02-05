@@ -1,3 +1,8 @@
+""" 
+Snakemake rule script to calculate the heat pump coefficient of performance 
+with atlite
+"""
+
 import logging
 from _helpers import configure_logging
 
@@ -8,7 +13,12 @@ import scipy as sp
 logger = logging.getLogger(__name__)
 
 
+# TODO cleanup
 def build_cop_profiles():
+    """Build COP time profiles with atlite
+
+    Write outputs to snakemake.output.cop as hf5
+    """
 
     with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
         pop_map = store["population_gridcell_map"]

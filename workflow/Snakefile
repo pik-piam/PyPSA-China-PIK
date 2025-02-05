@@ -106,16 +106,16 @@ rule build_solar_thermal_profiles:
     resources: mem_mb=30000
     script: "scripts/build_solar_thermal_profiles.py"
 
-rule build_temp_profiles:
+rule build_temperature_profiles:
     input:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout="resources/cutouts/China-2020.nc"
     output:
         temp=DERIVED_DATA+"/"+"heating/temp.h5"
-    log: LOG_DIR + "/build_temp_profiles.log"
+    log: LOG_DIR + "/build_temperature_profiles.log"
     threads: 8
     resources: mem_mb=30000
-    script: "scripts/build_temp_profiles.py"
+    script: "scripts/build_temperature_profiles.py"
 
 rule build_cop_profiles:
     input:

@@ -1,5 +1,8 @@
 # coding: utf-8
-
+""" 
+Functions supporting myopic pathway network creation
+"""
+# TODO improve docstring
 import logging
 import numpy as np
 import pandas as pd

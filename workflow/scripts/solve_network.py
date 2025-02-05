@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 # coding: utf-8
-
+""" Functions to add constraints and prepare the network for the solver. 
+Associated with the `solve_networks` rule in the Snakefile.
+"""
 import logging
 import numpy as np
 import pypsa

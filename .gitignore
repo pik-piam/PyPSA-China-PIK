@@ -11,6 +11,7 @@ __pycache__
 **.idea/
 .vscode
 
+/site/**
 /resources/**/*
 !/resources/data/shapefiles/
 !/resources/**/*.csv
