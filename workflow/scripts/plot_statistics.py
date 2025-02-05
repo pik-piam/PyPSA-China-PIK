@@ -96,14 +96,14 @@ if __name__ == "__main__":
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "optimal_capacity.png"))
 
-    if "capex" in stats_list:
+    if "capital_expenditure" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.capex(bus_carrier=carrier)
         plot_static_per_carrier(ds, ax)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capex.png"))
 
-    if "opex" in stats_list:
+    if "operational_expenditure" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.opex(bus_carrier=carrier)
         plot_static_per_carrier(ds, ax)

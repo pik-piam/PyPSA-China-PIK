@@ -500,7 +500,7 @@ if __name__ == "__main__":
         "energy_supply": [os.path.join(p, "supply_energy.csv") for p in paths],
     }
 
-    sdr = float(config["costs"]["discountrate"])
+    sdr = float(config["costs"]["social_discount_rate"])
     plot_pathway_costs(
         data_paths["costs"],
         config["plotting"],

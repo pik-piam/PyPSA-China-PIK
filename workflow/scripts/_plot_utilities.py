@@ -23,10 +23,10 @@ def make_nice_tech_colors(tech_colors: dict, nice_names: dict) -> dict:
 
 
 def get_stat_colors(
-    df_stats: pd.DataFrame,
+    # df_stats: pd.DataFrame,
     n: pypsa.Network,
-    plot_config: dict,
-    nan_color="lightgrey",
+    # plot_config: dict,
+    # nan_color="lightgrey",
     extra_colors: dict = None,
 ) -> pd.DataFrame:
     """Make several attempts to get colors for statistics from difference sources
@@ -49,6 +49,7 @@ def get_stat_colors(
     carrier_colors = carrier_colors.groupby(level=0).first()
     extra_colors = pd.DataFrame(extra_colors.values(), index=extra_colors.keys(), columns=["color"])
     carrier_colors = pd.concat([carrier_colors, extra_colors])
+    carrier_colors.rename(index=lambda x: x.title(), inplace=True)
     return carrier_colors.squeeze()
 
 

@@ -50,7 +50,8 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
                 RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.pdf",      
                 **config["scenario"]
             ),
-            expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"])
+            expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"]),
+            expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"]),
 
 else:
     raise ValueError("Invalid scenario config: {}".format(config["foresight"]))

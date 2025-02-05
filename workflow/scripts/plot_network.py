@@ -181,8 +181,6 @@ def add_cost_pannel(
 # TODO fix args unused
 def plot_cost_map(
     network: pypsa.Network,
-    planning_horizon: int,
-    discount_rate: float,
     opts: dict,
     base_year=2020,
     plot_additions=True,
@@ -223,7 +221,7 @@ def plot_cost_map(
         else:
             return row.p_nom_opt
 
-    # === Stats by bus ===
+    # ============ === Stats by bus ===
     # calc costs & sum over component types to keep bus & carrier (remove no loc)
     costs = network.statistics.capex(groupby=["location", "carrier"])
     costs = costs.groupby(level=[1, 2]).sum().drop("")
@@ -235,8 +233,8 @@ def plot_cost_map(
         opex = network.statistics.opex(groupby=["location", "carrier"])
         opex = opex.groupby(level=[1, 2]).sum()
         cost_pies = costs + opex.reindex(costs.index, fill_value=0)
-    # === make map components ====
-    # bus pies
+
+    # === make map components: pies and edges
     cost_pies = costs.fillna(0)
     cost_pies.index.names = ["bus", "carrier"]
     carriers = cost_pies.index.get_level_values(1).unique()
@@ -629,8 +627,6 @@ if __name__ == "__main__":
     additions = True if config["foresight"] != "overnight" else False
     plot_cost_map(
         n,
-        planning_horizon=snakemake.wildcards.planning_horizons,
-        discount_rate=config["costs"]["discountrate"],
         opts=config["plotting"],
         save_path=snakemake.output.cost_map,
         capex_only=not additions,
@@ -639,8 +635,6 @@ if __name__ == "__main__":
     p = snakemake.output.cost_map.replace(".pdf", "_additions.pdf")
     plot_cost_map(
         n,
-        planning_horizon=snakemake.wildcards.planning_horizons,
-        discount_rate=config["costs"]["discountrate"],
         opts=config["plotting"],
         save_path=p,
         capex_only=not additions,
@@ -659,8 +653,8 @@ if __name__ == "__main__":
     plot_energy_map(
         n,
         opts=config["plotting"],
-        save_path=snakemake.output.el_supply_map,
-        carrier="AC",
+        save_path=p,
+        carrier="heat",
         energy_pannel=True,
         components=["Generator", "Link"],
     )

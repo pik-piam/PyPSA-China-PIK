@@ -84,6 +84,24 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
         script:
             "../scripts/plot_statistics.py"
 
+    rule plot_snapshots:
+        input:
+            network=join(
+                RESULTS_DIR,
+                "postnetworks/ntwk_{planning_horizons}.nc",
+            ),
+        params:
+            winter_day1="12-10 21:00",  # mm-dd HH:MM 
+            winter_day2="12-17 12:00",  # mm-dd HH:MM
+            spring_day1="03-31 21:00",  # mm-dd HH:MM
+            spring_day2="04-06 12:00",  # mm-dd HH:MM
+        output:
+            outp_dir=directory(RESULTS_DIR + "/plots/snapshots_{planning_horizons}"),
+        log:
+            LOG_DIR + "/plot_snapshots_ntwk_{planning_horizons}.log",
+        script:
+            "../scripts/plot_time_series.py"
+
 else:
     raise NotImplementedError(
         f"Plotting fororesight {config["foresight"]} not implemented"
