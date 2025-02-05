@@ -22,8 +22,7 @@ def basename(x):
 
 def add_brownfield(n, n_p, year):
 
-    print("adding brownfield")
-
+    logger.info("Adding brownfield")
     # electric transmission grid set optimised capacities of previous as minimum
     n.lines.s_nom_min = n_p.lines.s_nom_opt
     # dc_i = n.links[n.links.carrier=="DC"].index

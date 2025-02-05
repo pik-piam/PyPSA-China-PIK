@@ -6,20 +6,21 @@
 Create summary CSV files for all scenario runs including costs, capacities,
 capacity factors, curtailment, energy balances, prices and other metrics.
 """
-
+import os
+import sys
 import logging
 
-import sys
-import os
-
 import pandas as pd
+import numpy as np
 import pypsa
 
 from _helpers import mock_snakemake, configure_logging
+from _helpers import assign_locations
 
 # import numpy as np
 # from add_electricity import load_costs, update_transmission_costs
 
+logger = logging.getLogger(__name__)
 logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
 
@@ -31,18 +32,7 @@ def assign_carriers(n):
         n.lines["carrier"] = "AC"
 
 
-def assign_locations(n):
-    for c in n.iterate_components(n.one_port_components | n.branch_components):
-        ifind = pd.Series(c.df.index.str.find(" ", start=4), c.df.index)
-        for i in ifind.unique():
-            names = ifind.index[ifind == i]
-            if i == -1:
-                c.df.loc[names, "location"] = ""
-            else:
-                c.df.loc[names, "location"] = names.str[:i]
-
-
-def calculate_nodal_cfs(n, label, nodal_cfs):
+def calculate_nodal_cfs(n: pypsa.Network, label: str, nodal_cfs: pd.DataFrame):
     # Beware this also has extraneous locations for country (e.g. biomass)
     # or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
@@ -74,7 +64,7 @@ def calculate_nodal_cfs(n, label, nodal_cfs):
     return nodal_cfs
 
 
-def calculate_cfs(n, label, cfs):
+def calculate_cfs(n: pypsa.Network, label: str, cfs: pd.DataFrame):
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load", "StorageUnit"}
     ):
@@ -100,7 +90,7 @@ def calculate_cfs(n, label, cfs):
     return cfs
 
 
-def calculate_nodal_costs(n, label, nodal_costs):
+def calculate_nodal_costs(n: pypsa.Network, label: str, nodal_costs: pd.DataFrame):
     # Beware this also has extraneous locations for country (e.g. biomass)
     #  or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
@@ -141,7 +131,7 @@ def calculate_nodal_costs(n, label, nodal_costs):
     return nodal_costs
 
 
-def calculate_costs(n, label, costs):
+def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame):
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
@@ -190,24 +180,14 @@ def calculate_costs(n, label, costs):
     return costs
 
 
-def calculate_nodal_capacities(n, label, nodal_capacities):
+def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: pd.DataFrame):
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide (e.g. fossil gas/oil) stuff
-    for c in n.iterate_components(
-        n.branch_components | n.controllable_one_port_components ^ {"Load"}
-    ):
-        nodal_capacities_c = c.df.groupby(["location", "carrier"])[
-            opt_name.get(c.name, "p") + "_nom_opt"
-        ].sum()
-        index = pd.MultiIndex.from_tuples(
-            [(c.list_name,) + t for t in nodal_capacities_c.index.to_list()]
-        )
-        nodal_capacities = nodal_capacities.reindex(index.union(nodal_capacities.index))
-        nodal_capacities.loc[index, label] = nodal_capacities_c.values
-
+    nodal_cap = n.statistics.optimal_capacity(groupby=pypsa.statistics.get_bus_and_carrier)
+    nodal_capacities[label] = nodal_cap.sort_index(level=0)
     return nodal_capacities
 
 
-def calculate_capacities(n, label, capacities):
+def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame):
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
@@ -223,8 +203,54 @@ def calculate_capacities(n, label, capacities):
     return capacities
 
 
-def calculate_curtailment(n, label, curtailment):
-    avail = (
+def calculate_co2_balance(
+    n: pypsa.Network, label: str, co2_balance: pd.DataFrame, withdrawal_stores=["CO2 capture"]
+) -> pd.DataFrame:
+    """calc the co2 balance [DOES NOT INCLUDE EMISSION GENERATING LINKSs]
+    Args:
+        n (pypsa.Network): the network object
+        withdrawal_stores (list, optional): names of stores. Defaults to ["CO2 capture"].
+        label (str): the label for the column
+        co2_balance (pd.DataFrame): the df to update
+
+    Returns:
+        tuple[float,float,float]: balance,
+    """
+
+    # year *(assumes one planning year intended),
+    year = int(np.round(n.snapshots.year.values.mean(), 0))
+
+    # emissions from generators (from fneumann course)
+    emissions = (
+        n.generators_t.p
+        / n.generators.efficiency
+        * n.generators.carrier.map(n.carriers.co2_emissions)
+    )  # t/h
+    emissions_carrier = (
+        (n.snapshot_weightings.generators @ emissions).groupby(n.generators.carrier).sum()
+    )
+
+    # format and drop 0 values
+    emissions_carrier = emissions_carrier.where(emissions_carrier > 0).dropna()
+    emissions_carrier.rename(year, inplace=True)
+    emissions_carrier = emissions_carrier.to_frame()
+    # CO2 withdrawal
+    stores = n.stores_t.e.T.groupby(n.stores.carrier).sum()
+    co2_stores = stores.index.intersection(withdrawal_stores)
+    co2_withdrawal = stores.iloc[:, -1].loc[co2_stores] * -1
+    co2_withdrawal.rename(year, inplace=True)
+    co2_withdrawal = co2_withdrawal.to_frame()
+    year_balance = pd.concat([emissions_carrier, co2_withdrawal])
+
+    #  combine with previous
+    co2_balance = co2_balance.reindex(year_balance.index.union(co2_balance.index))
+    co2_balance.loc[year_balance.index, label] = year_balance[year]
+
+    return co2_balance
+
+
+def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFrame):
+    p_avail_by_carr = (
         n.generators_t.p_max_pu.multiply(n.generators.p_nom_opt)
         .sum()
         .groupby(n.generators.carrier)
@@ -232,12 +258,14 @@ def calculate_curtailment(n, label, curtailment):
     )
     used = n.generators_t.p.sum().groupby(n.generators.carrier).sum()
 
-    curtailment[label] = (((avail - used) / avail) * 100).round(3)
+    curtailment[label] = (
+        ((p_avail_by_carr - used).clip(0) / p_avail_by_carr).fillna(0) * 100
+    ).round(3)
 
     return curtailment
 
 
-def calculate_energy(n, label, energy):
+def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame):
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         if c.name in n.one_port_components:
             c_energies = (
@@ -265,110 +293,56 @@ def calculate_energy(n, label, energy):
     return energy
 
 
-def calculate_supply(n, label, supply):
-    """
-    Calculate the max dispatch of each component at the buses aggregated by
+def calculate_peak_dispatch(n: pypsa.Network, label: str, supply: pd.DataFrame) -> pd.DataFrame:
+    """Calculate the MAX dispatch of each component at the buses aggregated by
     carrier.
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the labe representing the pathway
+        supply_energy (pd.DataFrame): supply energy balance (empty df)
+
+    Returns:
+        pd.DataFrame: updated supply DF
     """
-    bus_carriers = n.buses.carrier.unique()
 
-    for i in bus_carriers:
-        bus_map = n.buses.carrier == i
-        bus_map.at[""] = False
-
-        for c in n.iterate_components(n.one_port_components):
-            items = c.df.index[c.df.bus.map(bus_map).fillna(False)]
-
-            if len(items) == 0:
-                continue
-
-            s = (
-                c.pnl.p[items]
-                .max()
-                .multiply(c.df.loc[items, "sign"])
-                .groupby(c.df.loc[items, "carrier"])
-                .sum()
-            )
-            s = pd.concat([s], keys=[c.list_name])
-            s = pd.concat([s], keys=[i])
-
-            supply = supply.reindex(s.index.union(supply.index))
-            supply.loc[s.index, label] = s
-
-        for c in n.iterate_components(n.branch_components):
-            for end in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
-                items = c.df.index[c.df["bus" + end].map(bus_map).fillna(False)]
-
-                if len(items) == 0:
-                    continue
-
-                # lots of sign compensation for direction and to do maximums
-                s = (-1) ** (1 - int(end)) * (
-                    (-1) ** int(end) * c.pnl["p" + end][items]
-                ).max().groupby(c.df.loc[items, "carrier"]).sum()
-                s.index = s.index + end
-                s = pd.concat([s], keys=[c.list_name])
-                s = pd.concat([s], keys=[i])
-
-                supply = supply.reindex(s.index.union(supply.index))
-                supply.loc[s.index, label] = s
+    sup_ = n.statistics.supply(
+        groupby=pypsa.statistics.get_carrier_and_bus_carrier, aggregate_time="max"
+    )
+    supply_reordered = sup_.reorder_levels([2, 0, 1])
+    supply_reordered.sort_index(inplace=True)
+    supply[label] = supply_reordered
 
     return supply
 
 
-def calculate_supply_energy(n, label, supply_energy):
-    """
-    Calculate the total energy supply/consuption of each component at the buses
+def calculate_supply_energy(
+    n: pypsa.Network, label: str, supply_energy: pd.DataFrame
+) -> pd.DataFrame:
+    """Calculate the total energy supply/consuption of each component at the buses
     aggregated by carrier.
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the labe representing the pathway
+        supply_energy (pd.DataFrame): supply energy balance (empty df)
+
+    Returns:
+        pd.DataFrame: updated supply energy balance
     """
-    bus_carriers = n.buses.carrier.unique()
 
-    for i in bus_carriers:
-        bus_map = n.buses.carrier == i
-        bus_map.at[""] = False
+    eb = n.statistics.energy_balance(groupby=pypsa.statistics.get_carrier_and_bus_carrier)
+    # fragile
+    eb_reordered = eb.reorder_levels([2, 0, 1])
+    eb_reordered.sort_index(inplace=True)
+    eb_reordered.rename(index={"AC": "transmission losses"}, level=2, inplace=True)
 
-        for c in n.iterate_components(n.one_port_components):
-            items = c.df.index[c.df.bus.map(bus_map).fillna(False)]
-
-            if len(items) == 0:
-                continue
-
-            s = (
-                c.pnl.p[items]
-                .multiply(n.snapshot_weightings.generators, axis=0)
-                .sum()
-                .multiply(c.df.loc[items, "sign"])
-                .groupby(c.df.loc[items, "carrier"])
-                .sum()
-            )
-            s = pd.concat([s], keys=[c.list_name])
-            s = pd.concat([s], keys=[i])
-
-            supply_energy = supply_energy.reindex(s.index.union(supply_energy.index))
-            supply_energy.loc[s.index, label] = s
-
-        for c in n.iterate_components(n.branch_components):
-            for end in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
-                items = c.df.index[c.df["bus" + str(end)].map(bus_map).fillna(False)]
-
-                if len(items) == 0:
-                    continue
-
-                s = (-1) * c.pnl["p" + end][items].multiply(
-                    n.snapshot_weightings.generators, axis=0
-                ).sum().groupby(c.df.loc[items, "carrier"]).sum()
-                s.index = s.index + end
-                s = pd.concat([s], keys=[c.list_name])
-                s = pd.concat([s], keys=[i])
-
-                supply_energy = supply_energy.reindex(s.index.union(supply_energy.index))
-
-                supply_energy.loc[s.index, label] = s
+    supply_energy[label] = eb_reordered
 
     return supply_energy
 
 
-def calculate_metrics(n, label, metrics):
+def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
     metrics_list = [
         "line_volume",
         "line_volume_limit",
@@ -376,6 +350,7 @@ def calculate_metrics(n, label, metrics):
         "line_volume_DC",
         "line_volume_shadow",
         "co2_shadow",
+        "co2_budget",
     ]
 
     metrics = metrics.reindex(pd.Index(metrics_list).union(metrics.index))
@@ -394,11 +369,11 @@ def calculate_metrics(n, label, metrics):
 
     if "co2_limit" in n.global_constraints.index:
         metrics.at["co2_shadow", label] = n.global_constraints.at["co2_limit", "mu"]
-
+        metrics.at["co2_budget", label] = n.global_constraints.at["co2_limit", "constant"]
     return metrics
 
 
-def calculate_prices(n, label, prices):
+def calculate_t_avgd_prices(n: pypsa.Network, label: str, prices: pd.DataFrame):
     prices = prices.reindex(prices.index.union(n.buses.carrier.unique()))
 
     # WARNING: this is time-averaged, see weighted_prices for load-weighted average
@@ -407,91 +382,46 @@ def calculate_prices(n, label, prices):
     return prices
 
 
-def calculate_weighted_prices(n, label, weighted_prices):
-    # Warning: doesn't include storage units as loads
+def calculate_weighted_prices(
+    n: pypsa.Network, label: str, weighted_prices: pd.DataFrame
+) -> pd.DataFrame:
+    """Demand-weighed prices for stores and loads.
+        For stores if withdrawal is zero, use supply instead.
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label representing the pathway (not needed, refactor)
+        weighted_prices (pd.DataFrame): the dataframe to write to (not needed, refactor)
 
-    weighted_prices = weighted_prices.reindex(
-        pd.Index(
-            [
-                "electricity",
-                "heat",
-                "space heat",
-                "urban heat",
-                "space urban heat",
-                "gas",
-                "H2",
-            ]
-        )
+    Returns:
+        pd.DataFrame: updated weighted_prices
+    """
+    entries = pd.Index(["electricity", "heat", "H2", "CO2 capture", "gas", "biomass"])
+    weighted_prices = weighted_prices.reindex(entries)
+
+    # loads
+    loads = (
+        n.statistics.revenue(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
+        / n.statistics.withdrawal(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
+        * -1
     )
+    loads.rename(index={"AC": "electricity"}, inplace=True)
 
-    link_loads = {
-        "electricity": [
-            "heat pump",
-            "resistive heater",
-            "battery charger",
-            "H2 Electrolysis",
-        ],
-        "heat": ["water tanks charger"],
-        "urban heat": ["water tanks charger"],
-        "space heat": [],
-        "space urban heat": [],
-        "gas": ["OCGT", "gas boiler", "CHP electric", "CHP heat"],
-        "H2": ["Sabatier", "H2 Fuel Cell"],
-    }
-
-    for carrier in link_loads:
-        if carrier == "electricity":
-            suffix = ""
-        elif carrier[:5] == "space":
-            suffix = carrier[5:]
-        else:
-            suffix = " " + carrier
-
-        buses = n.buses.index[n.buses.index.str[2:] == suffix]
-
-        if buses.empty:
-            continue
-
-        # TODO fix undefined heat_demand_df
-        if carrier in ["H2", "gas"]:
-            load = pd.DataFrame(index=n.snapshots, columns=buses, data=0.0)
-        elif carrier[:5] == "space":
-            load = heat_demand_df[buses.str[:2]].rename(columns=lambda i: str(i) + suffix)
-        else:
-            load = n.loads_t.p_set[buses]
-
-        for tech in link_loads[carrier]:
-            names = n.links.index[n.links.index.to_series().str[-len(tech) :] == tech]
-
-            if names.empty:
-                continue
-
-            load += n.links_t.p0[names].groupby(n.links.loc[names, "bus0"], axis=1).sum()
-
-        # Add H2 Store when charging
-        # if carrier == "H2":
-        #    stores = n.stores_t.p[buses+ " Store"].groupby(n.stores.loc[buses+ " Store", "bus"],axis=1).sum(axis=1)
-        #    stores[stores > 0.] = 0.
-        #    load += -stores
-
-        weighted_prices.loc[carrier, label] = (
-            load * n.buses_t.marginal_price[buses]
-        ).sum().sum() / load.sum().sum()
-
-        # still have no idea what this is for, only for debug reasons.
-        if carrier[:5] == "space":
-            logger.debug(load * n.buses_t.marginal_price[buses])
-
+    # stores
+    w = n.statistics.withdrawal(comps="Store")
+    # biomass stores have no withdrawal for some reason
+    w[w == 0] = n.statistics.supply(comps="Store")[w == 0]
+    weighted_prices[label] = pd.concat([loads, n.statistics.revenue(comps="Store") / w])
     return weighted_prices
 
 
-def calculate_market_values(n, label, market_values):
+def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.DataFrame):
     # Warning: doesn't include storage units
 
     carrier = "AC"
 
     buses = n.buses.index[n.buses.carrier == carrier]
 
+    # === First do market value of generators  ===
     # === First do market value of generators  ===
 
     generators = n.generators.index[n.buses.loc[n.generators.bus, "carrier"] == carrier]
@@ -515,16 +445,17 @@ def calculate_market_values(n, label, market_values):
         market_values.at[tech, label] = revenue.sum().sum() / dispatch.sum().sum()
 
     # === Now do market value of links  ===
+    # === Now do market value of links  ===
 
     for i in ["0", "1"]:
-        all_links = n.links.index[n.buses.loc[n.links["bus" + i], "carrier"] == carrier]
+        carrier_links = n.links[n.links["bus" + i].isin(buses)].index
 
-        techs = n.links.loc[all_links, "carrier"].value_counts().index
+        techs = n.links.loc[carrier_links, "carrier"].value_counts().index
 
         market_values = market_values.reindex(market_values.index.union(techs))
 
         for tech in techs:
-            links = all_links[n.links.loc[all_links, "carrier"] == tech]
+            links = carrier_links[n.links.loc[carrier_links, "carrier"] == tech]
 
             dispatch = (
                 n.links_t["p" + i][links]
@@ -540,7 +471,19 @@ def calculate_market_values(n, label, market_values):
     return market_values
 
 
-def calculate_price_statistics(n, label, price_statistics):
+def calculate_price_statistics(n: pypsa.Network, label: str, price_statistics: pd.DataFrame):
+    """WARNING THIS FUNCTION DON#T HAVE ANY WIEGHTING FOR SUPPLY AND SHOULD NOT BE USED
+
+    Args:
+        n (pypsa.Network): _description_
+        label (str): _description_
+        price_statistics (pd.DataFrame): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    raise Warning("This function doesn't have any weighting for supply and should not be used")
+
     price_statistics = price_statistics.reindex(
         price_statistics.index.union(pd.Index(["zero_hours", "mean", "standard_deviation"]))
     )
@@ -553,57 +496,64 @@ def calculate_price_statistics(n, label, price_statistics):
 
     df[n.buses_t.marginal_price[buses] < threshold] = 1.0
 
-    price_statistics.at["zero_hours", label] = df.sum().sum() / (df.shape[0] * df.shape[1])
+    price_statistics.at["zero_hours", label] = (
+        n.buses_t.marginal_price.apply(lambda x: (x <= 0).sum())
+        .groupby(n.buses.carrier)
+        .sum()
+        .loc["AC"]
+    )
 
-    price_statistics.at["mean", label] = n.buses_t.marginal_price[buses].unstack().mean()
-
+    price_statistics.at["mean", label] = (
+        n.buses_t.marginal_price.mean().groupby(n.buses.carrier).mean()["AC"]
+    )
+    # wrong maths.
     price_statistics.at["standard_deviation", label] = (
-        n.buses_t.marginal_price[buses].unstack().std()
+        n.buses_t.marginal_price.std().groupby(n.buses.carrier).mean()["AC"]
     )
 
     return price_statistics
 
 
-def make_summaries(networks_dict):
-    outputs = [
-        "nodal_costs",
-        "nodal_capacities",
-        "nodal_cfs",
-        "cfs",
-        "costs",
-        "capacities",
-        "curtailment",
-        "energy",
-        "supply",
-        "supply_energy",
-        "prices",
-        "weighted_prices",
-        "price_statistics",
-        "market_values",
-        "metrics",
-    ]
+def make_summaries(networks_dict: dict[tuple, os.PathLike]):
+    output_funcs = {
+        "nodal_costs": calculate_nodal_costs,
+        "nodal_capacities": calculate_nodal_capacities,
+        "nodal_cfs": calculate_nodal_cfs,
+        "cfs": calculate_cfs,
+        "costs": calculate_costs,
+        "co2_balance": calculate_co2_balance,
+        "capacities": calculate_capacities,
+        "curtailment_pc": calculate_curtailment,
+        "energy": calculate_energy,
+        "peak_dispatch": calculate_peak_dispatch,
+        "supply_energy": calculate_supply_energy,
+        "time_averaged_prices": calculate_t_avgd_prices,
+        "weighted_prices": calculate_weighted_prices,
+        # "price_statistics": calculate_price_statistics,
+        "market_values": calculate_market_values,
+        "metrics": calculate_metrics,
+    }
 
     columns = pd.MultiIndex.from_tuples(
         networks_dict.keys(), names=["pathway", "planning_horizons"]
     )
+    dataframes_dict = {}
 
-    df = {}
-
-    for output in outputs:
-        df[output] = pd.DataFrame(columns=columns, dtype=float)
+    # TO DO: not needed, could be made by the functions
+    for output in output_funcs.keys():
+        dataframes_dict[output] = pd.DataFrame(columns=columns, dtype=float)
 
     for label, filename in networks_dict.items():
         logger.info(f"Make summary for scenario {label}, using {filename}")
 
         n = pypsa.Network(filename)
-
         assign_carriers(n)
         assign_locations(n)
 
-        for output in outputs:
-            df[output] = globals()["calculate_" + output](n, label, df[output])
+        for output, output_fn in output_funcs.items():
+            dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
 
-    return df
+    return dataframes_dict
 
 
 # TODO move to helper?
@@ -617,27 +567,36 @@ if __name__ == "__main__":
 
         snakemake = mock_snakemake(
             "make_summary",
-            opts="ll",
-            topology="current+Neighbor",
-            pathway="exponential175",
-            planning_horizons=["2020"],
+            topology="current+FCG",
+            pathway="exp175",
+            planning_horizons="2030",
+            heating_demand="positive",
         )
+
+    configure_logging(snakemake)
 
     configure_logging(snakemake)
 
     config = snakemake.config
     wildcards = snakemake.wildcards
 
-    # TODO : make readable
-    networks_dict = {
-        (pathway, planning_horizons): config["base_results_dir"]
-        + f"/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc"
-        for opts in expand_from_wildcard("opts", config)
-        for planning_horizons in expand_from_wildcard("planning_horizons", config)
-        for pathway in expand_from_wildcard("pathway", config)
-        for topology in expand_from_wildcard("topology", config)
-        for heating_demand in expand_from_wildcard("heating_demand", config)
-    }
+    # The original was intended to handle a list of files
+    # this doesnt r eflect the current snakefile
+    # previous code was hardcoded and could cause issue w snakefile input
+
+    # To go back to the all in one, would need to parse the file list
+    # or hope that snamek wildcards are ordered in a sensible way
+
+    # == here would be the way to get the list of possible wildcards
+    pathways = expand_from_wildcard("pathway", config)
+    years = expand_from_wildcard("planning_horizons", config)
+
+    if len(pathways) != 1 or len(years) != 1:
+        raise ValueError("Multi file mode not implemented for summary")
+    else:
+        pathway, planning_horizons = pathways[0], years[0]
+
+    networks_dict = {(pathway, planning_horizons): snakemake.input.network}
 
     df = make_summaries(networks_dict)
     df["metrics"].loc["total costs"] = df["costs"].sum()
@@ -648,3 +607,5 @@ if __name__ == "__main__":
             df.to_csv(os.path.join(dir, f"{key}.csv"))
 
     to_csv(df, snakemake.output[0])
+
+    logger.info(f"Made summary for {planning_horizons} in {pathway}")

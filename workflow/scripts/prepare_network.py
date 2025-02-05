@@ -4,69 +4,893 @@
 
 # for non-pathway network
 # TODO fix timezones
+# TODO fix timezones
 
 import pypsa
+from vresutils.costdata import annuity
 from vresutils.costdata import annuity
 from shapely.geometry import Point
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-import pytz
-import pyproj
 import xarray as xr
 import logging
 
-from math import radians, cos, sin, asin, sqrt
-from functools import partial
-from shapely.ops import transform
-
-from constants import PROV_NAMES
-from functions import HVAC_cost_curve
-from _helpers import configure_logging, mock_snakemake
+from _helpers import (
+    configure_logging,
+    mock_snakemake,
+    shift_profile_to_planning_year,
+    make_periodic_snapshots,
+    assign_locations,
+)
+from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
+from readers import read_province_shapes
+from prepare_network_common import calc_renewable_pu_avail
+from constants import (
+    PROV_NAMES,
+    CRS,
+    CO2_HEATING_2020,
+    CO2_EL_2020,
+    LOAD_CONVERSION_FACTOR,
+    INFLOW_DATA_YR,
+    NUCLEAR_EXTENDABLE,
+    NON_LIN_PATH_SCALING,
+    LINE_SECURITY_MARGIN,
+    ECON_LIFETIME_LINES,
+    FOM_LINES,
+)
 
 logger = logging.getLogger(__name__)
 
 
-# This function follows http://toblerity.org/shapely/manual.html
-def area_from_lon_lat_poly(geometry):
-    """For shapely geometry in lon-lat coordinates,
-    returns area in km^2."""
-
-    project = partial(
-        pyproj.transform, pyproj.Proj(init="epsg:4326"), pyproj.Proj(proj="aea")  # Source: Lon-Lat
-    )  # Target: Albers Equal Area Conical https://en.wikipedia.org/wiki/Albers_projection
-
-    new_geometry = transform(project, geometry)
-
-    # default area is in m^2
-    return new_geometry.area / 1e6
-
-
-def haversine(p1, p2) -> float:
-    """Calculate the great circle distance in km between two points on
-    the earth (specified in decimal degrees)
+def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
+    """add the various carriers to the network based on the config file
 
     Args:
-        p1 (shapely.Point): location 1 in decimal deg
-        p2 (shapely.Point): location 2 in decimal deg
-
-    Returns:
-        float: great circle distance in [km]
+        network (pypsa.Network): the pypsa network
+        config (dict): the config file
+        costs (pd.DataFrame): the costs dataframe
     """
 
-    # convert decimal degrees to radians
-    lon1, lat1, lon2, lat2 = map(radians, [p1[0], p1[1], p2[0], p2[1]])
+    network.add("Carrier", "AC")
+    if config["heat_coupling"]:
+        network.add("Carrier", "heat")
+    for carrier in config["Techs"]["vre_techs"]:
+        network.add("Carrier", carrier)
+        if carrier == "hydroelectricity":
+            network.add("Carrier", "hydro_inflow")
+    for carrier in config["Techs"]["store_techs"]:
+        network.add("Carrier", carrier)
+        if carrier == "battery":
+            network.add("Carrier", "battery discharger")
 
-    # haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-    c = 2 * asin(sqrt(a))
-    r = 6371  # Radius of earth in kilometers. Use 3956 for miles
-    return c * r
+    # add fuel carriers, emissions in # in t_CO2/MWht
+    if config["add_gas"]:
+        network.add("Carrier", "gas", co2_emissions=costs.at["gas", "co2_emissions"])
+    if config["add_coal"]:
+        network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
 
 
+def add_conventional_generators(
+    network: pypsa.Network,
+    nodes: pd.Index,
+    config: dict,
+    prov_centroids: gpd.GeoDataFrame,
+    costs: pd.DataFrame,
+):
+    """add conventional generators to the network
+
+    Args:
+        network (pypsa.Network): the pypsa network object
+        nodes (pd.Index): the nodes
+        config (dict): the snakemake config
+        prov_centroids (gpd.GeoDataFrame): the x,y locations of the nodes
+        costs (pd.DataFrame): the costs data base
+    """
+    if config["add_gas"]:
+        # add converter from fuel source
+        network.add(
+            "Bus",
+            nodes,
+            suffix=" gas",
+            x=prov_centroids.x,
+            y=prov_centroids.y,
+            carrier="gas",
+            location=nodes,
+        )
+
+        network.add(
+        network.add(
+            "Generator",
+            nodes,
+            suffix=" gas fuel",
+            bus=nodes + " gas",
+            carrier="gas",
+            p_nom_extendable=True,
+            p_nom=1e7,
+            marginal_cost=costs.at["gas", "fuel"],
+        )
+
+        # TODO why not centralised?
+        network.add(
+            "Store",
+            nodes + " gas Store",
+            bus=nodes + " gas",
+            e_nom_extendable=True,
+            carrier="gas",
+            e_nom=1e7,
+            e_cyclic=True,
+        )
+
+        network.add(
+        network.add(
+            "Link",
+            nodes,
+            suffix=" OCGT",
+            bus0=nodes + " gas",
+            bus1=nodes,
+            marginal_cost=costs.at["OCGT", "efficiency"]
+            * costs.at["OCGT", "VOM"],  # NB: VOM is per MWel
+            capital_cost=costs.at["OCGT", "efficiency"]
+            * costs.at["OCGT", "capital_cost"],  # NB: capital cost is per MWel
+            p_nom_extendable=True,
+            efficiency=costs.at["OCGT", "efficiency"],
+            lifetime=costs.at["OCGT", "lifetime"],
+            carrier="gas",
+        )
+
+    if config["add_coal"]:
+        # this is the non sector-coupled approach
+        # for industry may have an issue in that coal feeds to chem sector
+        network.add(
+            "Generator",
+            nodes,
+            suffix=" coal power",
+            bus=nodes,
+            carrier="coal",
+            p_nom_extendable=True,
+            efficiency=costs.at["coal", "efficiency"],
+            marginal_cost=costs.at["coal", "marginal_cost"],
+            capital_cost=costs.at["coal", "efficiency"]
+            * costs.at["coal", "capital_cost"],  # NB: capital cost is per MWel
+            lifetime=costs.at["coal", "lifetime"],
+        )
+
+
+def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.DataFrame):
+    """add H2 generators, storage and links to the network - currently all or nothing
+
+    Args:
+        network (pypsa.Network): network object too which H2 comps will be added
+        config (dict): the config (snakemake config)
+        nodes (pd.Index): the buses
+        costs (pd.DataFrame): the cost database
+    """
+
+    network.add(
+        "Link",
+        name=nodes + " H2 Electrolysis",
+        bus0=nodes,
+        bus1=nodes + " H2",
+        bus2=nodes + " central heat",
+        p_nom_extendable=True,
+        carrier="H2 Electrolysis",
+        efficiency=costs.at["electrolysis", "efficiency"],
+        efficiency2=costs.at["electrolysis", "efficiency-heat"],
+        capital_cost=costs.at["electrolysis", "capital_cost"],
+        lifetime=costs.at["electrolysis", "lifetime"],
+    )
+
+    # TODO consider switching to turbines and making a switch for off
+    # TODO understand MVs
+    network.add(
+        "Link",
+        name=nodes + " H2 Fuel Cell",
+        bus0=nodes + " H2",
+        bus1=nodes,
+        p_nom_extendable=True,
+        efficiency=costs.at["fuel cell", "efficiency"],
+        capital_cost=costs.at["fuel cell", "efficiency"] * costs.at["fuel cell", "capital_cost"],
+        lifetime=costs.at["fuel cell", "lifetime"],
+        carrier="H2 fuel cell",
+    )
+
+    H2_under_nodes = pd.Index(config["H2"]["geo_storage_nodes"])
+    H2_type1_nodes = nodes.difference(H2_under_nodes)
+
+    network.add(
+        "Store",
+        H2_under_nodes + " H2 Store",
+        bus=H2_under_nodes + " H2",
+        e_nom_extendable=True,
+        e_cyclic=True,
+        capital_cost=costs.at["hydrogen storage underground", "capital_cost"],
+        lifetime=costs.at["hydrogen storage underground", "lifetime"],
+    )
+
+    network.add(
+        "Store",
+        H2_type1_nodes + " H2 Store",
+        bus=H2_type1_nodes + " H2",
+        e_nom_extendable=True,
+        e_cyclic=True,
+        capital_cost=costs.at["hydrogen storage tank type 1 including compressor", "capital_cost"],
+        lifetime=costs.at["hydrogen storage tank type 1 including compressor", "lifetime"],
+    )
+    if config["add_methanation"]:
+        cost_year = snakemake.wildcards["planning_horizons"]
+        network.add(
+            "Link",
+            nodes + " Sabatier",
+            bus0=nodes + " H2",
+            bus1=nodes + " gas",
+            carrier="Sabatier",
+            p_nom_extendable=True,
+            efficiency=costs.at["methanation", "efficiency"],
+            capital_cost=costs.at["methanation", "efficiency"]
+            * costs.at["methanation", "capital_cost"]
+            + costs.at["direct air capture", "capital_cost"]
+            * costs.at["gas", "co2_emissions"]
+            * costs.at["methanation", "efficiency"],
+            # TODO fix me
+            lifetime=costs.at["methanation", "lifetime"],
+            marginal_cost=(400 - 5 * (int(cost_year) - 2020))
+            * costs.at["gas", "co2_emissions"]
+            * costs.at["methanation", "efficiency"],
+        )
+
+    if config["Techs"]["hydrogen_lines"]:
+        edge_path = config["edge_paths"].get(config["scenario"]["topology"], None)
+        if edge_path is None:
+            raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
+        else:
+            edges = pd.read_csv(
+                edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
+            ).fillna(0)
+
+        # fix this to use map with x.y
+        lengths = NON_LIN_PATH_SCALING * np.array(
+            [
+                haversine(
+                    [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
+                    [network.buses.at[bus1, "x"], network.buses.at[bus1, "y"]],
+                )
+                for bus0, bus1 in edges[["bus0", "bus1"]].values
+            ]
+        )
+
+        cc = costs.at["H2 (g) pipeline", "capital_cost"] * lengths
+
+        # === h2 pipeline with losses ====
+        # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"] + " H2 pipeline",
+            suffix=" positive",
+            bus0=edges["bus0"].values + " H2",
+            bus1=edges["bus1"].values + " H2",
+            bus2=edges["bus0"].values,
+            carrier="H2 pipeline",
+            p_nom_extendable=True,
+            p_nom=0,
+            p_nom_min=0,
+            p_min_pu=0,
+            efficiency=config["transmission_efficiency"]["H2 pipeline"]["efficiency_static"]
+            * config["transmission_efficiency"]["H2 pipeline"]["efficiency_per_1000km"]
+            ** (lengths / 1000),
+            efficiency2=-config["transmission_efficiency"]["H2 pipeline"]["compression_per_1000km"]
+            * lengths
+            / 1e3,
+            length=lengths,
+            lifetime=costs.at["H2 (g) pipeline", "lifetime"],
+            capital_cost=cc,
+        )
+
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"] + " H2 pipeline",
+            suffix=" reversed",
+            carrier="H2 pipeline",
+            bus0=edges["bus1"].values + " H2",
+            bus1=edges["bus0"].values + " H2",
+            bus2=edges["bus1"].values,
+            p_nom_extendable=True,
+            p_nom=0,
+            p_nom_min=0,
+            p_min_pu=0,
+            efficiency=config["transmission_efficiency"]["H2 pipeline"]["efficiency_static"]
+            * config["transmission_efficiency"]["H2 pipeline"]["efficiency_per_1000km"]
+            ** (lengths / 1000),
+            efficiency2=-config["transmission_efficiency"]["H2 pipeline"]["compression_per_1000km"]
+            * lengths
+            / 1e3,
+            length=lengths,
+            lifetime=costs.at["H2 (g) pipeline", "lifetime"],
+            capital_cost=0,
+        )
+
+
+def add_voltage_links(network: pypsa.Network, config: dict):
+    """add HVDC/AC links (no KVL)
+
+    Args:
+        network (pypsa.Network): the network object
+        config (dict): the snakemake config
+
+    Raises:
+        ValueError: Invalid Edge path in config options
+    """
+
+    represented_hours = network.snapshot_weightings.sum()[0]
+    n_years = represented_hours / 8760.0
+
+    # determine topology
+    edge_path = config["edge_paths"].get(config["scenario"]["topology"], None)
+    if edge_path is None:
+        raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
+    else:
+        edges = pd.read_csv(
+            edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
+        ).fillna(0)
+
+    # fix this to use map with x.y
+    lengths = NON_LIN_PATH_SCALING * np.array(
+        [
+            haversine(
+                [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
+                [network.buses.at[bus1, "x"], network.buses.at[bus1, "y"]],
+            )
+            for bus0, bus1 in edges[["bus0", "bus1"]].values
+        ]
+    )
+
+    cc = (
+        (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
+        * LINE_SECURITY_MARGIN
+        * FOM_LINES
+        * n_years
+        * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
+    )
+
+    # ==== lossy transport model (split into 2) ====
+    # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk
+    if config["line_losses"]:
+
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"],
+            bus0=edges["bus0"].values,
+            bus1=edges["bus1"].values,
+            suffix=" positive",
+            p_nom_extendable=True,
+            p_nom=edges["p_nom"].values,
+            p_nom_min=edges["p_nom"].values,
+            p_min_pu=0,
+            efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
+            * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
+            length=lengths,
+            capital_cost=cc,
+        )
+        # 0 len for reversed in case line limits are specified in km
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"],
+            bus0=edges["bus1"].values,
+            bus1=edges["bus0"].values,
+            suffix=" reversed",
+            p_nom_extendable=True,
+            p_nom=edges["p_nom"].values,
+            p_nom_min=edges["p_nom"].values,
+            p_min_pu=0,
+            efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
+            * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
+            length=0,
+            capital_cost=0,
+        )
+    # lossless transport model
+    else:
+        network.add(
+            "Link",
+            edges["bus0"] + "-" + edges["bus1"],
+            p_nom=edges["p_nom"].values,
+            p_nom_min=edges["p_nom"].values,
+            bus0=edges["bus0"].values,
+            bus1=edges["bus1"].values,
+            p_nom_extendable=True,
+            p_min_pu=-1,
+            length=lengths,
+            capital_cost=cc,
+        )
+
+
+def add_heat_coupling(
+    network: pypsa.Network,
+    config: dict,
+    nodes: pd.Index,
+    prov_centroids: gpd.GeoDataFrame,
+    costs: pd.DataFrame,
+    planning_year: int,
+):
+    """add the heat-coupling links and generators to the network
+
+    Args:
+        network (pypsa.Network): the network object
+        config (dict): the config
+        nodes (pd.Index): the node names. Defaults to pd.Index.
+        prov_centroids (gpd.GeoDataFrame): the node locations.
+        costs (pd.DataFrame): the costs dataframe for emissions
+    """
+
+    central_fraction = pd.read_hdf(snakemake.input.central_fraction)
+    with pd.HDFStore(snakemake.input.heat_demand_profile, mode="r") as store:
+        heat_demand = store["heat_demand_profiles"]
+        # TODO fix this if not working
+        heat_demand.index = heat_demand.index.tz_localize(None)
+        heat_demand = heat_demand.loc[network.snapshots]
+
+    network.add(
+        "Bus",
+        nodes,
+        suffix=" decentral heat",
+        x=prov_centroids.x,
+        y=prov_centroids.y,
+        carrier="heat",
+        location=nodes,
+    )
+
+    network.add(
+        "Bus",
+        nodes,
+        suffix=" central heat",
+        x=prov_centroids.x,
+        y=prov_centroids.y,
+        carrier="heat",
+        location=nodes,
+    )
+
+    network.add(
+        "Load",
+        nodes,
+        suffix=" decentral heat",
+        bus=nodes + " decentral heat",
+        p_set=heat_demand[nodes].multiply(1 - central_fraction),
+    )
+
+    network.add(
+        "Load",
+        nodes,
+        suffix=" central heat",
+        bus=nodes + " central heat",
+        p_set=heat_demand[nodes].multiply(central_fraction),
+    )
+
+    if "heat pump" in config["Techs"]["vre_techs"]:
+
+        with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
+            ashp_cop = store["ashp_cop_profiles"]
+            ashp_cop.index = ashp_cop.index.tz_localize(None)
+            ashp_cop = shift_profile_to_planning_year(
+                ashp_cop, snakemake.wildcards.planning_horizons
+            )
+            gshp_cop = store["gshp_cop_profiles"]
+            gshp_cop.index = gshp_cop.index.tz_localize(None)
+            gshp_cop = shift_profile_to_planning_year(
+                gshp_cop, snakemake.wildcards.planning_horizons
+            )
+
+        for cat in [" decentral ", " central "]:
+            network.add(
+                "Link",
+                nodes,
+                suffix=cat + "heat pump",
+                bus0=nodes,
+                bus1=nodes + cat + "heat",
+                carrier="heat pump",
+                efficiency=(
+                    ashp_cop[nodes]
+                    if config["time_dep_hp_cop"]
+                    else costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
+                ),
+                capital_cost=costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
+                * costs.at[cat.lstrip() + "air-sourced heat pump", "capital_cost"],
+                marginal_cost=costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
+                * costs.at[cat.lstrip() + "air-sourced heat pump", "marginal_cost"],
+                p_nom_extendable=True,
+                lifetime=costs.at[cat.lstrip() + "air-sourced heat pump", "lifetime"],
+            )
+
+        network.add(
+            "Link",
+            nodes,
+            suffix=" ground heat pump",
+            bus0=nodes,
+            bus1=nodes + " decentral heat",
+            carrier="heat pump",
+            efficiency=(
+                gshp_cop[nodes]
+                if config["time_dep_hp_cop"]
+                else costs.at["decentral ground-sourced heat pump", "efficiency"]
+            ),
+            marginal_cost=costs.at[cat.lstrip() + "ground-sourced heat pump", "efficiency"]
+            * costs.at[cat.lstrip() + "ground-sourced heat pump", "marginal_cost"],
+            capital_cost=costs.at[cat.lstrip() + "ground-sourced heat pump", "efficiency"]
+            * costs.at["decentral ground-sourced heat pump", "capital_cost"],
+            p_nom_extendable=True,
+            lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
+        )
+
+    if "water tanks" in config["Techs"]["store_techs"]:
+
+        for cat in [" decentral ", " central "]:
+            network.add(
+                "Bus",
+                nodes,
+                suffix=cat + "water tanks",
+                x=prov_centroids.x,
+                y=prov_centroids.y,
+                carrier="water tanks",
+                location=nodes,
+            )
+
+            network.add(
+                "Link",
+                nodes + cat + "water tanks charger",
+                bus0=nodes + cat + "heat",
+                bus1=nodes + cat + "water tanks",
+                carrier="water tanks",
+                efficiency=costs.at["water tank charger", "efficiency"],
+                p_nom_extendable=True,
+            )
+
+            network.add(
+                "Link",
+                nodes + cat + "water tanks discharger",
+                bus0=nodes + cat + "water tanks",
+                bus1=nodes + cat + "heat",
+                carrier="water tanks",
+                efficiency=costs.at["water tank discharger", "efficiency"],
+                p_nom_extendable=True,
+            )
+            # [HP] 180 day time constant for centralised, 3 day for decentralised
+            tes_tau = config["water_tanks"]["tes_tau"][cat.strip()]
+            network.add(
+                "Store",
+                nodes + cat + "water tank",
+                bus=nodes + cat + "water tanks",
+                carrier="water tanks",
+                e_cyclic=True,
+                e_nom_extendable=True,
+                standing_loss=1 - np.exp(-1 / (24.0 * tes_tau)),
+                capital_cost=costs.at[cat.lstrip() + "water tank storage", "capital_cost"],
+                lifetime=costs.at[cat.lstrip() + "water tank storage", "lifetime"],
+            )
+
+    if "resistive heater" in config["Techs"]["vre_techs"]:
+
+        for cat in [" decentral ", " central "]:
+            network.add(
+                "Link",
+                nodes + cat + "resistive heater",
+                bus0=nodes,
+                bus1=nodes + cat + "heat",
+                carrier="resistive heater",
+                efficiency=costs.at[cat.lstrip() + "resistive heater", "efficiency"],
+                capital_cost=costs.at[cat.lstrip() + "resistive heater", "efficiency"]
+                * costs.at[cat.lstrip() + "resistive heater", "capital_cost"],
+                marginal_cost=costs.at[cat.lstrip() + "resistive heater", "efficiency"]
+                * costs.at[cat.lstrip() + "resistive heater", "marginal_cost"],
+                p_nom_extendable=True,
+                lifetime=costs.at[cat.lstrip() + "resistive heater", "lifetime"],
+            )
+
+    if "H2 CHP" in config["Techs"]["vre_techs"] and config["add_H2"] and config["heat_coupling"]:
+        network.add(
+            "Bus",
+            nodes,
+            suffix=" central H2 CHP",
+            x=prov_centroids.x,
+            y=prov_centroids.y,
+            carrier="H2",
+            location=nodes,
+        )
+        network.add(
+            "Link",
+            name=nodes + " central H2 CHP",
+            bus0=nodes + " H2",
+            bus1=nodes,
+            bus2=nodes + " central heat",
+            p_nom_extendable=True,
+            carrier="H2 CHP",
+            efficiency=costs.at["central hydrogen CHP", "efficiency"],
+            efficiency2=costs.at["central hydrogen CHP", "efficiency"]
+            / costs.at["central hydrogen CHP", "c_b"],
+            capital_cost=costs.at["central hydrogen CHP", "efficiency"]
+            * costs.at["central hydrogen CHP", "capital_cost"],
+            lifetime=costs.at["central hydrogen CHP", "lifetime"],
+        )
+    if "gas boiler" in config["Techs"]["conv_techs"]:
+        for cat in [" decentral ", " central "]:
+            network.add(
+                "Link",
+                nodes + cat + "gas boiler",
+                p_nom_extendable=True,
+                bus0=nodes + " gas",
+                bus1=nodes + cat + "heat",
+                efficiency=costs.at[cat.lstrip() + "gas boiler", "efficiency"],
+                marginal_cost=costs.at[cat.lstrip() + "gas boiler", "VOM"],
+                capital_cost=costs.at[cat.lstrip() + "gas boiler", "efficiency"]
+                * costs.at[cat.lstrip() + "gas boiler", "capital_cost"],
+                lifetime=costs.at[cat.lstrip() + "gas boiler", "lifetime"],
+            )
+
+    if "CHP gas" in config["Techs"]["conv_techs"]:
+        # TODO merge with gas ?
+        network.add(
+            "Bus",
+            nodes,
+            suffix=" CHP gas",
+            x=prov_centroids.x,
+            y=prov_centroids.y,
+            carrier="gas",
+            location=nodes,
+        )
+
+        network.add(
+            "Generator",
+            name=nodes + " CHP gas",
+            bus=nodes + " CHP gas",
+            carrier="gas",
+            p_nom_extendable=True,
+            marginal_cost=costs.at["gas", "marginal_cost"],
+        )
+
+        # TODO why is not combined cycle?
+        # TODO efficiency to be understood - DK doc not clear
+        network.add(
+            "Link",
+            nodes,
+            suffix=" CHP gas",
+            bus0=nodes + " gas",
+            bus1=nodes,
+            bus2=nodes + " central heat",
+            p_nom_extendable=True,
+            marginal_cost=costs.at["central gas CHP", "efficiency"]
+            * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
+            capital_cost=costs.at["central gas CHP", "efficiency"]
+            * costs.at["central gas CHP", "capital_cost"],  # NB: capital cost is per MWel
+            efficiency=config["chp_parameters"]["eff_el"],
+            efficiency2=config["chp_parameters"]["eff_th"],
+            lifetime=costs.at["central gas CHP", "lifetime"],
+        )
+
+    if "CHP coal" in config["Techs"]["conv_techs"]:
+
+        # TODO merge with normal coal?
+        network.add(
+            "Bus",
+            nodes,
+            suffix=" CHP coal",
+            x=prov_centroids.x,
+            y=prov_centroids.y,
+            carrier="coal",
+            location=nodes,
+        )
+
+        network.add(
+            "Generator",
+            name=nodes + " CHP coal",
+            bus=nodes + " CHP coal",
+            carrier="coal",
+            p_nom_extendable=True,
+            marginal_cost=costs.at["coal", "marginal_cost"],
+        )
+
+        network.add(
+            "Link",
+            name=nodes,
+            suffix=" CHP coal",
+            bus0=nodes + " CHP coal",
+            bus1=nodes,
+            bus2=nodes + " central heat",
+            p_nom_extendable=True,
+            marginal_cost=costs.at["central coal CHP", "efficiency"]
+            * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
+            capital_cost=costs.at["central coal CHP", "efficiency"]
+            * costs.at["central coal CHP", "capital_cost"],  # NB: capital cost is per MWel
+            efficiency=config["chp_parameters"]["eff_el"],
+            efficiency2=config["chp_parameters"]["eff_th"],
+            lifetime=costs.at["central coal CHP", "lifetime"],
+        )
+
+    if "solar thermal" in config["Techs"]["vre_techs"]:
+
+        # this is the amount of heat collected in W per m^2, accounting
+        # for efficiency
+        with pd.HDFStore(snakemake.input.solar_thermal_name, mode="r") as store:
+            # 1e3 converts from W/m^2 to MW/(1000m^2) = kW/m^2
+            solar_thermal = config["solar_cf_correction"] * store["solar_thermal_profiles"] / 1e3
+
+        solar_thermal.index = solar_thermal.index.tz_localize(None)
+        solar_thermal = shift_profile_to_planning_year(solar_thermal, planning_year)
+        solar_thermal = solar_thermal.loc[network.snapshots]
+
+        for cat in [" decentral "]:
+            network.add(
+                "Generator",
+                nodes,
+                suffix=cat + "solar thermal",
+                bus=nodes + cat + "heat",
+                carrier="solar thermal",
+                p_nom_extendable=True,
+                capital_cost=costs.at[cat.lstrip() + "solar thermal", "capital_cost"],
+                p_max_pu=solar_thermal[nodes].clip(1.0e-4),
+                lifetime=costs.at[cat.lstrip() + "solar thermal", "lifetime"],
+            )
+
+
+def add_hydro(
+    network: pypsa.Network,
+    config: dict,
+    nodes: pd.Index,
+    prov_shapes: gpd.GeoDataFrame,
+    costs: pd.DataFrame,
+    planning_horizons: int,
+):
+    """Add the hydropower plants (dams) to the network.
+    Due to the spillage/basin calculations these have real locations not just nodes.
+    WARNING: the node is assigned based on the damn province name (turbine link)
+            NOT future proof
+
+    Args:
+        network (pypsa.Network): the network object
+        config (dict): the yaml config
+        nodes (pd.Index): the buses
+        prov_shapes (gpd.GeoDataFrame): the province shapes GDF
+        costs (pd.DataFrame): the costs dataframe
+        planning_horizons (int): the year
+    """
+
+    # load dams
+    df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
+    points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
+    dams = gpd.GeoDataFrame(df, geometry=points, crs=CRS)
+
+    hourly_rng = pd.date_range(
+        config["hydro_dams"]["inflow_date_start"],
+        config["hydro_dams"]["inflow_date_end"],
+        freq=config["snapshots"]["freq"],
+        inclusive="left",
+    )
+    # TODO understand where inflow is calculated
+    inflow = pd.read_pickle(config["hydro_dams"]["inflow_path"]).reindex(hourly_rng, fill_value=0)
+    inflow.columns = dams.index
+    inflow = inflow.loc[str(INFLOW_DATA_YR)]
+    inflow = shift_profile_to_planning_year(inflow, INFLOW_DATA_YR)
+
+    # m^3/KWh -> m^3/MWh
+    water_consumption_factor = dams.loc[:, "Water_consumption_factor_avg"] * 1e3
+
+    #######
+    # ### Add hydro stations as buses
+    network.add(
+        "Bus",
+        dams.index,
+        suffix=" station",
+        carrier="stations",
+        x=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(prov_shapes.crs).x,
+        y=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(prov_shapes.crs).y,
+    )
+
+    dam_buses = network.buses[network.buses.carrier == "stations"]
+
+    # ===== add hydro reservoirs as stores ======
+    initial_capacity = pd.read_pickle(config["hydro_dams"]["reservoir_initial_capacity_path"])
+    effective_capacity = pd.read_pickle(config["hydro_dams"]["reservoir_effective_capacity_path"])
+    initial_capacity.index = dams.index
+    effective_capacity.index = dams.index
+    initial_capacity = initial_capacity / water_consumption_factor
+    effective_capacity = effective_capacity / water_consumption_factor
+
+    network.add(
+        "Store",
+        dams.index,
+        suffix=" reservoir",
+        bus=dam_buses.index,
+        e_nom=effective_capacity,
+        e_initial=initial_capacity,
+        e_cyclic=True,
+        # TODO fix all config["costs"]
+        marginal_cost=config["costs"]["marginal_cost"]["hydro"],
+    )
+
+    # add hydro turbines to link stations to provinces
+    network.add(
+        "Link",
+        dams.index,
+        suffix=" turbines",
+        bus0=dam_buses.index,
+        bus1=dams["Province"],
+        carrier="hydroelectricity",
+        p_nom=10 * dams["installed_capacity_10MW"],
+        capital_cost=(
+            costs.at["hydro", "capital_cost"] if config["hydro"]["hydro_capital_cost"] else 0
+        ),
+        efficiency=1,
+        location=dams["Province"],
+        p_nom_extendable=False,
+    )
+
+    # ===  add rivers to link station to station
+    dam_edges = pd.read_csv(config["hydro_dams"]["damn_flows_path"], delimiter=",")
+
+    # === normal flow ====
+    for row in dam_edges.iterrows():
+        bus0 = row[1].bus0 + " turbines"
+        bus2 = row[1].end_bus + " station"
+        network.links.at[bus0, "bus2"] = bus2
+        network.links.at[bus0, "efficiency2"] = 1.0
+
+    # TODO WHY EXTENDABLE - weather year?
+    for row in dam_edges.iterrows():
+        bus0 = row[1].bus0 + " station"
+        bus1 = row[1].end_bus + " station"
+        network.add(
+            "Link",
+            "{}-{}".format(bus0, bus1) + " spillage",
+            bus0=bus0,
+            bus1=bus1,
+            p_nom_extendable=True,
+        )
+
+    dam_ends = [
+        dam
+        for dam in np.unique(dams.index.values)
+        if dam not in dam_edges["bus0"]
+        or dam not in dam_edges["end_bus"]
+        or (dam in dam_edges["end_bus"].values & dam not in dam_edges["bus0"])
+    ]
+    # need some kind of sink to absorb spillage (e,g ocean).
+    # here hack by flowing to existing bus with 0 efficiency (lose)
+    # TODO make more transparent -> generator with neg sign and 0 c0st
+    for bus0 in dam_ends:
+        network.add(
+            "Link",
+            bus0 + " spillage",
+            bus0=bus0 + " station",
+            bus1="Tibet",
+            p_nom_extendable=True,
+            efficiency=0.0,
+        )
+
+    # add inflow as generators
+    # only feed into hydro stations which are the first of a cascade
+    inflow_stations = [
+        dam for dam in np.unique(dams.index.values) if dam not in dam_edges["end_bus"].values
+    ]
+
+    for inflow_station in inflow_stations:
+
+        # p_nom = 1 and p_max_pu & p_min_pu = p_pu, compulsory inflow
+        p_nom = (inflow / water_consumption_factor)[inflow_station].max()
+        p_pu = (inflow / water_consumption_factor)[inflow_station] / p_nom
+        p_pu.index = network.snapshots
+        network.add(
+            "Generator",
+            inflow_station + " inflow",
+            bus=inflow_station + " station",
+            carrier="hydro_inflow",
+            p_max_pu=p_pu.clip(1.0e-6),
+            # p_min_pu=p_pu.clip(1.0e-6),
+            p_nom=p_nom,
+        )
+
+        # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
+
+    # TODO clarify that accounting for hydro is working
+
+
+# TODO fix timezones/centralsie, think Shanghai won't work on its own
 def generate_periodic_profiles(
     dt_index=None,
     col_tzs=pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]),
@@ -77,90 +901,18 @@ def generate_periodic_profiles(
     zones and Summer Time."""
 
     weekly_profile = pd.Series(weekly_profile, range(24 * 7))
-
+    # TODO fix, no longer take into accoutn summer time
+    # ALSO ADD A TODO in base_network
     week_df = pd.DataFrame(index=dt_index, columns=col_tzs.index)
     for ct in col_tzs.index:
-        week_df[ct] = [
-            24 * dt.weekday() + dt.hour
-            for dt in dt_index.tz_convert(pytz.timezone("Asia/{}".format(col_tzs[ct])))
-        ]
+        week_df[ct] = [24 * dt.weekday() + dt.hour for dt in dt_index.tz_localize(None)]
         week_df[ct] = week_df[ct].map(weekly_profile)
     return week_df
 
 
-def prepare_data(
-    network: pypsa.Network, date_range: pd.date_range, planning_horizons: int
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, any, any, any]:
-    """prepare profiles
-
-    Args:
-        network (pypsa.Network): the network object
-        date_range (pd.date_range): the date range of the model
-        planning_horizons (int): the run year
-
-    Returns:
-        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, any, any, any]: the heat,
-          space heat, water heat demand, the cop, the cop, co2
-    """
-
-    ##############
-    # Heating
-    ##############
-
-    # copy forward the daily average heat demand into each hour, so it can be multipled by the
-    # intraday profile
-
-    with pd.HDFStore(snakemake.input.heat_demand_name, mode="r") as store:
-        # the ffill converts daily values into hourly values
-        h = store["heat_demand_profiles"]
-        h_n = h[~h.index.duplicated(keep="first")].iloc[:-1, :]
-        heat_demand_hdh = h_n.reindex(index=network.snapshots, method="ffill")
-
-    with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
-        ashp_cop = store["ashp_cop_profiles"].loc[date_range].set_index(network.snapshots)
-        gshp_cop = store["gshp_cop_profiles"].loc[date_range].set_index(network.snapshots)
-
-    with pd.HDFStore(snakemake.input.energy_totals_name, mode="r") as store:
-        space_heating_per_hdd = store["space_heating_per_hdd"]
-        hot_water_per_day = store["hot_water_per_day"]
-
-    intraday_profiles = pd.read_csv("data/heating/heat_load_profile_DK_AdamJensen.csv", index_col=0)
-    intraday_year_profiles = generate_periodic_profiles(
-        dt_index=heat_demand_hdh.index.tz_localize("UTC"),
-        weekly_profile=(
-            list(intraday_profiles["weekday"]) * 5 + list(intraday_profiles["weekend"]) * 2
-        ),
-    ).tz_localize(None)
-
-    space_heat_demand = intraday_year_profiles.mul(heat_demand_hdh).mul(space_heating_per_hdd)
-    water_heat_demand = intraday_year_profiles.mul(hot_water_per_day / 24.0)
-
-    heat_demand_calculate = (
-        space_heat_demand + water_heat_demand
-    )  # only consider heat demand at first
-
-    heat_demand = (
-        heat_demand_calculate
-        / (heat_demand_calculate.sum().sum() * snakemake.config["frequency"])
-        * snakemake.config["heating_demand"][planning_horizons]
-        * 1e9
-    )
-
-    ###############
-    # CO2
-    ###############
-
-    # tCO2
-    represented_hours = network.snapshot_weightings.sum()[0]
-    n_years = represented_hours / 8760.0
-    with pd.HDFStore(snakemake.input.co2_totals_name, mode="r") as store:
-        co2_totals = n_years * store["co2"]
-
-    return heat_demand, space_heat_demand, water_heat_demand, ashp_cop, gshp_cop, co2_totals
-
-
 def prepare_network(config: dict) -> pypsa.Network:
-    """Monster function to be broken up and make modular. Prepares the network
+    """Prepares/makes the network object for overnight mode according to config &
+    at 1 node per region/province
 
     Args:
         config (dict): the snakemake config
@@ -168,164 +920,105 @@ def prepare_network(config: dict) -> pypsa.Network:
     Returns:
         pypsa.Network: the pypsa network object
     """
-    # add CHP definition
-    override_component_attrs = pypsa.descriptors.Dict(
-        {k: v.copy() for k, v in pypsa.components.component_attrs.items()}
+
+    # determine whether gas/coal to be added depending on specified conv techs
+    config["add_gas"] = (
+        True if [tech for tech in config["Techs"]["conv_techs"] if "gas" in tech] else False
     )
-    override_component_attrs["Link"].loc["bus2"] = [
-        "string",
-        np.nan,
-        np.nan,
-        "2nd bus",
-        "Input (optional)",
-    ]
-    override_component_attrs["Link"].loc["efficiency2"] = [
-        "static or series",
-        "per unit",
-        1.0,
-        "2nd bus efficiency",
-        "Input (optional)",
-    ]
-    override_component_attrs["Link"].loc["p2"] = [
-        "series",
-        "MW",
-        0.0,
-        "2nd bus output",
-        "Output",
-    ]
+    config["add_coal"] = (
+        True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False
+    )
+
+    planning_horizons = snakemake.wildcards["planning_horizons"]
 
     # Build the Network object, which stores all other objects
-    network = pypsa.Network(override_component_attrs=override_component_attrs)
-
+    network = pypsa.Network()
     # load graph
     nodes = pd.Index(PROV_NAMES)
-    edges = pd.read_csv("data/edges.txt", sep=",", header=None)
-    edges_current = pd.read_csv("data/edges_current.csv", header=None)
-    edges_current_FCG = pd.read_csv("data/edges_current_FCG.csv", header=None)
 
-    # set times
-    planning_horizons = snakemake.wildcards["planning_horizons"]
-    if int(planning_horizons) % 4 != 0:
-        snapshots = pd.date_range(
-            str(planning_horizons) + "-01-01 00:00",
-            str(planning_horizons) + "-12-31 23:00",
-            freq=config["freq"],
-        )
-    else:
-        snapshots = pd.date_range(
-            str(planning_horizons) + "-01-01 00:00",
-            str(planning_horizons) + "-02-28 23:00",
-            freq=config["freq"],
-        ).append(
-            pd.date_range(
-                str(planning_horizons) + "-03-01 00:00",
-                str(planning_horizons) + "-12-31 23:00",
-                freq=config["freq"],
-            )
-        )
-
+    # make snapshots (drop leap days) -> possibly do all the unpacking in the function
+    snapshot_cfg = config["snapshots"]
+    snapshots = make_periodic_snapshots(
+        year=planning_horizons,
+        freq=snapshot_cfg["freq"],
+        start_day_hour=snapshot_cfg["start"],
+        end_day_hour=snapshot_cfg["end"],
+        bounds=snapshot_cfg["bounds"],
+        tz=snapshot_cfg["timezone"],
+        end_year=(None if not snapshot_cfg["end_year_plus1"] else planning_horizons + 1),
+    )
     network.set_snapshots(snapshots)
 
-    network.snapshot_weightings[:] = config["frequency"]
+    network.snapshot_weightings[:] = config["snapshots"]["frequency"]
     represented_hours = network.snapshot_weightings.sum()[0]
     n_years = represented_hours / 8760.0
 
+    # load costs
     tech_costs = snakemake.input.tech_costs
-    cost_year = snakemake.wildcards.planning_horizons
+    cost_year = planning_horizons
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
-    date_range = pd.date_range("2020-01-01 00:00", "2020-02-28 23:00", freq=config["freq"]).append(
-        pd.date_range("2020-03-01 00:00", "2020-12-31 23:00", freq=config["freq"])
-    )
-    # TODO fix not used
-    (
-        heat_demand,
-        space_heat_demand,
-        water_heat_demand,
-        ashp_cop,
-        gshp_cop,
-        co2_totals,
-    ) = prepare_data(network, date_range, planning_horizons)
+    # TODO check crs projection correct
+    # load provinces
+    prov_shapes = read_province_shapes(snakemake.input.province_shape)
+    prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
 
+    # add AC buses
+    network.add("Bus", nodes, x=prov_centroids.x, y=prov_centroids.y, location=nodes)
+
+    # add carriers
+    add_carriers(network, config, costs)
+
+    # load datasets calculated by build_renewable_profiles
     ds_solar = xr.open_dataset(snakemake.input.profile_solar)
     ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)
     ds_offwind = xr.open_dataset(snakemake.input.profile_offwind)
 
-    solar_p_max_pu = (
-        ds_solar["profile"]
-        .transpose("time", "bus")
-        .to_pandas()
-        .loc[date_range]
-        .set_index(network.snapshots)
-    )
-    onwind_p_max_pu = (
-        ds_onwind["profile"]
-        .transpose("time", "bus")
-        .to_pandas()
-        .loc[date_range]
-        .set_index(network.snapshots)
-    )
-    offwind_p_max_pu = (
-        ds_offwind["profile"]
-        .transpose("time", "bus")
-        .to_pandas()
-        .loc[date_range]
-        .set_index(network.snapshots)
-    )
+    # == shift datasets from reference to planning year, sort columns to match network bus order ==
+    solar_p_max_pu = calc_renewable_pu_avail(ds_solar, planning_horizons, snapshots)
+    onwind_p_max_pu = calc_renewable_pu_avail(ds_onwind, planning_horizons, snapshots)
+    offwind_p_max_pu = calc_renewable_pu_avail(ds_offwind, planning_horizons, snapshots)
 
-    pro_shapes = gpd.GeoDataFrame.from_file("data/province_shapes/CHN_adm1.shp")
-    pro_shapes = pro_shapes.to_crs(4326)
-    pro_shapes.index = PROV_NAMES
+    # TODO SOFT CODE BASE YEAR
+    if config["scenario"]["co2_reduction"] is None:
+        pass
+    elif isinstance(config["scenario"]["co2_reduction"], dict):
+        logger.info("Adding CO2 constraint based on scenario")
+        pathway = snakemake.wildcards["pathway"]
+        reduction = float(config["scenario"]["co2_reduction"][pathway][str(planning_horizons)])
+        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (1 - reduction)
+        network.add(
+            "GlobalConstraint",
+            "co2_limit",
+            type="primary_energy",
+            carrier_attribute="co2_emissions",
+            sense="<=",
+            constant=co2_limit,
+        )
+    elif not isinstance(config["scenario"]["co2_reduction"], tuple):
+        logger.info("Adding CO2 constraint based on scenario")
+        # TODO fix hard coded
+        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (
+            1 - float(config["scenario"]["co2_reduction"])
+        )  # Chinese 2020 CO2 emissions of electric and heating sector
 
-    # add buses
-    network.add(
-        "Bus",
-        nodes,
-        x=pro_shapes["geometry"].centroid.x,
-        y=pro_shapes["geometry"].centroid.y,
-    )
+        network.add(
+            "GlobalConstraint",
+            "co2_limit",
+            type="primary_energy",
+            carrier_attribute="co2_emissions",
+            sense="<=",
+            constant=co2_limit,
+        )
+    else:
+        logger.error(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}.")
+        raise ValueError(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}")
 
-    # add carriers
-    network.add("Carrier", "onwind")
-    network.add("Carrier", "offwind")
-    network.add("Carrier", "solar")
-    if config["add_solar_thermal"]:
-        network.add("Carrier", "solar thermal")
-    if config["add_PHS"]:
-        network.add("Carrier", "PHS")
-    if config["add_hydro"]:
-        network.add("Carrier", "hydro")
-    if config["add_H2_storage"]:
-        network.add("Carrier", "H2")
-    if config["add_battery_storage"]:
-        network.add("Carrier", "battery")
-    if config["heat_coupling"]:
-        network.add("Carrier", "heat")
-        network.add("Carrier", "water tanks")
-
-    if not isinstance(config["scenario"]["co2_reduction"], tuple):
-
-        if config["scenario"]["co2_reduction"] is not None:
-            # TODO fix hard coded
-            co2_limit = (
-                5.59 * 1e9 * (1 - config["scenario"]["co2_reduction"])
-            )  # Chinese 2020 CO2 emissions of electric and heating sector
-
-            network.add(
-                "GlobalConstraint",
-                "co2_limit",
-                type="primary_energy",
-                carrier_attribute="co2_emissions",
-                sense="<=",
-                constant=co2_limit,
-            )
-
-    # load demand data
-    with pd.HDFStore(
-        f"data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5", mode="r"
-    ) as store:
-        load = 1e6 * store["load"].loc[network.snapshots]
-
+    # load electricity demand data
+    demand_path = snakemake.input.elec_load.replace("{planning_horizons}", f"{cost_year}")
+    with pd.HDFStore(demand_path, mode="r") as store:
+        load = LOAD_CONVERSION_FACTOR * store["load"]  # TODO add unit
+        load = load.loc[network.snapshots]
     load.columns = PROV_NAMES
 
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
@@ -374,142 +1067,33 @@ def prepare_network(config: dict) -> pypsa.Network:
         lifetime=costs.at["solar", "lifetime"],
     )
 
-    # add conventionals
-    if config["add_gas"]:
-        # add converter from fuel source
-        network.add(
-            "Carrier", "gas", co2_emissions=costs.at["gas", "co2_emissions"]
-        )  # in t_CO2/MWht
-        network.add(
-            "Bus",
-            nodes,
-            suffix=" gas",
-            x=pro_shapes["geometry"].centroid.x,
-            y=pro_shapes["geometry"].centroid.y,
-            carrier="gas",
-        )
+    add_conventional_generators(network, nodes, config, prov_centroids, costs)
 
+    # nuclear is brownfield
+    if "nuclear" in config["Techs"]["vre_techs"]:
+        nuclear_p_nom = pd.read_csv(config["nuclear_reactors"]["pp_path"], index_col=0)
+        nuclear_p_nom = pd.Series(nuclear_p_nom.squeeze())
+
+        nuclear_nodes = pd.Index(NUCLEAR_EXTENDABLE)
         network.add(
             "Generator",
-            nodes,
-            suffix=" gas fuel",
-            bus=nodes,
-            carrier="gas",
-            p_nom_extendable=True,
-            marginal_cost=costs.at["OCGT", "fuel"],
-        )
-
-        network.add(
-            "Store", nodes + " gas Store", bus=nodes + " gas", e_nom_extendable=True, carrier="gas"
-        )
-
-        network.add(
-            "Link",
-            nodes,
-            suffix=" OCGT",
-            bus0=nodes + " gas",
-            bus1=nodes,
-            marginal_cost=costs.at["OCGT", "efficiency"]
-            * costs.at["OCGT", "VOM"],  # NB: VOM is per MWel
-            capital_cost=costs.at["OCGT", "efficiency"]
-            * costs.at["OCGT", "capital_cost"],  # NB: capital cost is per MWel
-            p_nom_extendable=True,
-            efficiency=costs.at["OCGT", "efficiency"],
-            lifetime=costs.at["OCGT", "lifetime"],
-        )
-
-        if config["add_chp"]:
-            network.add(
-                "Link",
-                nodes,
-                suffix=" CHP gas",
-                bus0=nodes + " gas",
-                bus1=nodes,
-                bus2=nodes + " central heat",
-                p_nom_extendable=True,
-                marginal_cost=costs.at["central gas CHP", "efficiency"]
-                * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
-                capital_cost=costs.at["central gas CHP", "efficiency"]
-                * costs.at["central gas CHP", "capital_cost"],  # NB: capital cost is per MWel
-                efficiency=config["chp_parameters"]["eff_el"],
-                efficiency2=config["chp_parameters"]["eff_th"],
-                lifetime=costs.at["central gas CHP", "lifetime"],
-            )
-
-    if config["add_coal"]:
-        network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
-        network.add(
-            "Generator",
-            nodes,
-            suffix=" coal",
-            bus=nodes,
-            carrier="coal",
-            p_nom_extendable=True,
-            efficiency=costs.at["coal", "efficiency"],
-            marginal_cost=costs.at["coal", "efficiency"] * costs.at["coal", "marginal_cost"],
-            capital_cost=costs.at["coal", "efficiency"]
-            * costs.at["coal", "capital_cost"],  # NB: capital cost is per MWel
-            lifetime=costs.at["coal", "lifetime"],
-        )
-
-        if config["add_chp"]:
-            network.add(
-                "Bus",
-                nodes,
-                suffix=" CHP coal",
-                x=pro_shapes["geometry"].centroid.x,
-                y=pro_shapes["geometry"].centroid.y,
-                carrier="coal",
-            )
-
-            network.add(
-                "Generator",
-                nodes + " CHP coal fuel",
-                bus=nodes + " CHP coal",
-                carrier="coal",
-                p_nom_extendable=True,
-                marginal_cost=costs.at["coal", "fuel"],
-            )
-
-            network.add(
-                "Link",
-                nodes,
-                suffix=" CHP coal",
-                bus0=nodes + " CHP coal",
-                bus1=nodes,
-                bus2=nodes + " central heat",
-                p_nom_extendable=True,
-                marginal_cost=costs.at["central coal CHP", "efficiency"]
-                * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
-                capital_cost=costs.at["central coal CHP", "efficiency"]
-                * costs.at["central coal CHP", "capital_cost"],  # NB: capital cost is per MWel
-                efficiency=config["chp_parameters"]["eff_el"],
-                efficiency2=config["chp_parameters"]["eff_th"],
-                lifetime=costs.at["central coal CHP", "lifetime"],
-            )
-
-    if config["add_nuclear"]:
-        network.add("Carrier", "uranium")
-        nuclear_p_nom = pd.read_hdf("data/p_nom/nuclear_p_nom.h5")
-        network.add(
-            "Generator",
-            nodes,
+            nuclear_nodes,
             suffix=" nuclear",
             p_nom_extendable=True,
-            p_nom=nuclear_p_nom,
-            p_nom_max=nuclear_p_nom * 2,
-            p_nom_min=nuclear_p_nom,
-            bus=nodes,
-            carrier="uranium",
+            p_min_pu=0.7,
+            bus=nuclear_nodes,
+            carrier="nuclear",
             efficiency=costs.at["nuclear", "efficiency"],
-            capital_cost=costs.at["nuclear", "efficiency"]
-            * costs.at["nuclear", "capital_cost"],  # NB: capital cost is per MWel
-            marginal_cost=costs.at["nuclear", "efficiency"] * costs.at["nuclear", "marginal_cost"],
+            capital_cost=costs.at["nuclear", "capital_cost"],  # NB: capital cost is per MWel
+            marginal_cost=costs.at["nuclear", "marginal_cost"],
+            lifetime=costs.at["nuclear", "lifetime"],
         )
 
-    if config["add_PHS"]:
+    # TODO add coal CC? no retrofit option
+
+    if "PHS" in config["Techs"]["store_techs"]:
         # pure pumped hydro storage, fixed, 6h energy by default, no inflow
-        hydrocapa_df = pd.read_csv("data/hydro/PHS_p_nom.csv", index_col=0)
+        hydrocapa_df = pd.read_csv("resources/data/hydro/PHS_p_nom.csv", index_col=0)
         phss = hydrocapa_df.index[hydrocapa_df["MW"] > 0].intersection(nodes)
         if config["hydro"]["hydro_capital_cost"]:
             cc = costs.at["PHS", "capital_cost"]
@@ -534,220 +1118,39 @@ def prepare_network(config: dict) -> pypsa.Network:
         )
 
     if config["add_hydro"]:
+        add_hydro(network, config, nodes, prov_centroids, costs, planning_horizons)
 
-        #######
-        df = pd.read_csv("data/hydro/dams_large.csv", index_col=0)
-        points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
-        dams = gpd.GeoDataFrame(df, geometry=points)
-        dams.crs = {"init": "epsg:4326"}
-
-        hourly_rng = pd.date_range("1979-01-01", "2017-01-01", freq="1H", closed="left")
-        inflow = pd.read_pickle(
-            "data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
-        ).reindex(hourly_rng, fill_value=0)
-        inflow.columns = dams.index
-
-        water_consumption_factor = (
-            dams.loc[:, "Water_consumption_factor_avg"] * 1e3
-        )  # m^3/KWh -> m^3/MWh
-
-        #######
-        # ### Add hydro stations as buses
-        network.add(
-            "Bus",
-            dams.index,
-            suffix=" station",
-            carrier="stations",
-            x=dams["geometry"].centroid.x,
-            y=dams["geometry"].centroid.y,
-        )
-
-        dam_buses = network.buses[network.buses.carrier == "stations"]
-
-        # ### add hydro reservoirs as stores
-
-        initial_capacity = pd.read_pickle("data/hydro/reservoir_initial_capacity.pickle")
-        effective_capacity = pd.read_pickle("data/hydro/reservoir_effective_capacity.pickle")
-        initial_capacity.index = dams.index
-        effective_capacity.index = dams.index
-        initial_capacity = initial_capacity / water_consumption_factor
-        effective_capacity = effective_capacity / water_consumption_factor
-
-        network.add(
-            "Store",
-            dams.index,
-            suffix=" reservoir",
-            bus=dam_buses.index,
-            e_nom=effective_capacity,
-            e_initial=initial_capacity,
-            e_cyclic=True,
-            marginal_cost=config["costs"]["marginal_cost"]["hydro"],
-        )
-
-        # add hydro turbines to link stations to provinces
-        network.add(
-            "Link",
-            dams.index,
-            suffix=" turbines",
-            bus0=dam_buses.index,
-            bus1=dams["Province"],
-            p_nom=10 * dams["installed_capacity_10MW"],
-            efficiency=1,
-        )
-        # p_nom * efficiency = 10 * dams['installed_capacity_10MW']
-
-        # TODO fix hard coded
-        # ===  add rivers to link station to station
-        bus0s = [0, 21, 11, 19, 22, 29, 8, 40, 25, 1, 7, 4, 10, 15, 12, 20, 26, 6, 3, 39]
-        bus1s = [5, 11, 19, 22, 32, 8, 40, 25, 35, 2, 4, 10, 9, 12, 20, 23, 6, 17, 14, 16]
-
-        for bus0, bus2 in list(zip(dams.index[bus0s], dam_buses.iloc[bus1s].index)):
-
-            # normal flow
-            network.links.at[bus0 + " turbines", "bus2"] = bus2
-            network.links.at[bus0 + " turbines", "efficiency2"] = 1.0
-
-        #  spillage
-        for bus0, bus1 in list(zip(dam_buses.iloc[bus0s].index, dam_buses.iloc[bus1s].index)):
-            network.add(
-                "Link",
-                "{}-{}".format(bus0, bus1) + " spillage",
-                bus0=bus0,
-                bus1=bus1,
-                p_nom_extendable=True,
-            )
-
-        # dam_ends = [
-        #     dam
-        #     for dam in range(len(dams.index))
-        #     if (dam in bus1s and dam not in bus0s) or (dam not in bus0s + bus1s)
-        # ]
-
-        # for bus0 in dam_buses.iloc[dam_ends].index:
-        #     network.add('Link',
-        #                 bus0 + ' spillage',
-        #                 bus0=bus0,
-        #                 bus1='Tibet',
-        #                 p_nom_extendable=True,
-        #                 efficiency=0.0)
-
-        # add inflow as generators
-        # only feed into hydro stations which are the first of a cascade
-        inflow_stations = [dam for dam in range(len(dams.index)) if dam not in bus1s]
-
-        for inflow_station in inflow_stations:
-
-            # p_nom = 1 and p_max_pu & p_min_pu = p_pu, compulsory inflow
-            date_range = pd.date_range(
-                "2016-01-01 00:00", "2016-02-28 23:00", freq=config["freq"]
-            ).append(pd.date_range("2016-03-01 00:00", "2016-12-31 23:00", freq=config["freq"]))
-
-            p_nom = (
-                (inflow.loc[date_range] / water_consumption_factor).iloc[:, inflow_station].max()
-            )
-            p_pu = (inflow.loc[date_range] / water_consumption_factor).iloc[
-                :, inflow_station
-            ] / p_nom
-            p_pu.index = network.snapshots
-            network.add(
-                "Generator",
-                dams.index[inflow_station] + " inflow",
-                bus=dam_buses.iloc[inflow_station].name,
-                carrier="hydro_inflow",
-                p_max_pu=p_pu.clip(1.0e-6),
-                # p_min_pu=p_pu.clip(1.e-6),
-                p_nom=p_nom,
-            )
-
-            # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
-
-        # ### add fake hydro just to introduce capital cost
-        if config["add_hydro"] and config["hydro"]["hydro_capital_cost"]:
-            hydro_cc = costs.at["hydro", "capital_cost"]
-
-            network.add(
-                "StorageUnit",
-                dams.index,
-                suffix=" hydro dummy",
-                bus=dams["Province"],
-                carrier="hydro",
-                p_nom=10 * dams["installed_capacity_10MW"],
-                p_max_pu=0.0,
-                p_min_pu=0.0,
-                capital_cost=hydro_cc,
-            )
-
-        # else: hydro_cc=0.
-
-    if config["add_H2_storage"]:
-
+    if config["add_H2"]:
+        # do beore heat coupling to avoid warning
         network.add(
             "Bus",
             nodes,
             suffix=" H2",
-            x=pro_shapes["geometry"].centroid.x,
-            y=pro_shapes["geometry"].centroid.y,
+            x=prov_centroids.x,
+            y=prov_centroids.y,
             carrier="H2",
+            location=nodes,
         )
 
-        network.add(
-            "Link",
-            nodes + " H2 Electrolysis",
-            bus0=nodes,
-            bus1=nodes + " H2",
-            p_nom_extendable=True,
-            efficiency=costs.at["electrolysis", "efficiency"],
-            capital_cost=costs.at["electrolysis", "efficiency"]
-            * costs.at["electrolysis", "capital_cost"],
-            lifetime=costs.at["electrolysis", "lifetime"],
-        )
+    if config["heat_coupling"]:
+        add_heat_coupling(network, config, nodes, prov_centroids, costs, planning_horizons)
 
-        network.add(
-            "Link",
-            nodes + " H2 Fuel Cell",
-            bus0=nodes + " H2",
-            bus1=nodes,
-            p_nom_extendable=True,
-            efficiency=costs.at["fuel cell", "efficiency"],
-            capital_cost=costs.at["fuel cell", "efficiency"]
-            * costs.at["fuel cell", "capital_cost"],
-            lifetime=costs.at["fuel cell", "lifetime"],
-        )
+    if config["add_H2"]:
+        add_H2(network, config, nodes, costs)
 
-        network.add(
-            "Store",
-            nodes + " H2 Store",
-            bus=nodes + " H2",
-            e_nom_extendable=True,
-            e_cyclic=True,
-            capital_cost=costs.at["hydrogen storage tank", "capital_cost"],
-            lifetime=costs.at["hydrogen storage tank", "lifetime"],
-        )
-
-    if config["add_methanation"]:
-        network.add(
-            "Link",
-            nodes + " Sabatier",
-            bus0=nodes + " H2",
-            bus1=nodes + " gas",
-            p_nom_extendable=True,
-            efficiency=costs.at["methanation", "efficiency"],
-            capital_cost=costs.at["methanation", "efficiency"]
-            * costs.at["methanation", "capital_cost"],
-            lifetime=costs.at["methanation", "lifetime"],
-        )
-
-    if config["add_battery_storage"]:
+    if "battery" in config["Techs"]["store_techs"]:
 
         network.add(
             "Bus",
             nodes,
             suffix=" battery",
-            x=pro_shapes["geometry"].centroid.x,
-            y=pro_shapes["geometry"].centroid.y,
+            x=prov_centroids.x,
+            y=prov_centroids.y,
             carrier="battery",
+            location=nodes,
         )
 
+        # TODO Why no standing loss?
         network.add(
             "Store",
             nodes + " battery",
@@ -758,6 +1161,11 @@ def prepare_network(config: dict) -> pypsa.Network:
             lifetime=costs.at["battery storage", "lifetime"],
         )
 
+        # TODO understand/remove sources, data should not be in code
+        # Sources:
+        # [HP]: Henning, Palzer http://www.sciencedirect.com/science/article/pii/S1364032113006710
+        # [B]: Budischak et al. http://www.sciencedirect.com/science/article/pii/S0378775312014759
+
         network.add(
             "Link",
             nodes + " battery charger",
@@ -767,6 +1175,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             capital_cost=costs.at["battery inverter", "efficiency"]
             * costs.at["battery inverter", "capital_cost"],
             p_nom_extendable=True,
+            carrier="battery",
             lifetime=costs.at["battery inverter", "lifetime"],
         )
 
@@ -778,312 +1187,18 @@ def prepare_network(config: dict) -> pypsa.Network:
             efficiency=costs.at["battery inverter", "efficiency"] ** 0.5,
             marginal_cost=0.0,
             p_nom_extendable=True,
+            carrier="battery discharger",
         )
 
-    # Sources:
-    # [HP]: Henning, Palzer http://www.sciencedirect.com/science/article/pii/S1364032113006710
-    # [B]: Budischak et al. http://www.sciencedirect.com/science/article/pii/S0378775312014759
-
-    if config["heat_coupling"]:
-
-        # urban = nodes
-
-        # NB: must add costs of central heating afterwards (EUR 400 / kWpeak, 50a, 1% FOM from Fraunhofer ISE)
-
-        # central are urban nodes with district heating
-        # central = nodes ^ urban
-
-        central_fraction = pd.read_hdf("data/heating/DH1.h5")
-
-        network.add(
-            "Bus",
-            nodes,
-            suffix=" decentral heat",
-            x=pro_shapes["geometry"].centroid.x,
-            y=pro_shapes["geometry"].centroid.y,
-            carrier="heat",
-        )
-
-        network.add(
-            "Bus",
-            nodes,
-            suffix=" central heat",
-            x=pro_shapes["geometry"].centroid.x,
-            y=pro_shapes["geometry"].centroid.y,
-            carrier="heat",
-        )
-
-        network.add(
-            "Load",
-            nodes,
-            suffix=" decentral heat",
-            bus=nodes + " decentral heat",
-            p_set=heat_demand[nodes].multiply(1 - central_fraction),
-        )
-
-        network.add(
-            "Load",
-            nodes,
-            suffix=" central heat",
-            bus=nodes + " central heat",
-            p_set=heat_demand[nodes].multiply(central_fraction),
-        )
-
-        if config["add_heat_pumps"]:
-
-            for cat in [" decentral ", " central "]:
-                network.add(
-                    "Link",
-                    nodes,
-                    suffix=cat + "heat pump",
-                    bus0=nodes,
-                    bus1=nodes + cat + "heat",
-                    carrier="heat pump",
-                    efficiency=(
-                        ashp_cop[nodes]
-                        if config["time_dep_hp_cop"]
-                        else costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
-                    ),
-                    capital_cost=costs.at[cat.lstrip() + "air-sourced heat pump", "capital_cost"],
-                    p_nom_extendable=True,
-                    lifetime=costs.at[cat.lstrip() + "air-sourced heat pump", "lifetime"],
-                )
-
-            network.add(
-                "Link",
-                nodes,
-                suffix=" ground heat pump",
-                bus0=nodes,
-                bus1=nodes + " decentral heat",
-                carrier="heat pump",
-                efficiency=(
-                    gshp_cop[nodes]
-                    if config["time_dep_hp_cop"]
-                    else costs.at["decentral ground-sourced heat pump", "efficiency"]
-                ),
-                capital_cost=costs.at["decentral ground-sourced heat pump", "capital_cost"],
-                p_nom_extendable=True,
-                lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
-            )
-
-        if config["add_thermal_storage"]:
-
-            for cat in [" decentral ", " central "]:
-                network.add(
-                    "Bus",
-                    nodes,
-                    suffix=cat + "water tanks",
-                    x=pro_shapes["geometry"].centroid.x,
-                    y=pro_shapes["geometry"].centroid.y,
-                    carrier="water tanks",
-                )
-
-                network.add(
-                    "Link",
-                    nodes + cat + "water tanks charger",
-                    bus0=nodes + cat + "heat",
-                    bus1=nodes + cat + "water tanks",
-                    carrier="water tanks",
-                    efficiency=costs.at["water tank charger", "efficiency"],
-                    p_nom_extendable=True,
-                )
-
-                network.add(
-                    "Link",
-                    nodes + cat + "water tanks discharger",
-                    bus0=nodes + cat + "water tanks",
-                    bus1=nodes + cat + "heat",
-                    carrier="water tanks",
-                    efficiency=costs.at["water tank discharger", "efficiency"],
-                    p_nom_extendable=True,
-                )
-
-                network.add(
-                    "Store",
-                    nodes + cat + "water tank",
-                    bus=nodes + cat + "water tanks",
-                    carrier="water tanks",
-                    e_cyclic=True,
-                    e_nom_extendable=True,
-                    standing_loss=1
-                    - np.exp(
-                        -1 / (24.0 * (config["tes_tau"] if cat == " decentral " else 180.0))
-                    ),  # [HP] 180 day time constant for centralised, 3 day for decentralised
-                    capital_cost=costs.at[cat.lstrip() + "water tank storage", "capital_cost"]
-                    / (1.17e-3 * 40),
-                    lifetime=costs.at[cat.lstrip() + "water tank storage", "lifetime"],
-                )  # conversion from EUR/m^3 to EUR/MWh for 40 K diff and 1.17 kWh/m^3/K
-
-        if config["add_boilers"]:
-            if config["add_resistive_heater"]:
-                network.add("Carrier", "resistive heater")
-
-                for cat in [" decentral ", " central "]:
-                    network.add(
-                        "Link",
-                        nodes + cat + "resistive heater",
-                        bus0=nodes,
-                        bus1=nodes + cat + "heat",
-                        carrier="resistive heater",
-                        efficiency=costs.at[cat.lstrip() + "resistive heater", "efficiency"],
-                        capital_cost=costs.at[cat.lstrip() + "resistive heater", "efficiency"]
-                        * costs.at[cat.lstrip() + "resistive heater", "capital_cost"],
-                        p_nom_extendable=True,
-                        lifetime=costs.at[cat.lstrip() + "resistive heater", "lifetime"],
-                    )
-
-            if config["add_gas"]:
-                for cat in [" decentral ", " central "]:
-                    network.add(
-                        "Link",
-                        nodes + cat + "gas boiler",
-                        p_nom_extendable=True,
-                        bus0=nodes + " gas",
-                        bus1=nodes + cat + "heat",
-                        efficiency=costs.at[cat.lstrip() + "gas boiler", "efficiency"],
-                        marginal_cost=costs.at[cat.lstrip() + "gas boiler", "VOM"],
-                        capital_cost=costs.at[cat.lstrip() + "gas boiler", "efficiency"]
-                        * costs.at[cat.lstrip() + "gas boiler", "capital_cost"],
-                        lifetime=costs.at[cat.lstrip() + "gas boiler", "lifetime"],
-                    )
-
-        if config["add_solar_thermal"]:
-
-            # this is the amount of heat collected in W per m^2, accounting
-            # for efficiency
-            with pd.HDFStore(snakemake.input.solar_thermal_name, mode="r") as store:
-                # 1e3 converts from W/m^2 to MW/(1000m^2) = kW/m^2
-                solar_thermal = (
-                    config["solar_cf_correction"] * store["solar_thermal_profiles"] / 1e3
-                )
-
-            date_range = pd.date_range(
-                "2020-01-01 00:00", "2020-02-28 23:00", freq=config["freq"]
-            ).append(pd.date_range("2020-03-01 00:00", "2020-12-31 23:00", freq=config["freq"]))
-
-            solar_thermal = solar_thermal.loc[date_range].set_index(network.snapshots)
-
-            for cat in [" decentral "]:
-                network.add(
-                    "Generator",
-                    nodes,
-                    suffix=cat + "solar thermal collector",
-                    bus=nodes + cat + "heat",
-                    carrier="solar thermal",
-                    p_nom_extendable=True,
-                    capital_cost=costs.at[cat.lstrip() + "solar thermal", "capital_cost"],
-                    p_max_pu=solar_thermal[nodes].clip(1.0e-4),
-                    lifetime=costs.at[cat.lstrip() + "solar thermal", "lifetime"],
-                )
-
-    # add lines
+    # ============= add lines =========
+    # The lines are implemented according to the transport model (no KVL) and without losses.
+    # see Neumann et al 10.1016/j.apenergy.2022.118859
+    # TODO make not lossless optional (? - increases computing cost)
 
     if not config["no_lines"]:
+        add_voltage_links(network, config)
 
-        if config["scenario"]["topology"] == "FCG":
-            lengths = 1.25 * np.array(
-                [
-                    haversine(
-                        [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
-                        [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
-                    )
-                    for name0, name1 in edges.values
-                ]
-            )
-
-            # if config['line_volume_limit_max'] is not None:
-            #     cc = n_years * 0.01  # Set line costs to ~zero because we already restrict the line volume
-            # else:
-            cc = (
-                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-                * 1.5
-                * 1.02
-                * n_years
-                * annuity(40.0, config["costs"]["discountrate"])
-            )
-
-            network.add(
-                "Link",
-                edges[0] + "-" + edges[1],
-                bus0=edges[0].values,
-                bus1=edges[1].values,
-                p_nom_extendable=True,
-                p_min_pu=-1,
-                length=lengths,
-                capital_cost=cc,
-            )
-
-        elif config["scenario"]["topology"] == "current":
-            lengths = 1.25 * np.array(
-                [
-                    haversine(
-                        [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
-                        [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
-                    )
-                    for name0, name1 in edges_current[[0, 1]].values
-                ]
-            )
-
-            # if config['line_volume_limit_max'] is not None:
-            #     cc = n_years * 0.01  # Set line costs to ~zero because we already restrict the line volume
-            # else:
-            cc = (
-                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-                * 1.5
-                * 1.02
-                * n_years
-                * annuity(40.0, config["costs"]["discountrate"])
-            )
-
-            network.add(
-                "Link",
-                edges_current[0] + "-" + edges_current[1],
-                bus0=edges_current[0].values,
-                bus1=edges_current[1].values,
-                p_nom_extendable=True,
-                p_min_pu=-1,
-                p_nom=edges_current[2].values,
-                p_nom_min=edges_current[2].values,
-                length=lengths,
-                capital_cost=cc,
-            )
-
-        elif config["scenario"]["topology"] == "current+FCG":
-            lengths = 1.25 * np.array(
-                [
-                    haversine(
-                        [network.buses.at[name0, "x"], network.buses.at[name0, "y"]],
-                        [network.buses.at[name1, "x"], network.buses.at[name1, "y"]],
-                    )
-                    for name0, name1 in edges_current_FCG[[0, 1]].values
-                ]
-            )
-
-            # Set line costs to ~zero because we already restrict the line volume
-            # if config['line_volume_limit_max'] is not None:
-            #     cc = n_years * 0.01
-            # else:
-            cc = (
-                (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-                * 1.5
-                * 1.02
-                * n_years
-                * annuity(40.0, config["costs"]["discountrate"])
-            )
-
-            network.add(
-                "Link",
-                edges_current_FCG[0] + "-" + edges_current_FCG[1],
-                bus0=edges_current_FCG[0].values,
-                bus1=edges_current_FCG[1].values,
-                p_nom_extendable=True,
-                p_min_pu=-1,
-                p_nom=edges_current_FCG[2].values,
-                p_nom_min=edges_current_FCG[2].values,
-                length=lengths,
-                capital_cost=cc,
-            )
-
+    assign_locations(network)
     return network
 
 
@@ -1093,20 +1208,19 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "prepare_networks",
-            opts="ll",
             topology="current+FCG",
-            pathway="non-pathway",
+            pathway="exp175",
             co2_reduction="0.0",
             planning_horizons=2060,
+            heating_demand="positive",
         )
     configure_logging(snakemake)
-    population = pd.read_hdf(snakemake.input.population_name)
 
     network = prepare_network(snakemake.config)
+    sanitize_carriers(network, snakemake.config)
     sanitize_carriers(network, snakemake.config)
 
     network.export_to_netcdf(snakemake.output.network_name)
 
-    logger.info(
-        f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {snakemake.output.network_name}"
-    )
+    outp = {snakemake.output.network_name}
+    logger.info(f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {outp}")

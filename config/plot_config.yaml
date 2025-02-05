@@ -1,64 +1,129 @@
 
 plot: True
 plotting:
-  map:
-    figsize: [14, 8]
-    boundaries: [71, 135., 0, 56.]
-    cost_size_factor: 1.5e+10
-    bus_size_factor: 1.e+5
+  network_style_config_file: "config/plotting_styles/network_map.mplstyle"
+  cost_panel:
+    y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
+  cost_map:
+    figsize: [10, 8]
+    figsize_w_additions: [14, 8]
+    boundaries: [71, 135., 10, 56.]
+    bus_size_factor: 1.e+10
     linewidth_factor: 6.e+3
     bus_size_factor_demand: 2.e+7
     bus_size_factor_heat: 5.e+4
     linewidth_factor_heat: 5.e+4
+    min_edge_capacity : 1.e+4
+    ref_edge_sizes : [5.e+3,10.e+3,30.e+3] # MW
+    ref_bus_sizes : [20.e+9, 10.e+9, 5.e+9] # eur/currnecy
+    ref_bus_unit: "bn €/a"
+    edge_color: "indigo"
+  energy_map:
+    figsize: [9, 8]
+    boundaries: [71, 135., 0, 56.]
+    bus_size_factor: 4.e+8
+    bus_size_factor_heat: 2.e+8
+    linewidth_factor: 7.5e+3
+    linewidth_factor_heat: 5.e+3
+    bus_size_factor_demand: 2.e+7
+    min_edge_capacity : 5.e+2 # MW
+    ref_bus_unit: "TWh"
+    ref_edge_sizes : [5.e+3,10.e+3,30.e+3] # MW
+    ref_edge_sizes_heat : [1.e+3,10.e+3,50.e+3]  # in MW
+    ref_bus_sizes : [5.e+7, 1.e+8, 2.e+9] # MWh
+    ref_bus_sizes_heat : [10.e+6, 100.e+6, 500.e+6] # MWh
+    bus_ref_title : "Electricity supply"
+    edge_color: "indigo"
+  price_map:
+    figsize: [9, 8]
+    boundaries: [71, 135., 0, 56.]
+    bus_size_factor: 4.e+8
+    linewidth_factor: 1.8e+4
+    linewidth_factor_heat: 8.e+7
+    bus_size_factor_demand: 2.e+7
+    bus_size_factor_heat: 5.e+4
+    min_edge_capacity : 1.e+4
+    ref_bus_unit: "TWh"
+    ref_edge_sizes : [10e3,50e3,1e5]  # in MW
+    ref_bus_sizes : [5e7, 1e8, 1e9] # MWhh
+    bus_ref_title : "Electricity supply"
+    edge_color: "black"
 
-  costs_max: 500
-  costs_avg: 50
-  costs_threshold: 1000
-  costs_plots_threshold: 10
+  costs_threshold: 2.e+6
+  energy_threshold: 5.e+6
 
-  energy_max: 25000.
-  energy_min: 0.
-  energy_threshold: 50.
   loads: ['electricity', 'decentral heat', 'central heat']
   vre_techs: [ "onwind", "offwind", "solar"]
   conv_techs: [ "gas", "gas-heat", "gas-AC", "AC-gas", "coal", "coal-AC","solar thermal","AC-heat","AC-AC","stations-AC","uranium", "H2-AC", "H2-gas",]
   storage_techs: [ "hydro+PHS", "battery", "AC-battery", "H2", "AC-H2" , "AC-heat"]
 
+  nan_color: "pink"
+
   tech_colors:
     blank: "white"
-    # wind
-    wind: "#235ebc"
-    onwind: "#235ebc"
-    onshore wind: "#235ebc"
-    offwind: "#6895dd"
-    offshore wind: "#6895dd"
-    offwind-ac: "#6895dd"
-    offshore wind (AC): "#6895dd"
-    offshore wind ac: "#6895dd"
-    offwind-dc: "#74c6f2"
-    offshore wind (DC): "#74c6f2"
-    offshore wind dc: "#74c6f2"
-    # water
-    hydro: '#298c81'
-    hydro reservoir: '#298c81'
-    ror: '#3dbfb0'
-    run of river: '#3dbfb0'
-    hydroelectricity: '#298c81'
-    PHS: '#51dbcc'
-    hydro+PHS: "#08ad97"
-    wave: '#a7d4cf'
-    # solar
-    solar: "#f9d002"
-    solar PV: "#f9d002"
-    solar thermal: "#ffbf2b" #'#ffbf2b'
-    residential rural solar thermal: '#f1c069'
-    services rural solar thermal: '#eabf61'
-    residential urban decentral solar thermal: '#e5bc5a'
-    services urban decentral solar thermal: '#dfb953'
-    urban central solar thermal: '#d7b24c'
-    solar rooftop: '#ffea80'
+
+    # ammonia
+    NH3: '#46caf0'
+    ammonia: '#46caf0'
+    ammonia store: '#00ace0'
+    ammonia cracker: '#87d0e6'
+    Haber-Bosch: '#076987'
+    # coal
+    Coal: '#545454'
+    coal: '#545454'
+    coal-AC: '#545454'
+    coal power plant: '#545454'
+    Coal Power Plant: '#545454'
+    coal boiler: '#787575'
+    Coal marginal: '#545454'
+    solid: '#545454'
+    Lignite: '#826837'
+    lignite: '#826837'
+    Lignite marginal: '#826837'
+
+    # battery + EVs
+    battery: '#ace37f'
+    battery storage: '#ace37f'
+    battery charger: '#88a75b'
+    battery discharger: '#5d4e29'
+    home battery: '#80c944'
+    home battery storage: '#80c944'
+    home battery charger: '#5e8032'
+    home battery discharger: '#3c5221'
+    BEV charger: '#baf238'
+    V2G: '#e5ffa8'
+    land transport EV: '#baf238'
+    Li ion: '#baf238'
+
+    # biomass
+    biogas: '#e3d37d'
+    biomass: '#baa741'
+    biomass CHP: '#baa741'
+    solid biomass: '#baa741'
+    solid biomass transport: '#baa741'
+    solid biomass for industry: '#7a6d26'
+    solid biomass for industry CC: '#47411c'
+    solid biomass for industry co2 from atmosphere: '#736412'
+    solid biomass for industry co2 to stored: '#47411c'
+    urban central solid biomass CHP: '#9d9042'
+    urban central solid biomass CHP CC: '#6c5d28'
+    biomass CHP CC: '#6c5d28'
+    biomass carbon capture: '#6c5d28'
+    biomass boiler: '#8A9A5B'
+    residential rural biomass boiler: '#a1a066'
+    residential urban decentral biomass boiler: '#b0b87b'
+    services rural biomass boiler: '#c6cf98'
+    services urban decentral biomass boiler: '#dde5b5'
+    biomass to liquid: '#32CD32'
+    BioSNG: '#123456'
+    # coal
+
+    coal carbon capture: '#8487e8'
+    coal cc: '#8487e8'
+    coal power plant retrofit: '#8487e8'
     # gas
     OCGT: '#e0986c'
+    OCGT gas: '#e0986c'
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
     gas boiler: '#db6a25'
@@ -82,78 +147,9 @@ plotting:
     gas for industry CC: '#692e0a'
     gas pipeline: '#ebbca0'
     gas pipeline new: '#a87c62'
-    # oil
-    oil: '#c9c9c9'
-    oil boiler: '#adadad'
-    residential rural oil boiler: '#a9a9a9'
-    services rural oil boiler: '#a5a5a5'
-    residential urban decentral oil boiler: '#a1a1a1'
-    urban central oil boiler: '#9d9d9d'
-    services urban decentral oil boiler: '#999999'
-    agriculture machinery oil: '#949494'
-    shipping oil: "#808080"
-    land transport oil: '#afafaf'
-    # nuclear
-    Nuclear: '#ff8c00'
-    Nuclear marginal: '#ff8c00'
-    nuclear: '#ff8c00'
-    uranium: '#ff8c00'
-    # coal
-    Coal: '#545454'
-    coal: '#545454'
-    coal power plant: '#545454'
-    coal boiler: '#787575'
-    Coal marginal: '#545454'
-    solid: '#545454'
-    Lignite: '#826837'
-    lignite: '#826837'
-    Lignite marginal: '#826837'
-    # biomass
-    biogas: '#e3d37d'
-    biomass: '#baa741'
-    biomass CHP: '#baa741'
-    solid biomass: '#baa741'
-    solid biomass transport: '#baa741'
-    solid biomass for industry: '#7a6d26'
-    solid biomass for industry CC: '#47411c'
-    solid biomass for industry co2 from atmosphere: '#736412'
-    solid biomass for industry co2 to stored: '#47411c'
-    urban central solid biomass CHP: '#9d9042'
-    urban central solid biomass CHP CC: '#6c5d28'
-    biomass CHP CC: '#6c5d28'
-    biomass carbon capture: '#6c5d28'
-    biomass boiler: '#8A9A5B'
-    residential rural biomass boiler: '#a1a066'
-    residential urban decentral biomass boiler: '#b0b87b'
-    services rural biomass boiler: '#c6cf98'
-    services urban decentral biomass boiler: '#dde5b5'
-    biomass to liquid: '#32CD32'
-    BioSNG: '#123456'
-    # power transmission
-    lines: '#6c9459'
-    transmission lines: '#6c9459'
-    electricity distribution grid: '#97ad8c'
-    low voltage: '#97ad8c'
-    # electricity demand
-    electric load: '#110d63'
-    electric demand: '#110d63'
-    electricity: '#110d63'
-    industry electricity: '#2d2a66'
-    industry new electricity: '#2d2a66'
-    agriculture electricity: '#494778'
-    # battery + EVs
-    battery: '#ace37f'
-    battery storage: '#ace37f'
-    battery charger: '#88a75b'
-    battery discharger: '#5d4e29'
-    home battery: '#80c944'
-    home battery storage: '#80c944'
-    home battery charger: '#5e8032'
-    home battery discharger: '#3c5221'
-    BEV charger: '#baf238'
-    V2G: '#e5ffa8'
-    land transport EV: '#baf238'
-    Li ion: '#baf238'
+    gas-AC: "grey"
+
+
     # hot water storage
     water tanks: '#e69487'
     residential rural water tanks: '#f7b7a3'
@@ -174,6 +170,7 @@ plotting:
     residential urban decentral water tanks discharger: '#baac9e'
     services rural water tanks discharger: '#bbc2b8'
     services urban decentral water tanks discharger: '#bdd8d3'
+
     # heat demand
     heat load: '#cc1f1f'
     heat: '#cc1f1f'
@@ -189,6 +186,7 @@ plotting:
     low-temperature heat for industry: '#8f2727'
     process heat: '#ff0000'
     agriculture heat: '#d9a5a5'
+
     # heat supply
     heat pumps: '#2fb537'
     heat pump: '#2fb537'
@@ -220,9 +218,8 @@ plotting:
     services urban decentral resistive heater: '#98e991'
     urban central resistive heater: '#8cdf85'
     retrofitting: '#8487e8'
-    coal carbon capture: '#8487e8'
-    coal power plant retrofit: '#8487e8'
     building retrofitting: '#8487e8'
+
     # hydrogen
     H2 for industry: "#f073da"
     H2 for shipping: "#ebaee0"
@@ -243,12 +240,72 @@ plotting:
     H2 turbine: '#991f83'
     H2 Electrolysis: '#ff29d9'
     H2 electrolysis: '#ff29d9'
-    # ammonia
-    NH3: '#46caf0'
-    ammonia: '#46caf0'
-    ammonia store: '#00ace0'
-    ammonia cracker: '#87d0e6'
-    Haber-Bosch: '#076987'
+
+    # hydro and water
+    hydro: '#298c81'
+    hydro reservoir: '#298c81'
+    ror: '#3dbfb0'
+    run of river: '#3dbfb0'
+    hydroelectricity: '#298c81'
+    PHS: '#51dbcc'
+    hydro+PHS: "#08ad97"
+    wave: '#a7d4cf'
+    stations: "pink"
+    # solar
+    solar: "#f9d002"
+    solar PV: "#f9d002"
+    solar thermal: "#ffbf2b" #'#ffbf2b'
+    residential rural solar thermal: '#f1c069'
+    services rural solar thermal: '#eabf61'
+    residential urban decentral solar thermal: '#e5bc5a'
+    services urban decentral solar thermal: '#dfb953'
+    urban central solar thermal: '#d7b24c'
+    solar rooftop: '#ffea80'
+    # wind
+    wind: "#235ebc"
+    onwind: "#235ebc"
+    onshore wind: "#235ebc"
+    Onshore Wind: "#235ebc"
+    offwind: "#6895dd"
+    offshore wind: "#6895dd"
+    Offshore Wind: "#6895dd"
+    Offshore waste:ind: "#6895dd"
+    offwind-ac: "#6895dd"
+    offshore wind (AC): "#6895dd"
+    offshore wind ac: "#6895dd"
+    offwind-dc: "#74c6f2"
+    offshore wind (DC): "#74c6f2"
+    offshore wind dc: "#74c6f2"
+    # oil
+    oil: '#c9c9c9'
+    oil boiler: '#adadad'
+    residential rural oil boiler: '#a9a9a9'
+    services rural oil boiler: '#a5a5a5'
+    residential urban decentral oil boiler: '#a1a1a1'
+    urban central oil boiler: '#9d9d9d'
+    services urban decentral oil boiler: '#999999'
+    agriculture machinery oil: '#949494'
+    shipping oil: "#808080"
+    land transport oil: '#afafaf'
+    # nuclear
+    Nuclear: '#ff8c00'
+    Nuclear marginal: '#ff8c00'
+    nuclear: '#ff8c00'
+    uranium: '#ff8c00'
+    # power transmission
+    lines: '#6c9459'
+    transmission lines: '#6c9459'
+    transmission losses: '#6c9459'
+    electricity distribution grid: '#97ad8c'
+    low voltage: '#97ad8c'
+    # electricity demand
+    electric load: '#110d63'
+    electric demand: '#110d63'
+    electricity: '#110d63'
+    industry electricity: '#2d2a66'
+    industry new electricity: '#2d2a66'
+    agriculture electricity: '#494778'
+
     # syngas
     Sabatier: '#9850ad'
     methanation: '#c44ce6'
@@ -263,6 +320,7 @@ plotting:
     methanol: '#468c8b'
     shipping methanol: '#468c8b'
     # co2
+    CO2 capture: '#f29dae'
     CC: '#f29dae'
     CCS: '#f29dae'
     CO2 sequestration: '#f29dae'
@@ -301,36 +359,85 @@ plotting:
     DC-DC: "#8a1caf"
     DC link: "#8a1caf"
     Other: "k"
+    stations-AC: "pink"
   nice_names:
+    # links
     AC-AC: "Electric grid"
-    H2-AC: "H2 Fuel Cell"
-    AC-H2: "H2 Electrolysis"
-    H2-gas: "Sabatier + DAC"
     AC-battery: "Battery Charger"
+    AC-H2: "H2 Electrolysis"
+    H2-AC: "H2 Fuel Cell"
+    H2-gas: "Sabatier + DAC"
+    lines: "Transmission Lines"
     CHP: "Combined Heat and Power"
     OCGT: "Open-Cycle Gas"
     CCGT: "Combined-Cycle Gas"
+    heat pump: "Heat Pump"
+    stations-AC: "Reservoir & Dam"
+    AC-heat: "Heat Pump"
+    # generatord
+    battery: "Battery Storage"
+    coal: "Coal Power Plant"
+    coal cc: "coal carbon capture"
+    coal-heat: "Coal Boiler"
+    hydro: "Reservoir & Dam"
+    H2 fuel cell: "H2 Fuel Cell"
+    PHS: "Pumped Hydro Storage"
     offwind: "Offshore Wind"
     onwind: "Onshore Wind"
     solar: "Solar"
-    coal: "Coal Power Plant"
-    coal-AC: "Combined Heat and Power"
-    coal-heat: "Coal Boiler"
-    gas-AC: "Open-Cycle Gas"
-    PHS: "Pumped Hydro Storage"
-    stations-AC: "Reservoir & Dam"
-    hydro: "Reservoir & Dam"
-    battery: "Battery Storage"
-    H2: "Hydrogen Storage"
-    lines: "Transmission Lines"
+    # H2: "Hydrogen Power"
     ror: "Run of River"
-    AC-heat: "Heat Pump"
-    heat pump: "Heat Pump"
     solar thermal: "Solar Thermal"
     uranium: "Nuclear"
+    hydroelectricity: "Hydroelectricity"
     energy:
       coal: "Coal"
       offwind: "Offshore Wind"
       onwind: "Onshore Wind"
       solar: "Solar"
       solar thermal: "Solar Thermal"
+
+  preferred_order:
+  - electric load
+  - heat load
+  - Load
+  - Transmission Lines
+  - transmission losses
+  - nuclear
+  - Nuclear
+  - hydroelectricity
+  - Hydroelectricity
+  - Coal
+  - coal
+  - coal carbon capture
+  - coal power plant
+  - coal power plant retrofit
+  - coal boiler
+  - CHP coal
+  - gas
+  - OCGT
+  - gas boiler
+  - CHP gas
+  - biomass
+  - biomass carbon capture
+  - heat pump
+  - Heat Pump
+  - resistive heater
+  - methanation
+  - H2
+  - Hydrogen Storage
+  - H2 fuel cell
+  - H2 CHP
+  - hot water storage
+  - hydrogen storage
+  - solar thermal
+  - offshore wind
+  - Offshore Wind
+  - onshore wind
+  - Onshore Wind
+  - solar PV
+  - Solar
+  - battery storage
+  - battery discharger
+  - battery
+  - Battery

@@ -5,14 +5,12 @@
 # coding: utf-8
 
 import logging
-
-from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 import numpy as np
 import pypsa
+from pandas import DatetimeIndex
 
 from _helpers import (
     configure_logging,
-    override_component_attrs,
     mock_snakemake,
     setup_gurobi_tunnel_and_env,
 )
@@ -21,7 +19,7 @@ pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-def prepare_network(n, solve_opts):
+def prepare_network(n: pypsa.Network, solve_opts: dict):
 
     if "clip_p_max_pu" in solve_opts:
         for df in (n.generators_t.p_max_pu, n.storage_units_t.inflow):
@@ -64,7 +62,7 @@ def prepare_network(n, solve_opts):
     return n
 
 
-def add_battery_constraints(n):
+def add_battery_constraints(n: pypsa.Network):
     """
     Add constraint ensuring that charger = discharger, i.e.
     1 * charger_size - efficiency * discharger_size = 0
@@ -84,7 +82,7 @@ def add_battery_constraints(n):
     n.model.add_constraints(lhs == 0, name="Link-charger_ratio")
 
 
-def add_chp_constraints(n):
+def add_chp_constraints(n: pypsa.Network):
     electric = n.links.index.str.contains("CHP") & n.links.index.str.contains("generator")
     heat = n.links.index.str.contains("CHP") & n.links.index.str.contains("boiler")
 
@@ -126,19 +124,21 @@ def add_chp_constraints(n):
         n.model.add_constraints(lhs <= rhs, name="chplink-backpressure")
 
 
-def extra_functionality(n, snapshots):
+def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex):
     """
     Collects supplementary constraints which will be passed to ``pypsa.linopf.network_lopf``.
     If you want to enforce additional custom constraints, this is a good location to add them.
     The arguments ``opts`` and ``snakemake.config`` are expected to be attached to the network.
     """
-    opts = n.opts
-    config = n.config
+
     add_battery_constraints(n)
+    add_transimission_constraints(n)
     add_chp_constraints(n)
 
 
-def solve_network(n, config, solving, opts="", **kwargs):
+def solve_network(
+    n: pypsa.Network, config: dict, solving: dict, opts: str = "", **kwargs
+) -> pypsa.Network:
     set_of_options = solving["solver"]["options"]
     solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
     solver_name = solving["solver"]["name"]
@@ -185,10 +185,40 @@ def solve_network(n, config, solving, opts="", **kwargs):
     return n
 
 
+def add_transimission_constraints(n: pypsa.Network):
+    """
+    Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
+    p_nom positive = p_nom negative
+
+    Args:
+        n (pypsa.Network): the network object to optimize
+    """
+
+    if not n.links.p_nom_extendable.any():
+        return
+
+    positive_bool = n.links.index.str.contains("positive")
+    negative_bool = n.links.index.str.contains("reversed")
+
+    positive_ext = n.links[positive_bool].query("p_nom_extendable").index
+    negative_ext = n.links[negative_bool].query("p_nom_extendable").index
+
+    lhs = n.model["Link-p_nom"].loc[positive_ext]
+    rhs = n.model["Link-p_nom"].loc[negative_ext]
+
+    n.model.add_constraints(lhs == rhs, name="Link-transimission")
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "solve_network_myopic", co2_reduction="0.0", opts="ll", planning_horizons=2020
+            "solve_networks",
+            co2_reduction="0.0",
+            # opts="ll",
+            planning_horizons=2020,
+            pathway="exponential-175",
+            topology="current+Neighbour",
+            heating_demand="positive",
         )
     configure_logging(snakemake)
 
@@ -197,22 +227,21 @@ if __name__ == "__main__":
     gurobi_license_config = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
     logger.info(f"Solver config {solver_config} and license cfg {gurobi_license_config}")
     if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
-        setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
+        tunnel = setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
+        logger.info(tunnel)
+        logger.info(tunnel.poll())
 
-    opts = snakemake.wildcards.opts
+    opts = snakemake.wildcards.get("opts", "")
     if "sector_opts" in snakemake.wildcards.keys():
         opts += "-" + snakemake.wildcards.sector_opts
     opts = [o for o in opts.split("-") if o != ""]
     solve_opts = snakemake.params.solving["options"]
 
-    if "overrides" in snakemake.input.keys():
-        overrides = override_component_attrs(snakemake.input.overrides)
-        n = pypsa.Network(snakemake.input.network, override_component_attrs=overrides)
-    else:
-        n = pypsa.Network(snakemake.input.network)
+    n = pypsa.Network(snakemake.input.network_name)
 
     n = prepare_network(n, solve_opts)
-
+    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
+        logger.info(f"tunnel process alive? {tunnel.poll()}")
     n = solve_network(
         n,
         config=snakemake.config,
@@ -226,3 +255,8 @@ if __name__ == "__main__":
     n.export_to_netcdf(snakemake.output[0])
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
+    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
+        logger.info(f"tunnel alive? {tunnel.poll()}")
+
+        tunnel.kill()
+        logger.info(f"tunnel alive after kill? {tunnel.poll()}")

@@ -2,22 +2,19 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-version: 0412.175.1H
-
 run:
-  name: 'China-175'
+  name: 'Debug_overnight_1hr_res'
 
-foresight: "myopic"
-# foresight: "steady-state"
+foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
 
 scenario:
-  line_limits: [ 'opt' ]
-  pathway: ['exponential175'] # ,'beta25175']
-  topology: "current+Neighbor" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
+  pathway: ['exp175'] # ,'beta25175']
+  topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
+  # relative CO2 reduction, TODO soft code base year (ideally also fetch data)
   co2_reduction:
-    exponential175:
+    exp175:
       '2020': 0.0
       '2025': 0.22623418
       '2030': 0.41175086
@@ -67,8 +64,6 @@ scenario:
       '2050': 0.93740309
       '2055': 0.97179661
       '2060': 1.0
-  opts: ['ll']
-  attr: 'p_nom'
   planning_horizons:
     - 2020
     - 2025
@@ -81,16 +76,20 @@ scenario:
     - 2060
   heating_demand: ['positive']
 
+# TODO Need to test timezones and functionality of end_year_plus1
 snapshots:
-  start: "2020-01-01"
-  end: "2021-01-01"
-  inclusive: 'left'
+  start: "01-01 00:00"
+  end: "12-31 23:00"
+  bounds: 'both'
+  freq: '1h'
+  # naive timezone (but not for cutout)
+  timezone : null
+  # for weighings -> to be improved
+  frequency: 1.
+  # in case snapshots cross the planning horizon year
+  end_year_plus1: false
 
-tmin: '-01-01 00:00'
-tmax: '-12-31 23:00'
-freq: '1h'
-frequency: 1.
-
+logging_level: INFO
 logging_level: INFO
 logging:
   level: INFO
@@ -102,14 +101,24 @@ enable:
   retrieve_raster: false
 
 atlite:
+  weather_year: 2020
+  freq: "h"
   nprocesses: 4
   show_progress: true
+  # accounts for tz, which is missing in atlite. This could be done via constants.TIMEZONE
+  hour_shift_heating: 8
   cutouts:
-   China-2020:
+    China-2020:
      module: era5
      dx: 0.25
      dy: 0.25
 
+heat_demand:
+  start_day : "01-04" # dd-mm
+  end_day : "30-09" # dd-mm
+  heating_start_temp : 15.0  # c
+  heating_lin_slope : 1  # slope
+  heating_offet : 0  # linear model offset
 solar_thermal_angle: 45
 
 Technique:
@@ -117,8 +126,11 @@ Technique:
   onwind: true
   offwind: true
 
-coal_cc: true
-hydrogen_lines: false
+# TODO implement consistent accounting 
+# brownfield_capex:
+#   existing_hydro: False
+#   existing_nuclear: False
+#   existing_PHS: False
 
 existing_infrastructure: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
@@ -132,20 +144,42 @@ bus_carrier: {
 }
 
 Techs:
-  ## for add carriers
+  ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
   vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","heat pump","resistive heater","Sabatier","H2 CHP"]
   conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
+  coal_cc: true # currently myopic pathway only.  CC = co2 cap 
+  hydrogen_lines: true # currently myopic pathway only
 
-
-## add components
+## add components (overwrites vre tech choice)
 heat_coupling: True
-add_gas: True
-add_coal: True
 add_biomass: True
 add_hydro: True
 add_H2: True
 add_methanation: True
+line_losses: True
+no_lines: False
+
+hydro_dams:
+  dams_path: "resources/data/hydro/dams_large.csv"
+  inflow_path: "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
+  inflow_date_start: "1979-01-01"
+  inflow_date_end: "2017-01-01" # uses left for inclusive
+  reservoir_initial_capacity_path: "resources/data/hydro/reservoir_initial_capacity.pickle"
+  reservoir_effective_capacity_path: "resources/data/hydro/reservoir_effective_capacity.pickle"
+  river_links_stations : "" # TODO
+  p_nom_path: "resources/data/p_nom/hydro_p_nom.h5"
+  p_max_pu_path: "resources/data/p_nom/hydro_p_max_pu.h5"
+  p_max_pu_key : "hydro_p_max_pu"
+  damn_flows_path: "resources/data/hydro/dam_flow_links.csv"
+nuclear_reactors:
+  pp_path: "resources/data/p_nom/nuclear_p_nom.csv"
+H2:
+  geo_storage_nodes: [ "Sichuan", "Chongqing", "Hubei", "Jiangxi", "Anhui", "Jiangsu", "Shandong", "Guangdong" ]
+edge_paths:
+  current: "resources/data/grids/edges_current.csv"
+  current+FCG: "resources/data/grids/edges_current_FCG.csv"
+  current+Neighbor: "resources/data/grids/edges_current_neighbor.csv"
 
 solving:
   options:
@@ -170,6 +204,9 @@ solving:
   solver:
     name: gurobi
     options: gurobi-default
+  gurobi_hpc_tunnel:
+    use_tunnel: True
+    tunnel_port: 1080
   gurobi_hpc_tunnel:
     use_tunnel: True
     tunnel_port: 1080
@@ -239,7 +276,7 @@ solving:
 
   mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
 
-no_lines: False
+
 line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max
 line_cost_factor: 1
 

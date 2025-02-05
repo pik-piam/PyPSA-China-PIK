@@ -96,7 +96,7 @@ def add_power_capacities_installed_before_baseyear(
         to read lifetime to estimate YearDecomissioning
     baseyear : int
     """
-    print("adding power capacities installed before baseyear")
+    logger.info("adding power capacities installed before baseyear")
 
     df_agg = pd.DataFrame()
 
@@ -330,10 +330,13 @@ def add_power_capacities_installed_before_baseyear(
                     build_year=grouping_year,
                     lifetime=costs.at[cat.lstrip() + generator, "lifetime"],
                 )
-
+        # TODO fix centralise
         if generator == "ground heat pump":
             date_range = pd.date_range(
-                "2025-01-01 00:00", "2025-12-31 23:00", freq=config["freq"], tz="Asia/shanghai"
+                "2025-01-01 00:00",
+                "2025-12-31 23:00",
+                freq=config["snapshots"]["freq"],
+                tz="Asia/shanghai",
             )
             date_range = date_range.map(lambda t: t.replace(year=2020))
 

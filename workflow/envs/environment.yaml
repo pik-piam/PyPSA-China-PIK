@@ -7,13 +7,12 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python>=3.8
+  - python>=3.12
   - pip
 
-  - pypsa>=0.18.1
+  - pypsa>=0.31
   - atlite>=0.2.6
   - dask
-  - snakemake
   - snakemake-storage-plugin-http
   # - pyasyncore
   # - pyasynchat
@@ -59,3 +58,4 @@ dependencies:
   - pip:
     - vresutils>=0.3.1
     - tsam>=1.1.0
+    - gurobipy==11.0.3

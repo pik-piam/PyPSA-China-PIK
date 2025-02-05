@@ -14,7 +14,11 @@ chp_parameters:
 
 solar_cf_correction: 0.85
 time_dep_hp_cop: True
-tes_tau: 3.
+# standing losses for thermal storage
+water_tanks:
+  tes_tau:
+    decentral: 3. # days
+    central: 180 # days
 
 renewable:
   onwind:
@@ -55,7 +59,7 @@ renewable:
     min_p_nom_max: 1.e-2
 
 electricity:
-  voltages: [220., 300., 380.]
+  voltages: [220., 300., 380.] # kV
   co2limit: 7.75e+7 # 0.05 * 3.1e9*0.5
   co2base: 1.487e+9
   agg_p_nom_limits: data/agg_p_nom_minmax.csv
@@ -80,24 +84,15 @@ electricity:
   #   Wind: [onwind, offwind-ac, offwind-dc]
   #   Solar: [solar]
 
+# TODO move to brownfield
 hydro:
   hydro_capital_cost: True
   PHS_max_hours: 24.
 
 costs:
-  year: 2030
-  lifetime: 25
-  discountrate: 0.02 # social discountrate
+  discountrate: 0.06
+  social_discount_rate: 0.02 # social discountrate
   USD2013_to_EUR2013: 0.9189 # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
   marginal_cost: # EUR/MWh
-    solar: 0.01
-    onwind: 0.015
-    offwind: 0.015
     hydro: 0.
-    H2: 0.
-    electrolysis: 0.
-    fuel cell: 0.
-    battery: 0.
-    battery inverter: 0.
-  emission_prices: # in currency per tonne emission, only used with the option Ep
-    co2: 0.
+  pv_utility_fraction: 0.5 # the fraction that will not be residential

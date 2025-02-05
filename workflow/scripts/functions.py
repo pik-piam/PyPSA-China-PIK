@@ -4,9 +4,10 @@
 
 import numpy as np
 from scipy import interpolate
+import pyproj
 
 from math import radians, cos, sin, asin, sqrt
-
+from functools import partial
 
 offwind_nodes = np.array(
     [
@@ -29,9 +30,16 @@ offwind_nodes = np.array(
 get_poly_center = lambda poly: (poly.centroid.xy[0][0], poly.centroid.xy[1][0])
 
 
-def haversine(p1, p2):
+def haversine(p1, p2) -> float:
     """Calculate the great circle distance in km between two points on
     the earth (specified in decimal degrees)
+
+    Args:
+        p1 (shapely.Point): location 1 in decimal deg
+        p2 (shapely.Point): location 2 in decimal deg
+
+    Returns:
+        float: great circle distance in [km]
     """
 
     # convert decimal degrees to radians
@@ -44,6 +52,21 @@ def haversine(p1, p2):
     c = 2 * asin(sqrt(a))
     r = 6371  # Radius of earth in kilometers. Use 3956 for miles
     return c * r
+
+
+# This function follows http://toblerity.org/shapely/manual.html
+def area_from_lon_lat_poly(geometry):
+    """For shapely geometry in lon-lat coordinates,
+    returns area in km^2."""
+
+    project = partial(
+        pyproj.transform, pyproj.Proj(init="epsg:4326"), pyproj.Proj(proj="aea")  # Source: Lon-Lat
+    )  # Target: Albers Equal Area Conical https://en.wikipedia.org/wiki/Albers_projection
+
+    new_geometry = transform(project, geometry)
+
+    # default area is in m^2
+    return new_geometry.area / 1e6
 
 
 # TODO fix this

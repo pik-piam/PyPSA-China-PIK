@@ -1,20 +1,25 @@
 import logging
-from _helpers import load_network_for_plots, aggregate_p, aggregate_costs, configure_logging
 
 import pandas as pd
 import numpy as np
-
+from pypsa import Network
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.patches import Circle, Ellipse
 from matplotlib.legend_handler import HandlerPatch
 
+from _helpers import (
+    load_network_for_plots,
+    aggregate_p,
+    aggregate_costs,
+    configure_logging,
+    mock_snakemake,
+)
+from _plot_utilities import fix_network_names_colors, set_plot_style
+
 to_rgba = mpl.colors.colorConverter.to_rgba
-
 logger = logging.getLogger(__name__)
-
-opt_name = {"Store": "e", "Line": "s", "Transformer": "s"}
 
 
 def make_handler_map_to_scale_circles_as_in(ax, dont_resize_actively=False):
@@ -50,35 +55,17 @@ def make_legend_circles_for(sizes, scale=1.0, **kw):
     return [Circle((0, 0), radius=(s / scale) ** 0.5, **kw) for s in sizes]
 
 
-def set_plot_style():
-    plt.style.use(
-        [
-            "classic",
-            "seaborn-white",
-            {
-                "axes.grid": False,
-                "grid.linestyle": "--",
-                "grid.color": "0.6",
-                "hatch.color": "white",
-                "patch.linewidth": 0.5,
-                "font.size": 12,
-                "legend.fontsize": "medium",
-                "lines.linewidth": 1.5,
-                "pdf.fonttype": 42,
-            },
-        ]
-    )
+def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
 
-
-def plot_opt_map(n, opts, ax=None, attribute="p_nom"):
     if ax is None:
-        ax = plt.gca()
+        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={"projection": ccrs.PlateCarree()})
 
-    # DATA
+    # colors
     line_colors = {"cur": "purple", "exp": mpl.colors.rgb2hex(to_rgba("red", 0.7), True)}
-    tech_colors = opts["tech_colors"]
+    tech_colors = plot_config["tech_colors"]
 
     if attribute == "p_nom":
+        # size by total p_nom (installed cap)
         bus_sizes = pd.concat(
             (
                 n.generators.query('carrier != "solar thermal"' and 'carrier != "hydro_inflow"')
@@ -94,11 +81,15 @@ def plot_opt_map(n, opts, ax=None, attribute="p_nom"):
         line_widths_exp = n.lines.s_nom_opt
         line_widths_cur = n.lines.s_nom_min
         link_widths_exp = (
-            n.links.query('carrier == ["AC-AC"]').p_nom_opt.append(
-                n.links.query('carrier != ["AC-AC"]').p_min_pu
+            pd.concat(
+                [
+                    n.links.query('carrier == ["AC-AC"]').p_nom_opt,
+                    n.links.query('carrier != ["AC-AC"]').p_min_pu,
+                ]
             )
             - n.links.p_nom_min
         )
+
         link_widths_cur = n.links.p_nom_min
     else:
         raise "plotting of {} has not been implemented yet".format(attribute)
@@ -111,8 +102,8 @@ def plot_opt_map(n, opts, ax=None, attribute="p_nom"):
     )
 
     # FORMAT
-    linewidth_factor = opts["map"][attribute]["linewidth_factor"]
-    bus_size_factor = opts["map"][attribute]["bus_size_factor"]
+    linewidth_factor = plot_config["map"]["linewidth_factor"]
+    bus_size_factor = plot_config["map"]["bus_size_factor"]
 
     # PLOT
     n.plot(
@@ -120,24 +111,24 @@ def plot_opt_map(n, opts, ax=None, attribute="p_nom"):
         link_widths=link_widths_exp / linewidth_factor,
         line_colors=line_colors["exp"],
         link_colors=line_colors["exp"],
-        bus_sizes=bus_sizes / bus_size_factor,
+        bus_sizes=bus_sizes / bus_size_factor / 1000,
         bus_colors=tech_colors,
         boundaries=map_boundaries,
-        color_geomap=True,
+        # color_geomap=True,
         geomap=True,
         ax=ax,
     )
-    n.plot(
-        line_widths=line_widths_cur / linewidth_factor,
-        link_widths=link_widths_cur / linewidth_factor,
-        line_colors=line_colors_with_alpha,
-        link_colors=link_colors_with_alpha,
-        bus_sizes=0,
-        boundaries=map_boundaries,
-        color_geomap=True,
-        geomap=False,
-        ax=ax,
-    )
+    # n.plot(
+    #     line_widths=line_widths_cur / linewidth_factor,
+    #     link_widths=link_widths_cur / linewidth_factor,
+    #     line_colors=line_colors_with_alpha,
+    #     link_colors=link_colors_with_alpha,
+    #     bus_sizes=0,
+    #     boundaries=map_boundaries,
+    #     color_geomap=True,
+    #     geomap=False,
+    #     ax=ax,
+    # )
     ax.set_aspect("equal")
     ax.axis("off")
 
@@ -201,7 +192,9 @@ def plot_opt_map(n, opts, ax=None, attribute="p_nom"):
     ax.add_artist(l2)
 
     techs = (bus_sizes.index.levels[1]).intersection(
-        pd.Index(opts["vre_techs"] + opts["conv_techs"] + opts["storage_techs"])
+        pd.Index(
+            plot_config["vre_techs"] + plot_config["conv_techs"] + plot_config["storage_techs"]
+        )
     )
     handles = []
     labels = []
@@ -209,7 +202,7 @@ def plot_opt_map(n, opts, ax=None, attribute="p_nom"):
         handles.append(
             plt.Line2D([0], [0], color=tech_colors[t], marker="o", markersize=8, linewidth=0)
         )
-        labels.append(opts["nice_names"].get(t, t))
+        labels.append(plot_config["nice_names"].get(t, t))
     l3 = ax.legend(
         handles,
         labels,
@@ -221,12 +214,12 @@ def plot_opt_map(n, opts, ax=None, attribute="p_nom"):
         title="Technology",
     )
 
-    return fig
+    return ax
 
 
-def plot_total_energy_pie(n, opts, ax=None):
+def plot_total_energy_pie(n, plot_config, ax=None):
     if ax is None:
-        ax = plt.gca()
+        fig, ax = plt.subplots(figsize=(5, 5))
 
     ax.set_title("Energy per technology", fontdict=dict(fontsize="medium"))
 
@@ -237,10 +230,10 @@ def plot_total_energy_pie(n, opts, ax=None):
     patches, texts, autotexts = ax.pie(
         e_primary,
         startangle=90,
-        labels=e_primary.rename(opts["nice_names"]["energy"]).index,
+        labels=e_primary.rename(plot_config["nice_names"]["energy"]).index,
         autopct="%.0f%%",
         shadow=False,
-        colors=[opts["tech_colors"][tech] for tech in e_primary.index],
+        colors=n.carriers.color.loc[e_primary.index],
     )
     for t1, t2, i in zip(texts, autotexts, e_primary.index):
         if e_primary.at[i] < 0.04 * e_primary.sum():
@@ -248,14 +241,14 @@ def plot_total_energy_pie(n, opts, ax=None):
             t2.remove()
 
 
-def plot_total_cost_bar(n, opts, ax=None):
+def plot_total_cost_bar(n: Network, plot_config: dict, ax=None):
     if ax is None:
         ax = plt.gca()
 
     total_load = (n.snapshot_weightings.generators * n.loads_t.p.sum(axis=1)).sum()
-    tech_colors = opts["tech_colors"]
+    tech_colors = plot_config["tech_colors"]
 
-    def split_costs(n):
+    def split_costs(n: Network):
         costs = aggregate_costs(n).reset_index(level=0, drop=True)
         costs.index.rename(["cost", "carrier"], inplace=True)
         costs = costs.groupby(["cost", "carrier"]).sum()
@@ -271,18 +264,26 @@ def plot_total_cost_bar(n, opts, ax=None):
 
     costs, costs_cap_ex, costs_cap_new, costs_marg = split_costs(n)
 
-    costs_graph = pd.DataFrame(dict(a=costs[costs > opts["costs_threshold"]])).dropna()
-
+    costs_graph = pd.DataFrame(dict(a=costs[costs > plot_config["costs_threshold"]])).dropna()
+    # TODO aggregate rest into othrer
     bottom = np.array([0.0, 0.0])
     texts = []
 
+    # fix_colors
+    costs = costs.to_frame()
+    costs["color"] = costs.index.map(tech_colors)
+    costs["nice_name"] = costs.index.map(config["plotting"]["nice_names"])
+    costs.loc[costs.color.isna(), "color"] = (
+        costs[costs.color.isna()].nice_name.str.lower().map(tech_colors).fillna("pink")
+    )
+
     for i, ind in enumerate(costs_graph.index):
         data = np.asarray(costs_graph.loc[ind]) / total_load
-        ax.bar([0.5], data, bottom=bottom, color=tech_colors[ind], width=0.7, zorder=-1)
+        ax.bar([0.5], data, bottom=bottom, color=costs.color, width=0.7, zorder=-1)
         bottom_sub = bottom
         bottom = bottom + data
 
-        if ind in opts["conv_techs"] + ["AC line"]:
+        if ind in plot_config["conv_techs"] + ["AC line"]:
             for c in [costs_cap_ex, costs_marg]:
                 if ind in c:
                     data_sub = np.asarray([c.loc[ind]]) / total_load
@@ -291,7 +292,7 @@ def plot_total_cost_bar(n, opts, ax=None):
                         data_sub,
                         linewidth=0,
                         bottom=bottom_sub,
-                        color=tech_colors[ind],
+                        color=costs.color,
                         width=0.7,
                         zorder=-1,
                         alpha=0.8,
@@ -301,11 +302,11 @@ def plot_total_cost_bar(n, opts, ax=None):
         if abs(data[-1]) < 5:
             continue
 
-        text = ax.text(1.1, (bottom - 0.5 * data)[-1] - 3, opts["nice_names"].get(ind, ind))
+        text = ax.text(1.1, (bottom - 0.5 * data)[-1] - 3, plot_config["nice_names"].get(ind, ind))
         texts.append(text)
 
     ax.set_ylabel("Average system cost [Eur/MWh]")
-    ax.set_ylim([0, opts.get("costs_avg", 80)])
+    ax.set_ylim([0, plot_config.get("costs_avg", 80)])
     ax.set_xlim([0, 1])
     ax.set_xticklabels([])
     ax.grid(True, axis="y", color="k", linestyle="dotted")
@@ -313,15 +314,24 @@ def plot_total_cost_bar(n, opts, ax=None):
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
 
-        snakemake = mock_snakemake("plot_network", opts="ll", planning_horizons=2020)
+        snakemake = mock_snakemake(
+            "plot_network",
+            opts="ll",
+            planning_horizons=2020,
+            heating_demand="positive",
+            topology="current+Neighbor",
+            pathway="exponential175",
+        )
+
     configure_logging(snakemake)
 
-    set_plot_style()
+    set_plot_style(
+        style_config_file=snakemake.config["plotting"]["network_style_config_file"],
+        base_styles=["classic", "seaborn-v0_8-white"],
+    )
 
     config, wildcards = snakemake.config, snakemake.wildcards
-
     map_figsize = config["plotting"]["map"]["figsize"]
     map_boundaries = config["plotting"]["map"]["boundaries"]
 
@@ -330,18 +340,17 @@ if __name__ == "__main__":
     n = load_network_for_plots(
         snakemake.input.network, snakemake.input.tech_costs, config, cost_year
     )
+    fix_network_names_colors(n, config)
 
     scenario_opts = wildcards.opts.split("-")
 
     fig, ax = plt.subplots(figsize=map_figsize, subplot_kw={"projection": ccrs.PlateCarree()})
     plot_opt_map(n, config["plotting"], ax=ax)
-
     fig.savefig(snakemake.output.only_map, dpi=150, bbox_inches="tight")
 
-    ax1 = fig.add_axes([-0.115, 0.625, 0.2, 0.2])
-    plot_total_energy_pie(n, config["plotting"], ax=ax1)
-
-    ax2 = fig.add_axes([-0.075, 0.1, 0.1, 0.45])
-    plot_total_cost_bar(n, config["plotting"], ax=ax2)
-
+    energy_ax = fig.add_axes([-0.115, 0.625, 0.2, 0.2])
+    plot_total_energy_pie(n, config["plotting"], ax=energy_ax)
     fig.savefig(snakemake.output.ext, transparent=True, bbox_inches="tight")
+
+    costs_ax = fig.add_axes([-0.075, 0.1, 0.1, 0.45])
+    plot_total_cost_bar(n, config["plotting"], ax=costs_ax)

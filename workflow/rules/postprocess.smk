@@ -1,115 +1,122 @@
-# TAKE CARE OF PLOTTING
+# Snakefile rules for postprocessing (plotting etc)
+
+from os.path import join
+
+STATISTICS_BARPLOTS = [
+    "capacity_factor",
+    "installed_capacity",
+    "optimal_capacity",
+    "capital_expenditure",
+    "operational_expenditure",
+    "curtailment",
+    "supply",
+    "withdrawal",
+    "market_value",
+]
 
 
-base_results_dir = config["base_results_dir"]
+if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
 
-if config["foresight"] == "steady-state":
+    rule plot_network:
+        input:
+            network=join(
+                RESULTS_DIR,
+                "postnetworks/ntwk_{planning_horizons}.nc",
+            ),
+            tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
+            province_shape="resources/data/province_shapes/CHN_adm1.shp",
+        output:
+            cost_map=RESULTS_DIR + "/plots/networks/ntwk_{planning_horizons}-cost.pdf",
+            el_supply_map=RESULTS_DIR
+            + "/plots/networks/ntwk_{planning_horizons}-el_supply.pdf",
+        log:
+            LOG_DIR + "/plot_network/ntwk_{planning_horizons}.log",
+        script:
+            "../scripts/plot_network.py"
 
-    rule plot_steady_state:
+    rule make_summary:
+        input:
+            network=join(
+                RESULTS_DIR,
+                "postnetworks/ntwk_{planning_horizons}.nc",
+            ),
+            tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
+        output:
+            directory(RESULTS_DIR + "/summary/ntwk_{planning_horizons}"),
+        log:
+            LOG_DIR + "/make_summary_ntwk_{planning_horizons}.log",
+        resources:
+            mem_mb=5000,
+        script:
+            "../scripts/make_summary.py"
+
+    rule plot_summary:
         input:
             expand(
-                base_results_dir
-                + "/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf",
-                **config["scenario"],
+                RESULTS_DIR + "/summary/ntwk_{planning_horizons}",
+                **{
+                    k: v
+                    for k, v in config["scenario"].items()
+                    if k != "planing_horizons"
+                },
             ),
-            expand(
-                base_results_dir
-                + "/plots/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png",
-                **config["scenario"],
-            ),
+        output:
+            energy=RESULTS_DIR + "/plots/summary/pathway_energy.png",
+            costs=RESULTS_DIR + "/plots/summary/pathway_costs.png",
+        log:
+            LOG_DIR + "/plot/summary_plot_ntwk_summary.log",
+        script:
+            "../scripts/plot_summary_all.py"
 
-
-# TODO fix comments: there shouldnt be commented out code on a live version
-elif config["foresight"] == "myopic":
-
-    rule plot_myopic:
+    rule plot_statistics:
         input:
-            expand(
-                base_results_dir
-                + "/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_costs.png",
-                **config["scenario"],
+            network=join(
+                RESULTS_DIR,
+                "postnetworks/ntwk_{planning_horizons}.nc",
             ),
-            # expand(
-            #     base_results_dir + '/plots/heatmap/water_tank/water_tank-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-            #     ** config["scenario"]
-            # ),
-            # expand(
-            #     base_results_dir + '/plots/heatmap/water_tank/water_store-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-            #     ** config["scenario"]
-            # ),
-            # expand(
-            #     base_results_dir + '/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf',
-            #     **config["scenario"]
-            # ),
-            expand(
-                base_results_dir
-                + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext_heat.pdf",
-                **config["scenario"],
+        params:
+            stat_types=STATISTICS_BARPLOTS,
+            carrier="AC",
+        output:
+            stats_dir=directory(RESULTS_DIR + "/plots/statistics_{planning_horizons}"),
+        log:
+            LOG_DIR + "/plot_statistics_ntwk_{planning_horizons}.log",
+        script:
+            "../scripts/plot_statistics.py"
+
+    rule plot_snapshots:
+        input:
+            network=join(
+                RESULTS_DIR,
+                "postnetworks/ntwk_{planning_horizons}.nc",
             ),
+        params:
+            winter_day1="12-10 21:00",  # mm-dd HH:MM 
+            winter_day2="12-17 12:00",  # mm-dd HH:MM
+            spring_day1="04-01 21:00",  # mm-dd HH:MM
+            spring_day2="04-07 12:00",  # mm-dd HH:MM
+        output:
+            outp_dir=directory(RESULTS_DIR + "/plots/snapshots_{planning_horizons}"),
+        log:
+            LOG_DIR + "/plot_snapshots_ntwk_{planning_horizons}.log",
+        script:
+            "../scripts/plot_time_series.py"
+
+else:
+    raise NotImplementedError(
+        f"Plotting fororesight {config["foresight"]} not implemented"
+    )
 
 
-# TODO fix paths
-rule plot_network:
+rule plot_heatmap:
     input:
-        network=base_results_dir
-        + "/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
-        tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
+        network=RESULTS_DIR + "/postnetworks/ntwk_{planning_horizons}.nc",
     output:
-        # only_map=base_results_dir
-        # + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.pdf",
-        cost_map=base_results_dir
-        + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}-cost.pdf",
-        # ext=base_results_dir
-        # + "/plots/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}_ext.pdf",
-    log:
-        "logs/plot_network/network_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
+        water=RESULTS_DIR
+        + "/plots/heatmap/water_tank/water_tank-{planning_horizons}.png",
+        water_store=RESULTS_DIR
+        + "/plots/heatmap/water_tank/water_store-{planning_horizons}.png",
+        battery=RESULTS_DIR + "/plots/heatmap/battery/battery-{planning_horizons}.png",
+        H2=RESULTS_DIR + "/plots/heatmap/H2/H2-{planning_horizons}.png",
     script:
-        "../scripts/plot_network.py"
-
-
-rule make_summary:
-    input:
-        network=base_results_dir
-        + "/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc",
-        tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
-    output:
-        directory(
-            base_results_dir
-            + "/summary/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}"
-        ),
-    log:
-        "logs/make_summary_postnetworks_{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.log",
-    resources:
-        mem_mb=5000,
-    script:
-        "../scripts/make_summary.py"
-
-
-rule plot_summary:
-    input:
-        expand(
-            base_results_dir
-            + "/summary/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}",
-            **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
-        ),
-    output:
-        energy=base_results_dir
-        + "/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_energy.png",
-        costs=base_results_dir
-        + "/plots/summary/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-pathway_costs.png",
-    log:
-        "logs/plot/{heating_demand}_summary_plot_postnetwork-{opts}-{topology}-{pathway}-summary.log",
-    script:
-        "../scripts/plot_summary_all.py"
-
-
-# TODO add to config options
-# rule plot_heatmap:
-#     input:
-#         network = base_results_dir + '/postnetworks/{heating_demand}/postnetwork-{opts}-{topology}-{pathway}-{planning_horizons}.nc',
-#     output:
-#         water = base_results_dir + '/plots/heatmap/{heating_demand}/water_tank/water_tank-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-#         water_store = base_results_dir + '/plots/heatmap/{heating_demand}/water_tank/water_store-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-#         battery = base_results_dir + '/plots/heatmap/{heating_demand}/battery/battery-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-#         H2 = base_results_dir + '/plots/heatmap/{heating_demand}/H2/H2-{opts}-{topology}-{pathway}-{planning_horizons}.png',
-#     script:  "../scripts/plot_heatmap.py"
+        "../scripts/plot_heatmap.py"
