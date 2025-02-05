@@ -93,8 +93,8 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
         params:
             winter_day1="12-10 21:00",  # mm-dd HH:MM 
             winter_day2="12-17 12:00",  # mm-dd HH:MM
-            spring_day1="03-31 21:00",  # mm-dd HH:MM
-            spring_day2="04-06 12:00",  # mm-dd HH:MM
+            spring_day1="04-01 21:00",  # mm-dd HH:MM
+            spring_day2="04-07 12:00",  # mm-dd HH:MM
         output:
             outp_dir=directory(RESULTS_DIR + "/plots/snapshots_{planning_horizons}"),
         log:

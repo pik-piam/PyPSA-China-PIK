@@ -56,7 +56,10 @@ if __name__ == "__main__":
     # # incase an old version need to add missing info to network
     fix_network_names_colors(n, snakemake.config)
     n.loads.carrier = "load"
-    n.carriers.loc["load", ["nice_name", "color"]] = "Load", "darkred"
+    n.carriers.loc["load", ["nice_name", "color"]] = (
+        "Load",
+        snakemake.config["plotting"]["tech_colors"]["electric load"],
+    )
     colors = n.carriers.set_index("nice_name").color.where(lambda s: s != "", "lightgrey")
 
     outp_dir = snakemake.output.stats_dir
@@ -78,7 +81,7 @@ if __name__ == "__main__":
         if "Line" in ds.index:
             ds = ds.drop("Line")
         ds = ds.drop(("Generator", "Load"), errors="ignore")
-        ds = ds / PLOT_CAP_UNITS
+        ds = ds.abs() / PLOT_CAP_UNITS
         ds.attrs["unit"] = PLOT_CAP_LABEL
         plot_static_per_carrier(ds.abs(), ax)
         fig.tight_layout()
@@ -90,7 +93,7 @@ if __name__ == "__main__":
         if "Line" in ds.index:
             ds = ds.drop("Line")
         ds = ds.drop(("Generator", "Load"), errors="ignore")
-        ds = ds / PLOT_CAP_UNITS
+        ds = ds.abs() / PLOT_CAP_UNITS
         ds.attrs["unit"] = PLOT_CAP_LABEL
         plot_static_per_carrier(ds, ax)
         fig.tight_layout()

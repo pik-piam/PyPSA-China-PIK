@@ -90,7 +90,8 @@ hydro:
   PHS_max_hours: 24.
 
 costs:
-  discountrate: 0.02 # social discountrate
+  discountrate: 0.06
+  social_discount_rate: 0.02 # social discountrate
   USD2013_to_EUR2013: 0.9189 # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
   marginal_cost: # EUR/MWh
     hydro: 0.

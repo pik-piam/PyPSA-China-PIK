@@ -23,20 +23,18 @@ def make_nice_tech_colors(tech_colors: dict, nice_names: dict) -> dict:
 
 
 def get_stat_colors(
-    # df_stats: pd.DataFrame,
     n: pypsa.Network,
-    # plot_config: dict,
-    # nan_color="lightgrey",
+    nice_tech_colors: dict,
     extra_colors: dict = None,
+    capitalize_words: bool = True,
 ) -> pd.DataFrame:
-    """Make several attempts to get colors for statistics from difference sources
+    """Combine colors from different sources
 
     Args:
-        df_stats (pd.DataFrame): the statistics output from n.statistics
         n (pypsa.Network): the network
-        plot_config (dict): the plotting config
-        nan_color (str, optional): _description_. Defaults to "grey".
+        nice_tech_colors (dict): the tech colors from make_nice_tech_colors
         extra_colors (dict, optional): Additional args for color. Defaults to None.
+        capitalize_words (bool, optional): Capitalize the words. Defaults to True.
 
     Returns:
         pd.DataFrame: the colors
@@ -48,9 +46,12 @@ def get_stat_colors(
     )
     carrier_colors = carrier_colors.groupby(level=0).first()
     extra_colors = pd.DataFrame(extra_colors.values(), index=extra_colors.keys(), columns=["color"])
-    carrier_colors = pd.concat([carrier_colors, extra_colors])
-    carrier_colors.rename(index=lambda x: x.title(), inplace=True)
-    return carrier_colors.squeeze()
+    carrier_colors = pd.concat([carrier_colors, extra_colors]).squeeze()
+    if capitalize_words:
+        carrier_colors.rename(index=lambda x: x.title(), inplace=True)
+        nice_tech_colors = {k.title(): v for k, v in nice_tech_colors.items()}
+
+    return pd.concat([carrier_colors, pd.Series(nice_tech_colors)]).groupby(level=0).first()
 
 
 def rename_techs(label):
