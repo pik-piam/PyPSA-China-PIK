@@ -120,7 +120,7 @@ def plot_load_duration_curve(
     Args:
         network (pypsa.Network): the pypasa network object
         carrier (str, optional): the load carrier, defaults to AC
-        ax (plt.Axes, optional): Optional figure axes, if none fig will be created. Defaults to None.
+        ax (plt.Axes, optional): figure axes, if none fig will be created. Defaults to None.
 
     Returns:
         plt.Axes: the plotting axes
@@ -135,12 +135,11 @@ def plot_load_duration_curve(
         comps="Load",
     ).sum()
     load_curve = load.sort_values(ascending=False) / PLOT_SUPPLY_UNITS
-    fig, ax = plt.subplots()
-    load_curve.reset_index(drop=True).plot(ax=ax)
-    ax.set_ylabel(f"Load [{PLOT_SUPPLY_LABEL}]")
+    load_curve.reset_index(drop=True).plot(ax=ax, lw=3)
+    ax.set_ylabel(f"Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")
 
-    return fig, ax
+    return ax
 
 
 def plot_regional_load_durations(network: pypsa.Network, carrier="AC", ax=None, cmap="plasma"):
@@ -149,7 +148,7 @@ def plot_regional_load_durations(network: pypsa.Network, carrier="AC", ax=None, 
     Args:
         network (pypsa.Network): the pypasa network object
         carrier (str, optional): the load carrier, defaults to AC
-        ax (plt.Axes, optional): Optional figure axes, if none fig will be created. Defaults to None.
+        ax (plt.Axes, optional): axes to plot on, if none fig will be created. Defaults to None.
 
     Returns:
         plt.Axes: the plotting axes
@@ -168,9 +167,9 @@ def plot_regional_load_durations(network: pypsa.Network, carrier="AC", ax=None, 
     load_curve_regio = regio.loc[load_curve_all.index] / PLOT_SUPPLY_UNITS
     fig, ax = plt.subplots()
     load_curve_regio.reset_index(drop=True).plot.area(
-        ax=ax, stacked=True, cmap="plasma", legend=True
+        ax=ax, stacked=True, cmap="plasma", legend=True, lw=3
     )
-    ax.set_ylabel(f"Load [{PLOT_SUPPLY_LABEL}]")
+    ax.set_ylabel(f"Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")
     ax.legend(
         ncol=3,
@@ -192,7 +191,7 @@ def plot_residual_load_duration_curve(
     Args:
         network (pypsa.Network): the pypasa network object
         carrier (str, optional): the load carrier, defaults to AC
-        ax (plt.Axes, optional): Optional figure axes, if none fig will be created. Defaults to None.
+        ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
 
     Returns:
         plt.Axes: the plotting axes
@@ -208,7 +207,7 @@ def plot_residual_load_duration_curve(
     ).sum()
 
     vre_supply = (
-        n.statistics.supply(
+        network.statistics.supply(
             groupby=get_location_and_carrier,
             aggregate_time=False,
             bus_carrier=CARRIER,
@@ -221,11 +220,11 @@ def plot_residual_load_duration_curve(
     )
 
     residual = (load - vre_supply).sort_values(ascending=False) / PLOT_SUPPLY_UNITS
-    residual.reset_index(drop=True).plot(ax=ax)
-    ax.set_ylabel(f"Load [{PLOT_SUPPLY_LABEL}]")
+    residual.reset_index(drop=True).plot(ax=ax, lw=3)
+    ax.set_ylabel(f"Residual Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")
 
-    return fig, ax
+    return ax
 
 
 if __name__ == "__main__":
