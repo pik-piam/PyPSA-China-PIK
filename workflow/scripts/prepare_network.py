@@ -4,10 +4,9 @@
 
 # for non-pathway network
 # TODO fix timezones
-# TODO fix timezones
+# TODO WHY DO WE USE VRESUTILS ANNUITY IN ONE PLACE AND OUR OWN CALC ELSEWHERE?
 
 import pypsa
-from vresutils.costdata import annuity
 from vresutils.costdata import annuity
 from shapely.geometry import Point
 import geopandas as gpd
@@ -101,7 +100,6 @@ def add_conventional_generators(
         )
 
         network.add(
-        network.add(
             "Generator",
             nodes,
             suffix=" gas fuel",
@@ -123,7 +121,6 @@ def add_conventional_generators(
             e_cyclic=True,
         )
 
-        network.add(
         network.add(
             "Link",
             nodes,

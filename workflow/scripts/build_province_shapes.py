@@ -1,3 +1,7 @@
+"""
+Functions to get the province shapes.
+"""
+
 import cartopy.io.shapereader as shpreader
 import geopandas as gpd
 import os.path
@@ -18,11 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 def fetch_natural_earth_records(country_iso2_code="CN") -> object:
-    """fetch the province/state level (1st admin level) from the NATURAL_EARTH data store and make a file
+    """fetch the province/state level (1st admin level) from the
+            NATURAL_EARTH data store and make a file
 
     Args:
         country_iso2_code (str, optional): the country code (iso_a2) for which
-          provincial records will be extracted. None will not filter (untestetd) Defaults to 'CN'
+             provincial records will be extracted. None will not filter (untestetd) Defaults to 'CN'
     Returns:
         Records: the natural earth records
     """
@@ -38,8 +43,10 @@ def fetch_natural_earth_records(country_iso2_code="CN") -> object:
         """filter provincial/state (admin level 1) records for one country
 
         Args:
-            records (shpreader.Reader.records): the records object from cartopy shpreader for natural earth dataset
-            target_iso_a2_code (str, optional): the country code (iso_a2) for which provincial records will be extracted. Defaults to 'CN'.
+            records (shpreader.Reader.records): the records object from cartopy
+                    shpreader for natural earth dataset
+            target_iso_a2_code (str, optional): the country code (iso_a2) for which
+                    provincial records will be extracted. Defaults to 'CN'.
 
         Returns:
             list: records list
@@ -82,7 +89,8 @@ def records_to_data_frame(records: object) -> gpd.GeoDataFrame:
 
     if not filtered.province.to_list() == sorted(PROV_NAMES):
         raise ValueError(
-            "Built cut-out does not have the right provinces - do your province lists have white spaces?"
+            "Built cut-out does not have the right provinces"
+            + "- do your province lists have white spaces?"
         )
 
     return filtered
@@ -105,7 +113,7 @@ def save_province_data(
 
 
 if __name__ == "__main__":
-    if not "snakemake" in globals():
+    if "snakemake" not in globals():
         snakemake = mock_snakemake("build_province_shapes")
     configure_logging(snakemake, logger=logger)
     records = fetch_natural_earth_records(country_iso2_code="CN")

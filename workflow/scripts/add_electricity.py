@@ -1,3 +1,8 @@
+"""
+Misc collection of functions supporting network prep
+    still to be cleaned up
+"""
+
 import logging
 import pandas as pd
 import pypsa
@@ -12,24 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 def calculate_annuity(lifetime: int, discount_rate: float) -> float:
-def calculate_annuity(lifetime: int, discount_rate: float) -> float:
     """Calculate the annuity factor for an asset with lifetime n years and
     discount rate of r, e.g. annuity(20, 0.05) * 20 = 1.6
 
     Args:
-        lifetime (int): _description_
-        discount_rate (float): _description_
-
-    Returns:
-        float: the annuity factor
-    """
-    r = discount_rate
-    n = lifetime
-    discount rate of r, e.g. annuity(20, 0.05) * 20 = 1.6
-
-    Args:
-        lifetime (int): _description_
-        discount_rate (float): _description_
+        lifetime (int): ecomic asset lifetime for discounting/NPV calc
+        discount_rate (float): the WACC
 
     Returns:
         float: the annuity factor
@@ -55,7 +48,6 @@ def calculate_annuity(lifetime: int, discount_rate: float) -> float:
 
 # TODO fix docstring and change file + IO
 def load_costs(
-    tech_costs: PathLike, cost_config: dict, elec_config: dict, cost_year: int, n_years: int
     tech_costs: PathLike, cost_config: dict, elec_config: dict, cost_year: int, n_years: int
 ) -> pd.DataFrame:
     """Calculate the anualised capex costs and OM costs for the technologies based on the input data
@@ -198,6 +190,7 @@ def add_missing_carriers(n: pypsa.Network, carriers: list | set) -> None:
         n.add("Carrier", missing_carriers)
 
 
+# TODO figure out whether still relevant
 def sanitize_carriers(n: pypsa.Network, config: dict) -> None:
     """Sanitize the carrier information in a PyPSA Network object.
 
@@ -208,7 +201,7 @@ def sanitize_carriers(n: pypsa.Network, config: dict) -> None:
     Args:
         n (pypsa.Network): PyPSA Network object representing the electrical power system.
         config (dict): A dictionary containing configuration information, specifically the
-        "plotting" key with "nice_names" and "tech_colors" keys for carriers.
+               "plotting" key with "nice_names" and "tech_colors" keys for carriers.
     """
     # update default nice names w user settings
     nice_names = NICE_NAMES_DEFAULT.update(config["plotting"].get("nice_names", {}))
@@ -234,34 +227,3 @@ def sanitize_carriers(n: pypsa.Network, config: dict) -> None:
         missing_i = list(colors.index[colors.isna()])
         logger.warning(f"tech_colors for carriers {missing_i} not defined in config.")
     n.carriers["color"] = n.carriers.color.where(n.carriers.color != "", colors)
-
-
-# TODO break up prep network
-def attach_conventional_generators(
-    n,
-    costs,
-    ppl,
-    conventional_carriers,
-    extendable_carriers,
-    conventional_params,
-    conventional_inputs,
-    unit_commitment=None,
-    fuel_price=None,
-):
-    raise NotImplementedError("This function is not yet implemented")
-
-
-def attach_hydro(n, costs, ppl, profile_hydro, hydro_capacities, carriers, **params):
-    raise NotImplementedError("This function is not yet implemented")
-
-
-def attach_wind_and_solar(
-    n: pypsa.Network,
-    costs: pd.DataFrame,
-    input_profiles: str,
-    carriers: list | set,
-    extendable_carriers: list | set,
-    line_length_factor: float = 1.0,
-    landfall_lengths: dict = None,
-) -> None:
-    raise NotImplementedError("This function is not yet implemented")

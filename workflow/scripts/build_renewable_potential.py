@@ -1,7 +1,11 @@
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
-
+""" 
+Functions associated with the build_renewable_potential rule.
+- Temporal Profiles are built based on the atlite cutout
+- Potentials are built based on the atlite cutout and raster data (land availability)
+"""
 import progressbar as pgb
 
 import logging
@@ -33,7 +37,7 @@ def make_solar_profile(
     ! Somewhat compute intensive !
 
     Args:
-        onwind_config (dict): the solar configuration (from the yaml config read by snakemake)
+        solar_config (dict): the solar configuration (from the yaml config read by snakemake)
         cutout (atlite.Cutout): the atlite cutout
         outp_path (PathLike): the output path for the raster data
         delta_t (pd.Timedelta): the time delta to convert to ntwk time

@@ -48,9 +48,9 @@ def plot_map(
         bus_colors (pd.Series): the series of bus colors
         bus_sizes (pd.Series): the series of bus sizes
         add_ref_edge_sizes (bool, optional): add reference line sizes in legend
-         (requires edge_colors=True). Defaults to True.
+            (requires edge_colors=True). Defaults to True.
         add_ref_bus_sizes (bool, optional): add reference bus sizes in legend.
-          Defaults to True.
+            Defaults to True.
         ax (plt.Axes, optional): the plotting ax. Defaults to None (new figure).
     """
 
@@ -154,7 +154,7 @@ def add_cost_pannel(
         tech_colors (dict): the tech colors
         plot_additions (bool): plot the additions
         ax_loc (list, optional): the location of the cost pannel.
-          Defaults to [-0.09, 0.28, 0.09, 0.45].
+            Defaults to [-0.09, 0.28, 0.09, 0.45].
     """
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
@@ -192,15 +192,11 @@ def plot_cost_map(
 
     Args:
         network (pypsa.Network): the network object
-        planning_horizon (int): the year reoresebtubg investment period
-        discount_rate (float): the social discount rate, applied to the cost pannel only
         opts (dict): the plotting config (snakemake.config["plotting"])
-        components (list, optional): the components to plot.
-         Defaults to ["generators", "links", "stores", "storage_units"].
         base_year (int, optional): the base year (for cost delta). Defaults to 2020.
         capex_only (bool, optional): do not plot VOM (FOM is in CAPEX). Defaults to False.
         plot_additions (bool, optional): plot a map of investments (p_nom_opt vs p_nom).
-          Defaults to True.
+              Defaults to True.
         cost_pannel (bool, optional): add a bar graph with costs. Defaults to True.
         save_path (os.PathLike, optional): save figure to path (or not if None). Defaults to None.
     raises:
@@ -306,7 +302,7 @@ def plot_cost_map(
             bus_sizes=cost_pies_additional / bus_size_factor,
             edge_colors="rosybrown",
             ax=ax2,
-            bus_ref_title=f"Added costs{ ('CAPEX') if capex_only else ''}",
+            bus_ref_title=f"Added costs{' (CAPEX)' if capex_only else ''}",
             add_legend=True,
             **opts["cost_map"],
         )
@@ -502,7 +498,6 @@ def plot_nodal_prices(
     Args:
         network (pypsa.Network): the pyPSA network object
         opts (dict): the plotting options (snakemake.config["plotting"])
-        energy_pannel (bool, optional): add an anergy pie to the left. Defaults to True.
         save_path (os.PathLike, optional): Fig outp path. Defaults to None (no save).
         carrier (str, optional): the energy carrier. Defaults to "AC".
     raises:

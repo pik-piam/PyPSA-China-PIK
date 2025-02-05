@@ -1,0 +1,57 @@
+
+site_name: PyPSA China Model (PIK edition) Documentation
+
+theme:
+  name: "readthedocs"
+docs_dir: "./docs"
+
+# Due to snakemake workflow, we need to include the 'scripts' directory in the python path
+plugins:
+- search
+- gen-files:
+    scripts:
+    - docs/autogen_ref_pages.py
+- mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        paths: ["./workflow/scripts"]
+
+nav:
+  - Home: index.md
+  - Tutorials: tutorials.md
+  - Reference: 
+    - reference.md
+    - add_brownfield: docs/reference/add_brownfield.md
+    - add_electricity: docs/reference/add_electricity.md
+    - add_existing_baseyear: docs/reference/add_existing_baseyear.md
+    - build_biomass_potential: docs/reference/build_biomass_potential.md
+    - build_cop_profiles: docs/reference/build_cop_profiles.md
+    - build_cutout: docs/reference/build_cutout.md
+    - build_heat_demand_profiles: docs/reference/build_heat_demand_profiles.md
+    - build_load_profiles: docs/reference/build_load_profiles.md
+    - build_population: docs/reference/build_population.md
+    - build_population_gridcell_map: docs/reference/build_population_gridcell_map.md
+    - build_province_shapes: docs/reference/build_province_shapes.md
+    - build_renewable_potential: docs/reference/build_renewable_potential.md
+    - build_solar_thermal_profiles: docs/reference/build_solar_thermal_profiles.md
+    - build_temp_profiles: docs/reference/build_temp_profiles.md
+    - constants: docs/reference/constants.md
+    - functions: docs/reference/functions.md
+    - make_summary: docs/reference/make_summary.md
+    - plot_heatmap: docs/reference/plot_heatmap.md
+    - plot_network: docs/reference/plot_network.md
+    - plot_network_heat: docs/reference/plot_network_heat.md
+    - plot_statistics: docs/reference/plot_statistics.md
+    - plot_summary_all: docs/reference/plot_summary_all.md
+    - plot_time_series: docs/reference/plot_time_series.md
+    - prepare_base_network: docs/reference/prepare_base_network.md
+    - prepare_base_network_2020: docs/reference/prepare_base_network_2020.md
+    - prepare_network: docs/reference/prepare_network.md
+    - prepare_network_common: docs/reference/prepare_network_common.md
+    - readers: docs/reference/readers.md
+    - solve_network: docs/reference/solve_network.md
+    - solve_network_myopic: docs/reference/solve_network_myopic.md
+
+  # - About: about.md
+  # - Workflow Overview: workflow_overview.md

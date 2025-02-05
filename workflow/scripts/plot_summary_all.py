@@ -70,9 +70,9 @@ def plot_pathway_costs(
     """plot the costs
 
     Args:
-        results_file (list): the input csvs
+        file_list (list): the input csvs from make_summary
         config (dict): the configuration for plotting (snakemake.config["plotting"])
-        social_discount_rate (float, optional): the social discount rate (2pc->0.02). Defaults to 0.0.
+        social_discount_rate (float, optional): the social discount rate (0.02). Defaults to 0.0.
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
     # all years in one df
@@ -141,7 +141,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
     """plot the energy production and consumption
 
     Args:
-        results_file (list): the input csvs
+        file_list (list): the input csvs
         config (dict): the configuration for plotting (snamkemake.config["plotting"])
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
@@ -200,7 +200,7 @@ def plot_electricty_heat_balance(file_list: list[os.PathLike], config: dict, fig
     """plot the energy production and consumption
 
     Args:
-        results_file (list): the input csvs ([year/supply_energy.csv])
+        file_list (list): the input csvs  from make_dirs([year/supply_energy.csv])
         config (dict): the configuration for plotting (snamkemake.config["plotting"])
         fig_dir (os.PathLike, optional): the figure name. Defaults to None.
     """
@@ -333,7 +333,7 @@ def plot_prices(file_list: list, config: dict, fig_name=None):
     """plot the prices
 
     Args:
-        results_file (list): the input csvs
+        file_list (list): the input csvs from make_summary
         config (dict): the configuration for plotting
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
@@ -421,7 +421,7 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
     """plot the co2 price
 
     Args:
-        results_file (list): the input csvs
+        file_list (list): the input csvs from make_summaries
         config (dict): the snakemake configuration
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """

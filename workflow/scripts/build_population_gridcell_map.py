@@ -66,7 +66,7 @@ def build_gridded_population(
         pop_density_raster_path (PathLike): Path to the population density raster file.
         cutout_path (PathLike): Path to the cutout file containing the grid.
         province_shape_path (PathLike): Path to the province shape file.
-        grid_pop_out (PathLike): output file path.
+        gridded_pop_out (PathLike): output file path.
     """
 
     with pd.HDFStore(prov_pop_path, mode="r") as store:
@@ -145,7 +145,7 @@ def build_population_map(
         pop_density_raster_path (PathLike): Path to the population density raster file.
         cutout_path (PathLike): Path to the cutout file containing the grid.
         province_shape_path (PathLike): Path to the province shape file.
-        grid_pop_out (PathLike): output file path.
+        gridded_pop_out (PathLike): output file path.
     """
 
     # =============== load data ===================

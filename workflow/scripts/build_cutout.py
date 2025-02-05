@@ -1,7 +1,10 @@
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
-
+""" 
+Functions to download ERA5/SARAH data and build the atlite cutout for the atlite.
+These functions linked to the build_cutout rule.
+"""
 import logging
 import atlite
 import geopandas as gpd

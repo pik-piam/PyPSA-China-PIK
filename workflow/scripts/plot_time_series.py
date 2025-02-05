@@ -11,7 +11,7 @@ from _plot_utilities import (
     fix_network_names_colors,
 )
 from _helpers import configure_logging, mock_snakemake, get_location_and_carrier
-from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL, PLOT_SUPPLY_LABEL, PLOT_SUPPLY_UNITS
+from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +134,7 @@ def plot_load_duration_curve(
         bus_carrier=carrier,
         comps="Load",
     ).sum()
-    load_curve = load.sort_values(ascending=False) / PLOT_SUPPLY_UNITS
+    load_curve = load.sort_values(ascending=False) / PLOT_CAP_LABEL
     load_curve.reset_index(drop=True).plot(ax=ax, lw=3)
     ax.set_ylabel(f"Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")
@@ -142,7 +142,9 @@ def plot_load_duration_curve(
     return ax
 
 
-def plot_regional_load_durations(network: pypsa.Network, carrier="AC", ax=None, cmap="plasma"):
+def plot_regional_load_durations(
+    network: pypsa.Network, carrier="AC", ax=None, cmap="plasma"
+) -> plt.Axes:
     """plot the load duration curve for the given carrier stacked by region
 
     Args:
@@ -159,15 +161,15 @@ def plot_regional_load_durations(network: pypsa.Network, carrier="AC", ax=None, 
     loads_all = network.statistics.withdrawal(
         groupby=get_location_and_carrier, aggregate_time=False, bus_carrier=carrier, comps="Load"
     ).sum()
-    load_curve_all = loads_all.sort_values(ascending=False) / PLOT_SUPPLY_UNITS
+    load_curve_all = loads_all.sort_values(ascending=False) / PLOT_CAP_UNITS
     regio = network.statistics.withdrawal(
         groupby=get_location_and_carrier, aggregate_time=False, bus_carrier=carrier, comps="Load"
     )
     regio = regio.droplevel(1).T
-    load_curve_regio = regio.loc[load_curve_all.index] / PLOT_SUPPLY_UNITS
+    load_curve_regio = regio.loc[load_curve_all.index] / PLOT_CAP_UNITS
     fig, ax = plt.subplots()
     load_curve_regio.reset_index(drop=True).plot.area(
-        ax=ax, stacked=True, cmap="plasma", legend=True, lw=3
+        ax=ax, stacked=True, cmap=cmap, legend=True, lw=3
     )
     ax.set_ylabel(f"Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")
@@ -190,7 +192,6 @@ def plot_residual_load_duration_curve(
 
     Args:
         network (pypsa.Network): the pypasa network object
-        carrier (str, optional): the load carrier, defaults to AC
         ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
 
     Returns:
@@ -219,7 +220,7 @@ def plot_residual_load_duration_curve(
         .sum()
     )
 
-    residual = (load - vre_supply).sort_values(ascending=False) / PLOT_SUPPLY_UNITS
+    residual = (load - vre_supply).sort_values(ascending=False) / PLOT_CAP_UNITS
     residual.reset_index(drop=True).plot(ax=ax, lw=3)
     ax.set_ylabel(f"Residual Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")

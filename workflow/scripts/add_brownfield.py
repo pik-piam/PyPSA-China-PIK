@@ -1,5 +1,11 @@
 # coding: utf-8
 
+""" 
+Functions for myopic pathway network generation snakemake rules
+
+Add paid-off assets from previous planning horizon to network from next
+        planning horizon
+"""
 import logging
 import pandas as pd
 import pypsa
@@ -15,12 +21,14 @@ idx = pd.IndexSlice
 logger = logging.getLogger(__name__)
 
 
-# TODO switch ot os. basename
-def basename(x):
-    return x.split("-2")[0]
+def add_brownfield(n: pypsa.Network, n_p: pypsa.Network, year: int):
+    """Add paid for assets as p_nom to the current network
 
-
-def add_brownfield(n, n_p, year):
+    Args:
+        n (pypsa.Network): next network to prep & optimize in the planning horizon
+        n_p (pypsa.Network): previous optimized network
+        year (int): the planning year
+    """
 
     logger.info("Adding brownfield")
     # electric transmission grid set optimised capacities of previous as minimum
@@ -125,8 +133,6 @@ def add_brownfield(n, n_p, year):
         "p_nom_extendable",
     ] = False
 
-
-# %%
 
 if __name__ == "__main__":
 
