@@ -1,0 +1,38 @@
+name: Deploy MkDocs Documentation
+
+on:
+  push:
+    branches:
+      - main  # for the default branch -> later need to think about release branches
+      - makedocu_workflow # testing
+    # paths:
+    #   - 'docs/**'  # Only trigger when files in the 'docs' folder are changed
+    #   - 'mkdocs.yml'  # or if the mkdocs.yml configuration file is changed
+    #   - 'workflow/scripts/**'  # or if the snmk scripts changed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.7'  # or 3.x
+
+      - name: Install MkDocs and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs
+          pip install mkdocs_gen_files
+          pip install "mkdocstrings[python]"
+
+      - name: Deploy to GitHub Pages
+        run: |
+          # deploy to gh-pages branch
+          mkdocs gh-deploy --force --quiet
+        env:
+          # automatically provide the required token for GH Pages
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
