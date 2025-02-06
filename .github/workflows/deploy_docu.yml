@@ -5,6 +5,10 @@ on:
     branches:
       - main  # for the default branch -> later need to think about release branches
       - makedocu_workflow # testing
+    # paths:
+    #   - 'docs/**'  # Only trigger when files in the 'docs' folder are changed
+    #   - 'mkdocs.yml'  # or if the mkdocs.yml configuration file is changed
+    #   - 'workflow/scripts/**'  # or if the snmk scripts changed
 
 jobs:
   deploy:
@@ -26,7 +30,7 @@ jobs:
       - name: Deploy to GitHub Pages
         run: |
           # deploy to gh-pages branch
-          mkdocs gh-deploy --force --quiet  h
+          mkdocs gh-deploy --force --quiet
         env:
           # automatically provide the required token for GH Pages
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
