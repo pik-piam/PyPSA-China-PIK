@@ -28,14 +28,13 @@ nav:
     - build_biomass_potential: docs/reference/build_biomass_potential.md
     - build_cop_profiles: docs/reference/build_cop_profiles.md
     - build_cutout: docs/reference/build_cutout.md
-    - build_heat_demand_profiles: docs/reference/build_heat_demand_profiles.md
     - build_load_profiles: docs/reference/build_load_profiles.md
     - build_population: docs/reference/build_population.md
     - build_population_gridcell_map: docs/reference/build_population_gridcell_map.md
     - build_province_shapes: docs/reference/build_province_shapes.md
     - build_renewable_potential: docs/reference/build_renewable_potential.md
     - build_solar_thermal_profiles: docs/reference/build_solar_thermal_profiles.md
-    - build_temp_profiles: docs/reference/build_temp_profiles.md
+    - build_temperature_profiles: docs/reference/build_temperature_profiles.md
     - constants: docs/reference/constants.md
     - functions: docs/reference/functions.md
     - make_summary: docs/reference/make_summary.md
@@ -52,6 +51,5 @@ nav:
     - readers: docs/reference/readers.md
     - solve_network: docs/reference/solve_network.md
     - solve_network_myopic: docs/reference/solve_network_myopic.md
-
   # - About: about.md
   # - Workflow Overview: workflow_overview.md
