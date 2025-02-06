@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main  # for the default branch -> later need to think about release branches
-      - makedocu_workflow # testing
+      - irr-patch-GHactions1 # testing
     # paths:
     #   - 'docs/**'  # Only trigger when files in the 'docs' folder are changed
     #   - 'mkdocs.yml'  # or if the mkdocs.yml configuration file is changed
