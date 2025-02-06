@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # for the default branch -> later need to think about release branches
+      - makedocu_workflow # testing
 
 jobs:
   deploy:
