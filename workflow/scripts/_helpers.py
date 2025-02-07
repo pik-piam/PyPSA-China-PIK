@@ -31,7 +31,7 @@ import pypsa
 logger = logging.getLogger()
 
 DEFAULT_TUNNEL_PORT = 1080
-LOGIN_NODE = "01"
+LOGIN_NODE = "03"
 
 
 class PathManager:
@@ -118,8 +118,8 @@ def setup_gurobi_tunnel_and_env(
 
     # bash commands for tunnel: reduce pipe err severity (too high from snakemake)
     pipe_err = "set -o pipefail; "
-
-    ssh_command = f"ssh-add -l;ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
+    # ssh_command = f"ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
+    ssh_command = f"ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
     logger.info(f"Attempting ssh tunnel to login node {LOGIN_NODE}")
     # Run SSH in the background to establish the tunnel
     socks_proc = subprocess.Popen(pipe_err + ssh_command, shell=True, stderr=subprocess.PIPE)
