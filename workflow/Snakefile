@@ -39,7 +39,7 @@ storage:
     provider="http",
 
 # ======= PSEUDO RULE TO CALL WHOLE WORKFLOW =========
-if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
+if config["foresight"] in ["overnight", "myopic"]:
     rule plot_all:
         input:
             expand(
@@ -184,7 +184,7 @@ rule build_biomass_potential:
     script: "scripts/build_biomass_potential.py"
 
 
-if config["foresight"] in ["None", "overnight", "non-pathway"]:
+if config["foresight"] in ["overnight"]:
     rule prepare_networks:
         input:
             # overrides="resources/data/override_component_attrs",
