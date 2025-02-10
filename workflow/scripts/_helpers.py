@@ -97,7 +97,7 @@ class PathManager:
         if self.config["run"]["name"] == TESTS_RUNNAME:
             return "tests/testdata"
         else:
-            return "resources/derived_data"
+            return "resources/cutouts"
 
 
 # ============== HPC helpers ==================
