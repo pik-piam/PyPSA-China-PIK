@@ -110,7 +110,7 @@ rule build_solar_thermal_profiles:
 rule build_temperature_profiles:
     input:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
-        cutout=os.path.join(CUTOUTS_DIR,config["atlite"]["cutout_name"])
+        cutout=os.path.join(CUTOUTS_DIR,config["atlite"]["cutout_name"])+".nc"
     output:
         temp=DERIVED_DATA+"/"+"heating/temp.h5"
     log: LOG_DIR + "/build_temperature_profiles.log"
@@ -130,6 +130,7 @@ rule build_cop_profiles:
     script: "scripts/build_cop_profiles.py"
 
 # TODO add cutout_name to potentials and profiles
+# TODO add rule to generate region shapes (there is one somewhere?)
 rule build_renewable_potential:
     input:
         Build_up_raster="resources/data/landuse_availability/Build_up.tif",
@@ -195,7 +196,7 @@ if config["foresight"] in ["overnight"]:
             solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
             cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
             elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
-            energy_totals_name=DERIVED_DATA+"/"+"energy_totals_{planning_horizons}.h5",
+            energy_totals_name=DERIVED_DATA+"/"+f"energy_totals_{config["atlite"]["cutout_name"]}"+"_{planning_horizons}.h5",
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
             tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",

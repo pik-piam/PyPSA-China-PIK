@@ -109,15 +109,15 @@ atlite:
   hour_shift_heating: 8
   cutouts:
     China-2020:
-     module: era5
-     dx: 0.25
-     dy: 0.25
-     weather_year: 2020
+      module: era5
+      dx: 0.25
+      dy: 0.25
+      weather_year: 2020
     China-tests-cutout:
-     module: era5
-     dx: 5
-     dy: 5
-     weather_year: 2020
+      module: era5
+      dx: 5
+      dy: 5
+      weather_year: 2020
 
 heat_demand:
   start_day : "01-04" # dd-mm
