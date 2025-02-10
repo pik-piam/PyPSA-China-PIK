@@ -485,7 +485,7 @@ def add_heat_coupling(
                 bus1=nodes + cat + "heat",
                 carrier="heat pump",
                 efficiency=(
-                    ashp_cop[nodes]
+                    ashp_cop.loc[network.snapshots, nodes]
                     if config["time_dep_hp_cop"]
                     else costs.at[cat.lstrip() + "air-sourced heat pump", "efficiency"]
                 ),
@@ -505,7 +505,7 @@ def add_heat_coupling(
             bus1=nodes + " decentral heat",
             carrier="heat pump",
             efficiency=(
-                gshp_cop[nodes]
+                gshp_cop.loc[network.snapshots, nodes]
                 if config["time_dep_hp_cop"]
                 else costs.at["decentral ground-sourced heat pump", "efficiency"]
             ),
