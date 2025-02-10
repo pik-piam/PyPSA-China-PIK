@@ -123,15 +123,17 @@ def setup_gurobi_tunnel_and_env(
 
     # bash commands for tunnel: reduce pipe err severity (too high from snakemake)
     pipe_err = "set -o pipefail; "
-
-    ssh_command = f"ssh-add -l;ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
+    # Add to ssh_config
+    ssh_command = f"ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
     logger.info(f"Attempting ssh tunnel to login node {LOGIN_NODE}")
     # Run SSH in the background to establish the tunnel
-    socks_proc = subprocess.Popen(pipe_err + ssh_command, shell=True, stderr=subprocess.PIPE)
+    socks_proc = subprocess.Popen(
+        pipe_err + ssh_command, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+    )
     try:
         time.sleep(0.2)
         # [-1] because ssh is last command
-        err = socks_proc.communicate(timeout=2)[-1].decode()
+        _, err = socks_proc.communicate(timeout=2)[-1].decode()
         logger.info(f"ssh err returns {str(err)}")
         if err.find("Permission") != -1 or err.find("Could not resolve hostname") != -1:
             socks_proc.kill()

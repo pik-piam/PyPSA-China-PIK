@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'Debug_overnight_1hr_res'
-
+  name: 'Debug_GUROBI_TUNNEL_TONN'
+  #name: 'Debug_overnight_3hr_res_testrun'
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
