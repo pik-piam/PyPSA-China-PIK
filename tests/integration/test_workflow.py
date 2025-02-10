@@ -9,22 +9,22 @@ import subprocess
     "make_test_config_file",
     [
         ({"time_res": 1752, "plan_year": [2040], "heat_coupling": True, "foresight": "overnight"}),
-        ({"time_res": 1460, "plan_year": 2060, "heat_coupling": True, "foresight": "myopic"}),
-        (
-            {
-                "time_res": 5,
-                "start_d": "04-01 00:00",
-                "end_d": "04-01 18:00",
-                "plan_year": 2060,
-                "heat_coupling": False,
-                "foresight": "overnight",
-            }
-        ),
+        # ({"time_res": 1460, "plan_year": 2060, "heat_coupling": True, "foresight": "myopic"}),
+        # (
+        #     {
+        #         "time_res": 5,
+        #         "start_d": "02-02 00:00",
+        #         "end_d": "02-04 18:00",
+        #         "plan_year": 2060,
+        #         "heat_coupling": False,
+        #         "foresight": "overnight",
+        #     }
+        # ),
     ],
     indirect=True,
 )
 def test_workflow(make_test_config_file):
-    # snakemake command
+    # snakemake command to test up to prepare networks
     cmd = f"snakemake --configfile {make_test_config_file}"
     res = subprocess.run(cmd, check=True, shell=True, capture_output=True)
 

@@ -1,5 +1,5 @@
 """
-FIXTURES for pytests
+FIXTURES & monkey patches for pytests
 Note that conftest functions are automatically discovered by pytest
 """
 
@@ -7,12 +7,20 @@ import pathlib
 import yaml
 import pytest
 from os import PathLike
-import os.path
+import matplotlib
 from hashlib import sha256 as hash256
+from pypsa import Network
 import logging
+from constants import TESTS_RUNNAME, TESTS_CUTOUT
 
 DEFAULT_CONFIG = pathlib.Path(pathlib.Path.cwd(), "config", "default_config.yaml")
 TECH_CONFIG = pathlib.Path(pathlib.Path.cwd(), "config", "technology_config.yaml")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def set_matplotlib_backend():
+    # make sure matplotlib is not plotting (backend with no rendering)
+    matplotlib.use("Agg")
 
 
 def load_config(config_path: PathLike) -> dict:
@@ -56,34 +64,18 @@ def make_snakemake_test_config(tmp_path_factory) -> dict:
 
         test_config["results_dir"] = str(tmp_path_factory.mktemp("results"))
         test_config["summary_dir"] = str(tmp_path_factory.mktemp("results_summary"))
-        test_config["run"]["name"] = "automated_test_run"
+        test_config["run"]["name"] = TESTS_RUNNAME
 
+        # mock the atlite cutout config
+        test_config["atlite"]["cutout_name"] = TESTS_CUTOUT
+        test_config["atlite"]["cutouts"] = {
+            TESTS_CUTOUT: {"weather_year": 2020, "module": "era5", "dx": 5, "dy": 5}
+        }
+        # remove solving params
         test_config.pop("solving")
-        test_config.pop("atlite")
-
         return test_config
 
     return make
-
-
-@pytest.fixture(scope="module")
-def make_test_config_args(make_snakemake_test_config, request):
-    """expand dict for --config flag"""
-
-    # Get parameters passed via pytest.mark.parametrize
-    time_res = request.param.get("time_res", 24)
-    plan_year = request.param.get("plan_year", 2040)
-    kwargs = {k: v for k, v in request.param.items() if k not in ["time_res", "plan_year"]}
-    test_config = make_snakemake_test_config(time_res=time_res, plan_year=plan_year, **kwargs)
-
-    def flatten(x):
-        if type(x) is dict or type(x) is list:
-            return x
-        else:
-            return '["' + str(x) + '"]'
-
-    base_str = "REPTHIS".join([f"{k}={v}" for k, v in test_config.items()])
-    return r"'" + base_str.replace("'", '"').replace("REPTHIS", "' '") + r"'"
 
 
 @pytest.fixture(scope="module")
@@ -102,7 +94,8 @@ def make_test_config_file(make_snakemake_test_config, tmpdir_factory, request):
         return f"test_config_{hash_object.hexdigest()[:8]}.yaml"
 
     # Create a temporary directory for the module
-    temp_dir = tmpdir_factory.mktemp("config_dir")
+    # temp_dir = tmpdir_factory.mktemp("config_dir")
+    temp_dir = pathlib.Path("tests/")
 
     # Generate the test config
     test_config = make_snakemake_test_config(time_res=time_res, plan_year=plan_year, **kwargs)
@@ -111,7 +104,7 @@ def make_test_config_file(make_snakemake_test_config, tmpdir_factory, request):
     config_filename = generate_filename(time_res=time_res, plan_year=plan_year)
 
     # Define the file path for the YAML file
-    config_file_path = temp_dir.join(config_filename)
+    config_file_path = temp_dir / config_filename
 
     # Write the test config to the YAML file
     with open(config_file_path, "w") as f:
@@ -119,3 +112,19 @@ def make_test_config_file(make_snakemake_test_config, tmpdir_factory, request):
 
     # Yield the file path for use in tests
     yield str(config_file_path)
+
+
+# @pytest.fixture(autouse=True)
+# def mock_network_optimisation(monkeypatch):
+#     """Mock the network optimisation function in the workflow"""
+
+#     def mock_solve(n:Network):
+#         for c in n.iterate_components(components=["Generator","Link", "Store","LineType"]):
+#             opt_cols = [col for col in c.df.columns if col.endswith("opt")]
+#             base_cols = [col.split("_opt")[0] for col in opt_cols]
+#             c.df[opt_cols] = c.df[base_cols]
+
+#     monkeypatch.setattr("pypsa.optimization.optimize", mock_solve)
+#     monkeypatch.setattr(
+#         "pypsa.optimization.optimize_transmission_expansion_iteratively", mock_solve
+#     )

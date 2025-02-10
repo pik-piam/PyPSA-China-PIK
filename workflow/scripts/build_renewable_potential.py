@@ -344,6 +344,7 @@ if __name__ == "__main__":
     weather_year = get_cutout_params(snakemake.config)["weather_year"]
     delta_t = calc_utc_timeshift(snakemake.config["snapshots"], weather_year)
 
+    logger.info(f"Building renewable potential profiles from cutout {snakemake.input.cutout}")
     if snakemake.config["Technique"]["solar"]:
         make_solar_profile(
             solar_config=snakemake.config["renewable"]["solar"],

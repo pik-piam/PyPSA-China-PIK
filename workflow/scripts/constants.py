@@ -193,4 +193,4 @@ NICE_NAMES_DEFAULT = {
 
 # tests
 TESTS_RUNNAME = "automated_test_run"
-TESTS_CUTOUT = "China-2020-shortertimetest"
+TESTS_CUTOUT = "China-tests-cutout"
