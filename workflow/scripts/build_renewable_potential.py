@@ -19,7 +19,7 @@ import pandas as pd
 from atlite.gis import ExclusionContainer
 from os import PathLike
 
-from _helpers import mock_snakemake, configure_logging, calc_utc_timeshift
+from _helpers import mock_snakemake, configure_logging, calc_utc_timeshift, get_cutout_params
 from readers import read_province_shapes
 from constants import PROV_NAMES, CRS, OFFSHORE_WIND_NODES, DEFAULT_OFFSHORE_WIND_CORR_FACTOR
 
@@ -329,7 +329,6 @@ if __name__ == "__main__":
     cutout = atlite.Cutout(snakemake.input.cutout)
     cutout.prepare()
     provinces_shp = read_province_shapes(snakemake.input.provinces_shp)
-    provinces_shp = gpd.read_file()[["province", "geometry"]]
     provinces_shp = provinces_shp.reindex(PROV_NAMES).rename_axis("bus")
     buses = provinces_shp.index
 
@@ -342,15 +341,13 @@ if __name__ == "__main__":
     area = xr.DataArray(area.values.reshape(cutout.shape), [cutout.coords["y"], cutout.coords["x"]])
 
     # atlite to network timedelta
-    delta_t = calc_utc_timeshift(
-        snakemake.config["snapshots"], snakemake.config["atlite"]["weather_year"]
-    )
+    weather_year = get_cutout_params(snakemake.config)["weather_year"]
+    delta_t = calc_utc_timeshift(snakemake.config["snapshots"], weather_year)
 
     if snakemake.config["Technique"]["solar"]:
         make_solar_profile(
             solar_config=snakemake.config["renewable"]["solar"],
             cutout=cutout,
-            path_build_up_raster=snakemake.input.Build_up_raster,
             outp_path=snakemake.output.solar_profile,
             delta_t=delta_t,
         )

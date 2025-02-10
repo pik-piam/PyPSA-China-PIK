@@ -190,3 +190,7 @@ NICE_NAMES_DEFAULT = {
     "DC": "transmission lines",
     "B2B": "transmission lines",
 }
+
+# tests
+TESTS_RUNNAME = "automated_test_run"
+TESTS_CUTOUT = "China-2020-shortertimetest"

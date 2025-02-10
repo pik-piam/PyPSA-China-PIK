@@ -21,11 +21,9 @@ from pathlib import Path
 from types import SimpleNamespace
 import logging
 import matplotlib.pyplot as plt
+
 from pypsa.components import components, component_attrs
 import pypsa
-
-import pypsa
-
 
 # get root logger
 logger = logging.getLogger()
@@ -34,6 +32,7 @@ DEFAULT_TUNNEL_PORT = 1080
 LOGIN_NODE = "01"
 
 
+# TODO return pathlib objects? so can just use / to combine paths?
 class PathManager:
     """A class to manage paths for the snakemake workflow"""
 
@@ -91,8 +90,14 @@ class PathManager:
         sub_dir = foresight + "_" + self._join_scenario_vars()
         return os.path.join("logs", base_dir, sub_dir)
 
-    def copy_log(self):
-        pass
+    def cutouts_dir(self):
+        # weird import for snakemake
+        from scripts.constants import TESTS_RUNNAME
+
+        if self.config["run"]["name"] == TESTS_RUNNAME:
+            return "tests/testdata"
+        else:
+            return "resources/derived_data"
 
 
 # ============== HPC helpers ==================
@@ -672,6 +677,32 @@ def configure_logging(
         sys.excepthook = handle_exception
 
     sys.excepthook = handle_exception
+
+
+def get_cutout_params(config: dict) -> dict:
+    """Get the cutout parameters from the config file
+
+    Args:
+        config (dict): the snakemake config
+    Raises:
+        ValueError: if no parameters are found for the cutout name
+        FileNotFoundError: if the cutout is not built & build_cutout is disabled
+    Returns:
+        dict: the cutout parameters
+    """
+    cutout_name = config["atlite"]["cutout_name"]
+    cutout_params = config["atlite"]["cutouts"].get(cutout_name, None)
+
+    if cutout_params is None:
+        err = f"No cutout parameters found for {cutout_name}"
+        raise ValueError(err + " in config['atlite']['cutouts'].")
+    elif not config["enable"]["build_cutout"]:
+        cutouts_dir = PathManager(config).cutouts_dir()
+        is_built = os.path.exists(os.path.join(cutouts_dir, f"{cutout_name}.nc"))
+        if not is_built:
+            err = f"Cutout {cutout_name} not found in {cutouts_dir}, enable build_cutout"
+            raise FileNotFoundError(err)
+    return cutout_params
 
 
 def mock_snakemake(

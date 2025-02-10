@@ -12,6 +12,7 @@ from _helpers import (
     make_periodic_snapshots,
     calc_atlite_heating_timeshift,
     shift_profile_to_planning_year,
+    get_cutout_params,
 )
 
 # TODO switch from hardocded REF_YEAR to a base year?
@@ -125,7 +126,7 @@ def build_daily_heat_demand_profiles(
         pop_map = store["population_gridcell_map"]
 
     cutout = atlite.Cutout(snakemake.input.cutout)
-    atlite_year = snakemake.config["atlite"]["weather_year"]
+    atlite_year = get_cutout_params(snakemake.config)["weather_year"]
 
     pop_matrix = sp.sparse.csr_matrix(pop_map.T)
     index = pop_map.columns
