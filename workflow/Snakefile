@@ -147,12 +147,11 @@ rule build_renewable_potential:
         offshore_province_shapes="resources/data/regions/regions_offshore_province.geojson",
         offshore_shapes="resources/data/regions/regions_offshore.geojson",
         cutout= os.path.join(CUTOUTS_DIR,config["atlite"]["cutout_name"])+".nc",
-    # TODO make profile path cutout/weather year dependent and not static
+    # TODO make paths depend on whether "Technique" is used in config
     output:
         solar_profile=DERIVED_COMMON +f"/{config["atlite"]["cutout_name"]}_solar.nc",
         onwind_profile=DERIVED_COMMON +f"/{config["atlite"]["cutout_name"]}_onwind.nc",
         offwind_profile=DERIVED_COMMON +f"/{config["atlite"]["cutout_name"]}_offwind.nc",
-        protected_areas_offshore = DERIVED_COMMON+"/"+"landuse_availability/protected_areas_offshore.shp"
     log: LOGS_COMMON + f"/build_renewable_potential_{config["atlite"]["cutout_name"]}.log"
     threads: ATLITE_NPROCESSES
     resources: mem_mb=ATLITE_NPROCESSES * 5000

@@ -360,45 +360,6 @@ def calc_atlite_heating_timeshift(date_range: pd.date_range, use_last_ts=False) 
     return pytz.timezone(TIMEZONE).utcoffset(date_range[idx]).total_seconds() / 3600
 
 
-def calc_utc_timeshift(snapshot_config: dict, weather_year: int) -> pd.TimedeltaIndex:
-    """calculate the timeshift to UTC based on the TIMEZONE constant. This is needed
-    to bring the atlite UTC times in line with the network ones.
-
-    A complication is that the planning and weather years are not identical
-
-    Args:
-        snapshot_config (dict): the snapshots config from snakemake
-
-    Returns:
-        pd.TimedeltaIndex: the shifts to UTC
-    """
-    # import constants here to not interfere with snakemake
-    from constants import TIMEZONE
-
-    weather_snapshots = make_periodic_snapshots(
-        year=weather_year,
-        freq=snapshot_config["freq"],
-        start_day_hour=snapshot_config["start"],
-        end_day_hour=snapshot_config["end"],
-        bounds=snapshot_config["bounds"],
-        tz=TIMEZONE,
-        end_year=(None if not snapshot_config["end_year_plus1"] else weather_year + 1),
-    )
-    # for some reason convert to utc messes up the time delta
-    utc_snapshots = make_periodic_snapshots(
-        year=weather_year,
-        freq=snapshot_config["freq"],
-        start_day_hour=snapshot_config["start"],
-        end_day_hour=snapshot_config["end"],
-        bounds=snapshot_config["bounds"],
-        tz="UTC",
-        end_year=(None if not snapshot_config["end_year_plus1"] else weather_year + 1),
-    )
-
-    # time delta will be added to the utc snapshots from atlite
-    return utc_snapshots - weather_snapshots
-
-
 def define_spatial(nodes, options):
     """
     Namespace for spatial
