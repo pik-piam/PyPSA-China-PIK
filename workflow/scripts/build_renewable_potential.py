@@ -17,10 +17,11 @@ import numpy as np
 import time
 import pandas as pd
 from atlite.gis import ExclusionContainer
-from os import PathLike, rmdir
+from os import PathLike, mkdir
+from shutil import rmtree
 import os.path
 
-from _helpers import mock_snakemake, configure_logging
+from _helpers import mock_snakemake, conf
 from readers import read_province_shapes
 from constants import (
     PROV_NAMES,
@@ -260,7 +261,8 @@ def make_offshore_wind_profile(offwind_config: dict, cutout: atlite.Cutout, outp
         protected_shp = gpd.GeoDataFrame(protected_shp)
         protected_Marine_shp = gpd.tools.overlay(protected_shp, EEZ_shp, how="intersection")
         # this is to avoid atlite complaining about parallelisation
-
+        if not os.path.isdir(os.path.dirname(TMP)):
+            mkdir(os.path.dirname(TMP))
         protected_Marine_shp.to_file(TMP)
         excluder_offwind.add_geometry(TMP)
 
@@ -373,6 +375,6 @@ if __name__ == "__main__":
         )
 
     if os.path.isdir(os.path.dirname(TMP)):
-        rmdir(os.path.dirname(TMP))
+        rmtree(os.path.dirname(TMP))
 
     logger.info("Renewable potential profiles successfully built.")
