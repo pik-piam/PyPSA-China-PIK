@@ -21,7 +21,7 @@ from os import PathLike, mkdir
 from shutil import rmtree
 import os.path
 
-from _helpers import mock_snakemake, conf
+from _helpers import mock_snakemake, configure_logging
 from readers import read_province_shapes
 from constants import (
     PROV_NAMES,
