@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>build_population_gridcell_map - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "build_population_gridcell_map";
+        var mkdocs_page_input_path = "docs/reference/build_population_gridcell_map.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">build_population_gridcell_map</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">build_population_gridcell_map</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="build_population_gridcell_map"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="build_population_gridcell_map.build_gridded_population" class="doc doc-heading">
+            <code class="highlight language-python">build_gridded_population(prov_pop_path, pop_density_raster_path, cutout_path, province_shape_path, gridded_pop_out)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Build a gridded population DataFrame by matching population density to the cutout grid cells.
+This DataFrame is a sparse matrix of the population and shape BusesxCutout_gridcells
+  where buses are the provinces</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>prov_pop_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Path to the province population count file (hdf5).</p>
+              </div>
+            </li>
+            <li>
+              <b><code>pop_density_raster_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Path to the population density raster file.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>cutout_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Path to the cutout file containing the grid.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>province_shape_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Path to the province shape file.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>gridded_pop_out</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>output file path.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/build_population_gridcell_map.py</code></summary>
+              <pre class="highlight"><code class="language-python">def build_gridded_population(
+    prov_pop_path: PathLike,
+    pop_density_raster_path: PathLike,
+    cutout_path: PathLike,
+    province_shape_path: PathLike,
+    gridded_pop_out: PathLike,
+):
+    """Build a gridded population DataFrame by matching population density to the cutout grid cells.
+    This DataFrame is a sparse matrix of the population and shape BusesxCutout_gridcells
+      where buses are the provinces
+
+    Args:
+        prov_pop_path (PathLike): Path to the province population count file (hdf5).
+        pop_density_raster_path (PathLike): Path to the population density raster file.
+        cutout_path (PathLike): Path to the cutout file containing the grid.
+        province_shape_path (PathLike): Path to the province shape file.
+        gridded_pop_out (PathLike): output file path.
+    """
+
+    with pd.HDFStore(prov_pop_path, mode="r") as store:
+        pop_province = store["population"]
+
+    prov_poly = read_province_shapes(province_shape_path)
+    pop_density = read_pop_density(pop_density_raster_path, prov_poly, crs=CRS)
+
+    cutout = atlite.Cutout(cutout_path)
+    grid_points = cutout.grid
+    # this is in polygons but need points for sjoin with pop dnesity to work
+    grid_points.to_crs(3857, inplace=True)
+    grid_points["geometry"] = grid_points.centroid
+    grid_points.to_crs(CRS, inplace=True)
+
+    # match cutout grid to province
+    # cutout_pts_in_prov = gpd.tools.sjoin(grid_points, prov_poly,
+    # how="left", predicate="intersects")
+    # TODO: do you want to dropna here?
+    cutout_pts_in_prov = gpd.tools.sjoin(
+        grid_points, prov_poly, how="left", predicate="intersects"
+    )  # .dropna()
+    cutout_pts_in_prov.rename(
+        columns={"index_right": "province_index", "province": "province_name"}, inplace=True
+    )
+
+    # match cutout grid to province
+    cutout_pts_in_prov = gpd.tools.sjoin(grid_points, prov_poly, how="left", predicate="intersects")
+    cutout_pts_in_prov.rename(
+        columns={"index_right": "province_index", "province": "province_name"}, inplace=True
+    )
+    # cutout_pts_in_prov.dropna(inplace=True)
+
+    # TODO CRS, think about whether this makes sense or need grid interp
+    merged = gpd.tools.sjoin_nearest(
+        cutout_pts_in_prov.to_crs(3857), pop_density.to_crs(3857), how="inner"
+    )
+    merged = merged.to_crs(CRS)
+    # points outside china are NaN, need to rename to keep the index cutout after agg
+    # otherwise the spare matrix will not match the cutoutpoints
+    #  (smarter would be to change the cutout)
+    merged.fillna({"province_name": "OutsideChina"}, inplace=True)
+
+    points_in_provinces = pd.DataFrame(index=cutout_pts_in_prov.index)
+    # normalise pop per province and make a loc_id/province table
+    points_in_provinces = (
+        merged.groupby("province_name")["pop_density"]
+        .apply(lambda x: x / x.sum())
+        .unstack(fill_value=0.0)
+        .T
+    )
+    # now get rid of the outside china "province"
+    points_in_provinces.drop(columns="OutsideChina", inplace=True)
+    points_in_provinces.index.name = ""
+    points_in_provinces.fillna(0.0, inplace=True)
+
+    points_in_provinces *= pop_province
+
+    with pd.HDFStore(gridded_pop_out, mode="w", complevel=4) as store:
+        store["population_gridcell_map"] = points_in_provinces</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="build_population_gridcell_map.build_population_map" class="doc doc-heading">
+            <code class="highlight language-python">build_population_map(prov_pop_path, pop_density_raster_path, cutout_path, province_shape_path, gridded_pop_out)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Build a gridded population DataFrame by matching population density to the cutout grid cells.
+This DataFrame is a sparse matrix of the population and shape BusesxCutout_gridcells
+  where buses are the provinces</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>prov_pop_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Path to the province population count file (hdf5).</p>
+              </div>
+            </li>
+            <li>
+              <b><code>pop_density_raster_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Path to the population density raster file.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>cutout_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Path to the cutout file containing the grid.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>province_shape_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Path to the province shape file.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>gridded_pop_out</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>output file path.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/build_population_gridcell_map.py</code></summary>
+              <pre class="highlight"><code class="language-python">def build_population_map(
+    prov_pop_path: PathLike,
+    pop_density_raster_path: PathLike,
+    cutout_path: PathLike,
+    province_shape_path: PathLike,
+    gridded_pop_out: PathLike,
+):
+    """Build a gridded population DataFrame by matching population density to the cutout grid cells.
+    This DataFrame is a sparse matrix of the population and shape BusesxCutout_gridcells
+      where buses are the provinces
+
+    Args:
+        prov_pop_path (PathLike): Path to the province population count file (hdf5).
+        pop_density_raster_path (PathLike): Path to the population density raster file.
+        cutout_path (PathLike): Path to the cutout file containing the grid.
+        province_shape_path (PathLike): Path to the province shape file.
+        gridded_pop_out (PathLike): output file path.
+    """
+
+    # =============== load data ===================
+    with pd.HDFStore(prov_pop_path, mode="r") as store:
+        pop_province_count = store["population"]
+
+    # CFSR points and Provinces
+    pop_ww = load_cfrs_data(pop_density_raster_path)
+
+    prov_poly = gpd.read_file(province_shape_path)[["province", "geometry"]]
+    prov_poly.set_index("province", inplace=True)
+    prov_poly = prov_poly.reindex(PROV_NAMES)
+    prov_poly.reset_index(inplace=True)
+
+    # load renewable profiles &amp; grid &amp; extract gridpoints
+    cutout = atlite.Cutout(cutout_path)
+    grid_points = cutout.grid
+    grid_points.to_crs(3857, inplace=True)
+    grid_points["geometry"] = grid_points.centroid
+    grid_points.to_crs(CRS, inplace=True)
+
+    # match cutout grid to province
+    cutout_pts_in_prov = gpd.tools.sjoin(grid_points, prov_poly, how="left", predicate="intersects")
+    cutout_pts_in_prov.rename(
+        columns={"index_right": "province_index", "province": "province_name"}, inplace=True
+    )
+
+    # Province masks merged with population density
+    # TODO: THIS REQUIRES EXPLANATION - can't just use random crs :||
+    cutout_pts_in_prov = cutout_pts_in_prov.to_crs(3857)
+    pop_ww = pop_ww.to_crs(3857)
+
+    merged = gpd.tools.sjoin_nearest(cutout_pts_in_prov, pop_ww, how="inner")
+    merged = merged.to_crs(CRS)
+
+    # normalised pop distribution per province
+    # need an extra province for points not in the province, otherwise lose cutout grid index
+    merged.fillna({"province_name": "OutsideChina"}, inplace=True)
+    points_in_provinces = pd.DataFrame(index=cutout_pts_in_prov.index)
+    points_in_provinces = (
+        merged.groupby("province_name")["pop_density"]
+        .apply(lambda x: x / x.sum())
+        .unstack(fill_value=0.0)
+        .T
+    )
+    # Cleanup the matrix: get rid of the outside china "province" et
+    points_in_provinces.drop(columns="OutsideChina", inplace=True)
+    points_in_provinces.index.name = ""
+    points_in_provinces.fillna(0.0, inplace=True)
+
+    # go from normalised distribution to head count
+    points_in_provinces *= pop_province_count
+    with pd.HDFStore(gridded_pop_out, mode="w", complevel=4) as store:
+        store["population_gridcell_map"] = points_in_provinces</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="build_population_gridcell_map.load_cfrs_data" class="doc doc-heading">
+            <code class="highlight language-python">load_cfrs_data(target)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>load  CFRS_grid.nc type files into a geodatafram</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>target</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the abs path</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: the data in gdf</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/build_population_gridcell_map.py</code></summary>
+              <pre class="highlight"><code class="language-python">def load_cfrs_data(target: PathLike) -&gt; gpd.GeoDataFrame:
+    """load  CFRS_grid.nc type files into a geodatafram
+
+    Args:
+        target (PathLike): the abs path
+
+    Returns:
+        gpd.GeoDataFrame: the data in gdf
+    """
+    pop_density = xr.open_dataarray(target).to_dataset(name="pop_density")
+    pop_ww = xarr_to_gdf(pop_density, var_name="pop_density")  # TODO is the CRS correct?
+
+    return pop_ww</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="build_population_gridcell_map.xarr_to_gdf" class="doc doc-heading">
+            <code class="highlight language-python">xarr_to_gdf(xarr, var_name, x_var='x', y_var='y', crs=CRS)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>convert an xarray to GDF</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>xarr</code></b>
+                  (<code><span title="xarray.DataArray">DataArray</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the input array</p>
+              </div>
+            </li>
+            <li>
+              <b><code>var_name</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>the array variable to be converted.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>x_var</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;x&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the x dimension. Defaults to "x".</p>
+              </div>
+            </li>
+            <li>
+              <b><code>y_var</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;y&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the y dimension. Defaults to "y".</p>
+              </div>
+            </li>
+            <li>
+              <b><code>crs</code></b>
+                  (<code>_type_</code>, default:
+                      <code><span title="constants.CRS">CRS</span></code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the crs. Defaults to CRS.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: geodata frame in chosen CRS</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/build_population_gridcell_map.py</code></summary>
+              <pre class="highlight"><code class="language-python">def xarr_to_gdf(
+    xarr: xr.DataArray, var_name: str, x_var="x", y_var="y", crs=CRS
+) -&gt; gpd.GeoDataFrame:
+    """convert an xarray to GDF
+
+    Args:
+        xarr (xr.DataArray): the input array
+        var_name (str): the array variable to be converted.
+        x_var (str, optional): the x dimension. Defaults to "x".
+        y_var (str, optional): the y dimension. Defaults to "y".
+        crs (_type_, optional): the crs. Defaults to CRS.
+
+    Returns:
+        gpd.GeoDataFrame: geodata frame in chosen CRS
+    """
+    df = xarr.to_dataframe()
+    df.reset_index(inplace=True)
+    return gpd.GeoDataFrame(
+        df[var_name], geometry=gpd.points_from_xy(df[x_var], df[y_var]), crs=crs
+    )</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../build_population/" class="btn btn-neutral float-left" title="build_population"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../build_province_shapes/" class="btn btn-neutral float-right" title="build_province_shapes">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../build_population/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../build_province_shapes/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>plot_summary_all - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "plot_summary_all";
+        var mkdocs_page_input_path = "docs/reference/plot_summary_all.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">plot_summary_all</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">plot_summary_all</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="plot_summary_all"></a>
+    <div class="doc doc-contents first">
+
+        <p>Plots energy and cost summaries for solved networks.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_summary_all.plot_co2_shadow_price" class="doc doc-heading">
+            <code class="highlight language-python">plot_co2_shadow_price(file_list, config, fig_name=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>plot the co2 price</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>file_list</code></b>
+                  (<code>list</code>)
+              –
+              <div class="doc-md-description">
+                <p>the input csvs from make_summaries</p>
+              </div>
+            </li>
+            <li>
+              <b><code>config</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>the snakemake configuration</p>
+              </div>
+            </li>
+            <li>
+              <b><code>fig_name</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the figure name. Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_summary_all.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
+    """plot the co2 price
+
+    Args:
+        file_list (list): the input csvs from make_summaries
+        config (dict): the snakemake configuration
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+    """
+    co2_prices = {}
+    co2_budget = {}
+    for i, results_file in enumerate(file_list):
+        df_metrics = pd.read_csv(results_file, index_col=list(range(1)), header=[1])
+        co2_prices.update(dict(df_metrics.loc["co2_shadow"]))
+        co2_budget.update(dict(df_metrics.loc["co2_budget"]))
+
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    ax.plot(co2_prices.keys(), np.abs(list(co2_prices.values())), marker="o", color="black")
+    ax.set_ylabel("CO2 Shadow price")
+    ax.set_xlabel("Year")
+
+    ax2 = ax.twinx()
+    ax2.plot(
+        co2_budget.keys(),
+        [v / PLOT_CO2_UNITS for v in co2_budget.values()],
+        marker="D",
+        color="blue",
+    )
+    ax2.set_ylabel(f"CO2 Budget [{PLOT_CO2_LABEL}]")
+
+    fig.tight_layout()
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=True)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_summary_all.plot_electricty_heat_balance" class="doc doc-heading">
+            <code class="highlight language-python">plot_electricty_heat_balance(file_list, config, fig_dir=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>plot the energy production and consumption</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>file_list</code></b>
+                  (<code>list</code>)
+              –
+              <div class="doc-md-description">
+                <p>the input csvs  from make_dirs([year/supply_energy.csv])</p>
+              </div>
+            </li>
+            <li>
+              <b><code>config</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>the configuration for plotting (snamkemake.config["plotting"])</p>
+              </div>
+            </li>
+            <li>
+              <b><code>fig_dir</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the figure name. Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_summary_all.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_electricty_heat_balance(file_list: list[os.PathLike], config: dict, fig_dir=None):
+    """plot the energy production and consumption
+
+    Args:
+        file_list (list): the input csvs  from make_dirs([year/supply_energy.csv])
+        config (dict): the configuration for plotting (snamkemake.config["plotting"])
+        fig_dir (os.PathLike, optional): the figure name. Defaults to None.
+    """
+    elec_df = pd.DataFrame()
+    heat_df = pd.DataFrame()
+
+    for results_file in file_list:
+        balance_df = pd.read_csv(results_file, index_col=list(range(2)), header=[1])
+        elec = balance_df.loc["AC"].copy()
+        elec.set_index(elec.columns[0], inplace=True)
+        elec.rename(index={"-": "electric load"}, inplace=True)
+        elec.index.rename("carrier", inplace=True)
+        # this groups subgroups of the same carrier. For example, baseyar hydro = link from dams
+        # but new hydro is generator from province
+        elec = elec.groupby(elec.index).sum()
+
+        heat = balance_df.loc["heat"].copy()
+        heat.set_index(heat.columns[0], inplace=True)
+        heat.rename(index={"-": "heat load"}, inplace=True)
+        heat.index.rename("carrier", inplace=True)
+        heat = heat.groupby(heat.index).sum()
+
+        to_drop = elec.index[
+            elec.max(axis=1).abs() &lt; config["energy_threshold"] / PLOT_SUPPLY_UNITS
+        ]
+        elec.loc["Other"] = elec.loc[to_drop].sum(axis=0)
+        elec.drop(to_drop, inplace=True)
+
+        to_drop = heat.index[
+            heat.max(axis=1).abs() &lt; config["energy_threshold"] / PLOT_SUPPLY_UNITS
+        ]
+        heat.loc["Other"] = heat.loc[to_drop].sum(axis=0)
+        heat.drop(to_drop, inplace=True)
+
+        elec_df = pd.concat([elec, elec_df], axis=1)
+        heat_df = pd.concat([heat, heat_df], axis=1)
+
+    elec_df.fillna(0, inplace=True)
+    elec_df.sort_index(axis=1, inplace=True, ascending=True)
+    elec_df = elec_df / PLOT_SUPPLY_UNITS
+
+    heat_df.fillna(0, inplace=True)
+    heat_df.sort_index(axis=1, inplace=True, ascending=True)
+    heat_df = heat_df / PLOT_SUPPLY_UNITS
+
+    # # split into consumption and generation
+    el_gen = elec_df.where(elec_df &gt;= 0).dropna(axis=0, how="all").fillna(0)
+    el_con = elec_df.where(elec_df &lt; 0).dropna(axis=0, how="all").fillna(0)
+    heat_gen = heat_df.where(heat_df &gt; 0).dropna(axis=0, how="all").fillna(0)
+    heat_con = heat_df.where(heat_df &lt; 0).dropna(axis=0, how="all").fillna(0)
+
+    # group identical values
+    el_con = el_con.groupby(el_con.index).sum()
+    el_gen = el_gen.groupby(el_gen.index).sum()
+    heat_con = heat_con.groupby(heat_con.index).sum()
+    heat_gen = heat_gen.groupby(heat_gen.index).sum()
+
+    logger.info(f"Total energy of {round(elec_df.sum()[0])} TWh/a")
+
+    # ===========        electricity =================
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    for df in [el_gen, el_con]:
+        preferred_order = pd.Index(config["preferred_order"])
+        new_index = preferred_order.intersection(df.index).append(
+            df.index.difference(preferred_order)
+        )
+        colors = pd.DataFrame(
+            new_index.map(config["tech_colors"]), index=new_index, columns=["color"]
+        )
+        colors.fillna(NAN_COLOR, inplace=True)
+        df.loc[new_index].T.plot(
+            kind="bar",
+            ax=ax,
+            stacked=True,
+            color=colors["color"],
+        )
+
+        handles, labels = ax.get_legend_handles_labels()
+        handles.reverse()
+        labels.reverse()
+
+    ax.set_ylim([el_con.sum(axis=0).min() * 1.1, el_gen.sum(axis=0).max() * 1.1])
+    ax.set_ylabel("Energy [TWh/a]")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_dir is not None:
+        fig.savefig(os.path.join(fig_dir, "elec_balance.png"), transparent=True)
+
+    # =================     heat     =================
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    for df in [heat_gen, heat_con]:
+        preferred_order = pd.Index(config["preferred_order"])
+        new_index = preferred_order.intersection(df.index).append(
+            df.index.difference(preferred_order)
+        )
+        colors = pd.DataFrame(
+            new_index.map(config["tech_colors"]), index=new_index, columns=["color"]
+        )
+        colors.fillna(NAN_COLOR, inplace=True)
+        df.loc[new_index].T.plot(
+            kind="bar",
+            ax=ax,
+            stacked=True,
+            color=colors["color"],
+        )
+
+        handles, labels = ax.get_legend_handles_labels()
+        handles.reverse()
+        labels.reverse()
+
+    ax.set_ylim([heat_con.sum(axis=0).min() * 1.1, heat_gen.sum(axis=0).max() * 1.1])
+    ax.set_ylabel("Energy [TWh/a]")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_dir is not None:
+        fig.savefig(os.path.join(fig_dir, "heat_balance.png"), transparent=True)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_summary_all.plot_energy" class="doc doc-heading">
+            <code class="highlight language-python">plot_energy(file_list, config, fig_name=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>plot the energy production and consumption</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>file_list</code></b>
+                  (<code>list</code>)
+              –
+              <div class="doc-md-description">
+                <p>the input csvs</p>
+              </div>
+            </li>
+            <li>
+              <b><code>config</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>the configuration for plotting (snamkemake.config["plotting"])</p>
+              </div>
+            </li>
+            <li>
+              <b><code>fig_name</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the figure name. Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_summary_all.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_energy(file_list: list, config: dict, fig_name=None):
+    """plot the energy production and consumption
+
+    Args:
+        file_list (list): the input csvs
+        config (dict): the configuration for plotting (snamkemake.config["plotting"])
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+    """
+    energy_df = pd.DataFrame()
+    for results_file in file_list:
+        en_df = pd.read_csv(results_file, index_col=list(range(2)), header=[1])
+        df_ = en_df.groupby(en_df.index.get_level_values(1)).sum()
+        # do this here so aggregate costs of small items only for that year
+        # convert MWh to TWh
+        df_ = df_ / PLOT_SUPPLY_UNITS
+        df_ = df_.groupby(df_.index.map(rename_techs)).sum()
+        to_drop = df_.index[df_.max(axis=1) &lt; config["energy_threshold"] / PLOT_SUPPLY_UNITS]
+        df_.loc["Other"] = df_.loc[to_drop].sum(axis=0)
+        df_ = df_.drop(to_drop)
+
+        energy_df = pd.concat([df_, energy_df], axis=1)
+    energy_df.fillna(0, inplace=True)
+    energy_df.sort_index(axis=1, inplace=True)
+
+    logger.info(f"Total energy of {round(energy_df.sum()[0])} TWh/a")
+    preferred_order = pd.Index(config["preferred_order"])
+    new_index = preferred_order.intersection(energy_df.index).append(
+        energy_df.index.difference(preferred_order)
+    )
+    new_columns = energy_df.columns.sort_values()
+
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    logger.debug(energy_df.loc[new_index, new_columns])
+
+    energy_df.loc[new_index, new_columns].T.plot(
+        kind="bar",
+        ax=ax,
+        stacked=True,
+        color=[config["tech_colors"][i] for i in new_index],
+    )
+
+    handles, labels = ax.get_legend_handles_labels()
+
+    handles.reverse()
+    labels.reverse()
+
+    ax.set_ylim([0, energy_df.sum(axis=0).max() * 1.1])
+    ax.set_ylabel("Energy [TWh/a]")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=True)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_summary_all.plot_pathway_co2" class="doc doc-heading">
+            <code class="highlight language-python">plot_pathway_co2(file_list, config, fig_name=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Plot the CO2 pathway balance and totals</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>file_list</code></b>
+                  (<code>list</code>)
+              –
+              <div class="doc-md-description">
+                <p>the input csvs</p>
+              </div>
+            </li>
+            <li>
+              <b><code>config</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>the plotting configuration</p>
+              </div>
+            </li>
+            <li>
+              <b><code>fig_name</code></b>
+                  (<code>_type_</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p><em>description</em>. Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_summary_all.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
+    """Plot the CO2 pathway balance and totals
+
+    Args:
+        file_list (list): the input csvs
+        config (dict): the plotting configuration
+        fig_name (_type_, optional): _description_. Defaults to None.
+    """
+
+    co2_balance_df = pd.DataFrame()
+    for results_file in file_list:
+        df_year = pd.read_csv(results_file, index_col=list(range(1)), header=[1]).T
+        co2_balance_df = pd.concat([df_year, co2_balance_df])
+
+    co2_balance_df.sort_index(axis=0, inplace=True)
+
+    fig, ax = plt.subplots()
+    bar_width = 0.6
+    colors = co2_balance_df.T.index.map(config["plotting"]["tech_colors"]).values
+    co2_balance_df = co2_balance_df / PLOT_CO2_UNITS
+    co2_balance_df.plot(
+        kind="bar",
+        stacked=True,
+        width=bar_width,
+        color=pd.Series(colors).fillna(NAN_COLOR),
+        ax=ax,
+    )
+    bar_centers = np.unique([patch.get_x() + bar_width / 2 for patch in ax.patches])
+    ax.plot(
+        bar_centers,
+        co2_balance_df.sum(axis=1).values,
+        color="black",
+        marker="D",
+        markersize=10,
+        lw=3,
+        label="Total",
+    )
+    ax.set_ylabel(PLOT_CO2_LABEL)
+
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+
+    fig.tight_layout()
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=True)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_summary_all.plot_pathway_costs" class="doc doc-heading">
+            <code class="highlight language-python">plot_pathway_costs(file_list, config, social_discount_rate=0.0, fig_name=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>plot the costs</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>file_list</code></b>
+                  (<code>list</code>)
+              –
+              <div class="doc-md-description">
+                <p>the input csvs from make_summary</p>
+              </div>
+            </li>
+            <li>
+              <b><code>config</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>the configuration for plotting (snakemake.config["plotting"])</p>
+              </div>
+            </li>
+            <li>
+              <b><code>social_discount_rate</code></b>
+                  (<code>float</code>, default:
+                      <code>0.0</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the social discount rate (0.02). Defaults to 0.0.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>fig_name</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the figure name. Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_summary_all.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_pathway_costs(
+    file_list: list, config: dict, social_discount_rate=0.0, fig_name: os.PathLike = None
+):
+    """plot the costs
+
+    Args:
+        file_list (list): the input csvs from make_summary
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
+        social_discount_rate (float, optional): the social discount rate (0.02). Defaults to 0.0.
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+    """
+    # all years in one df
+    df = pd.DataFrame()
+    for results_file in file_list:
+        cost_df = pd.read_csv(results_file, index_col=list(range(3)), header=[1])
+        df_ = cost_df.groupby(cost_df.index.get_level_values(2)).sum()
+        # do this here so aggregate costs of small items only for that year
+        # TODO centralise unit
+        df_ = df_ * COST_UNIT / PLOT_COST_UNITS
+        df_ = df_.groupby(df_.index.map(rename_techs)).sum()
+        to_drop = df_.index[df_.max(axis=1) &lt; config["costs_threshold"] / PLOT_COST_UNITS]
+        df_.loc["Other"] = df_.loc[to_drop].sum(axis=0)
+        df_ = df_.drop(to_drop)
+        df = pd.concat([df_, df], axis=1)
+
+    df.fillna(0, inplace=True)
+    df.rename(columns={int(y): y for y in df.columns}, inplace=True)
+    df.sort_index(axis=1, inplace=True, ascending=True)
+
+    # apply social discount rate
+    if social_discount_rate &gt; 0:
+        base_year = min([int(y) for y in df.columns])
+        df = df.apply(lambda x: x / (1 + social_discount_rate) ** (int(x.name) - base_year), axis=0)
+    elif social_discount_rate &lt; 0:
+        raise ValueError("Social discount rate must be positive")
+
+    preferred_order = pd.Index(config["preferred_order"])
+    new_index = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
+
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    df.loc[new_index].T.plot(
+        kind="bar",
+        ax=ax,
+        stacked=True,
+        color=[config["tech_colors"][i] for i in new_index],
+    )
+
+    handles, labels = ax.get_legend_handles_labels()
+
+    ax.set_ylim([0, df.sum(axis=0).max() * 1.1])
+    ax.set_ylabel("System Cost [EUR billion per year]")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+    # TODO fix this - doesnt work with non-constant interval
+    ax.annotate(
+        f"Total cost in bn Eur: {df.sum().sum()*5:.2f}",
+        xy=(0.75, 0.9),
+        color="darkgray",
+        xycoords="axes fraction",
+        ha="right",
+        va="top",
+    )
+
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+
+    fig.tight_layout()
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=True)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_summary_all.plot_prices" class="doc doc-heading">
+            <code class="highlight language-python">plot_prices(file_list, config, fig_name=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>plot the prices</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>file_list</code></b>
+                  (<code>list</code>)
+              –
+              <div class="doc-md-description">
+                <p>the input csvs from make_summary</p>
+              </div>
+            </li>
+            <li>
+              <b><code>config</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>the configuration for plotting</p>
+              </div>
+            </li>
+            <li>
+              <b><code>fig_name</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the figure name. Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_summary_all.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_prices(file_list: list, config: dict, fig_name=None):
+    """plot the prices
+
+    Args:
+        file_list (list): the input csvs from make_summary
+        config (dict): the configuration for plotting
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+    """
+    prices_df = pd.DataFrame()
+    for results_file in file_list:
+        df_year = pd.read_csv(results_file, index_col=list(range(1)), header=[1]).T
+
+        prices_df = pd.concat([df_year, prices_df])
+    prices_df.sort_index(axis=0, inplace=True)
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    colors = config["plotting"]["tech_colors"]
+
+    prices_df.plot(
+        ax=ax,
+        kind="line",
+        color=[colors[k] if k in colors else "k" for k in prices_df.columns],
+        linewidth=3,
+    )
+    ax.set_ylim([prices_df.min().min() * 1.1, prices_df.max().max() * 1.1])
+    ax.set_ylabel("prices [X/UNIT]")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+
+    handles, labels = ax.get_legend_handles_labels()
+
+    handles.reverse()
+    labels.reverse()
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=False)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../plot_statistics/" class="btn btn-neutral float-left" title="plot_statistics"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../plot_time_series/" class="btn btn-neutral float-right" title="plot_time_series">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../plot_statistics/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../plot_time_series/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>add_existing_baseyear - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "add_existing_baseyear";
+        var mkdocs_page_input_path = "docs/reference/add_existing_baseyear.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">add_existing_baseyear</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">add_existing_baseyear</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="add_existing_baseyear"></a>
+    <div class="doc doc-contents first">
+
+        <p>Functions supporting myopic pathway network creation</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="add_existing_baseyear.add_build_year_to_new_assets" class="doc doc-heading">
+            <code class="highlight language-python">add_build_year_to_new_assets(n, baseyear)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>add a build year to new assets</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>n</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the network</p>
+              </div>
+            </li>
+            <li>
+              <b><code>baseyear</code></b>
+                  (<code>int</code>)
+              –
+              <div class="doc-md-description">
+                <p>year in which optimized assets are built</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/add_existing_baseyear.py</code></summary>
+              <pre class="highlight"><code class="language-python">def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
+    """add a build year to new assets
+
+    Args:
+        n (pypsa.Network): the network
+        baseyear (int): year in which optimized assets are built
+    """
+
+    # Give assets with lifetimes and no build year the build year baseyear
+    for c in n.iterate_components(["Link", "Generator", "Store"]):
+        attr = "e" if c.name == "Store" else "p"
+
+        assets = c.df.index[(c.df.lifetime != np.inf) &amp; (c.df[attr + "_nom_extendable"] is True)]
+
+        # add -baseyear to name
+        rename = pd.Series(c.df.index, c.df.index)
+        rename[assets] += "-" + str(baseyear)
+        c.df.rename(index=rename, inplace=True)
+
+        assets = c.df.index[
+            (c.df.lifetime != np.inf)
+            &amp; (c.df[attr + "_nom_extendable"] is True)
+            &amp; (c.df.build_year == 0)
+        ]
+        c.df.loc[assets, "build_year"] = baseyear
+
+        # rename time-dependent
+        selection = n.component_attrs[c.name].type.str.contains("series") &amp; n.component_attrs[
+            c.name
+        ].status.str.contains("Input")
+        for attr in n.component_attrs[c.name].index[selection]:
+            c.pnl[attr].rename(columns=rename, inplace=True)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="add_existing_baseyear.add_power_capacities_installed_before_baseyear" class="doc doc-heading">
+            <code class="highlight language-python">add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear, config)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <h4 id="add_existing_baseyear.add_power_capacities_installed_before_baseyear--parameters">Parameters</h4>
+<p>n : pypsa.Network
+grouping_years :
+    intervals to group existing capacities
+costs :
+    to read lifetime to estimate YearDecomissioning
+baseyear : int</p>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/add_existing_baseyear.py</code></summary>
+              <pre class="highlight"><code class="language-python">def add_power_capacities_installed_before_baseyear(
+    n: pypsa.Network, grouping_years, costs, baseyear, config
+):
+    """
+    Parameters
+    ----------
+    n : pypsa.Network
+    grouping_years :
+        intervals to group existing capacities
+    costs :
+        to read lifetime to estimate YearDecomissioning
+    baseyear : int
+    """
+    logger.info("adding power capacities installed before baseyear")
+
+    df_agg = pd.DataFrame()
+
+    # include renewables in df_agg
+    add_existing_capacities(df_agg)
+
+    df_agg["grouping_year"] = np.take(
+        grouping_years, np.digitize(df_agg.DateIn, grouping_years, right=True)
+    )
+
+    df = df_agg.pivot_table(
+        index=["grouping_year", "Tech"], columns="cluster_bus", values="Capacity", aggfunc="sum"
+    )
+
+    df.fillna(0)
+
+    carrier = {
+        "coal": "coal power plant",
+        "CHP coal": "CHP coal",
+        "CHP gas": "CHP gas",
+        "OCGT": "OCGT gas",
+        "solar": "solar",
+        "solar thermal": "solar thermal",
+        "onwind": "onwind",
+        "offwind": "offwind",
+        "coal boiler": "coal boiler",
+        "ground heat pump": "heat pump",
+        "nuclear": "nuclear",
+    }
+
+    for grouping_year, generator in df.index:
+
+        # capacity is the capacity in MW at each node for this
+        capacity = df.loc[grouping_year, generator]
+        capacity = capacity[~capacity.isna()]
+        capacity = capacity[capacity &gt; config["existing_capacities"]["threshold_capacity"]]
+
+        if generator in ["solar", "onwind", "offwind"]:
+            p_max_pu = n.generators_t.p_max_pu[capacity.index + " " + generator]
+            n.add(
+                "Generator",
+                capacity.index,
+                suffix=" " + generator + "-" + str(grouping_year),
+                bus=capacity.index,
+                carrier=carrier[generator],
+                p_nom=capacity,
+                p_nom_min=capacity,
+                p_nom_extendable=False,
+                marginal_cost=costs.at[generator, "marginal_cost"],
+                capital_cost=costs.at[generator, "capital_cost"],
+                efficiency=costs.at[generator, "efficiency"],
+                p_max_pu=p_max_pu.rename(columns=n.generators.bus),
+                build_year=grouping_year,
+                lifetime=costs.at[generator, "lifetime"],
+            )
+
+        if generator == "coal":
+            n.add(
+                "Generator",
+                capacity.index,
+                suffix=" " + generator + "-" + str(grouping_year),
+                bus=capacity.index,
+                carrier=carrier[generator],
+                p_nom=capacity,
+                p_nom_extendable=False,
+                marginal_cost=costs.at[generator, "marginal_cost"],
+                capital_cost=costs.at[generator, "capital_cost"],
+                efficiency=costs.at[generator, "efficiency"],
+                build_year=grouping_year,
+                lifetime=costs.at[generator, "lifetime"],
+            )
+
+        if generator == "nuclear":
+            n.add(
+                "Generator",
+                capacity.index,
+                suffix=" " + generator + "-" + str(grouping_year),
+                bus=capacity.index,
+                carrier=carrier[generator],
+                p_nom=capacity,
+                p_nom_min=capacity,
+                p_nom_extendable=False,
+                p_min_pu=0.7,
+                marginal_cost=costs.at[generator, "marginal_cost"],
+                capital_cost=costs.at[generator, "capital_cost"],
+                efficiency=costs.at[generator, "efficiency"],
+                build_year=grouping_year,
+                lifetime=costs.at[generator, "lifetime"],
+            )
+
+        if generator == "solar thermal":
+            p_max_pu = n.generators_t.p_max_pu[capacity.index + " central " + generator]
+            p_max_pu.columns = capacity.index
+            n.add(
+                "Generator",
+                capacity.index,
+                suffix=" central " + generator + "-" + str(grouping_year),
+                bus=capacity.index + " central heat",
+                carrier=carrier[generator],
+                p_nom=capacity,
+                p_nom_min=capacity,
+                p_nom_extendable=False,
+                marginal_cost=costs.at["central " + generator, "marginal_cost"],
+                capital_cost=costs.at["central " + generator, "capital_cost"],
+                p_max_pu=p_max_pu,
+                build_year=grouping_year,
+                lifetime=costs.at["central " + generator, "lifetime"],
+            )
+
+        if generator == "CHP coal":
+            bus0 = capacity.index + " coal"
+            n.add(
+                "Link",
+                capacity.index,
+                suffix=" " + generator + " generator" + "-" + str(grouping_year),
+                bus0=bus0,
+                bus1=capacity.index,
+                carrier=carrier[generator],
+                marginal_cost=0.37 * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
+                capital_cost=0.37
+                * costs.at["central coal CHP", "capital_cost"],  # NB: fixed cost is per MWel,
+                p_nom=capacity / 0.37,
+                p_nom_min=capacity / 0.37,
+                p_nom_extendable=False,
+                efficiency=0.37,
+                p_nom_ratio=1.0,
+                c_b=0.75,
+                build_year=grouping_year,
+                lifetime=costs.at["central coal CHP", "lifetime"],
+            )
+            n.add(
+                "Link",
+                capacity.index,
+                suffix=" " + generator + " boiler" + "-" + str(grouping_year),
+                bus0=bus0,
+                bus1=capacity.index + " central heat",
+                carrier=carrier[generator],
+                marginal_cost=0.37 * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
+                p_nom=capacity / 0.37 * 0.15,
+                p_nom_min=capacity / 0.37 * 0.15,
+                p_nom_extendable=False,
+                efficiency=0.37 / 0.15,
+                build_year=grouping_year,
+                lifetime=costs.at["central coal CHP", "lifetime"],
+            )
+
+        if generator == "CHP gas":
+            bus0 = capacity.index + " gas"
+            n.add(
+                "Link",
+                capacity.index,
+                suffix=" " + generator + " generator" + "-" + str(grouping_year),
+                bus0=bus0,
+                bus1=capacity.index,
+                carrier=carrier[generator],
+                marginal_cost=costs.at["central gas CHP", "efficiency"]
+                * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
+                capital_cost=costs.at["central gas CHP", "efficiency"]
+                * costs.at["central gas CHP", "capital_cost"],  # NB: fixed cost is per MWel,
+                p_nom=capacity / costs.at["central gas CHP", "efficiency"],
+                p_nom_min=capacity / costs.at["central gas CHP", "efficiency"],
+                p_nom_extendable=False,
+                efficiency=costs.at["central gas CHP", "efficiency"],
+                p_nom_ratio=1.0,
+                c_b=costs.at["central gas CHP", "c_b"],
+                build_year=grouping_year,
+                lifetime=costs.at["central gas CHP", "lifetime"],
+            )
+            n.add(
+                "Link",
+                capacity.index,
+                suffix=" " + generator + " boiler" + "-" + str(grouping_year),
+                bus0=bus0,
+                bus1=capacity.index + " central heat",
+                carrier=carrier[generator],
+                marginal_cost=costs.at["central gas CHP", "efficiency"]
+                * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
+                p_nom=capacity
+                / costs.at["central gas CHP", "efficiency"]
+                * costs.at["central gas CHP", "c_v"],
+                p_nom_min=capacity
+                / costs.at["central gas CHP", "efficiency"]
+                * costs.at["central gas CHP", "c_v"],
+                p_nom_extendable=False,
+                efficiency=costs.at["central gas CHP", "efficiency"]
+                / costs.at["central gas CHP", "c_v"],
+                build_year=grouping_year,
+                lifetime=costs.at["central gas CHP", "lifetime"],
+            )
+
+        if generator == "OCGT":
+            bus0 = capacity.index + " gas"
+            n.add(
+                "Link",
+                capacity.index,
+                suffix=" " + generator + "-" + str(grouping_year),
+                bus0=bus0,
+                bus1=capacity.index,
+                carrier=carrier[generator],
+                marginal_cost=costs.at[generator, "efficiency"]
+                * costs.at[generator, "VOM"],  # NB: VOM is per MWel
+                capital_cost=costs.at[generator, "efficiency"]
+                * costs.at[generator, "capital_cost"],
+                # NB: fixed cost is per MWel
+                p_nom=capacity / costs.at[generator, "efficiency"],
+                p_nom_min=capacity / costs.at[generator, "efficiency"],
+                p_nom_extendable=False,
+                efficiency=costs.at[generator, "efficiency"],
+                build_year=grouping_year,
+                lifetime=costs.at[generator, "lifetime"],
+            )
+
+        if generator == "coal boiler":
+            bus0 = capacity.index + " coal"
+            for cat in [" central "]:
+                n.add(
+                    "Link",
+                    capacity.index,
+                    suffix="" + cat + generator + "-" + str(grouping_year),
+                    bus0=bus0,
+                    bus1=capacity.index + cat + "heat",
+                    carrier=carrier[generator],
+                    marginal_cost=costs.at[cat.lstrip() + generator, "efficiency"]
+                    * costs.at[cat.lstrip() + generator, "VOM"],
+                    capital_cost=costs.at[cat.lstrip() + generator, "efficiency"]
+                    * costs.at[cat.lstrip() + generator, "capital_cost"],
+                    p_nom=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
+                    p_nom_min=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
+                    p_nom_extendable=False,
+                    efficiency=costs.at[cat.lstrip() + generator, "efficiency"],
+                    build_year=grouping_year,
+                    lifetime=costs.at[cat.lstrip() + generator, "lifetime"],
+                )
+        # TODO fix centralise
+        if generator == "ground heat pump":
+            date_range = pd.date_range(
+                "2025-01-01 00:00",
+                "2025-12-31 23:00",
+                freq=config["snapshots"]["freq"],
+                tz="Asia/shanghai",
+            )
+            date_range = date_range.map(lambda t: t.replace(year=2020))
+
+            with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
+                gshp_cop = store["gshp_cop_profiles"]
+                gshp_cop.index = gshp_cop.index.tz_localize("Asia/shanghai")
+                gshp_cop = gshp_cop.loc[date_range].set_index(n.snapshots)
+
+            n.add(
+                "Link",
+                capacity.index,
+                suffix=" " + generator + "-" + str(grouping_year),
+                bus0=capacity.index,
+                bus1=capacity.index + " central heat",
+                carrier="heat pump",
+                efficiency=(
+                    gshp_cop[capacity.index]
+                    if config["time_dep_hp_cop"]
+                    else costs.at["decentral ground-sourced heat pump", "efficiency"]
+                ),
+                capital_cost=costs.at["decentral ground-sourced heat pump", "efficiency"]
+                * costs.at["decentral ground-sourced heat pump", "capital_cost"],
+                marginal_cost=costs.at["decentral ground-sourced heat pump", "efficiency"]
+                * costs.at["decentral ground-sourced heat pump", "marginal_cost"],
+                p_nom=capacity / costs.at["decentral ground-sourced heat pump", "efficiency"],
+                p_nom_min=capacity / costs.at["decentral ground-sourced heat pump", "efficiency"],
+                p_nom_extendable=False,
+                build_year=grouping_year,
+                lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
+            )</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../add_electricity/" class="btn btn-neutral float-left" title="add_electricity"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../build_biomass_potential/" class="btn btn-neutral float-right" title="build_biomass_potential">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../add_electricity/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../build_biomass_potential/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

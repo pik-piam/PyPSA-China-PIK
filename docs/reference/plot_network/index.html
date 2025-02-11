@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>plot_network - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "plot_network";
+        var mkdocs_page_input_path = "docs/reference/plot_network.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">plot_network</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">plot_network</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="plot_network"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.add_cost_pannel" class="doc doc-heading">
+            <code class="highlight language-python">add_cost_pannel(df, fig, preferred_order, tech_colors, plot_additions, ax_loc=[-0.09, 0.28, 0.09, 0.45])</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add a cost pannel to the figure</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>df</code></b>
+                  (<code><span title="pandas.DataFrame">DataFrame</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the cost data to plot</p>
+              </div>
+            </li>
+            <li>
+              <b><code>fig</code></b>
+                  (<code><span title="matplotlib.pyplot.Figure">Figure</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the figure object to which the cost pannel will be added</p>
+              </div>
+            </li>
+            <li>
+              <b><code>preferred_order</code></b>
+                  (<code><span title="pandas.Index">Index</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>index, the order in whiich to plot</p>
+              </div>
+            </li>
+            <li>
+              <b><code>tech_colors</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>the tech colors</p>
+              </div>
+            </li>
+            <li>
+              <b><code>plot_additions</code></b>
+                  (<code>bool</code>)
+              –
+              <div class="doc-md-description">
+                <p>plot the additions</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ax_loc</code></b>
+                  (<code>list</code>, default:
+                      <code>[-0.09, 0.28, 0.09, 0.45]</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the location of the cost pannel.
+Defaults to [-0.09, 0.28, 0.09, 0.45].</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <pre class="highlight"><code class="language-python">def add_cost_pannel(
+    df: pd.DataFrame,
+    fig: plt.Figure,
+    preferred_order: pd.Index,
+    tech_colors: dict,
+    plot_additions: bool,
+    ax_loc=[-0.09, 0.28, 0.09, 0.45],
+) -&gt; None:
+    """Add a cost pannel to the figure
+
+    Args:
+        df (pd.DataFrame): the cost data to plot
+        fig (plt.Figure): the figure object to which the cost pannel will be added
+        preferred_order (pd.Index): index, the order in whiich to plot
+        tech_colors (dict): the tech colors
+        plot_additions (bool): plot the additions
+        ax_loc (list, optional): the location of the cost pannel.
+            Defaults to [-0.09, 0.28, 0.09, 0.45].
+    """
+    ax3 = fig.add_axes(ax_loc)
+    reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
+    colors = {k.lower(): v for k, v in tech_colors.items()}
+    df.loc[reordered, df.columns].T.plot(
+        kind="bar",
+        ax=ax3,
+        stacked=True,
+        color=[colors[k.lower()] for k in reordered],
+    )
+    ax3.legend().remove()
+    ax3.set_ylabel("annualized system cost bEUR/a")
+    ax3.set_xticklabels(ax3.get_xticklabels(), rotation="horizontal")
+    ax3.grid(axis="y")
+    ax3.set_ylim([0, df.sum().max() * 1.1])
+    if plot_additions:
+        # add label
+        percent = np.round((df.sum()["added"] / df.sum()["total"]) * 100)
+        ax3.text(0.85, (df.sum()["added"] + 15), str(percent) + "%", color="black")
+
+    fig.tight_layout()</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.add_energy_pannel" class="doc doc-heading">
+            <code class="highlight language-python">add_energy_pannel(df, fig, preferred_order, colors, ax_loc=[-0.09, 0.28, 0.09, 0.45])</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add a cost pannel to the figure</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>df</code></b>
+                  (<code><span title="pandas.DataFrame">DataFrame</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the statistics supply output by carrier (from plot_energy map)</p>
+              </div>
+            </li>
+            <li>
+              <b><code>fig</code></b>
+                  (<code><span title="matplotlib.pyplot.Figure">Figure</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the figure object to which the cost pannel will be added</p>
+              </div>
+            </li>
+            <li>
+              <b><code>preferred_order</code></b>
+                  (<code><span title="pandas.Index">Index</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>index, the order in whiich to plot</p>
+              </div>
+            </li>
+            <li>
+              <b><code>colors</code></b>
+                  (<code><span title="pandas.Series">Series</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the colors for the techs, with the correct index and no extra techs</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ax_loc</code></b>
+                  (<code>list</code>, default:
+                      <code>[-0.09, 0.28, 0.09, 0.45]</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the pannel location. Defaults to [-0.09, 0.28, 0.09, 0.45].</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <pre class="highlight"><code class="language-python">def add_energy_pannel(
+    df: pd.DataFrame,
+    fig: plt.Figure,
+    preferred_order: pd.Index,
+    colors: pd.Series,
+    ax_loc=[-0.09, 0.28, 0.09, 0.45],
+) -&gt; None:
+    """Add a cost pannel to the figure
+
+    Args:
+        df (pd.DataFrame): the statistics supply output by carrier (from plot_energy map)
+        fig (plt.Figure): the figure object to which the cost pannel will be added
+        preferred_order (pd.Index): index, the order in whiich to plot
+        colors (pd.Series): the colors for the techs, with the correct index and no extra techs
+        ax_loc (list, optional): the pannel location. Defaults to [-0.09, 0.28, 0.09, 0.45].
+    """
+    ax3 = fig.add_axes(ax_loc)
+    reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
+    df = df / PLOT_SUPPLY_UNITS
+    # only works if colors has correct index
+    df.loc[reordered, df.columns].T.plot(
+        kind="bar",
+        ax=ax3,
+        stacked=True,
+        color=colors[reordered],
+    )
+
+    ax3.legend().remove()
+    ax3.set_ylabel("Electricity supply [TWh]")
+    ax3.set_xticklabels(ax3.get_xticklabels(), rotation="horizontal")
+    ax3.grid(axis="y")
+    ax3.set_ylim([0, df.sum().max() * 1.1])
+
+    fig.tight_layout()</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.plot_cost_map" class="doc doc-heading">
+            <code class="highlight language-python">plot_cost_map(network, opts, base_year=2020, plot_additions=True, capex_only=False, cost_pannel=True, save_path=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Plot the cost of each node on a map as well as the line capacities</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>network</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the network object</p>
+              </div>
+            </li>
+            <li>
+              <b><code>opts</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>the plotting config (snakemake.config["plotting"])</p>
+              </div>
+            </li>
+            <li>
+              <b><code>base_year</code></b>
+                  (<code>int</code>, default:
+                      <code>2020</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the base year (for cost delta). Defaults to 2020.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>capex_only</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>do not plot VOM (FOM is in CAPEX). Defaults to False.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>plot_additions</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>plot a map of investments (p_nom_opt vs p_nom).
+  Defaults to True.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>cost_pannel</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>add a bar graph with costs. Defaults to True.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>save_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>save figure to path (or not if None). Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>        <p>raises:
+    ValueError: if plot_additions and not capex_only</p>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_cost_map(
+    network: pypsa.Network,
+    opts: dict,
+    base_year=2020,
+    plot_additions=True,
+    capex_only=False,
+    cost_pannel=True,
+    save_path: os.PathLike = None,
+):
+    """Plot the cost of each node on a map as well as the line capacities
+
+    Args:
+        network (pypsa.Network): the network object
+        opts (dict): the plotting config (snakemake.config["plotting"])
+        base_year (int, optional): the base year (for cost delta). Defaults to 2020.
+        capex_only (bool, optional): do not plot VOM (FOM is in CAPEX). Defaults to False.
+        plot_additions (bool, optional): plot a map of investments (p_nom_opt vs p_nom).
+              Defaults to True.
+        cost_pannel (bool, optional): add a bar graph with costs. Defaults to True.
+        save_path (os.PathLike, optional): save figure to path (or not if None). Defaults to None.
+    raises:
+        ValueError: if plot_additions and not capex_only
+    """
+
+    if plot_additions and not capex_only:
+        raise ValueError("Cannot plot additions without capex only")
+
+    tech_colors = make_nice_tech_colors(opts["tech_colors"], opts["nice_names"])
+
+    # TODO scale edges by cost from capex summary
+    def calc_link_plot_width(row, carrier="AC", additions=False):
+        if row.length == 0 or row.carrier != carrier or not row.plottable:
+            return 0
+        elif additions:
+            return row.p_nom
+        else:
+            return row.p_nom_opt
+
+    # ============ === Stats by bus ===
+    # calc costs &amp; sum over component types to keep bus &amp; carrier (remove no loc)
+    costs = network.statistics.capex(groupby=["location", "carrier"])
+    costs = costs.groupby(level=[1, 2]).sum().drop("")
+    # we miss some buses by grouping epr location, fill w 0s
+    bus_idx = pd.MultiIndex.from_product([network.buses.index, ["AC"]])
+    costs = costs.reindex(bus_idx.union(costs.index), fill_value=0)
+    # add marginal (excluding quasi fixed) to costs if desired
+    if not capex_only:
+        opex = network.statistics.opex(groupby=["location", "carrier"])
+        opex = opex.groupby(level=[1, 2]).sum()
+        cost_pies = costs + opex.reindex(costs.index, fill_value=0)
+
+    # === make map components: pies and edges
+    cost_pies = costs.fillna(0)
+    cost_pies.index.names = ["bus", "carrier"]
+    carriers = cost_pies.index.get_level_values(1).unique()
+    # map edges
+    link_plot_w = network.links.apply(lambda row: calc_link_plot_width(row, carrier="AC"), axis=1)
+    edges = pd.concat([network.lines.s_nom_opt, link_plot_w]).groupby(level=0).sum()
+    line_lower_threshold = opts.get("min_edge_capacity", 0)
+    edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
+
+    # === Additions ===
+    # for pathways sometimes interested in additions from last time step
+    if plot_additions:
+        installed = (
+            network.statistics.installed_capex(groupby=["location", "carrier"])
+            .groupby(level=[1, 2])
+            .sum()
+        )
+        costs_additional = costs - installed.reindex(costs.index, fill_value=0)
+        cost_pies_additional = costs_additional.fillna(0)
+        cost_pies_additional.index.names = ["bus", "carrier"]
+
+        link_additions = network.links.apply(
+            lambda row: calc_link_plot_width(row, carrier="AC", additions=True), axis=1
+        )
+        added_links = link_plot_w - link_additions.reindex(link_plot_w.index, fill_value=0)
+        added_lines = network.lines.s_nom_opt - network.lines.s_nom.reindex(
+            network.lines.index, fill_value=0
+        )
+        edge_widths_added = pd.concat([added_links, added_lines]).groupby(level=0).sum()
+
+        # add to carrier types
+        carriers = carriers.union(cost_pies_additional.index.get_level_values(1).unique())
+
+    preferred_order = pd.Index(opts["preferred_order"])
+    carriers = carriers.tolist()
+
+    # Make figure with right number of pannels
+    if plot_additions:
+        fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": ccrs.PlateCarree()})
+        fig.set_size_inches(opts["cost_map"]["figsize_w_additions"])
+    else:
+        fig, ax1 = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
+        fig.set_size_inches(opts["cost_map"]["figsize"])
+
+    # Add the total costs
+    bus_size_factor = opts["cost_map"]["bus_size_factor"]
+    linewidth_factor = opts["cost_map"]["linewidth_factor"]
+    plot_map(
+        network,
+        tech_colors=tech_colors,
+        edge_widths=edge_widths / linewidth_factor,
+        bus_colors=tech_colors,
+        bus_sizes=cost_pies / bus_size_factor,
+        edge_colors=opts["cost_map"]["edge_color"],
+        ax=ax1,
+        add_legend=not plot_additions,
+        bus_ref_title=f"System costs{' (CAPEX)'if capex_only else ''}",
+        **opts["cost_map"],
+    )
+
+    # TODO check edges is working
+    # Add the added pathway costs
+    if plot_additions:
+        plot_map(
+            network,
+            tech_colors=tech_colors,
+            edge_widths=edge_widths_added / linewidth_factor,
+            bus_colors=tech_colors,
+            bus_sizes=cost_pies_additional / bus_size_factor,
+            edge_colors="rosybrown",
+            ax=ax2,
+            bus_ref_title=f"Added costs{' (CAPEX)' if capex_only else ''}",
+            add_legend=True,
+            **opts["cost_map"],
+        )
+
+    # Add the optional cost pannel
+    if cost_pannel:
+        df = pd.DataFrame(columns=["total"])
+        df["total"] = network.statistics.capex(nice_names=False).groupby(level=1).sum()
+        if not capex_only:
+            df["opex"] = network.statistics.opex(nice_names=False).groupby(level=1).sum()
+            df.rename(columns={"total": "capex"})
+        elif plot_additions:
+            df["added"] = (
+                df["total"]
+                - network.statistics.installed_capex(nice_names=False).groupby(level=1).sum()
+            )
+
+        df.fillna(0, inplace=True)
+        df = df / PLOT_COST_UNITS
+        # TODO decide discount
+        # df = df / (1 + discount_rate) ** (int(planning_horizon) - base_year)
+        add_cost_pannel(
+            df, fig, preferred_order, tech_colors, plot_additions, ax_loc=[-0.09, 0.28, 0.09, 0.45]
+        )
+
+    fig.set_size_inches(opts["cost_map"][f"figsize{'_w_additions' if plot_additions else ''}"])
+    fig.tight_layout()
+    if save_path:
+        fig.savefig(save_path, transparent=False, bbox_inches="tight")</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.plot_energy_map" class="doc doc-heading">
+            <code class="highlight language-python">plot_energy_map(network, opts, energy_pannel=True, save_path=None, carrier='AC', plot_ac_imports=False, components=['Generator', 'Link'])</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>A map plot of energy, either AC or heat</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>network</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the pyPSA network object</p>
+              </div>
+            </li>
+            <li>
+              <b><code>opts</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>the plotting options (snakemake.config["plotting"])</p>
+              </div>
+            </li>
+            <li>
+              <b><code>energy_pannel</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>add an anergy pie to the left. Defaults to True.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>save_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Fig outp path. Defaults to None (no save).</p>
+              </div>
+            </li>
+            <li>
+              <b><code>carrier</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;AC&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the energy carrier. Defaults to "AC".</p>
+              </div>
+            </li>
+            <li>
+              <b><code>plot_ac_imports</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>plot electricity imports. Defaults to False.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>components</code></b>
+                  (<code>list</code>, default:
+                      <code>[&#39;Generator&#39;, &#39;Link&#39;]</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the components to plot. Defaults to ["Generator", "Link"].</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>        <p>raises:
+    ValueError: if carrier is not AC or heat</p>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_energy_map(
+    network: pypsa.Network,
+    opts: dict,
+    energy_pannel=True,
+    save_path: os.PathLike = None,
+    carrier="AC",
+    plot_ac_imports=False,
+    components=["Generator", "Link"],
+):
+    """A map plot of energy, either AC or heat
+
+    Args:
+        network (pypsa.Network): the pyPSA network object
+        opts (dict): the plotting options (snakemake.config["plotting"])
+        energy_pannel (bool, optional): add an anergy pie to the left. Defaults to True.
+        save_path (os.PathLike, optional): Fig outp path. Defaults to None (no save).
+        carrier (str, optional): the energy carrier. Defaults to "AC".
+        plot_ac_imports (bool, optional): plot electricity imports. Defaults to False.
+        components (list, optional): the components to plot. Defaults to ["Generator", "Link"].
+    raises:
+        ValueError: if carrier is not AC or heat
+    """
+    if carrier not in ["AC", "heat"]:
+        raise ValueError("Carrier must be either 'AC' or 'heat'")
+
+    # make the statistics. Buses not assigned to a region will be included
+    # if they are linked to a region (e.g. turbine link w carrier = hydroelectricity)
+    energy_supply = network.statistics.supply(
+        groupby=get_location_and_carrier,
+        bus_carrier=carrier,
+        comps=components,
+    )
+    # get rid of components
+    supply_pies = energy_supply.groupby(level=[1, 2]).sum()
+
+    # TODO fix  this for heat
+    # # calc costs &amp; sum over component types to keep bus &amp; carrier (remove no loc)
+    # energy_supply = network.statistics.capex(groupby=["location", "carrier"])
+    # energy_supply = energy_supply.groupby(level=[1, 2]).sum().drop("")
+    # # we miss some buses by grouping epr location, fill w 0s
+    # bus_idx = pd.MultiIndex.from_product([network.buses.index, ["AC"]])
+    # supply_pies = energy_supply.reindex(bus_idx.union(energy_supply.index), fill_value=0)
+
+    # remove imports from supply pies
+    if carrier == "AC" and not plot_ac_imports:
+        supply_pies = supply_pies.loc[supply_pies.index.get_level_values(1) != "AC"]
+
+    # TODO aggregate costs below threshold into "other" -&gt; requires messing with network
+    # network.add("Carrier", "Other")
+
+    # get all carrier types
+    carriers_list = supply_pies.index.get_level_values(1).unique()
+    carriers_list = carriers_list.tolist()
+
+    # TODO make line handling nicer
+    line_lower_threshold = opts.get("min_edge_capacity", 500)
+    # Make figur
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
+    fig.set_size_inches(opts["energy_map"]["figsize"])
+    # get colors
+    bus_colors = network.carriers.loc[network.carriers.nice_name.isin(carriers_list), "color"]
+    bus_colors.rename(opts["nice_names"], inplace=True)
+
+    preferred_order = pd.Index(opts["preferred_order"])
+    reordered = preferred_order.intersection(bus_colors.index).append(
+        bus_colors.index.difference(preferred_order)
+    )
+    # TODO there'sa  problem with network colors when using heat, pies aren't grouped by location
+    colors = network.carriers.color.copy()
+    colors.index = colors.index.map(opts["nice_names"])
+    tech_colors = make_nice_tech_colors(opts["tech_colors"], opts["nice_names"])
+
+    # make sure plot isnt overpopulated
+    def calc_link_plot_width(row, carrier="AC"):
+        if row.length == 0 or row.carrier != carrier or not row.plottable:
+            return 0
+        else:
+            return row.p_nom_opt
+
+    edge_carrier = "H2 pipeline" if carrier == "heat" else "AC"
+    link_plot_w = network.links.apply(lambda row: calc_link_plot_width(row, edge_carrier), axis=1)
+    edges = pd.concat([network.lines.s_nom_opt, link_plot_w])
+    edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
+
+    opts_plot = opts["energy_map"].copy()
+    if carrier == "heat":
+        opts_plot["ref_bus_sizes"] = opts_plot["ref_bus_sizes_heat"]
+        opts_plot["ref_edge_sizes"] = opts_plot["ref_edge_sizes_heat"]
+        opts_plot["linewidth_factor"] = opts_plot["linewidth_factor_heat"]
+        opts_plot["bus_size_factor"] = opts_plot["bus_size_factor_heat"]
+    plot_map(
+        network,
+        tech_colors=tech_colors,  # colors.to_dict(),
+        edge_widths=edge_widths / opts_plot["linewidth_factor"],
+        bus_colors=bus_colors.loc[reordered],
+        bus_sizes=supply_pies / opts_plot["bus_size_factor"],
+        edge_colors=opts_plot["edge_color"],
+        ax=ax,
+        edge_unit_conv=PLOT_CAP_UNITS,
+        bus_unit_conv=PLOT_SUPPLY_UNITS,
+        add_legend=True,
+        **opts_plot,
+    )
+    # # Add the optional cost pannel
+    if energy_pannel:
+        df = supply_pies.groupby(level=1).sum().to_frame()
+        df = df.fillna(0)
+        add_energy_pannel(df, fig, preferred_order, bus_colors, ax_loc=[-0.09, 0.28, 0.09, 0.45])
+
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if save_path:
+        fig.savefig(save_path, transparent=True, bbox_inches="tight")</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.plot_map" class="doc doc-heading">
+            <code class="highlight language-python">plot_map(network, tech_colors, edge_widths, bus_colors, bus_sizes, edge_colors='black', add_ref_edge_sizes=True, add_ref_bus_sizes=True, add_legend=True, bus_unit_conv=PLOT_COST_UNITS, edge_unit_conv=PLOT_CAP_UNITS, ax=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Plot the network on a map</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>network</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the pypsa network (filtered to contain only relevant buses &amp; links)</p>
+              </div>
+            </li>
+            <li>
+              <b><code>tech_colors</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>config mapping</p>
+              </div>
+            </li>
+            <li>
+              <b><code>edge_colors</code></b>
+                  (<code><span title="pandas.Series">Series</span> | str</code>, default:
+                      <code>&#39;black&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the series of edge colors</p>
+              </div>
+            </li>
+            <li>
+              <b><code>edge_widths</code></b>
+                  (<code><span title="pandas.Series">Series</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the edge widths</p>
+              </div>
+            </li>
+            <li>
+              <b><code>bus_colors</code></b>
+                  (<code><span title="pandas.Series">Series</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the series of bus colors</p>
+              </div>
+            </li>
+            <li>
+              <b><code>bus_sizes</code></b>
+                  (<code><span title="pandas.Series">Series</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the series of bus sizes</p>
+              </div>
+            </li>
+            <li>
+              <b><code>add_ref_edge_sizes</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>add reference line sizes in legend
+(requires edge_colors=True). Defaults to True.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>add_ref_bus_sizes</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>add reference bus sizes in legend.
+Defaults to True.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ax</code></b>
+                  (<code><span title="matplotlib.pyplot.Axes">Axes</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the plotting ax. Defaults to None (new figure).</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_map(
+    network: pypsa.Network,
+    tech_colors: dict,
+    edge_widths: pd.Series,
+    bus_colors: pd.Series,
+    bus_sizes: pd.Series,
+    edge_colors: pd.Series | str = "black",
+    add_ref_edge_sizes=True,
+    add_ref_bus_sizes=True,
+    add_legend=True,
+    bus_unit_conv=PLOT_COST_UNITS,
+    edge_unit_conv=PLOT_CAP_UNITS,
+    ax=None,
+    **kwargs,
+) -&gt; plt.Axes:
+    """Plot the network on a map
+
+    Args:
+        network (pypsa.Network): the pypsa network (filtered to contain only relevant buses &amp; links)
+        tech_colors (dict): config mapping
+        edge_colors (pd.Series|str): the series of edge colors
+        edge_widths (pd.Series): the edge widths
+        bus_colors (pd.Series): the series of bus colors
+        bus_sizes (pd.Series): the series of bus sizes
+        add_ref_edge_sizes (bool, optional): add reference line sizes in legend
+            (requires edge_colors=True). Defaults to True.
+        add_ref_bus_sizes (bool, optional): add reference bus sizes in legend.
+            Defaults to True.
+        ax (plt.Axes, optional): the plotting ax. Defaults to None (new figure).
+    """
+
+    if not ax:
+        fig, ax = plt.subplots()
+
+    network.plot(
+        bus_sizes=bus_sizes,
+        bus_colors=bus_colors,
+        line_colors=edge_colors,
+        link_colors=edge_colors,
+        line_widths=edge_widths,
+        link_widths=edge_widths,
+        ax=ax,
+        color_geomap=True,
+        boundaries=kwargs.get("boundaries", None),
+    )
+
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5, edgecolor="gray")
+    states_provinces = cfeature.NaturalEarthFeature(
+        category="cultural", name="admin_1_states_provinces_lines", scale="50m", facecolor="none"
+    )
+    # Add our states feature.
+    ax.add_feature(states_provinces, edgecolor="lightgray", alpha=0.7)
+
+    if add_legend:
+        carriers = bus_sizes.index.get_level_values(1).unique()
+        colors = carriers.intersection(tech_colors).map(tech_colors).to_list()
+
+        if isinstance(edge_colors, str):
+            colors += [edge_colors]
+            labels = carriers.to_list() + ["HVDC or HVAC link"]
+        else:
+            colors += edge_colors.values.to_list()
+            labels = carriers.to_list() + edge_colors.index.to_list()
+        leg_opt = {"bbox_to_anchor": (1.42, 1.04), "frameon": False}
+        add_legend_patches(ax, colors, labels, legend_kw=leg_opt)
+
+    if add_ref_edge_sizes &amp; isinstance(edge_colors, str):
+        ref_unit = kwargs.get("ref_edge_unit", "GW")
+        size_factor = float(kwargs.get("linewidth_factor", 1e5))
+        ref_sizes = kwargs.get("ref_edge_sizes", [1e5, 5e5])
+
+        labels = [f"{float(s)/edge_unit_conv} {ref_unit}" for s in ref_sizes]
+        ref_sizes = list(map(lambda x: float(x) / size_factor, ref_sizes))
+        legend_kw = dict(
+            loc="upper left",
+            bbox_to_anchor=(0.26, 1.0),
+            frameon=False,
+            labelspacing=0.8,
+            handletextpad=2,
+            title=kwargs.get("edge_ref_title", "Grid cap."),
+        )
+        add_legend_lines(
+            ax, ref_sizes, labels, patch_kw=dict(color=edge_colors), legend_kw=legend_kw
+        )
+
+    # add reference bus sizes ferom the units
+    if add_ref_bus_sizes:
+        ref_unit = kwargs.get("ref_bus_unit", "bEUR/a")
+        size_factor = float(kwargs.get("bus_size_factor", 1e10))
+        ref_sizes = kwargs.get("ref_bus_sizes", [2e10, 1e10, 5e10])
+        labels = [f"{float(s)/bus_unit_conv:.0f} {ref_unit}" for s in ref_sizes]
+        ref_sizes = list(map(lambda x: float(x) / size_factor, ref_sizes))
+
+        legend_kw = {
+            "loc": "upper left",
+            "bbox_to_anchor": (0.0, 1.0),
+            "labelspacing": 0.8,
+            "frameon": False,
+            "handletextpad": 0,
+            "title": kwargs.get("bus_ref_title", "UNDEFINED TITLE"),
+        }
+
+        add_legend_circles(
+            ax,
+            ref_sizes,
+            labels,
+            srid=network.srid,
+            patch_kw=dict(facecolor="lightgrey"),
+            legend_kw=legend_kw,
+        )
+
+    return ax</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.plot_nodal_prices" class="doc doc-heading">
+            <code class="highlight language-python">plot_nodal_prices(network, opts, carrier='AC', save_path=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>A map plot of energy, either AC or heat</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>network</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the pyPSA network object</p>
+              </div>
+            </li>
+            <li>
+              <b><code>opts</code></b>
+                  (<code>dict</code>)
+              –
+              <div class="doc-md-description">
+                <p>the plotting options (snakemake.config["plotting"])</p>
+              </div>
+            </li>
+            <li>
+              <b><code>save_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Fig outp path. Defaults to None (no save).</p>
+              </div>
+            </li>
+            <li>
+              <b><code>carrier</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;AC&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the energy carrier. Defaults to "AC".</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>        <p>raises:
+    ValueError: if carrier is not AC or heat</p>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_nodal_prices(
+    network: pypsa.Network,
+    opts: dict,
+    carrier="AC",
+    save_path: os.PathLike = None,
+):
+    """A map plot of energy, either AC or heat
+
+    Args:
+        network (pypsa.Network): the pyPSA network object
+        opts (dict): the plotting options (snakemake.config["plotting"])
+        save_path (os.PathLike, optional): Fig outp path. Defaults to None (no save).
+        carrier (str, optional): the energy carrier. Defaults to "AC".
+    raises:
+        ValueError: if carrier is not AC or heat
+    """
+    if carrier not in ["AC", "heat"]:
+        raise ValueError("Carrier must be either 'AC' or 'heat'")
+
+    # demand weighed prices per node
+    nodal_prices = (
+        network.statistics.revenue(
+            groupby=pypsa.statistics.get_bus_and_carrier_and_bus_carrier,
+            comps="Load",
+            bus_carrier=carrier,
+        )
+        / network.statistics.withdrawal(
+            comps="Load",
+            groupby=pypsa.statistics.get_bus_and_carrier_and_bus_carrier,
+            bus_carrier=carrier,
+        )
+        * -1
+    )
+    # drop the carrier and bus_carrier, map to colors
+    nodal_prices = nodal_prices.droplevel(1).droplevel(1)
+    norm = plt.Normalize(vmin=nodal_prices.min(), vmax=nodal_prices.max())
+    cmap = plt.get_cmap("plasma")
+    bus_colors = nodal_prices.map(lambda x: cmap(norm(x)))
+
+    energy_consum = network.statistics.withdrawal(
+        groupby=pypsa.statistics.get_bus_and_carrier,
+        bus_carrier=carrier,
+        comps=["Load"],
+    )
+    consum_pies = energy_consum.groupby(level=1).sum()
+
+    # Make figure
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
+    fig.set_size_inches(opts["price_map"]["figsize"])
+    # get colors
+
+    # TODO make line handling nicer
+    # make sure plot isnt overpopulated
+    def calc_plot_width(row, carrier="AC"):
+        if row.length == 0:
+            return 0
+        elif row.carrier != carrier:
+            return 0
+        else:
+            return row.p_nom_opt
+
+    line_lower_threshold = opts.get("min_edge_capacity", 500)
+    edge_carrier = "H2" if carrier == "heat" else "AC"
+    link_plot_w = network.links.apply(lambda row: calc_plot_width(row, edge_carrier), axis=1)
+    edges = pd.concat([network.lines.s_nom_opt, link_plot_w])
+    edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
+
+    bus_size_factor = opts["price_map"]["bus_size_factor"]
+    linewidth_factor = opts["price_map"][f"linewidth_factor{"_heat" if carrier == 'heat' else ''}"]
+    plot_map(
+        network,
+        tech_colors=None,
+        edge_widths=edge_widths / linewidth_factor,
+        bus_colors=bus_colors,
+        bus_sizes=consum_pies / bus_size_factor,
+        edge_colors=opts["price_map"]["edge_color"],
+        ax=ax,
+        edge_unit_conv=PLOT_CAP_UNITS,
+        bus_unit_conv=PLOT_SUPPLY_UNITS,
+        add_legend=False,
+        **opts["price_map"],
+    )
+
+    # Add colorbar based on bus_colors
+    # fig.tight_layout()
+    fig.subplots_adjust(right=0.85)
+    cax = fig.add_axes([0.87, ax.get_position().y0, 0.02, ax.get_position().height])
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = plt.colorbar(sm, cax=cax, orientation="vertical")
+    cbar.set_label(f"Nodal Prices ${CURRENCY}/MWh")
+
+    if save_path:
+        fig.savefig(save_path, transparent=True, bbox_inches="tight")</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../plot_heatmap/" class="btn btn-neutral float-left" title="plot_heatmap"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../plot_network_heat/" class="btn btn-neutral float-right" title="plot_network_heat">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../plot_heatmap/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../plot_network_heat/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

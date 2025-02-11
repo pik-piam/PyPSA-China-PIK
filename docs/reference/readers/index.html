@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>readers - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "readers";
+        var mkdocs_page_input_path = "docs/reference/readers.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">readers</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">readers</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="readers"></a>
+    <div class="doc doc-contents first">
+
+        <p>File reading support functions</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="readers.read_pop_density" class="doc doc-heading">
+            <code class="highlight language-python">read_pop_density(path, clip_shape=None, crs=CRS, chunks=25, var_name='pop_density')</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>read raster data, clip it to a clip_shape and convert it to a GeoDataFrame</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the target path for the raster data (tif)</p>
+              </div>
+            </li>
+            <li>
+              <b><code>clip_shape</code></b>
+                  (<code><span title="geopandas.GeoSeries">GeoSeries</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the shape to clip the data. Defaults to None.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>crs</code></b>
+                  (<code>int</code>, default:
+                      <code><span title="constants.CRS">CRS</span></code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the coordinate system. Defaults to 4326.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>var_name</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;pop_density&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the variable name. Defaults to "var".</p>
+              </div>
+            </li>
+            <li>
+              <b><code>chunks</code></b>
+                  (<code>int</code>, default:
+                      <code>25</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the chunk size for the raster data. Defaults to 25.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: the raster data for the aoi</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/readers.py</code></summary>
+              <pre class="highlight"><code class="language-python">def read_pop_density(
+    path: os.PathLike,
+    clip_shape: gpd.GeoSeries = None,
+    crs=CRS,
+    chunks=25,
+    var_name="pop_density",
+) -&gt; gpd.GeoDataFrame:
+    """read raster data, clip it to a clip_shape and convert it to a GeoDataFrame
+
+    Args:
+        path (os.PathLike): the target path for the raster data (tif)
+        clip_shape (gpd.GeoSeries, optional): the shape to clip the data. Defaults to None.
+        crs (int, optional): the coordinate system. Defaults to 4326.
+        var_name (str, optional): the variable name. Defaults to "var".
+        chunks (int, optional): the chunk size for the raster data. Defaults to 25.
+
+    Returns:
+        gpd.GeoDataFrame: the raster data for the aoi
+    """
+
+    ds = read_raster(path, clip_shape, var_name, plot=False)
+    ds = ds.where(ds &gt; 0)
+
+    df = ds.to_dataframe(var_name)
+    df.reset_index(inplace=True)
+
+    # Convert the DataFrame to a GeoDataFrame
+    return gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.x, df.y), crs=crs)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="readers.read_province_shapes" class="doc doc-heading">
+            <code class="highlight language-python">read_province_shapes(shape_file)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>read the province shape files</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>shape_file</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the path to the .shp file &amp; co</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: the province shapes as a GeoDataFrame</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/readers.py</code></summary>
+              <pre class="highlight"><code class="language-python">def read_province_shapes(shape_file: os.PathLike) -&gt; gpd.GeoDataFrame:
+    """read the province shape files
+
+    Args:
+        shape_file (os.PathLike): the path to the .shp file &amp; co
+
+    Returns:
+        gpd.GeoDataFrame: the province shapes as a GeoDataFrame
+    """
+
+    prov_shapes = gpd.GeoDataFrame.from_file(shape_file)
+    prov_shapes = prov_shapes.to_crs(CRS)
+    prov_shapes.set_index("province", inplace=True)
+    # TODO: does this make sense? reindex after?
+    if not (prov_shapes.index == PROV_NAMES).all():
+        raise ValueError(f"Province names do not match expected names: {PROV_NAMES}")
+
+    return prov_shapes</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="readers.read_raster" class="doc doc-heading">
+            <code class="highlight language-python">read_raster(path, clip_shape=None, var_name='var', chunks=60, plot=False)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Read raster data and optionally clip it to a given shape.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>The path to the raster file.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>clip_shape</code></b>
+                  (<code><span title="geopandas.GeoSeries">GeoSeries</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The shape to clip the raster data. Defaults to None.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>var_name</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;var&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The variable name to assign to the raster data. Defaults to "var".</p>
+              </div>
+            </li>
+            <li>
+              <b><code>chunks</code></b>
+                  (<code>int</code>, default:
+                      <code>60</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The chunk size for the raster data. Defaults to 60.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>plot</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to plot the raster data. Defaults to False.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>DataArray</code></b>(                  <code><span title="xarray.DataArray">DataArray</span></code>
+)              –
+              <div class="doc-md-description">
+                <p>The raster data as an xarray DataArray.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/readers.py</code></summary>
+              <pre class="highlight"><code class="language-python">def read_raster(
+    path: os.PathLike,
+    clip_shape: gpd.GeoSeries = None,
+    var_name="var",
+    chunks=60,
+    plot=False,
+) -&gt; DataArray:
+    """Read raster data and optionally clip it to a given shape.
+
+    Args:
+        path (os.PathLike): The path to the raster file.
+        clip_shape (gpd.GeoSeries, optional): The shape to clip the raster data. Defaults to None.
+        var_name (str, optional): The variable name to assign to the raster data. Defaults to "var".
+        chunks (int, optional): The chunk size for the raster data. Defaults to 60.
+        plot (bool, optional): Whether to plot the raster data. Defaults to False.
+
+    Returns:
+        DataArray: The raster data as an xarray DataArray.
+    """
+    ds = rioxarray.open_rasterio(path, chunks=chunks, default_name="pop_density")
+    ds = ds.rename(var_name)
+
+    if clip_shape is not None:
+        ds = ds.rio.clip(clip_shape.geometry)
+
+    if plot:
+        ds.plot()
+
+    return ds</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../prepare_network_common/" class="btn btn-neutral float-left" title="prepare_network_common"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../solve_network/" class="btn btn-neutral float-right" title="solve_network">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../prepare_network_common/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../solve_network/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
