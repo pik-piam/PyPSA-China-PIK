@@ -12,7 +12,6 @@ from os.path import abspath, getctime
 from scripts._helpers import PathManager, get_cutout_params
 
 # NB: duplicated parameters will be overwritten by the last read cfg
-# NB: duplicated parameters will be overwritten by the last read cfg
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"

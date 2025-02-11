@@ -20,7 +20,6 @@ import pytz
 from pathlib import Path
 from types import SimpleNamespace
 import logging
-import matplotlib.pyplot as plt
 
 from pypsa.components import components, component_attrs
 import pypsa
@@ -29,7 +28,7 @@ import pypsa
 logger = logging.getLogger()
 
 DEFAULT_TUNNEL_PORT = 1080
-LOGIN_NODE = "01"
+LOGIN_NODE = "03"
 
 
 # TODO return pathlib objects? so can just use / to combine paths?
@@ -123,6 +122,8 @@ def setup_gurobi_tunnel_and_env(
 
     # bash commands for tunnel: reduce pipe err severity (too high from snakemake)
     pipe_err = "set -o pipefail; "
+    # ssh_command = f"ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
+    ssh_command = f"ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
     # Add to ssh_config
     ssh_command = f"ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
     logger.info(f"Attempting ssh tunnel to login node {LOGIN_NODE}")
