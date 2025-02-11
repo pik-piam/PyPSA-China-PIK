@@ -756,15 +756,18 @@ def add_hydro(
     hourly_rng = pd.date_range(
         config["hydro_dams"]["inflow_date_start"],
         config["hydro_dams"]["inflow_date_end"],
-        freq=config["snapshots"]["freq"],
+        freq="1h",
         inclusive="left",
     )
-    # TODO understand where inflow is calculated
-    inflow = pd.read_pickle(config["hydro_dams"]["inflow_path"]).reindex(hourly_rng, fill_value=0)
+    # TODO implement inflow calc, understand resolution (seems daily!)
+    inflow = pd.read_pickle(config["hydro_dams"]["inflow_path"])
+    # select inflow year
+    hourly_rng = hourly_rng[hourly_rng.year == INFLOW_DATA_YR]
+    inflow = inflow.loc[inflow.index.year == INFLOW_DATA_YR]
+    inflow = inflow.reindex(hourly_rng, fill_value=0)
     inflow.columns = dams.index
-    inflow = inflow.loc[str(INFLOW_DATA_YR)]
-    inflow = shift_profile_to_planning_year(inflow, INFLOW_DATA_YR)
-
+    inflow = shift_profile_to_planning_year(inflow, planning_horizons)
+    inflow = inflow.loc[network.snapshots]
     # m^3/KWh -> m^3/MWh
     water_consumption_factor = dams.loc[:, "Water_consumption_factor_avg"] * 1e3
 
