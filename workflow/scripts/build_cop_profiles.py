@@ -3,12 +3,14 @@ Snakemake rule script to calculate the heat pump coefficient of performance
 with atlite
 """
 
-import logging
-from _helpers import configure_logging
-
 import atlite
 import pandas as pd
 import scipy as sp
+import logging
+
+from _helpers import configure_logging
+from constants import TIMEZONE
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +33,12 @@ def build_cop_profiles():
     index.name = "provinces"
 
     soil_temp = cutout.soil_temperature(matrix=pop_matrix, index=index)
-    soil_temp["time"] = soil_temp["time"].values + pd.Timedelta(8, unit="h")  # UTC-8 instead of UTC
+    soil_temp["time"] = (
+        pd.DatetimeIndex(soil_temp["time"].values, tz="UTC")
+        .tz_convert(TIMEZONE)
+        .tz_localize(None)
+        .values
+    )
 
     with pd.HDFStore(snakemake.input.temp, mode="r") as store:
         temp = store["temperature"]

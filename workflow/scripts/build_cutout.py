@@ -35,6 +35,7 @@ def cutout_timespan(config: dict, weather_year: int) -> list:
             start_day_hour=snapshot_cfg["start"],
             end_day_hour=snapshot_cfg["end"],
             bounds=snapshot_cfg["bounds"],
+            # here we need to convert UTC to local
             tz=TIMEZONE,
             end_year=(None if not snapshot_cfg["end_year_plus1"] else weather_year + 1),
         )

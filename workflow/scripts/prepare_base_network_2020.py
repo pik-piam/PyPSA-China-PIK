@@ -70,7 +70,8 @@ def prepare_network(config):
         start_day_hour=snapshot_cfg["start"],
         end_day_hour=snapshot_cfg["end"],
         bounds=snapshot_cfg["bounds"],
-        tz=snapshot_cfg["timezone"],
+        # naive local timezone
+        tz=None,
         end_year=(
             None
             if not snapshot_cfg["end_year_plus1"]

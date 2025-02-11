@@ -100,8 +100,8 @@ rule build_solar_thermal_profiles:
         cutout=os.path.join(CUTOUTS_DIR,config["atlite"]["cutout_name"])+".nc",
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5"
     output:
-        profile_solar_thermal = DERIVED_DATA+"/"+f"heating/solar_thermal-{config['solar_thermal_angle']}.h5"
-    log: LOG_DIR + "/build_solar_thermal_profiles.log"
+        profile_solar_thermal = DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/solar_thermal-{config['solar_thermal_angle']}.h5"
+    log: LOGS_COMMON + "/build_solar_thermal_profiles.log"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_solar_thermal_profiles.py"
@@ -111,8 +111,8 @@ rule build_temperature_profiles:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout=os.path.join(CUTOUTS_DIR,config["atlite"]["cutout_name"])+".nc"
     output:
-        temp=DERIVED_DATA+"/"+"heating/temp.h5"
-    log: LOG_DIR + "/build_temperature_profiles.log"
+        temp=DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/temperature.h5"
+    log: LOGS_COMMON + "/build_temperature_profiles.log"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_temperature_profiles.py"
@@ -121,9 +121,9 @@ rule build_cop_profiles:
     input:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout=os.path.join(CUTOUTS_DIR,config["atlite"]["cutout_name"])+".nc",
-        temp=DERIVED_DATA+"/"+"heating/temp.h5"
+        temp=DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/temperature.h5"
     output:
-        cop=DERIVED_DATA+"/"+"heating/cop.h5"
+        cop=DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/hp_cop.h5"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_cop_profiles.py"
@@ -148,9 +148,9 @@ rule build_renewable_potential:
         cutout= os.path.join(CUTOUTS_DIR,config["atlite"]["cutout_name"])+".nc",
     # TODO make paths depend on whether "Technique" is used in config
     output:
-        solar_profile=DERIVED_COMMON +f"/{config["atlite"]["cutout_name"]}_solar.nc",
-        onwind_profile=DERIVED_COMMON +f"/{config["atlite"]["cutout_name"]}_onwind.nc",
-        offwind_profile=DERIVED_COMMON +f"/{config["atlite"]["cutout_name"]}_offwind.nc",
+        solar_profile=DERIVED_COMMON +f"/cutout_{config["atlite"]["cutout_name"]}/profile_solar.nc",
+        onwind_profile=DERIVED_COMMON +f"/cutout_{config["atlite"]["cutout_name"]}/profile_onwind.nc",
+        offwind_profile=DERIVED_COMMON +f"/cutout_{config["atlite"]["cutout_name"]}/profile_offwind.nc",
     log: LOGS_COMMON + f"/build_renewable_potential_{config["atlite"]["cutout_name"]}.log"
     threads: ATLITE_NPROCESSES
     resources: mem_mb=ATLITE_NPROCESSES * 5000
@@ -164,7 +164,7 @@ rule build_load_profiles:
         intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
         space_heat_demand="resources/data/heating/SPH_2020.csv"
     output:
-        heat_demand_profile = DERIVED_DATA + "/" + f"heating/{config["atlite"]["cutout_name"]}"+"heat_demand_profile_{planning_horizons}.h5",
+        heat_demand_profile = DERIVED_DATA + f"/heating-cutout_{config["atlite"]["cutout_name"]}/"+"heat_demand_profile_{planning_horizons}.h5",
         energy_totals_name = DERIVED_DATA + "/" +f"energy_totals_{config["atlite"]["cutout_name"]}_"+"{planning_horizons}.h5"
     log: LOG_DIR + "/build_load_profiles/build_{planning_horizons}"+f"_{config["atlite"]["cutout_name"]}.log"
     threads: ATLITE_NPROCESSES
@@ -187,18 +187,16 @@ rule build_biomass_potential:
 if config["foresight"] in ["overnight"]:
     rule prepare_networks:
         input:
-            # overrides="resources/data/override_component_attrs",
-            temp=DERIVED_DATA+"/"+"heating/temp.h5",
-            heat_demand_profile=DERIVED_DATA+"/" + f"heating/{config["atlite"]["cutout_name"]}"+"heat_demand_profile_{planning_horizons}.h5",
+            heat_demand_profile=DERIVED_DATA + f"/heating-cutout_{config["atlite"]["cutout_name"]}/"+"heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
-            solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
-            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
+            solar_thermal_name=DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
+            cop_name=DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/hp_cop.h5",
             elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
             energy_totals_name=DERIVED_DATA+"/"+f"energy_totals_{config["atlite"]["cutout_name"]}"+"_{planning_horizons}.h5",
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
             tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_COMMON +f"/{config["atlite"]["cutout_name"]}_{tech}.nc"
+            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{config["atlite"]["cutout_name"]}/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
@@ -222,18 +220,17 @@ if config["foresight"] in ["overnight"]:
 elif config["foresight"] == "myopic":
     rule prepare_base_networks_2020:
         input:
-            overrides = "resources/data/override_component_attrs",
             edges= "resources/data/grids/edges.txt",
             edges_existing = "resources/data/grids/edges_current.csv",
-            heat_demand_profile= DERIVED_DATA+"/"+f"heat{config["atlite"]["cutout_name"]}"+"heat_demand_profile_{planning_horizons}.h5",
+            heat_demand_profile=DERIVED_DATA + f"/heating-cutout_{config["atlite"]["cutout_name"]}/"+"heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
-            solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
-            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
+            solar_thermal_name=DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
+            cop_name=DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/hp_cop.h5",
             elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
             # TODO: metadata for file, why does it need to be h5?
             tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_COMMON +f"/{config["atlite"]["cutout_name"]}_{tech}.nc"
+            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{config["atlite"]["cutout_name"]}/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
@@ -245,18 +242,16 @@ elif config["foresight"] == "myopic":
 
     rule prepare_base_networks:
         input:
-            overrides = "resources/data/override_component_attrs",
-            # TODO fix me
             edges = "resources/data/grids/edges.txt",
             biomass_potental = DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",
-            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
+            cop_name=DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/hp_cop.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
-            heat_demand_profile= DERIVED_DATA+"/"+f"heating/{config["atlite"]["cutout_name"]}/"+"heat_demand_profile_{planning_horizons}.h5",
-            solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
+            heat_demand_profile= DERIVED_DATA + f"/heating-cutout_{config["atlite"]["cutout_name"]}/"+"heat_demand_profile_{planning_horizons}.h5",
+            solar_thermal_name=DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
             elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
             tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_COMMON +f"/{config["atlite"]["cutout_name"]}_{tech}.nc"
+            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{config["atlite"]["cutout_name"]}/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
@@ -268,10 +263,9 @@ elif config["foresight"] == "myopic":
 
     rule add_existing_baseyear:
         input:
-            overrides="resources/data/override_component_attrs",
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
-            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
+            cop_name=DERIVED_COMMON+f"/cutout_{config["atlite"]["cutout_name"]}/heating/hp_cop.h5",
             **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
                for tech in config['existing_infrastructure']},
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
@@ -289,11 +283,10 @@ elif config["foresight"] == "myopic":
 
     rule add_brownfield:
         input:
-            overrides="resources/data/override_component_attrs",
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             network_p=solved_previous_horizon,#solved network at previous time step
             costs="resources/data/costs/costs_{planning_horizons}.csv",
-            **{f"profile_{tech}": DERIVED_COMMON +f"/{config["atlite"]["cutout_name"]}_{tech}.nc"
+            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{config["atlite"]["cutout_name"]}/profile_{tech}.nc"
                 for tech in config['renewable']}
         output:
             network_name = RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
@@ -307,7 +300,6 @@ elif config["foresight"] == "myopic":
         params:
             solving = config["solving"],
         input:
-            overrides = "resources/data/override_component_attrs",
             network=RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
             costs="resources/data/costs/costs_{planning_horizons}.csv",
             biomass_potental= DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",

@@ -298,7 +298,7 @@ if __name__ == "__main__":
         start_day_hour=config["snapshots"]["start"],
         end_day_hour=config["snapshots"]["end"],
         bounds=config["snapshots"]["bounds"],
-        tz=config["snapshots"]["timezone"],
+        tz=None,
         end_year=(None if not config["snapshots"]["end_year_plus1"] else planning_horizons + 1),
     )
 

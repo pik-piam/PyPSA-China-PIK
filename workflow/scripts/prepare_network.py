@@ -463,7 +463,7 @@ def add_heat_coupling(
     )
 
     if "heat pump" in config["Techs"]["vre_techs"]:
-
+        logger.info(f"loading cop profiles from {snakemake.input.cop_name}")
         with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
             ashp_cop = store["ashp_cop_profiles"]
             ashp_cop.index = ashp_cop.index.tz_localize(None)
@@ -944,7 +944,8 @@ def prepare_network(config: dict) -> pypsa.Network:
         start_day_hour=snapshot_cfg["start"],
         end_day_hour=snapshot_cfg["end"],
         bounds=snapshot_cfg["bounds"],
-        tz=snapshot_cfg["timezone"],
+        # naive local timezone
+        tz=None,
         end_year=(None if not snapshot_cfg["end_year_plus1"] else planning_horizons + 1),
     )
     network.set_snapshots(snapshots)
