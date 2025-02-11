@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'Debug_GUROBI_TUNNEL_TONN'
+  name: 'example_run'
   #name: 'Debug_overnight_3hr_res_testrun'
 foresight: "overnight"
 results_dir: 'results/'
@@ -81,11 +81,9 @@ snapshots:
   start: "01-01 00:00"
   end: "12-31 23:00"
   bounds: 'both'
-  freq: '24h'
-  # naive timezone (but not for cutout)
-  timezone : null
+  freq: '2h'
   # for weighings -> to be improved
-  frequency: 24.
+  frequency: 2.
   # in case snapshots cross the planning horizon year
   end_year_plus1: false
 
@@ -101,12 +99,10 @@ enable:
   retrieve_raster: false
 
 atlite:
-  cutout_name: "China-2020"
+  cutout_name: "China-tests-cutout"
   freq: "h"
   nprocesses: 4
   show_progress: true
-  # accounts for tz, which is missing in atlite. This could be done via constants.TIMEZONE
-  hour_shift_heating: 8
   cutouts:
     China-2020:
       module: era5
@@ -240,14 +236,10 @@ solving:
       PreDual: 0
       GURO_PAR_BARDENSETHRESH: 200
       DualReductions: 0
-#      threads: 4
-#      method: 2 # barrier
-#      crossover: 0
 #      BarConvTol: 1.e-6
 #      Seed: 123
 #      AggFill: 0
 #      PreDual: 0
-#      GURO_PAR_BARDENSETHRESH: 200
 #      seed: 10              # Consistent seed for all plattforms
     gurobi-numeric-focus:
       name: gurobi
