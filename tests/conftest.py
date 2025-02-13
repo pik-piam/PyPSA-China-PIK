@@ -11,10 +11,37 @@ import matplotlib
 from hashlib import sha256 as hash256
 from pypsa import Network
 import logging
+from typing import Generator
+import contextlib
+from os import remove
+from filelock import BaseFileLock
+
 from constants import TESTS_RUNNAME, TESTS_CUTOUT
 
 DEFAULT_CONFIG = pathlib.Path(pathlib.Path.cwd(), "config", "default_config.yaml")
 TECH_CONFIG = pathlib.Path(pathlib.Path.cwd(), "config", "technology_config.yaml")
+
+
+# fixture from https://lyz-code.github.io/blue-book/coding/python/pytest/
+@pytest.fixture(name="lock", scope="session")
+def lock_(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Generator[BaseFileLock, None, None]:
+    """Create lock file."""
+    base_temp = tmp_path_factory.getbasetemp()
+    lock_file = base_temp.parent / "serial.lock"
+
+    yield BaseFileLock(lock_file=str(lock_file))
+
+    with contextlib.suppress(OSError):
+        remove(path=lock_file)
+
+
+@pytest.fixture(name="serial")
+def _serial(lock: BaseFileLock) -> Generator[None, None, None]:
+    """Fixture to run tests in serial."""
+    with lock.acquire(poll_interval=0.1):
+        yield
 
 
 @pytest.fixture(scope="session", autouse=True)
