@@ -7,7 +7,7 @@ rule fetch_region_shapes:
         offshore_shapes=DERIVED_COMMON +"/regions/provinves_offshore.geojson",
         prov_shpfile="resources/data/province_shapes/CHN_adm1.shp"
     log: LOGS_COMMON+"/fetch_regions_shapes.log"
-    script: "scripts/fetch_shapes.py"
+    script: "../scripts/fetch_shapes.py"
 
 
 # TODO build actual fetch rules with the sentinel/copernicus APIs. 
