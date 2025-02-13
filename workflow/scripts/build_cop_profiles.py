@@ -8,7 +8,7 @@ import pandas as pd
 import scipy as sp
 import logging
 
-from _helpers import configure_logging
+from _helpers import configure_logging, mock_snakemake
 from constants import TIMEZONE
 
 
@@ -76,8 +76,6 @@ if __name__ == "__main__":
 
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
-        from _helpers import mock_snakemake
-
         snakemake = mock_snakemake("build_cop_profiles")
     configure_logging(snakemake, logger=logger)
 
