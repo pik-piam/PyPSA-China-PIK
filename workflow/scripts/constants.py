@@ -142,7 +142,7 @@ PROV_NAMES = [
     "Yunnan",
     "Zhejiang",
 ]
-
+# TODO soft-code based on the eez shapefile
 OFFSHORE_WIND_NODES = np.array(
     [
         "Fujian",

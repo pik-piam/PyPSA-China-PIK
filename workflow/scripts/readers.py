@@ -82,7 +82,8 @@ def read_province_shapes(shape_file: os.PathLike) -> gpd.GeoDataFrame:
     prov_shapes = prov_shapes.to_crs(CRS)
     prov_shapes.set_index("province", inplace=True)
     # TODO: does this make sense? reindex after?
-    if not (prov_shapes.index == PROV_NAMES).all():
-        raise ValueError(f"Province names do not match expected names: {PROV_NAMES}")
+    if not (prov_shapes.sort_index().index == sorted(PROV_NAMES)).all():
+        missing = f"Missing provinces: {set(PROV_NAMES) - set(prov_shapes.index)}"
+        raise ValueError(f"Province names do not match expected names: missing {missing}")
 
     return prov_shapes

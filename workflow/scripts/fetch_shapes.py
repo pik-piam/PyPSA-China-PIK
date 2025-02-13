@@ -72,21 +72,29 @@ def fetch_country_shape(outp_path: PathLike):
     country_shape.to_file(outp_path, driver="GeoJSON")
 
 
-def fetch_province_shapes(outp_path: PathLike):
+def fetch_province_shapes() -> gpd.GeoDataFrame:
     """fetch the province shapes from natural earth and save it to the outpath
 
-    Args:
-        outp_path (PathLike): path to save the province shapes (geojson)
+    Returns:
+        gpd.GeoDataFrame: the province shapes
     """
 
     province_shapes = fetch_natural_earth_shape(
         "admin_1_states_provinces", "iso_a2", COUNTRY_ISO, region_key="name_en"
     )
     province_shapes.rename(columns={"region": "province"}, inplace=True)
+    province_shapes.province = province_shapes.province.str.replace(" ", "")
+    province_shapes.sort_values("province", inplace=True)
+    logger.debug("province shapes:\n", province_shapes)
+
     filtered = province_shapes[province_shapes["province"].isin(PROV_NAMES)]
+    if (filtered["province"].unique() != sorted(PROV_NAMES)).all():
+        logger.warning(
+            f"Missing provinces: {set(PROV_NAMES) - set(province_shapes['province'].unique())}"
+        )
     filtered.set_index("province", inplace=True)
 
-    return filtered
+    return filtered.sort_index()
 
 
 def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
@@ -175,7 +183,7 @@ def eez_by_region(
     voronoi_cells = voronoi_cells.sjoin(prov_centroids, predicate="contains").reset_index()
     if "index_right" in voronoi_cells.columns:
         voronoi_cells.drop(columns=["index_right"], inplace=True)
-    logger.info(f"Voronoi cells: {voronoi_cells}")
+    logger.debug(f"Voronoi cells: {voronoi_cells}")
     # check the below with ez.overlay(voronoi_cells, how="intersection").boundary.plot()
     eez_by_region = voronoi_cells.overlay(eez, how="intersection")[[prov_key, "geometry"]]
     return eez_by_region[eez_by_region[prov_key].isin(PROV_NAMES)].set_index(prov_key)
@@ -192,7 +200,7 @@ if __name__ == "__main__":
     logger.info(f"Country shape saved to {snakemake.output.country_shape}")
 
     logger.info(f"Fetching province shapes for {COUNTRY_ISO} from cartopy")
-    regions = fetch_province_shapes(snakemake.output.province_shapes)
+    regions = fetch_province_shapes()
     regions.to_file(snakemake.output.province_shapes, driver="GeoJSON")
     regions.to_file(snakemake.output.prov_shpfile)
     logger.info(f"Province shapes saved to {snakemake.output.province_shapes}")
