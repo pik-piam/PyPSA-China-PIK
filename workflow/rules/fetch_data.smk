@@ -1,5 +1,15 @@
 # snakemake rules for data fetch operations
 
+rule fetch_region_shapes:
+    output: 
+        country_shape=DERIVED_COMMON +"/regions/country.geojson",
+        province_shapes=DERIVED_COMMON +"/regions/provinces_onshore.geojson",
+        offshore_shapes=DERIVED_COMMON +"/regions/provinves_offshore.geojson",
+        prov_shpfile="resources/data/province_shapes/CHN_adm1.shp"
+    log: LOGS_COMMON+"/fetch_regions_shapes.log"
+    script: "scripts/fetch_shapes.py"
+
+
 # TODO build actual fetch rules with the sentinel/copernicus APIs. 
 # TODO See if there are datasets succeeding the S2 LC100 cover to get newer data
 if config['enable'].get('retrieve_raster', True):

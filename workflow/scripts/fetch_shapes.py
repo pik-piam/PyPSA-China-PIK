@@ -69,8 +69,7 @@ def fetch_country_shape(outp_path: PathLike):
 
     country_shape = fetch_natural_earth_shape("admin_0_countries", "ADMIN", COUNTRY_NAME)
     country_shape.set_index("region", inplace=True)
-    with open(outp_path, "w") as f:
-        country_shape.to_file(f, driver="GeoJSON")
+    country_shape.to_file(outp_path, driver="GeoJSON")
 
 
 def fetch_province_shapes(outp_path: PathLike):
@@ -87,8 +86,7 @@ def fetch_province_shapes(outp_path: PathLike):
     filtered = province_shapes[province_shapes["province"].isin(PROV_NAMES)]
     filtered.set_index("province", inplace=True)
 
-    with open(outp_path, "w") as f:
-        filtered.to_file(f, driver="GeoJSON")
+    return filtered
 
 
 def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
@@ -114,7 +112,7 @@ def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
                 f"Failed to retrieve Maritime Gazette ID. Status code: {response.status_code}"
             )
         record_data = response.json()
-        print(record_data)
+        logger.debug(record_data)
         return [
             data
             for data in record_data
@@ -123,7 +121,7 @@ def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
         ][0]["MRGID"]
 
     mgrid = find_record_id(zone_name)
-
+    logger.debug(f"Found Maritime Gazette ID for {zone_name}: {mgrid}")
     #  URL of the WFS service
     url = "https://geo.vliz.be/geoserver/wfs"
     # WFS request parameters + record ID filter
@@ -135,9 +133,6 @@ def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
         outputFormat="json",
         filter=f"<Filter><PropertyIsEqualTo><PropertyName>mrgid_eez</PropertyName><Literal>{mgrid}</Literal></PropertyIsEqualTo></Filter>",
     )
-    print(
-        f"<Filter><PropertyIsEqualTo><PropertyName>mrgid_eez</PropertyName><Literal>{mgrid}</Literal></PropertyIsEqualTo></Filter>"
-    )
 
     # Fetch data from WFS using requests
     response_eez = requests.get(url, params=params)
@@ -146,10 +141,15 @@ def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
     if response_eez.status_code == 200:
         data = response_eez.json()
     else:
-        print(f"Error: {response_eez.status_code}")
+        logger.error(f"Error: {response_eez.status_code}")
+        raise requests.HTTPError(
+            f"Failed to retrieve Maritime Gazette data. Status code: {response_eez.status_code}"
+        )
     if data["totalFeatures"] != 1:
         raise ValueError(f"Expected 1 feature, got {data['totalFeatures']}\n: {data}")
-    return gpd.GeoDataFrame.from_features(data["features"])
+    crs = data["crs"]["properties"]["name"].split("EPSG::")[-1]
+    eez = gpd.GeoDataFrame.from_features(data["features"])
+    return eez.set_crs(epsg=crs)
 
 
 def eez_by_region(
@@ -169,11 +169,40 @@ def eez_by_region(
     voronoi_cells = gpd.GeoDataFrame(
         geometry=province_shapes.centroid.voronoi_polygons(), crs=province_shapes.crs
     )
-    voronoi_cells = voronoi_cells.sjoin(province_shapes, predicate="intersects").set_index(prov_key)
-    voronoi_cells.drop(columns="index_right", inplace=True)
+    prov_centroids = province_shapes.copy()
+    prov_centroids.geometry = prov_centroids.centroid
+    # need to assign cells to province
+    voronoi_cells = voronoi_cells.sjoin(prov_centroids, predicate="contains").reset_index()
+    if "index_right" in voronoi_cells.columns:
+        voronoi_cells.drop(columns=["index_right"], inplace=True)
+    logger.info(f"Voronoi cells: {voronoi_cells}")
     # check the below with ez.overlay(voronoi_cells, how="intersection").boundary.plot()
-    return eez.overlay(voronoi_cells, how="intersection")
+    eez_by_region = voronoi_cells.overlay(eez, how="intersection")[[prov_key, "geometry"]]
+    return eez_by_region[eez_by_region[prov_key].isin(PROV_NAMES)].set_index(prov_key)
 
 
 if __name__ == "__main__":
-    pass
+    # Detect running outside of snakemake and mock snakemake for testing
+    if "snakemake" not in globals():
+        snakemake = mock_snakemake("fetch_region_shapes")
+    configure_logging(snakemake, logger=logger)
+
+    logger.info(f"Fetching country shape {COUNTRY_NAME} from cartopy")
+    fetch_country_shape(snakemake.output.country_shape)
+    logger.info(f"Country shape saved to {snakemake.output.country_shape}")
+
+    logger.info(f"Fetching province shapes for {COUNTRY_ISO} from cartopy")
+    regions = fetch_province_shapes(snakemake.output.province_shapes)
+    regions.to_file(snakemake.output.province_shapes, driver="GeoJSON")
+    regions.to_file(snakemake.output.prov_shpfile)
+    logger.info(f"Province shapes saved to {snakemake.output.province_shapes}")
+
+    logger.info(f"Fetching maritime zones for EEZ prefix {EEZ_PREFIX}")
+    eez_country = fetch_maritime_eez(EEZ_PREFIX)
+    logger.info("Breaking by reion")
+    # TODO remove one read call by returning gdf instead of saving to file
+    eez_by_region(eez_country, regions, prov_key="province").to_file(
+        snakemake.output.offshore_shapes, driver="GeoJSON"
+    )
+
+    logger.info("Regions succesfully built")

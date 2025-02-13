@@ -29,7 +29,7 @@ CUTOUTS_DIR = path_manager.cutouts_dir()
 include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
 
-localrules: plot_all, build_population, dag
+localrules: plot_all, build_population, dag, fetch_region_shapes
 
 # ====== set global parameters =======
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)

@@ -64,7 +64,11 @@ REF_YEAR = 2020
 START_YEAR = 2020
 END_YEAR = 2060
 
+# geographical
 CRS = 4326  # WGS84
+COUNTRY_NAME = "China"
+COUNTRY_ISO = "CN"
+EEZ_PREFIX = "chinese"
 
 # ===== CHINA ======
 # 791 TWh extra space heating demand + 286 Twh extra hot water demand
