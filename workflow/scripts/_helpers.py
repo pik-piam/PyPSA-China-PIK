@@ -76,12 +76,16 @@ class PathManager:
         return os.path.join(self.config["results_dir"], base_dir, sub_dir)
 
     def derived_data_dir(self, shared=False):
+        # weird import for snakemake
+        from scripts.constants import TESTS_RUNNAME
+
         foresight = self.config["foresight"]
+        base_path = "resources" if not self.config["run"]["name"] == TESTS_RUNNAME else "tests"
         if not shared:
             sub_dir = foresight + "_" + self._join_scenario_vars()
-            return os.path.join("resources/derived_data", sub_dir)
+            return os.path.join(f"{base_path}/derived_data", sub_dir)
         else:
-            return "resources/derived_data"
+            return f"{base_path}/derived_data"
 
     def logs_dir(self):
         run, foresight = self.config["run"]["name"], self.config["foresight"]
