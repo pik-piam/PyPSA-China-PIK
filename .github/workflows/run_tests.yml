@@ -39,14 +39,14 @@ jobs:
     - name: Check py path
       run: |
         which python
-        conda list
-        conda init
+        conda env list
+        conda init --all
         conda activate pypsa-china
         which python
     # 4/ Run tests using pytest
     - name: Run pytest
       run: |
-        conda init
+        conda init --all
         conda activate pypsa-china
         conda install pytest
         pytest -v -s  # Run pytest (make sure your tests are discovered and run)
