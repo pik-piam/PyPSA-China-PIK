@@ -36,18 +36,10 @@ jobs:
         key: ${{ runner.os }}-conda-${{ hashFiles('environment.yml') }}
         restore-keys: |
           ${{ runner.os }}-conda-
-    - name: Check py path
-      run: |
-        which python
-        conda env list
-        conda init --all
-        conda activate pypsa-china
-        which python
     # 4/ Run tests using pytest
     - name: Run pytest
+      shell: bash -el {0}
       run: |
-        conda init --all
-        conda activate pypsa-china
         conda install pytest
         pytest -v -s  # Run pytest (make sure your tests are discovered and run)
 
