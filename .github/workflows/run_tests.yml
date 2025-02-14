@@ -11,14 +11,16 @@ on:
       - main  # Trigger on pull requests to main branch
 
 jobs:
-  snakemake:
+  run-tests:
     runs-on: ubuntu-latest  # Set the environment to Ubuntu
 
     steps:
     # Step 1: Checkout the repository code
     - name: Checkout code
-      uses: actions/checkout@v2
-
+      uses: actions/checkout@v4
+    - name: List files in the repository
+      run: |
+        ls ${{ github.workspace }}
     # Step 2: Set up Conda
     - name: Set up Conda
       uses: conda-incubator/setup-miniconda@v2
