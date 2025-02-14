@@ -36,9 +36,12 @@ jobs:
         key: ${{ runner.os }}-conda-${{ hashFiles('environment.yml') }}
         restore-keys: |
           ${{ runner.os }}-conda-
-
+    - name: Check py path
+      run: |
+        which python
     # 4/ Run tests using pytest
     - name: Run pytest
       run: |
-        pytest  # Run pytest (make sure your tests are discovered and run)
+        conda install pytest
+        pytest -v -s  # Run pytest (make sure your tests are discovered and run)
 
