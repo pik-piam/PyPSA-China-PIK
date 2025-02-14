@@ -71,7 +71,7 @@ def test_dry_run_build_cutouts(make_test_config_file):
     """Simple workflow test to check the snakemake inputs and outputs are valid"""
     cfg = make_test_config_file
     cmd = f"snakemake --configfile {cfg} --rerun-incomplete"
-    cmd += '-n --config \'enable={"build_cutout: 1","retrieve_cutout: 1","retrieve_raster: 1"}\''
+    cmd += ' -n --config \'enable={"build_cutout: 1","retrieve_cutout: 1","retrieve_raster: 1"}\''
 
     res = launch_subprocess(cmd)
     if res.returncode != 0:
