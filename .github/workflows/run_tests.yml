@@ -23,10 +23,9 @@ jobs:
     # Step 2: Set up Conda
     - name: Set up Conda
       uses: conda-incubator/setup-miniconda@v2
-      working-directory: "~/."
       with:
         conda-version: 'latest'  # Use the latest version of Miniconda
-        environment-file: workflows/envs/environment.yaml  # Point to your conda environment file (if exists)
+        environment-file: ../workflows/envs/environment.yaml  # Point to your conda environment file (if exists)
         auto-activate-base: false
         activate-environment: pypsa-china
   
