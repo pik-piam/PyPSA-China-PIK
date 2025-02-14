@@ -28,19 +28,6 @@ jobs:
         environment-file: workflow/envs/environment.yaml  # Point to your conda environment file (if exists)
         auto-activate-base: false
         activate-environment: pypsa-china
-  
-    # Step 3: Create and activate the Conda environment
-    - name: Activate Conda environment
-      run: |
-        conda init
-        conda activate pypsa-china  # name is defined in yaml
-
-    # Run tests using pytest
-    - name: Run pytest
-      run: |
-        conda activate myenv  # Ensure the environment is activated
-        pytest  # Run pytest (make sure your tests are discovered and run)
-
     #  cache the Conda environment (for faster CI)
     - name: Cache Conda environment
       uses: actions/cache@v4  
@@ -49,3 +36,16 @@ jobs:
         key: ${{ runner.os }}-conda-${{ hashFiles('environment.yml') }}
         restore-keys: |
           ${{ runner.os }}-conda-
+
+    # # Step 3: Create and activate the Conda environment
+    # - name: Activate Conda environment
+    #   run: |
+    #     conda init
+    #     conda activate pypsa-china  # name is defined in yaml
+
+    # Run tests using pytest
+    - name: Run pytest
+      run: |
+        conda activate myenv  # Ensure the environment is activated
+        pytest  # Run pytest (make sure your tests are discovered and run)
+
