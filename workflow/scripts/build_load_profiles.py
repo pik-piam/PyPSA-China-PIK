@@ -36,7 +36,7 @@ nodes = pd.Index(PROV_NAMES)
 def downscale_time_data(
     dt_index: pd.DatetimeIndex,
     weekly_profile: Iterable,
-    regional_tzs=pd.Series(index=PROV_NAMES, data=list(REGIONAL_GEO_TIMEZONES.values())),
+    regional_tzs: pd.Series,
 ) -> pd.DataFrame:
     """Make hourly resolved data profiles based on exogenous weekdays and weekend profiles.
     This fn takes into account that the profiles are in local time and that regions may
@@ -249,6 +249,7 @@ def build_heat_demand_profile(
         weekly_profile=(
             list(intraday_profiles["weekday"]) * 5 + list(intraday_profiles["weekend"]) * 2
         ),
+        regional_tzs=pd.Series(index=PROV_NAMES, data=list(REGIONAL_GEO_TIMEZONES.values())),
     )
 
     # TWh -> MWh

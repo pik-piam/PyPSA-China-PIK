@@ -30,7 +30,7 @@ TIMEZONE = "Asia/Shanghai"
 # THIS is used to heating demand and is a bit of a problem since currently all are set to
 # the administrative timezone and not the geo timezoones
 
-REGIONAL_GEO_TIMEZONES = {
+REGIONAL_GEO_TIMEZONES_DEFAULT = {
     "Anhui": TIMEZONE,
     "Beijing": TIMEZONE,
     "Chongqing": TIMEZONE,
@@ -74,7 +74,7 @@ def get_province_names() -> list:
     Returns:
         list: the province node names to build the network
     """
-    default_prov_names = list(REGIONAL_GEO_TIMEZONES)
+    default_prov_names = list(REGIONAL_GEO_TIMEZONES_DEFAULT)
     _provs = os.getenv("PROV_NAMES", default_prov_names)
     if isinstance(_provs, str):
         _provs = re.findall(r"[\w']+", _provs)
@@ -92,6 +92,9 @@ def filter_buses(names) -> list:
 
 
 PROV_NAMES = get_province_names()
+REGIONAL_GEO_TIMEZONES = {
+    k: v for k, v in REGIONAL_GEO_TIMEZONES_DEFAULT.items() if k in PROV_NAMES
+}
 
 NUCLEAR_EXTENDABLE_DEFAULT = [
     "Liaoning",
