@@ -2,17 +2,25 @@ import pytest
 import subprocess
 import logging
 import shutil
-
+import os
 
 # Test the workflow for different foresights, years and time resolutions
 # serial needed as snakemake locks directory
 
 
-# TODO ideally this would be a poll of the subprocess
-def test_subprocess(cmd):
+def launch_subprocess(cmd: str, env=None) -> subprocess.CompletedProcess:
+    """launch a subprocess
+
+    Args:
+        cmd (str): a command to run
+        env (os.environment.copy, optional): an environment. Defaults to None.
+
+    Returns:
+        CompletedProcess: process result
+    """
     try:
         logging.debug(f"Running command: {cmd}")
-        res = subprocess.run(cmd, check=True, shell=True, capture_output=True, text=True)
+        res = subprocess.run(cmd, check=True, shell=True, capture_output=True, text=True, env=env)
         logging.info("\n\t".join(res.stdout.split("\n")))
         logging.info(f"return code: {res.returncode}")
         logging.info(f"====== stderr ====== :\n {"\n\t".join(res.stderr.split("\n"))}")
@@ -23,12 +31,12 @@ def test_subprocess(cmd):
     return res
 
 
-# @pytest.mark.serial
+@pytest.mark.serial
 @pytest.mark.parametrize(
     "make_test_config_file",
     [
-        ({"time_res": 1752, "plan_year": [2040], "heat_coupling": True, "foresight": "overnight"}),
-        ({"time_res": 24, "plan_year": [2060], "heat_coupling": True, "foresight": "myopic"}),
+        ({"time_res": 1752, "plan_year": 2040, "heat_coupling": True, "foresight": "overnight"}),
+        ({"time_res": 24, "plan_year": 2060, "heat_coupling": True, "foresight": "myopic"}),
         (
             {
                 "time_res": 5,
@@ -46,22 +54,26 @@ def test_dry_run(make_test_config_file):
     """Simple workflow test to check the snakemake inputs and outputs are valid"""
     cfg = make_test_config_file
     cmd = f"snakemake --configfile {cfg} -n -f"
-    res = test_subprocess(cmd)
+    cmd += " --rerun-incomplete"
+    res = launch_subprocess(cmd)
     if res.returncode != 0:
         shutil.copy(cfg, "tests/failed_test_config.yaml")
     assert res.returncode == 0, "Snakemake dry run failed"
 
 
+@pytest.mark.serial
 @pytest.mark.parametrize(
     "make_test_config_file",
-    [({"time_res": 1752, "plan_year": [2040], "heat_coupling": True, "foresight": "overnight"})],
+    [({"time_res": 1752, "plan_year": 2040, "heat_coupling": True, "foresight": "overnight"})],
     indirect=True,
 )
 def test_dry_run_build_cutouts(make_test_config_file):
     """Simple workflow test to check the snakemake inputs and outputs are valid"""
     cfg = make_test_config_file
-    cmd = f'snakemake --configfile {cfg} -n --config \'enable={{"build_cutout: 1","retrieve_cutout: 1","retrieve_raster: 1"}}\''
-    res = test_subprocess(cmd)
+    cmd = f"snakemake --configfile {cfg} --rerun-incomplete"
+    cmd += '-n --config \'enable={"build_cutout: 1","retrieve_cutout: 1","retrieve_raster: 1"}\''
+
+    res = launch_subprocess(cmd)
     if res.returncode != 0:
         shutil.copy(cfg, "tests/failed_test_config.yaml")
     assert res.returncode == 0, "Snakemake dry run w build cutouts failed"
@@ -71,15 +83,22 @@ def test_dry_run_build_cutouts(make_test_config_file):
 @pytest.mark.serial
 @pytest.mark.parametrize(
     "make_test_config_file",
-    [({"time_res": 1752, "plan_year": [2040], "heat_coupling": True, "foresight": "overnight"})],
+    [({"time_res": 8, "plan_year": 2040, "heat_coupling": True, "foresight": "overnight"})],
     indirect=True,
 )
 def test_workflow(make_test_config_file):
     logging.info("Starting workflow test")
-    # snakemake command to test up to prepare network
+    # reduce network size
+
+    env = os.environ.copy()
+    # make smaller network by limiting province sizes
+    env["PROV_NAMES"] = '["Anhui", "Jiangsu", "Shanghai"]'  # Override CONST1
+    env["IS_TEST"] = "1"
     cfg = make_test_config_file
+    # snakemake command to test up to prepare network
     cmd = f"snakemake --configfile {cfg}"
-    res = test_subprocess(cmd)
+    cmd += " --rerun-incomplete"
+    res = launch_subprocess(cmd, env)
     if res.returncode != 0:
         shutil.copy(cfg, "tests/failed_test_config.yaml")
     assert res.returncode == 0, "Snakemake run failed"

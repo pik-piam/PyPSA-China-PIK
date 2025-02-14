@@ -10,7 +10,7 @@ import os.path
 
 from os.path import abspath, getctime
 from scripts._helpers import PathManager, get_cutout_params
-
+from scripts.constants import TESTS_RUNNAME
 # NB: duplicated parameters will be overwritten by the last read cfg
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
@@ -39,7 +39,15 @@ CUTOUT_PATH = os.path.join(CUTOUTS_DIR,CUTOUT_NAME + ".nc")
 storage:
     provider="http",
 
-# ======= PSEUDO RULE TO CALL WHOLE WORKFLOW =========
+# ======= PSEUDO RULES TO EXECUTE WORKFLOW =========
+# for testing (plotting not yet integrated)
+if config["run"]["name"]==TESTS_RUNNAME:
+    rule test_workflow:
+        input:
+            expand(RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc',   
+            **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
+            ),
+# for runs
 if config["foresight"] in ["overnight", "myopic"]:
     rule plot_all:
         input:
@@ -149,9 +157,8 @@ rule build_renewable_potential:
         cutout= CUTOUT_PATH,
     # TODO make paths depend on whether "Technique" is used in config
     output:
-        solar_profile=DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_solar.nc",
-        onwind_profile=DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_onwind.nc",
-        offwind_profile=DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_offwind.nc",
+        **{f"{tech}_profile": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
+            for tech in config['Technique']}
     log: LOGS_COMMON + f"/build_renewable_potential_{CUTOUT_NAME}.log"
     threads: ATLITE_NPROCESSES
     resources: mem_mb=ATLITE_NPROCESSES * 5000
@@ -334,6 +341,7 @@ rule dag:
         dot -Tpng -o {output.rules_png} {output.rules_dot}
         """
 
+    
 onerror:
     log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
@@ -348,6 +356,10 @@ onerror:
 onsuccess:
     log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
+    if not os.path.exists(res_dir):
+        os.makedirs(res_dir)
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR)
     # log path is available as "log"
     shutil.copy(log, log_out)
     yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))

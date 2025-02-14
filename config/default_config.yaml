@@ -88,7 +88,6 @@ snapshots:
   end_year_plus1: false
 
 logging_level: INFO
-logging_level: INFO
 logging:
   level: INFO
   format: '%(levelname)s:%(name)s:%(message)s'
@@ -99,7 +98,7 @@ enable:
   retrieve_raster: false
 
 atlite:
-  cutout_name: "China-tests-cutout"
+  cutout_name: "China-2020"
   freq: "h"
   nprocesses: 4
   show_progress: true

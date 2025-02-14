@@ -9,8 +9,7 @@ import pytest
 from os import PathLike
 import matplotlib
 from hashlib import sha256 as hash256
-from pypsa import Network
-import logging
+
 from typing import Generator
 import contextlib
 from os import remove
@@ -73,7 +72,7 @@ def make_snakemake_test_config(tmp_path_factory) -> dict:
     """
 
     def make(
-        time_res=24, plan_year=2040, start_d="01-01 00:00", end_d="01-12 23:00", **kwargs
+        time_res=24, plan_year=2040, start_d="01-02 00:00", end_d="01-02 23:00", **kwargs
     ) -> dict:
 
         base_config = load_config(DEFAULT_CONFIG)
@@ -81,14 +80,19 @@ def make_snakemake_test_config(tmp_path_factory) -> dict:
         base_config.update(kwargs)
 
         test_config = base_config.copy()
+        if isinstance(plan_year, int):
+            plan_year = [plan_year]
         test_config["scenario"]["planning_horizons"] = plan_year
         test_config["snapshots"]["freq"] = f"{time_res}h"
         test_config["snapshots"]["frequency"] = time_res
         test_config["snapshots"]["start"] = start_d
         test_config["snapshots"]["end"] = end_d
+        # do not setup tunnel
+        # test_config["solving"]["solver"] = None
+        test_config["solving"]["gurobi_hpc_tunnel"]["use_tunnel"] = False
         # do not build rasters
         test_config["enable"] = {k: False for k in test_config["enable"]}
-
+        # set the paths & run name (PathManager reacts to TESTS_RUNNAME)
         test_config["results_dir"] = str(tmp_path_factory.mktemp("results"))
         test_config["summary_dir"] = str(tmp_path_factory.mktemp("results_summary"))
         test_config["run"]["name"] = TESTS_RUNNAME
@@ -98,8 +102,7 @@ def make_snakemake_test_config(tmp_path_factory) -> dict:
         test_config["atlite"]["cutouts"] = {
             TESTS_CUTOUT: {"weather_year": 2020, "module": "era5", "dx": 5, "dy": 5}
         }
-        # remove solving params
-        test_config.pop("solving")
+
         return test_config
 
     return make
@@ -107,7 +110,9 @@ def make_snakemake_test_config(tmp_path_factory) -> dict:
 
 @pytest.fixture(scope="module")
 def make_test_config_file(make_snakemake_test_config, tmpdir_factory, request):
-    """Fixture to save a temp config file for testing, return its path, and clean up after module."""
+    """Fixture to save a temp config file for testing, return its path,
+    and clean up after module.
+    """
 
     # Get parameters passed via pytest.mark.parametrize
     time_res = request.param.get("time_res", 24)
@@ -135,23 +140,7 @@ def make_test_config_file(make_snakemake_test_config, tmpdir_factory, request):
 
     # Write the test config to the YAML file
     with open(config_file_path, "w") as f:
-        yaml.dump(test_config, f)
+        yaml.dump(test_config, f, sort_keys=False)
 
     # Yield the file path for use in tests
     yield str(config_file_path)
-
-
-# @pytest.fixture(autouse=True)
-# def mock_network_optimisation(monkeypatch):
-#     """Mock the network optimisation function in the workflow"""
-
-#     def mock_solve(n:Network):
-#         for c in n.iterate_components(components=["Generator","Link", "Store","LineType"]):
-#             opt_cols = [col for col in c.df.columns if col.endswith("opt")]
-#             base_cols = [col.split("_opt")[0] for col in opt_cols]
-#             c.df[opt_cols] = c.df[base_cols]
-
-#     monkeypatch.setattr("pypsa.optimization.optimize", mock_solve)
-#     monkeypatch.setattr(
-#         "pypsa.optimization.optimize_transmission_expansion_iteratively", mock_solve
-#     )

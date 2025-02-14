@@ -38,7 +38,6 @@ cluster-generic-submit-cmd:
     --output=logs/logs_slurm/{rule}/%j-{rule}-{wildcards}.out
     --parsable
     --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
-    --exclude=csl14c17[8-9]
 cluster-generic-cancel-cmd: scancel
 
 # now define the resources

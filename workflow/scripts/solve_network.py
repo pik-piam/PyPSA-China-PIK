@@ -3,19 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 # coding: utf-8
-""" Functions to add constraints and prepare the network for the solver. 
-Associated with the `solve_networks` rule in the Snakefile.
+""" Functions to add constraints and prepare the network for the solver.
+ Associated with the `solve_networks` rule in the Snakefile.
 """
 import logging
 import numpy as np
 import pypsa
 from pandas import DatetimeIndex
+import os
 
-from _helpers import (
-    configure_logging,
-    mock_snakemake,
-    setup_gurobi_tunnel_and_env,
-)
+from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -226,12 +223,13 @@ if __name__ == "__main__":
 
     # deal with the gurobi license activation, which requires a tunnel to the login nodes
     solver_config = snakemake.config["solving"]["solver"]
-    gurobi_license_config = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
-    logger.info(f"Solver config {solver_config} and license cfg {gurobi_license_config}")
-    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
-        tunnel = setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
+    gurobi_tnl_cfg = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
+    logger.info(f"Solver config {solver_config} and license cfg {gurobi_tnl_cfg}")
+    if (solver_config["name"] == "gurobi") & (gurobi_tnl_cfg is not None):
+        tunnel = setup_gurobi_tunnel_and_env(gurobi_tnl_cfg, logger=logger)
         logger.info(tunnel)
-        logger.info(tunnel.poll())
+    else:
+        tunnel = None
 
     opts = snakemake.wildcards.get("opts", "")
     if "sector_opts" in snakemake.wildcards.keys():
@@ -242,23 +240,31 @@ if __name__ == "__main__":
     n = pypsa.Network(snakemake.input.network_name)
 
     n = prepare_network(n, solve_opts)
-    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
+    if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
-    n = solve_network(
-        n,
-        config=snakemake.config,
-        solving=snakemake.params.solving,
-        opts=opts,
-        log_fn=snakemake.log.solver,
-    )
+
+    # HACK to replace pytest monkeypatch
+    # which doesn't work as snakemake is a subprocess
+    is_test = int(os.getenv("IS_TEST", 0))
+    if not is_test:
+        n = solve_network(
+            n,
+            config=snakemake.config,
+            solving=snakemake.params.solving,
+            opts=opts,
+            log_fn=snakemake.log.solver,
+        )
+    else:
+        logging.info("Mocking the solve step")
+        n = mock_solve(n)
 
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
     n.export_to_netcdf(snakemake.output[0])
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
-    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
-        logger.info(f"tunnel alive? {tunnel.poll()}")
 
+    if tunnel:
+        logger.info(f"tunnel alive? {tunnel.poll()}")
         tunnel.kill()
         logger.info(f"tunnel alive after kill? {tunnel.poll()}")

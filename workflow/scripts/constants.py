@@ -2,10 +2,11 @@
 Soft coded centalized `constants`
 """
 
+import os
+import re
 import numpy as np
 
-SNAKEFILE_CHOICES = ["Snakefile", "snakefile"]
-
+# ======= CONVERSIONS =======
 PLOT_COST_UNITS = 1e9  # bnEur
 PLOT_CAP_UNITS = 1e3  # MW->GW
 PLOT_CAP_LABEL = "GW"
@@ -18,11 +19,17 @@ COST_UNIT = 1
 CURRENCY = "Eur"
 
 # ==== data inputs ====
+# TODO move to config
 YEARBOOK_DATA2POP = 1e4
 POP_YEAR = "2020"
+
+# ========= SETUP REGIONS ==========
+# problem section due to pytests and snakemake not integrating well (snakmekae is as subprocess)
+
 TIMEZONE = "Asia/Shanghai"
 # THIS is used to heating demand and is a bit of a problem since currently all are set to
 # the administrative timezone and not the geo timezoones
+
 REGIONAL_GEO_TIMEZONES = {
     "Anhui": TIMEZONE,
     "Beijing": TIMEZONE,
@@ -56,6 +63,64 @@ REGIONAL_GEO_TIMEZONES = {
     "Yunnan": TIMEZONE,
     "Zhejiang": TIMEZONE,
 }
+
+
+def get_province_names() -> list:
+    """HACK to make it possible for pytest to generate a smaller network
+
+    Raises:
+        ValueError: if the PROV_NAMES is not a list or str
+
+    Returns:
+        list: the province node names to build the network
+    """
+    default_prov_names = list(REGIONAL_GEO_TIMEZONES)
+    _provs = os.getenv("PROV_NAMES", default_prov_names)
+    if isinstance(_provs, str):
+        _provs = re.findall(r"[\w']+", _provs)
+        if not _provs:
+            xpected = '["region1", ...]'
+            err = f"Environment var PROV_NAMES {_provs} for tests did not have expected format: "
+            raise ValueError(err + xpected)
+    elif not isinstance(_provs, list):
+        raise ValueError("PROV_NAMES must be a list or str")
+    return _provs
+
+
+def filter_buses(names) -> list:
+    return [name for name in names if name in PROV_NAMES]
+
+
+PROV_NAMES = get_province_names()
+
+NUCLEAR_EXTENDABLE_DEFAULT = [
+    "Liaoning",
+    "Shandong",
+    "Jiangsu",
+    "Zhejiang",
+    "Fujian",
+    "Guangdong",
+    "Hainan",
+    "Guangxi",
+]
+NUCLEAR_EXTENDABLE = filter_buses(NUCLEAR_EXTENDABLE_DEFAULT)
+
+OFFSHORE_WIND_NODES_DEFAULT = [
+    "Fujian",
+    "Guangdong",
+    "Guangxi",
+    "Hainan",
+    "Hebei",
+    "Jiangsu",
+    "Liaoning",
+    "Shandong",
+    "Shanghai",
+    "Tianjin",
+    "Zhejiang",
+]
+OFFSHORE_WIND_NODES = filter_buses(OFFSHORE_WIND_NODES_DEFAULT)
+
+# TIMES
 INFLOW_DATA_YR = 2016
 
 # TIME RANGE
@@ -77,16 +142,7 @@ EEZ_PREFIX = "chinese"
 CO2_EL_2020 = 5.288987673 * 1e9  # tCO2
 CO2_HEATING_2020 = 0.628275682 * 1e9  # tCO2
 
-NUCLEAR_EXTENDABLE = [
-    "Liaoning",
-    "Shandong",
-    "Jiangsu",
-    "Zhejiang",
-    "Fujian",
-    "Guangdong",
-    "Hainan",
-    "Guangxi",
-]
+
 # FACTORS
 LOAD_CONVERSION_FACTOR = 1e6  # convert from  ? to ?
 DEFAULT_OFFSHORE_WIND_CORR_FACTOR = 1.0
@@ -108,57 +164,8 @@ UNIT_HOT_WATER_START_YEAR = 0.366008  # MWh/capita/yr 2020 [!! INCONSISTENT]
 # http://www.estif.org/fileadmin/estif/content/publications/downloads/UNEP_2015/factsheet_single_family_houses_v05.pdf
 UNIT_HOT_WATER_END_YEAR = 1.0
 
-# ========= names ==========
-PROV_NAMES = [
-    "Anhui",
-    "Beijing",
-    "Chongqing",
-    "Fujian",
-    "Gansu",
-    "Guangdong",
-    "Guangxi",
-    "Guizhou",
-    "Hainan",
-    "Hebei",
-    "Heilongjiang",
-    "Henan",
-    "Hubei",
-    "Hunan",
-    "InnerMongolia",
-    "Jiangsu",
-    "Jiangxi",
-    "Jilin",
-    "Liaoning",
-    "Ningxia",
-    "Qinghai",
-    "Shaanxi",
-    "Shandong",
-    "Shanghai",
-    "Shanxi",
-    "Sichuan",
-    "Tianjin",
-    "Tibet",
-    "Xinjiang",
-    "Yunnan",
-    "Zhejiang",
-]
 # TODO soft-code based on the eez shapefile
-OFFSHORE_WIND_NODES = np.array(
-    [
-        "Fujian",
-        "Guangdong",
-        "Guangxi",
-        "Hainan",
-        "Hebei",
-        "Jiangsu",
-        "Liaoning",
-        "Shandong",
-        "Shanghai",
-        "Tianjin",
-        "Zhejiang",
-    ],
-    dtype=str,
-)
+
 
 # ==== technologies
 

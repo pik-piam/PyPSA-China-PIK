@@ -200,6 +200,7 @@ if __name__ == "__main__":
     logger.info(f"Country shape saved to {snakemake.output.country_shape}")
 
     logger.info(f"Fetching province shapes for {COUNTRY_ISO} from cartopy")
+    # TODO it would be better to filter by set regions after making the voronoi polygons
     regions = fetch_province_shapes()
     regions.to_file(snakemake.output.province_shapes, driver="GeoJSON")
     regions.to_file(snakemake.output.prov_shpfile)
@@ -208,7 +209,6 @@ if __name__ == "__main__":
     logger.info(f"Fetching maritime zones for EEZ prefix {EEZ_PREFIX}")
     eez_country = fetch_maritime_eez(EEZ_PREFIX)
     logger.info("Breaking by reion")
-    # TODO remove one read call by returning gdf instead of saving to file
     eez_by_region(eez_country, regions, prov_key="province").to_file(
         snakemake.output.offshore_shapes, driver="GeoJSON"
     )

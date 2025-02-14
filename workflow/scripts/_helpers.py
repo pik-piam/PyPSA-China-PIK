@@ -19,9 +19,7 @@ import time
 import pytz
 from pathlib import Path
 from types import SimpleNamespace
-import logging
 
-from pypsa.components import components, component_attrs
 import pypsa
 
 # get root logger
@@ -33,7 +31,10 @@ LOGIN_NODE = "03"
 
 # TODO return pathlib objects? so can just use / to combine paths?
 class PathManager:
-    """A class to manage paths for the snakemake workflow"""
+    """A class to manage paths for the snakemake workflow
+
+    Returns different paths for CI/CD runs (HACK due to snamekame-pytest incompatibility)
+    """
 
     def __init__(self, snmk_config):
         self.config = snmk_config
@@ -118,7 +119,7 @@ def setup_gurobi_tunnel_and_env(
         logger (logging.Logger, optional): Logger. Defaults to None.
         attempts (int, optional): ssh connection attemps. Defaults to 4.
     """
-    if tunnel_config.get("use_tunnel", False) is False:
+    if not tunnel_config.get("use_tunnel", False):
         return
     logger.info("setting up tunnel")
     user = os.getenv("USER")  # User is pulled from the environment
@@ -780,3 +781,26 @@ def mock_snakemake(
         os.chdir(curr_path)
 
     return snakemake
+
+
+def mock_solve(n: pypsa.Network) -> pypsa.Network:
+    """Mock the solving step for tests
+
+    Args:
+        n (pypsa.Network): the network object
+    """
+    for c in n.iterate_components(components=["Generator", "Link", "Store", "LineType"]):
+        opt_cols = [col for col in c.df.columns if col.endswith("opt")]
+        base_cols = [col.split("_opt")[0] for col in opt_cols]
+        c.df[opt_cols] = c.df[base_cols]
+    return n
+
+
+def set_plot_test_backend():
+    """Hack to set the matplotlib backend to Agg for testing
+    Not possible via normal conftest.py since snakemake is a subprocess"""
+    is_test = int(os.getenv("IS_TEST", 0))
+    if is_test:
+        import matplotlib
+
+        matplotlib.use("Agg")

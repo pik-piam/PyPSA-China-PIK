@@ -282,7 +282,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "build_load_profiles",
             heating_demand="positive",
-            planning_horizons="2020",
+            planning_horizons="2040",
             pathway="exponential-175",
             topology="Current+Neigbor",
         )
