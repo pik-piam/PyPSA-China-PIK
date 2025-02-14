@@ -22,9 +22,9 @@ jobs:
         ls ${{ github.workspace }}
     # Step 2: Set up Conda
     - name: Set up Conda
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
-        conda-version: 'latest'  # Use the latest version of Miniconda
+        miniconda-version: 'latest'  # Use the latest version of Miniconda
         environment-file: workflow/envs/environment.yaml  # Point to your conda environment file (if exists)
         auto-activate-base: false
         activate-environment: pypsa-china
