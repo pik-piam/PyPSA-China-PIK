@@ -24,12 +24,13 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         conda-version: 'latest'  # Use the latest version of Miniconda
-        environment-file: environment.yml  # Point to your conda environment file (if exists)
-
+        environment-file: workflows/envs/environment.yaml  # Point to your conda environment file (if exists)
+        auto-activate-base: false
+        activate-environment: pypsa-china
+  
     # Step 3: Create and activate the Conda environment
-    - name: Create Conda environment
+    - name: Activate Conda environment
       run: |
-        conda env create -f workflows/envs/environment.yaml # Create the environment from the YAML file
         conda activate pypsa-china  # name is defined in yaml
 
     # Run tests using pytest
@@ -40,7 +41,7 @@ jobs:
 
     #  cache the Conda environment (for faster CI)
     - name: Cache Conda environment
-      uses: actions/cache@v2  
+      uses: actions/cache@v4  
       with:
         path: ~/.conda
         key: ${{ runner.os }}-conda-${{ hashFiles('environment.yml') }}
