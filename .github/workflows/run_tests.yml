@@ -32,6 +32,7 @@ jobs:
     # Step 3: Create and activate the Conda environment
     - name: Activate Conda environment
       run: |
+        conda init
         conda activate pypsa-china  # name is defined in yaml
 
     # Run tests using pytest
