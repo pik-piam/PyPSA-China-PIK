@@ -80,8 +80,10 @@ class PathManager:
         # weird import for snakemake
         from scripts.constants import TESTS_RUNNAME
 
-        foresight = self.config["foresight"]
+        # HACK for pytests CI
         base_path = "resources" if not self.config["run"]["name"] == TESTS_RUNNAME else "tests"
+
+        foresight = self.config["foresight"]
         if not shared:
             sub_dir = foresight + "_" + self._join_scenario_vars()
             return os.path.join(f"{base_path}/derived_data", sub_dir)
@@ -98,10 +100,21 @@ class PathManager:
         # weird import for snakemake
         from scripts.constants import TESTS_RUNNAME
 
+        # HACK for pytests CI
         if self.config["run"]["name"] == TESTS_RUNNAME:
             return "tests/testdata"
         else:
             return "resources/cutouts"
+
+    def landuse_raster_data(self):
+        # weird import for snakemake
+        from scripts.constants import TESTS_RUNNAME
+
+        # HACK for pytests CI
+        if self.config["run"]["name"] == TESTS_RUNNAME:
+            return "tests/testdata/landuse_availability"
+        else:
+            return "resources/data/landuse_availability"
 
 
 # ============== HPC helpers ==================

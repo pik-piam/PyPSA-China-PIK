@@ -23,7 +23,7 @@ __pycache__
 /cutouts
 /logs
 /benchmarks
-
+/tests/derived_data/**
 !**.gitkeep
 .vscode/launch.json
 /workflow/logs/*

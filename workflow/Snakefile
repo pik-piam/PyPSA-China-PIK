@@ -23,6 +23,7 @@ DERIVED_DATA = path_manager.derived_data_dir(shared=False)
 DERIVED_COMMON = path_manager.derived_data_dir(shared=True)
 LOG_DIR = path_manager.logs_dir()
 LOGS_COMMON = "logs"
+LU_RASTER = path_manager.landuse_raster_data()
 CUTOUTS_DIR = path_manager.cutouts_dir()
 
 # ====== include rules ======= (after paths are set!)
@@ -94,7 +95,8 @@ rule build_population_gridcell_map:
     input:
         cutout=CUTOUT_PATH,
         province_populations=DERIVED_COMMON+"/"+"population/population.h5",
-        population_density_grid="resources/data/population/CFSR_grid.nc",
+        population_density_grid="resources/data/population/pop_density_china.nc",
+        # TODO directly link to output of fetch region shapes
         # admin 1 level = first administrative level within country
         province_shape="resources/data/province_shapes/CHN_adm1.shp",
     output:
@@ -137,20 +139,18 @@ rule build_cop_profiles:
     resources: mem_mb=30000
     script: "scripts/build_cop_profiles.py"
 
-# TODO add cutout_name to potentials and profiles
-# TODO add rule to generate region shapes (there is one somewhere?)
 rule build_renewable_potential:
     input:
-        Build_up_raster="resources/data/landuse_availability/Build_up.tif",
-        Grass_raster="resources/data/landuse_availability/Grass.tif",
-        Bare_raster="resources/data/landuse_availability/Bare.tif",
-        Shrubland_raster="resources/data/landuse_availability/Shrubland.tif",
+        Build_up_raster=f"{LU_RASTER}/Build_up.tif",
+        Grass_raster=f"{LU_RASTER}/Grass.tif",
+        Bare_raster=f"{LU_RASTER}/Bare.tif",
+        Shrubland_raster=f"{LU_RASTER}/Shrubland.tif",
+        # GEBCO bathymetry (water depth)
+        gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2024_CN.tif",
         # natural reserves data
         natura1='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_0/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
         natura2='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_1/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
         natura3='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_2/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
-        # GEBCO bathymetry (water depth)
-        gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2024_CN.tif",
         provinces_shp="resources/data/province_shapes/CHN_adm1.shp",
         offshore_province_shapes="resources/data/regions/regions_offshore_province.geojson",
         offshore_shapes="resources/data/regions/regions_offshore.geojson",
