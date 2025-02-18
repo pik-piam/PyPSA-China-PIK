@@ -164,14 +164,18 @@ rule build_renewable_potential:
     resources: mem_mb=ATLITE_NPROCESSES * 5000
     script: "scripts/build_renewable_potential.py"
 
+# TODO check whether energy totals still needed
 rule build_load_profiles:
     input:
         population = DERIVED_COMMON+"/"+"population/population.h5",
         population_map = DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout = CUTOUT_PATH,
         intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
-        space_heat_demand="resources/data/heating/SPH_2020.csv"
+        space_heat_demand="resources/data/heating/SPH_2020.csv",
+        elec_load_projs = "resources/data/load/Province_Load_2020_2060.csv",
+        hrly_regional_ac_load = "resources/data/load/Hourly_demand_of_31_province_China_modified_V2.1.csv"
     output:
+        elec_load_hrly = DERIVED_COMMON + "/load/regio_hrly_ac_load_{planing_horizons}.h5"
         heat_demand_profile = DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
         energy_totals_name = DERIVED_DATA + "/" +f"energy_totals_{CUTOUT_NAME}_"+"{planning_horizons}.h5"
     log: LOG_DIR + "/build_load_profiles/build_{planning_horizons}"+f"_{CUTOUT_NAME}.log"
@@ -199,8 +203,7 @@ if config["foresight"] in ["overnight"]:
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
             solar_thermal_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
             cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
-            elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
-            energy_totals_name=DERIVED_DATA+"/"+f"energy_totals_{CUTOUT_NAME}"+"_{planning_horizons}.h5",
+            elec_load=DERUVED_COMMON + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
             tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
@@ -234,7 +237,7 @@ elif config["foresight"] == "myopic":
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
             solar_thermal_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
             cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
-            elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
+            elec_load=DERUVED_COMMON + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             # TODO: metadata for file, why does it need to be h5?
             tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
@@ -256,7 +259,7 @@ elif config["foresight"] == "myopic":
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
             heat_demand_profile= DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             solar_thermal_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
-            elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
+            elec_load=DERUVED_COMMON + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
             **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"

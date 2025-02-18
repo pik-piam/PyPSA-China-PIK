@@ -277,6 +277,86 @@ def build_heat_demand_profile(
     return heat_demand, space_heat_demand, space_heating_per_hdd, water_heat_demand
 
 
+def prepare_hourly_load_data(
+    hourly_load_p: os.PathLike = "resources/data/load/Hourly_demand_of_31_province_China_modified - V2.1.csv",
+    prov_codes_p: os.PathLike = "resources/data/regions/province_codes.csv",
+) -> pd.DataFrame:
+    """Read the hourly demand data and prepare it for use in the model
+
+    Args:
+        hourly_load_p (os.PathLike, optional): raw elec data from zenodod.
+                Defaults to "resources/data/load/Hourly_demand_of_31_province_China_modified - V2.1.csv".
+        prov_codes_p (os.PathLike, optional): province mapping for data. Defaults to "resources/data/regions/province_codes.csv".
+
+    Returns:
+        pd.DataFrame: the hourly demand data with the right province names, in TWh/hr
+    """
+    TO_TWh = 1e-6
+    hourly = pd.read_csv(hourly_load_p)
+    hourly_TWh = hourly.drop(columns=["Time Series"]) * TO_TWh
+    prov_codes = pd.read_csv(prov_codes_p)
+    prov_codes.set_index("Code", inplace=True)
+    hourly_TWh.columns = hourly_TWh.columns.map(prov_codes["Full name"])
+    return hourly_TWh
+
+
+def read_yearly_projections(
+    yearly_projections_p: os.PathLike = "resources/data/load/Province_Load_2020_2060.csv",
+) -> pd.DataFrame:
+    """prepare projections for model use
+
+    Args:
+        yearly_projections_p (os.PathLike, optional): the data path. Defaults to "resources/data/load/Province_Load_2020_2060.csv".
+
+    Returns:
+        pd.DataFrame: the formatted data
+    """
+    TO_TWh = 1 / 10
+    yearly_proj_TWh = pd.read_csv(yearly_projections_p)
+    yearly_proj_TWh.rename(columns={"Unnamed: 0": "province"}, inplace=True)
+    yearly_proj_TWh.set_index("province", inplace=True)
+    yearly_proj_TWh.rename(columns={c: int(c) for c in yearly_proj_TWh.columns}, inplace=True)
+
+    return yearly_proj_TWh * TO_TWh
+
+
+def project_elec_demand(
+    hourly_demand_base_yr_MWh: pd.DataFrame, yearly_projections_TWh: pd.DataFrame, year=2020
+):
+    """project the hourly demand to the future years
+
+    Args:
+        hourly_demand_base_yr_MWh (pd.DataFrame): the hourly demand in the base year
+        yearly_projections_TWh (pd.DataFrame): the yearly projections
+
+    Returns:
+        pd.DataFrame: the projected hourly demand
+    """
+    hourly_load_TWH_hr = hourly_demand_base_yr_MWh.loc[:, PROV_NAMES]
+    # normalise the hourly load
+    hourly_load_TWH_hr /= hourly_load_TWH_hr.sum(axis=0)
+
+    yearly_projections_TWh = yearly_projections_TWh.T.loc[year, PROV_NAMES]
+    hourly_load_projected = yearly_projections_TWh.multiply(hourly_load_TWH_hr)
+
+    if len(hourly_load_projected) == 8784:
+        # rm feb 29th
+        hourly_load_projected.drop(hourly_load_projected.index[1416:1440], inplace=True)
+    elif len(hourly_load_projected) != 8760:
+        raise ValueError("The length of the hourly load is not 8760 or 8784 (leap year, dropped)")
+
+    snapshots = make_periodic_snapshots(
+        year=year,
+        freq="1h",
+        start_day_hour="01-01 00:00:00",
+        end_day_hour="12-31 23:00",
+        bounds="both",
+    )
+
+    hourly_load_projected.index = snapshots
+    return hourly_load_projected
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
 
@@ -302,6 +382,14 @@ if __name__ == "__main__":
         tz=None,
         end_year=(None if not config["snapshots"]["end_year_plus1"] else planning_horizons + 1),
     )
+
+    # project the electric load based on the demand
+    hrly_TWh_load = prepare_hourly_load_data(snakemake.input.hrly_regional_ac_load)
+    yearly_projs = read_yearly_projections(snakemake.input.elec_load_projs)
+    projected_demand = project_elec_demand(hrly_TWh_load, yearly_projs, planning_horizons)
+
+    with pd.HDFStore(snakemake.output.elec_load_hrly, mode="w", complevel=4) as store:
+        store["load"] = projected_demand
 
     atlite_hour_shift = calc_atlite_heating_timeshift(date_range, use_last_ts=False)
     reg_daily_hd = build_daily_heat_demand_profiles(
