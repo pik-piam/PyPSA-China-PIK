@@ -342,7 +342,7 @@ def project_elec_demand(
     # normalise the hourly load
     hourly_load_TWH_hr /= hourly_load_TWH_hr.sum(axis=0)
 
-    yearly_projections_TWh = yearly_projections_TWh.T.loc[year, PROV_NAMES]
+    yearly_projections_TWh = yearly_projections_TWh.T.loc[int(year), PROV_NAMES]
     hourly_load_projected = yearly_projections_TWh.multiply(hourly_load_TWH_hr)
 
     if len(hourly_load_projected) == 8784:
