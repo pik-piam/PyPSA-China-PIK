@@ -36,6 +36,8 @@ nav:
     - build_solar_thermal_profiles: docs/reference/build_solar_thermal_profiles.md
     - build_temperature_profiles: docs/reference/build_temperature_profiles.md
     - constants: docs/reference/constants.md
+    - fetch_rasters: docs/reference/fetch_rasters.md
+    - fetch_shapes: docs/reference/fetch_shapes.md
     - functions: docs/reference/functions.md
     - make_summary: docs/reference/make_summary.md
     - plot_heatmap: docs/reference/plot_heatmap.md
