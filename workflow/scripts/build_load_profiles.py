@@ -5,7 +5,7 @@ import scipy as sp
 import numpy as np
 from collections.abc import Iterable
 from scipy.optimize import curve_fit
-
+import os
 from _helpers import (
     configure_logging,
     mock_snakemake,
@@ -278,15 +278,14 @@ def build_heat_demand_profile(
 
 
 def prepare_hourly_load_data(
-    hourly_load_p: os.PathLike = "resources/data/load/Hourly_demand_of_31_province_China_modified - V2.1.csv",
-    prov_codes_p: os.PathLike = "resources/data/regions/province_codes.csv",
+    hourly_load_p: os.PathLike,
+    prov_codes_p: os.PathLike,
 ) -> pd.DataFrame:
     """Read the hourly demand data and prepare it for use in the model
 
     Args:
-        hourly_load_p (os.PathLike, optional): raw elec data from zenodod.
-                Defaults to "resources/data/load/Hourly_demand_of_31_province_China_modified - V2.1.csv".
-        prov_codes_p (os.PathLike, optional): province mapping for data. Defaults to "resources/data/regions/province_codes.csv".
+        hourly_load_p (os.PathLike, optional): raw elec data from zenodo, see readme in data.
+        prov_codes_p (os.PathLike, optional): province mapping for data.
 
     Returns:
         pd.DataFrame: the hourly demand data with the right province names, in TWh/hr
@@ -306,7 +305,8 @@ def read_yearly_projections(
     """prepare projections for model use
 
     Args:
-        yearly_projections_p (os.PathLike, optional): the data path. Defaults to "resources/data/load/Province_Load_2020_2060.csv".
+        yearly_projections_p (os.PathLike, optional): the data path.
+                Defaults to "resources/data/load/Province_Load_2020_2060.csv".
 
     Returns:
         pd.DataFrame: the formatted data

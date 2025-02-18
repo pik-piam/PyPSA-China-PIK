@@ -4,7 +4,6 @@ Soft coded centalized `constants`
 
 import os
 import re
-import numpy as np
 
 # ======= CONVERSIONS =======
 PLOT_COST_UNITS = 1e9  # bnEur
