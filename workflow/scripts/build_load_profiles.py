@@ -390,7 +390,9 @@ if __name__ == "__main__":
     )
 
     # project the electric load based on the demand
-    hrly_TWh_load = prepare_hourly_load_data(snakemake.input.hrly_regional_ac_load)
+    hrly_TWh_load = prepare_hourly_load_data(
+        snakemake.input.hrly_regional_ac_load, snakemake.input.province_codes
+    )
     yearly_projs = read_yearly_projections(snakemake.input.elec_load_projs)
     projected_demand = project_elec_demand(hrly_TWh_load, yearly_projs, planning_horizons)
 
