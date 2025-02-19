@@ -56,6 +56,11 @@ set-resources:
     qos : short
     partition: standard
     time : 300
+  build_cutout:
+    time: 500
+    cores: 4
+    partition: io
+    qos: io
   plot_network:
     mem_mb: 8000
     cores: 2
@@ -75,11 +80,6 @@ set-resources:
     partition: io
     qos: io
   retrieve_Shrubland_raster:
-    time: 300
-    cores: 1
-    partition: io
-    qos: io
-  build_cutout:
     time: 300
     cores: 1
     partition: io

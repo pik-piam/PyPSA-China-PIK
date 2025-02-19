@@ -338,11 +338,15 @@ if __name__ == "__main__":
 
     logger.info(f"Loading cutout {snakemake.input.cutout}")
     cutout = atlite.Cutout(snakemake.input.cutout)
-    cutout.prepare()
+    logger.info(f"Preparing cutout {snakemake.input.cutout}")
+    break_requests = snakemake.config["atlite"]["monthly_requests"]
+    cutout.prepare(monthly_requests=break_requests, concurrent_requests=break_requests)
+    logger.info(f"Cutout prepared from {snakemake.input.cutout}")
     provinces_shp = read_province_shapes(snakemake.input.provinces_shp)
     provinces_shp = provinces_shp.reindex(PROV_NAMES).rename_axis("bus")
     buses = provinces_shp.index
 
+    logger.info(f"Loading raster data")
     grass = snakemake.input.Grass_raster
     bare = snakemake.input.Bare_raster
     shrubland = snakemake.input.Shrubland_raster

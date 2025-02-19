@@ -3,8 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'example_run'
-  #name: 'Debug_overnight_3hr_res_testrun'
+  name: 'new_load_overnight_1hr_res_testrun'
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
@@ -81,9 +80,9 @@ snapshots:
   start: "01-01 00:00"
   end: "12-31 23:00"
   bounds: 'both'
-  freq: '2h'
+  freq: '1h'
   # for weighings -> to be improved
-  frequency: 2.
+  frequency: 1.
   # in case snapshots cross the planning horizon year
   end_year_plus1: false
 
@@ -102,6 +101,7 @@ atlite:
   freq: "h"
   nprocesses: 4
   show_progress: true
+  monthly_requests: true
   cutouts:
     China-2020:
       module: era5

@@ -76,8 +76,7 @@ if __name__ == "__main__":
 
     logging.info(f"Preparing cutout with parameters {cutout_params}.")
     cutout = atlite.Cutout(snakemake.output[0], **cutout_params)
-    cutout.prepare()
-
-    logger.info(f"Cutout successfully built at {snakemake.output[0]}.")
+    logging.info("You can check progress at https://cds.climate.copernicus.eu/requests?tab=all")
+    cutout.prepare(monthly_requests=config["atlite"]["monthly_requests"])
 
     logger.info(f"Cutout successfully built at {snakemake.output[0]}.")
