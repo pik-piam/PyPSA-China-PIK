@@ -2,10 +2,10 @@
 
 rule fetch_region_shapes:
     output: 
-        country_shape=DERIVED_COMMON +"/regions/country.geojson",
-        province_shapes=DERIVED_COMMON +"/regions/provinces_onshore.geojson",
-        offshore_shapes=DERIVED_COMMON +"/regions/provinves_offshore.geojson",
-        prov_shpfile="resources/data/province_shapes/CHN_adm1.shp"
+        country_shape=DERIVED_COMMON + "/regions/country.geojson",
+        province_shapes=DERIVED_COMMON + "/regions/provinces_onshore.geojson",
+        offshore_shapes=DERIVED_COMMON + "/regions/provinves_offshore.geojson",
+        prov_shpfile=DERIVED_COMMON + "/province_shapes/CHN_adm1.shp"
     log: LOGS_COMMON+"/fetch_regions_shapes.log"
     script: "../scripts/fetch_shapes.py"
 

@@ -208,7 +208,7 @@ if config["foresight"] in ["overnight"]:
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
             tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
-            province_shape="resources/data/province_shapes/CHN_adm1.shp",
+            province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
             **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
@@ -361,10 +361,10 @@ onerror:
 onsuccess:
     log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
-    if not os.path.exists(res_dir):
-        os.makedirs(res_dir)
-    if not os.path.exists(LOG_DIR):
-        os.makedirs(LOG_DIR)
-    # log path is available as "log"
-    shutil.copy(log, log_out)
-    yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
+    try:
+        # log path is available as "log"
+        shutil.copy(log, log_out)
+        yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
+    except FileNotFoundError as e:
+        logging.warning(f"Could not copy log file: {e}")
+
