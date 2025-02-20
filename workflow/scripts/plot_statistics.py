@@ -91,7 +91,7 @@ if __name__ == "__main__":
         ds = ds.drop(("Generator", "Load"), errors="ignore")
         ds = ds.abs() / PLOT_CAP_UNITS
         ds.attrs["unit"] = PLOT_CAP_LABEL
-        plot_static_per_carrier(ds.abs(), ax)
+        plot_static_per_carrier(ds.abs(), ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "installed_capacity.png"))
 
