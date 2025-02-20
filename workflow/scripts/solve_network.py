@@ -123,6 +123,30 @@ def add_chp_constraints(n: pypsa.Network):
         n.model.add_constraints(lhs <= rhs, name="chplink-backpressure")
 
 
+def add_transimission_constraints(n: pypsa.Network):
+    """
+    Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
+    p_nom positive = p_nom negative
+
+    Args:
+        n (pypsa.Network): the network object to optimize
+    """
+
+    if not n.links.p_nom_extendable.any():
+        return
+
+    positive_bool = n.links.index.str.contains("positive")
+    negative_bool = n.links.index.str.contains("reversed")
+
+    positive_ext = n.links[positive_bool].query("p_nom_extendable").index
+    negative_ext = n.links[negative_bool].query("p_nom_extendable").index
+
+    lhs = n.model["Link-p_nom"].loc[positive_ext]
+    rhs = n.model["Link-p_nom"].loc[negative_ext]
+
+    n.model.add_constraints(lhs == rhs, name="Link-transimission")
+
+
 def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex):
     """
     Collects supplementary constraints which will be passed to ``pypsa.linopf.network_lopf``.
@@ -182,30 +206,6 @@ def solve_network(
         raise RuntimeError("Solving status 'infeasible'")
 
     return n
-
-
-def add_transimission_constraints(n: pypsa.Network):
-    """
-    Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
-    p_nom positive = p_nom negative
-
-    Args:
-        n (pypsa.Network): the network object to optimize
-    """
-
-    if not n.links.p_nom_extendable.any():
-        return
-
-    positive_bool = n.links.index.str.contains("positive")
-    negative_bool = n.links.index.str.contains("reversed")
-
-    positive_ext = n.links[positive_bool].query("p_nom_extendable").index
-    negative_ext = n.links[negative_bool].query("p_nom_extendable").index
-
-    lhs = n.model["Link-p_nom"].loc[positive_ext]
-    rhs = n.model["Link-p_nom"].loc[negative_ext]
-
-    n.model.add_constraints(lhs == rhs, name="Link-transimission")
 
 
 if __name__ == "__main__":

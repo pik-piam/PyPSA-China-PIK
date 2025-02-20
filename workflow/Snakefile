@@ -94,11 +94,11 @@ if config['enable'].get('build_cutout', False):
 rule build_population_gridcell_map:
     input:
         cutout=CUTOUT_PATH,
-        province_populations=DERIVED_COMMON+"/"+"population/population.h5",
+        province_populations=DERIVED_COMMON+"/population/population.h5",
         population_density_grid="resources/data/population/pop_density_china.nc",
         # TODO directly link to output of fetch region shapes
         # admin 1 level = first administrative level within country
-        province_shape="resources/data/province_shapes/CHN_adm1.shp",
+        province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
     output:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5"
     log: LOGS_COMMON+"/build_population_gridcell_map.log"
@@ -151,11 +151,10 @@ rule build_renewable_potential:
         natura1='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_0/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
         natura2='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_1/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
         natura3='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_2/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
-        provinces_shp="resources/data/province_shapes/CHN_adm1.shp",
+        provinces_shp=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
         offshore_province_shapes="resources/data/regions/regions_offshore_province.geojson",
         offshore_shapes="resources/data/regions/regions_offshore.geojson",
         cutout= CUTOUT_PATH,
-    # TODO make paths depend on whether "Technique" is used in config
     output:
         **{f"{tech}_profile": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
             for tech in config['Technique']}
@@ -209,8 +208,7 @@ if config["foresight"] in ["overnight"]:
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
             tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
-               for tech in config['renewable']}
+            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc" for tech in config['renewable']}
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         threads: 1
@@ -242,7 +240,7 @@ elif config["foresight"] == "myopic":
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             # TODO: metadata for file, why does it need to be h5?
             tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
-            province_shape="resources/data/province_shapes/CHN_adm1.shp",
+            province_shape=DERIVED_COMMON +"/province_shapes/CHN_adm1.shp",
             **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
@@ -263,7 +261,7 @@ elif config["foresight"] == "myopic":
             solar_thermal_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
-            province_shape="resources/data/province_shapes/CHN_adm1.shp",
+            province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
             **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
