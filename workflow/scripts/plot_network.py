@@ -318,7 +318,7 @@ def plot_cost_map(
         df["total"] = network.statistics.capex(nice_names=False).groupby(level=1).sum()
         if not capex_only:
             df["opex"] = network.statistics.opex(nice_names=False).groupby(level=1).sum()
-            df.rename(columns={"total": "capex"})
+            df.rename(columns={"total": "capex"}, inplace=True)
         elif plot_additions:
             df["added"] = (
                 df["total"]

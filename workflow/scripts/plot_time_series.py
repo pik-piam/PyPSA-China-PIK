@@ -283,7 +283,7 @@ if __name__ == "__main__":
             end_date=f"{YEAR}-{snakemake.params.spring_day2}",
             ax=ax,
         )
-        outp = os.path.joiSn(snakemake.output.outp_dir, f"balance_spring_{carrier}.png")
+        outp = os.path.join(snakemake.output.outp_dir, f"balance_spring_{carrier}.png")
         fig.savefig(outp)
 
         fig, ax = plt.subplots(figsize=(16, 8))
