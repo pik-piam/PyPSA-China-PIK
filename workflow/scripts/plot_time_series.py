@@ -53,13 +53,17 @@ def plot_energy_balance(
         # .drop("-")
         .T
     )
+
     p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
     p = p.loc[start_date:end_date]
 
-    p["coal"] = p[[c for c in p.columns if c.find("coal") >= 0]].sum(axis=1)
-    p["gas"] = p[[c for c in p.columns if c.find("gas") >= 0]].sum(axis=1)
-    p.drop(columns=[c for c in p.columns if c.find("coal") >= 0], inplace=True)
-    p.drop(columns=[c for c in p.columns if c.find("gas") >= 0], inplace=True)
+    # aggreg fossil
+    coal = p.filter(regex="[C|c]oal")
+    p.drop(columns=coal.columns, inplace=True)
+    p["Coal"] = coal.sum(axis=1)
+    gas = p.filter(regex="[G|g]as")
+    p.drop(columns=gas.columns, inplace=True)
+    p["Gas"] = gas.sum(axis=1)
 
     extra_c = {
         "Load": plot_config["tech_colors"]["electric load"],
@@ -71,12 +75,13 @@ def plot_energy_balance(
     p.rename(plot_config["nice_names"], inplace=True)
     p.rename(columns={k: k.title() for k in p.columns}, inplace=True)
     color_series.index = color_series.index.str.strip()
-
+    color_series = color_series[p.columns]
     # split into supply and wothdrawal
     supply = p.where(p >= 0).dropna(axis=1, how="all")
     charge = p.where(p < 0).dropna(how="all", axis=1)
 
     # fix names and order
+
     charge.rename(columns={"Battery Storage": "Battery"}, inplace=True)
     supply.rename(columns={"Battery Discharger": "Battery"}, inplace=True)
     color_series.rename(
@@ -108,7 +113,8 @@ def plot_energy_balance(
         charge["load_pos"] = charge["Load"] * -1
         charge["load_pos"].plot(linewidth=2, color="black", label="Load", ax=ax, linestyle="--")
         charge.drop(columns="load_pos", inplace=True)
-
+        supply.sum(axis=1).plot(linewidth=2, color="red", label="Supply", ax=ax)
+        p.sum(axis=1).plot(linewidth=4, color="red", label="Net", ax=ax)
     ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
     ax.set_ylabel(PLOT_CAP_LABEL)
     ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
@@ -140,7 +146,7 @@ def plot_load_duration_curve(
         bus_carrier=carrier,
         comps="Load",
     ).sum()
-    load_curve = load.sort_values(ascending=False) / PLOT_CAP_LABEL
+    load_curve = load.sort_values(ascending=False) / PLOT_CAP_UNITS
     load_curve.reset_index(drop=True).plot(ax=ax, lw=3)
     ax.set_ylabel(f"Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")
@@ -173,7 +179,6 @@ def plot_regional_load_durations(
     )
     regio = regio.droplevel(1).T
     load_curve_regio = regio.loc[load_curve_all.index] / PLOT_CAP_UNITS
-    fig, ax = plt.subplots()
     load_curve_regio.reset_index(drop=True).plot.area(
         ax=ax, stacked=True, cmap=cmap, legend=True, lw=3
     )
@@ -280,7 +285,7 @@ if __name__ == "__main__":
             end_date=f"{YEAR}-{snakemake.params.spring_day2}",
             ax=ax,
         )
-        outp = os.path.join(snakemake.output.outp_dir, f"balance_spring_{carrier}.png")
+        outp = os.path.joiSn(snakemake.output.outp_dir, f"balance_spring_{carrier}.png")
         fig.savefig(outp)
 
         fig, ax = plt.subplots(figsize=(16, 8))
