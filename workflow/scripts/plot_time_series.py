@@ -75,7 +75,6 @@ def plot_energy_balance(
     p.rename(plot_config["nice_names"], inplace=True)
     p.rename(columns={k: k.title() for k in p.columns}, inplace=True)
     color_series.index = color_series.index.str.strip()
-    color_series = color_series[p.columns]
     # split into supply and wothdrawal
     supply = p.where(p >= 0).dropna(axis=1, how="all")
     charge = p.where(p < 0).dropna(how="all", axis=1)
@@ -84,6 +83,7 @@ def plot_energy_balance(
 
     charge.rename(columns={"Battery Storage": "Battery"}, inplace=True)
     supply.rename(columns={"Battery Discharger": "Battery"}, inplace=True)
+    color_series = color_series[charge.columns.union(supply.columns)]
     color_series.rename(
         {"Battery Discharger": "Battery", "Battery Storage": "Battery"},
         inplace=True,
@@ -113,8 +113,6 @@ def plot_energy_balance(
         charge["load_pos"] = charge["Load"] * -1
         charge["load_pos"].plot(linewidth=2, color="black", label="Load", ax=ax, linestyle="--")
         charge.drop(columns="load_pos", inplace=True)
-        supply.sum(axis=1).plot(linewidth=2, color="red", label="Supply", ax=ax)
-        p.sum(axis=1).plot(linewidth=4, color="red", label="Net", ax=ax)
     ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
     ax.set_ylabel(PLOT_CAP_LABEL)
     ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
