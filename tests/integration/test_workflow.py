@@ -9,6 +9,22 @@ from hashlib import sha256
 # serial needed as snakemake locks directory
 
 
+def copy_failed_config(cfg_path: os.PathLike) -> str:
+    """copy a failed config for local debugging
+
+    Args:
+        cfg_path (os.PathLike): the config path
+
+    Returns:
+        str: the hash id of the config
+    """
+
+    hash_id = sha256(cfg_path.encode()).hexdigest()
+    failed_test_config_path = f"tests/failed_test_config_{hash_id}.yaml"
+    shutil.copy(cfg_path, failed_test_config_path)
+    return hash_id
+
+
 def launch_subprocess(cmd: str, env=None) -> subprocess.CompletedProcess:
     """launch a subprocess
 
@@ -58,9 +74,7 @@ def test_dry_run(make_test_config_file):
     cmd += " --rerun-incomplete"
     res = launch_subprocess(cmd)
     if res.returncode != 0:
-        hash_id = sha256(cfg.encode()).hexdigest()
-        failed_test_config_path = f"tests/failed_test_config_{hash_id}.yaml"
-        shutil.copy(cfg, failed_test_config_path)
+        hash_id = copy_failed_config(cfg)
     assert res.returncode == 0, f"Snakemake dry run failed, config id {hash_id}"
 
 
@@ -78,9 +92,7 @@ def test_dry_run_build_cutouts(make_test_config_file):
 
     res = launch_subprocess(cmd)
     if res.returncode != 0:
-        hash_id = sha256(cfg.encode()).hexdigest()
-        failed_test_config_path = f"tests/failed_test_config_{hash_id}.yaml"
-        shutil.copy(cfg, failed_test_config_path)
+        hash_id = copy_failed_config(cfg)
     assert res.returncode == 0, f"Snakemake dry run w build cutouts failed, config id {hash_id}"
 
 
@@ -105,7 +117,5 @@ def test_workflow(make_test_config_file):
     cmd += " --rerun-incomplete"
     res = launch_subprocess(cmd, env)
     if res.returncode != 0:
-        hash_id = sha256(cfg.encode()).hexdigest()
-        failed_test_config_path = f"tests/failed_test_config_{hash_id}.yaml"
-        shutil.copy(cfg, failed_test_config_path)
+        hash_id = copy_failed_config(cfg)
     assert res.returncode == 0, f"Snakemake run failed, config id {hash_id}"
