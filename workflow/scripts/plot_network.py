@@ -632,7 +632,7 @@ if __name__ == "__main__":
         capex_only=not additions,
         plot_additions=additions,
     )
-    p = snakemake.output.cost_map.replace(".pdf", "_additions.pdf")
+    p = snakemake.output.cost_map.replace(".png", "_additions.png")
     plot_cost_map(
         n,
         opts=config["plotting"],
@@ -649,7 +649,7 @@ if __name__ == "__main__":
         components=["Generator", "Link"],
     )
 
-    p = snakemake.output.cost_map.replace("el_supply.pdf", "heat_supply.pdf")
+    p = snakemake.output.cost_map.replace("el_supply.png", "heat_supply.png")
     plot_energy_map(
         n,
         opts=config["plotting"],
@@ -659,7 +659,7 @@ if __name__ == "__main__":
         components=["Generator", "Link"],
     )
 
-    p = snakemake.output.cost_map.replace("cost.pdf", "nodal_prices.pdf")
+    p = snakemake.output.cost_map.replace("cost.png", "nodal_prices.png")
     plot_nodal_prices(
         n,
         carrier="AC",
