@@ -152,8 +152,7 @@ rule build_renewable_potential:
         natura2='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_1/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
         natura3='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_2/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
         provinces_shp=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
-        offshore_province_shapes="resources/data/regions/regions_offshore_province.geojson",
-        offshore_shapes="resources/data/regions/regions_offshore.geojson",
+        offshore_province_shapes=DERIVED_COMMON + "/regions/provinces_offshore.geojson",
         cutout= CUTOUT_PATH,
     output:
         **{f"{tech}_profile": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
