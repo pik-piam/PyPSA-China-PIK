@@ -78,7 +78,6 @@ rule build_population:
     resources: mem_mb=1000
     script: "scripts/build_population.py"
 
-# TODO wildcard issue?
 if config['enable'].get('build_cutout', False):
     rule build_cutout:
         input:
