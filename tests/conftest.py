@@ -16,26 +16,10 @@ from os import remove
 # from filelock import BaseFileLock
 
 from constants import TESTS_RUNNAME, TESTS_CUTOUT
-from helpers import PathManager
+from _helpers import PathManager
 
 DEFAULT_CONFIG = pathlib.Path(pathlib.Path.cwd(), "config", "default_config.yaml")
 TECH_CONFIG = pathlib.Path(pathlib.Path.cwd(), "config", "technology_config.yaml")
-
-def pytest_sessionfinish(session, exitstatus):
-    """ called when whole test run finishes"""
-    
-def pytest_sessionstart(session, exitstatus):
-    """ called when whole test run finishes"""
-    
-
-def cleanup_snakemake_data(request):
-    """Cleanup a testing directory once we are finished."""
-    config = 
-    TESTING_DIR = PathManager.get_results_dir()
-    def remove_test_dir():
-        shutil.rmtree(TESTING_DIR)
-
-    request.addfinalizer(remove_test_dir)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -91,6 +75,7 @@ def make_snakemake_test_config(tmp_path_factory) -> dict:
         test_config["results_dir"] = str(tmp_path_factory.mktemp("results"))
         test_config["summary_dir"] = str(tmp_path_factory.mktemp("results_summary"))
         test_config["run"]["name"] = TESTS_RUNNAME
+        test_config["run"]["is_test"] = True
 
         # mock the atlite cutout config
         test_config["atlite"]["cutout_name"] = TESTS_CUTOUT

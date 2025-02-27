@@ -38,6 +38,8 @@ class PathManager:
 
     def __init__(self, snmk_config):
         self.config = snmk_config
+        # HACK for pytests CI, should really be a patch but not possible
+        self._is_test_run = self.config["run"].get("is_test", False)
 
     def _get_version(self) -> str:
         """Hacky solution to get version from workflow pseudo-package"""
@@ -49,6 +51,11 @@ class PathManager:
         return workflow.__version__
 
     def _join_scenario_vars(self) -> str:
+        """Join scenario variables into a human readable string
+
+        Returns:
+            str: human readable string to build directories
+        """
         # TODO make into a config
         exclude = ["planning_horizons", "co2_reduction"]
         short_names = {
@@ -68,7 +75,15 @@ class PathManager:
             ]
         )
 
-    def results_dir(self, extra_opts: dict = None):
+    def results_dir(self, extra_opts: dict = None) -> os.PathLike:
+        """generate the results directory
+
+        Args:
+            extra_opts (dict, optional): opt extra args. Defaults to None.
+
+        Returns:
+            Pathlike: base directory for reslts
+        """
         run, foresight = self.config["run"]["name"], self.config["foresight"]
         base_dir = "v-" + self._get_version() + "_" + run
         sub_dir = foresight + "_" + self._join_scenario_vars()
@@ -76,12 +91,18 @@ class PathManager:
             sub_dir += "_" + "".join(extra_opts.values())
         return os.path.join(self.config["results_dir"], base_dir, sub_dir)
 
-    def derived_data_dir(self, shared=False):
-        # weird import for snakemake
-        from scripts.constants import TESTS_RUNNAME
+    def derived_data_dir(self, shared=False) -> os.PathLike:
+        """Generate the derived data directory path.
 
-        # HACK for pytests CI
-        base_path = "resources" if not self.config["run"]["name"] == TESTS_RUNNAME else "tests"
+        Args:
+            shared (bool, optional): If True, return the shared derived data directory.
+                         Defaults to False.
+
+        Returns:
+            os.PathLike: The path to the derived data directory.
+        """
+
+        base_path = "tests" if self._is_test_run else "resources"
 
         foresight = self.config["foresight"]
         if not shared:
@@ -90,28 +111,36 @@ class PathManager:
         else:
             return f"{base_path}/derived_data"
 
-    def logs_dir(self):
+    def logs_dir(self) -> os.PathLike:
+        """Generate logs directory.
+
+        Returns:
+            os.PathLike: The path to the derived data directory.
+        """
         run, foresight = self.config["run"]["name"], self.config["foresight"]
         base_dir = "v-" + self._get_version() + "_" + run
         sub_dir = foresight + "_" + self._join_scenario_vars()
         return os.path.join("logs", base_dir, sub_dir)
 
-    def cutouts_dir(self):
-        # weird import for snakemake
-        from scripts.constants import TESTS_RUNNAME
+    def cutouts_dir(self) -> os.PathLike:
+        """Generate cutouts directory.
 
-        # HACK for pytests CI
-        if self.config["run"]["name"] == TESTS_RUNNAME:
+        Returns:
+            os.PathLike: The path to the cutouts directory."""
+
+        if self._is_test_run:
             return "tests/testdata"
         else:
             return "resources/cutouts"
 
-    def landuse_raster_data(self):
-        # weird import for snakemake
-        from scripts.constants import TESTS_RUNNAME
+    def landuse_raster_data(self) -> os.PathLike:
+        """Generate the landuse raster data directory path.
 
-        # HACK for pytests CI
-        if self.config["run"]["name"] == TESTS_RUNNAME:
+        Returns:
+            os.PathLike: The path to the landuse raster data directory.
+        """
+
+        if self._is_test_run:
             return "tests/testdata/landuse_availability"
         else:
             return "resources/data/landuse_availability"
@@ -811,7 +840,7 @@ def set_plot_test_backend():
     """Hack to set the matplotlib backend to Agg for testing
     Not possible via normal conftest.py since snakemake is a subprocess"""
     is_test = int(os.getenv("IS_TEST", 0))
-    if is_test:
+    if self._is_test_run:
         import matplotlib
 
         matplotlib.use("Agg")

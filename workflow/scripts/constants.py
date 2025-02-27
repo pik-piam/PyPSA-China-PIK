@@ -64,6 +64,8 @@ REGIONAL_GEO_TIMEZONES_DEFAULT = {
 }
 
 
+# TODO really ugly, load the REGIONAL_GEO_TIMEZONES_DEFAULT from a file
+# use different file for tests
 def get_province_names() -> list:
     """HACK to make it possible for pytest to generate a smaller network
 
