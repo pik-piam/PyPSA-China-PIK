@@ -20,8 +20,6 @@ from _plot_utilities import set_plot_style
 
 logger = logging.getLogger(__name__)
 
-set_plot_test_backend()
-
 
 # consolidate and rename
 def rename_techs(label):
@@ -478,6 +476,7 @@ if __name__ == "__main__":
         )
 
     configure_logging(snakemake)
+    set_plot_test_backend(snakemake.config)
     logger.info(snakemake.input)
 
     set_plot_style(

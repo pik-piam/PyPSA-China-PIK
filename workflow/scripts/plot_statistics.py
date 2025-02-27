@@ -18,7 +18,6 @@ from _plot_utilities import rename_index, fix_network_names_colors
 from constants import PLOT_CAP_LABEL, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, PLOT_SUPPLY_LABEL
 
 sns.set_theme("paper", style="whitegrid")
-set_plot_test_backend()
 logger = logging.getLogger(__name__)
 
 
@@ -58,6 +57,8 @@ if __name__ == "__main__":
             heating_demand="positive",
         )
     configure_logging(snakemake)
+    set_plot_test_backend(snakemake.config)
+
     carrier = snakemake.params.carrier
 
     n = pypsa.Network(snakemake.input.network)

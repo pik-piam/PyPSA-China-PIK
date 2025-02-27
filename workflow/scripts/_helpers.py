@@ -836,11 +836,15 @@ def mock_solve(n: pypsa.Network) -> pypsa.Network:
     return n
 
 
-def set_plot_test_backend():
+def set_plot_test_backend(config: dict):
     """Hack to set the matplotlib backend to Agg for testing
-    Not possible via normal conftest.py since snakemake is a subprocess"""
-    is_test = int(os.getenv("IS_TEST", 0))
-    if self._is_test_run:
+    Not possible via normal conftest.py since snakemake is a subprocess
+
+    Args:
+        config (dict): the snakemake config
+    """
+    is_test = config["run"].get("is_test", False)
+    if is_test:
         import matplotlib
 
         matplotlib.use("Agg")
