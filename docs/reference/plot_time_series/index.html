@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>plot_time_series - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "plot_time_series";
+        var mkdocs_page_input_path = "docs/reference/plot_time_series.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_rasters/">fetch_rasters</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_shapes/">fetch_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">plot_time_series</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">plot_time_series</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="plot_time_series"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_time_series.plot_energy_balance" class="doc doc-heading">
+            <code class="highlight language-python">plot_energy_balance(n, plot_config, bus_carrier='AC', start_date='2060-03-31 21:00', end_date='2060-04-06 12:00:00', add_load_line=True, ax=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>plot the electricity balance of the network for the given time range</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>n</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the network</p>
+              </div>
+            </li>
+            <li>
+              <b><code>plot_config</code></b>
+                  (<code><span title="dict">dict</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the plotting config (snakemake.config["plotting"])</p>
+              </div>
+            </li>
+            <li>
+              <b><code>bus_carrier</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;AC&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the carrier for the energy_balance op. Defaults to "AC".</p>
+              </div>
+            </li>
+            <li>
+              <b><code>start_date</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;2060-03-31 21:00&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the range to plot. Defaults to "2060-03-31 21:00".</p>
+              </div>
+            </li>
+            <li>
+              <b><code>end_date</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;2060-04-06 12:00:00&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the range to plot. Defaults to "2060-04-06 12:00:00".</p>
+              </div>
+            </li>
+            <li>
+              <b><code>add_load_line</code></b>
+                  (<code><span title="bool">bool</span></code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>add a dashed line for the load. Defaults to True.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_time_series.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_energy_balance(
+    n: pypsa.Network,
+    plot_config: dict,
+    bus_carrier="AC",
+    start_date="2060-03-31 21:00",
+    end_date="2060-04-06 12:00:00",
+    add_load_line=True,
+    ax: plt.Axes = None,
+):
+    """plot the electricity balance of the network for the given time range
+
+    Args:
+        n (pypsa.Network): the network
+        plot_config (dict): the plotting config (snakemake.config["plotting"])
+        bus_carrier (str, optional): the carrier for the energy_balance op. Defaults to "AC".
+        start_date (str, optional): the range to plot. Defaults to "2060-03-31 21:00".
+        end_date (str, optional): the range to plot. Defaults to "2060-04-06 12:00:00".
+        add_load_line (bool, optional): add a dashed line for the load. Defaults to True.
+    """
+    if not ax:
+        fig, ax = plt.subplots(figsize=(16, 8))
+
+    p = (
+        n.statistics.energy_balance(aggregate_time=False, bus_carrier=bus_carrier)
+        .dropna(how="all")
+        .groupby("carrier")
+        .sum()
+        .div(PLOT_CAP_UNITS)
+        # .drop("-")
+        .T
+    )
+    p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
+    p = p.loc[start_date:end_date]
+
+    p["coal"] = p[[c for c in p.columns if c.find("coal") &gt;= 0]].sum(axis=1)
+    p["gas"] = p[[c for c in p.columns if c.find("gas") &gt;= 0]].sum(axis=1)
+    p.drop(columns=[c for c in p.columns if c.find("coal") &gt;= 0], inplace=True)
+    p.drop(columns=[c for c in p.columns if c.find("gas") &gt;= 0], inplace=True)
+
+    extra_c = {
+        "Load": plot_config["tech_colors"]["electric load"],
+        "transmission losses": plot_config["tech_colors"]["transmission losses"],
+    }
+    nice_tech_colors = make_nice_tech_colors(plot_config["tech_colors"], plot_config["nice_names"])
+    color_series = get_stat_colors(n, nice_tech_colors, extra_colors=extra_c)
+    # colors &amp; names part 1
+    p.rename(plot_config["nice_names"], inplace=True)
+    p.rename(columns={k: k.title() for k in p.columns}, inplace=True)
+    color_series.index = color_series.index.str.strip()
+
+    # split into supply and wothdrawal
+    supply = p.where(p &gt;= 0).dropna(axis=1, how="all")
+    charge = p.where(p &lt; 0).dropna(how="all", axis=1)
+
+    # fix names and order
+    charge.rename(columns={"Battery Storage": "Battery"}, inplace=True)
+    supply.rename(columns={"Battery Discharger": "Battery"}, inplace=True)
+    color_series.rename(
+        {"Battery Discharger": "Battery", "Battery Storage": "Battery"},
+        inplace=True,
+    )
+
+    preferred_order = plot_config["preferred_order"]
+    plot_order = (
+        supply.columns.intersection(preferred_order).to_list()
+        + supply.columns.difference(preferred_order).to_list()
+    )
+
+    plot_order_charge = [name for name in preferred_order if name in charge.columns] + [
+        name for name in charge.columns if name not in preferred_order
+    ]
+
+    supply = supply.reindex(columns=plot_order)
+    charge = charge.reindex(columns=plot_order_charge)
+    if not charge.empty:
+        charge.plot.area(ax=ax, linewidth=0, color=color_series.loc[charge.columns])
+
+    supply.plot.area(
+        ax=ax,
+        linewidth=0,
+        color=color_series.loc[supply.columns],
+    )
+    if add_load_line:
+        charge["load_pos"] = charge["Load"] * -1
+        charge["load_pos"].plot(linewidth=2, color="black", label="Load", ax=ax, linestyle="--")
+        charge.drop(columns="load_pos", inplace=True)
+
+    ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
+    ax.set_ylabel(PLOT_CAP_LABEL)
+    ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
+    ax.grid(axis="y")
+    ax.set_xlim(supply.index.min(), supply.index.max())
+
+    return ax</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_time_series.plot_load_duration_curve" class="doc doc-heading">
+            <code class="highlight language-python">plot_load_duration_curve(network, carrier='AC', ax=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>plot the load duration curve for the given carrier</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>network</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the pypasa network object</p>
+              </div>
+            </li>
+            <li>
+              <b><code>carrier</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;AC&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the load carrier, defaults to AC</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ax</code></b>
+                  (<code><span title="matplotlib.pyplot.Axes">Axes</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>figure axes, if none fig will be created. Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="matplotlib.pyplot.Axes">Axes</span></code>
+              –
+              <div class="doc-md-description">
+                <p>plt.Axes: the plotting axes</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_time_series.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_load_duration_curve(
+    network: pypsa.Network, carrier: str = "AC", ax: plt.Axes = None
+) -&gt; plt.Axes:
+    """plot the load duration curve for the given carrier
+
+    Args:
+        network (pypsa.Network): the pypasa network object
+        carrier (str, optional): the load carrier, defaults to AC
+        ax (plt.Axes, optional): figure axes, if none fig will be created. Defaults to None.
+
+    Returns:
+        plt.Axes: the plotting axes
+    """
+
+    if not ax:
+        fig, ax = plt.subplots(figsize=(16, 8))
+    load = network.statistics.withdrawal(
+        groupby=get_location_and_carrier,
+        aggregate_time=False,
+        bus_carrier=carrier,
+        comps="Load",
+    ).sum()
+    load_curve = load.sort_values(ascending=False) / PLOT_CAP_LABEL
+    load_curve.reset_index(drop=True).plot(ax=ax, lw=3)
+    ax.set_ylabel(f"Load [{PLOT_CAP_LABEL}]")
+    ax.set_xlabel("Hours")
+
+    return ax</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_time_series.plot_regional_load_durations" class="doc doc-heading">
+            <code class="highlight language-python">plot_regional_load_durations(network, carrier='AC', ax=None, cmap='plasma')</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>plot the load duration curve for the given carrier stacked by region</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>network</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the pypasa network object</p>
+              </div>
+            </li>
+            <li>
+              <b><code>carrier</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;AC&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>the load carrier, defaults to AC</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ax</code></b>
+                  (<code><span title="matplotlib.pyplot.Axes">Axes</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>axes to plot on, if none fig will be created. Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="matplotlib.pyplot.Axes">Axes</span></code>
+              –
+              <div class="doc-md-description">
+                <p>plt.Axes: the plotting axes</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_time_series.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_regional_load_durations(
+    network: pypsa.Network, carrier="AC", ax=None, cmap="plasma"
+) -&gt; plt.Axes:
+    """plot the load duration curve for the given carrier stacked by region
+
+    Args:
+        network (pypsa.Network): the pypasa network object
+        carrier (str, optional): the load carrier, defaults to AC
+        ax (plt.Axes, optional): axes to plot on, if none fig will be created. Defaults to None.
+
+    Returns:
+        plt.Axes: the plotting axes
+    """
+    if not ax:
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+    loads_all = network.statistics.withdrawal(
+        groupby=get_location_and_carrier, aggregate_time=False, bus_carrier=carrier, comps="Load"
+    ).sum()
+    load_curve_all = loads_all.sort_values(ascending=False) / PLOT_CAP_UNITS
+    regio = network.statistics.withdrawal(
+        groupby=get_location_and_carrier, aggregate_time=False, bus_carrier=carrier, comps="Load"
+    )
+    regio = regio.droplevel(1).T
+    load_curve_regio = regio.loc[load_curve_all.index] / PLOT_CAP_UNITS
+    fig, ax = plt.subplots()
+    load_curve_regio.reset_index(drop=True).plot.area(
+        ax=ax, stacked=True, cmap=cmap, legend=True, lw=3
+    )
+    ax.set_ylabel(f"Load [{PLOT_CAP_LABEL}]")
+    ax.set_xlabel("Hours")
+    ax.legend(
+        ncol=3,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.15),
+        fontsize="small",
+        title_fontsize="small",
+        fancybox=True,
+        shadow=True,
+    )
+    return ax</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_time_series.plot_residual_load_duration_curve" class="doc doc-heading">
+            <code class="highlight language-python">plot_residual_load_duration_curve(network, ax=None, vre_techs=['Onshore Wind', 'Offshore Wind', 'Solar'])</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>plot the residual load duration curve for the given carrier</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>network</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the pypasa network object</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ax</code></b>
+                  (<code><span title="matplotlib.pyplot.Axes">Axes</span></code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Axes to plot on, if none fig will be created. Defaults to None.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="matplotlib.pyplot.Axes">Axes</span></code>
+              –
+              <div class="doc-md-description">
+                <p>plt.Axes: the plotting axes</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_time_series.py</code></summary>
+              <pre class="highlight"><code class="language-python">def plot_residual_load_duration_curve(
+    network, ax: plt.Axes = None, vre_techs=["Onshore Wind", "Offshore Wind", "Solar"]
+) -&gt; plt.Axes:
+    """plot the residual load duration curve for the given carrier
+
+    Args:
+        network (pypsa.Network): the pypasa network object
+        ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
+
+    Returns:
+        plt.Axes: the plotting axes
+    """
+    CARRIER = "AC"
+    if not ax:
+        fig, ax = plt.subplots(figsize=(16, 8))
+    load = network.statistics.withdrawal(
+        groupby=get_location_and_carrier,
+        aggregate_time=False,
+        bus_carrier=CARRIER,
+        comps="Load",
+    ).sum()
+
+    vre_supply = (
+        network.statistics.supply(
+            groupby=get_location_and_carrier,
+            aggregate_time=False,
+            bus_carrier=CARRIER,
+            comps="Generator",
+        )
+        .groupby(level=1)
+        .sum()
+        .loc[vre_techs]
+        .sum()
+    )
+
+    residual = (load - vre_supply).sort_values(ascending=False) / PLOT_CAP_UNITS
+    residual.reset_index(drop=True).plot(ax=ax, lw=3)
+    ax.set_ylabel(f"Residual Load [{PLOT_CAP_LABEL}]")
+    ax.set_xlabel("Hours")
+
+    return ax</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../plot_summary_all/" class="btn btn-neutral float-left" title="plot_summary_all"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../prepare_base_network/" class="btn btn-neutral float-right" title="prepare_base_network">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../plot_summary_all/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../prepare_base_network/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

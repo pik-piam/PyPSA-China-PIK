@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>build_renewable_potential - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "build_renewable_potential";
+        var mkdocs_page_input_path = "docs/reference/build_renewable_potential.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">build_renewable_potential</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_rasters/">fetch_rasters</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_shapes/">fetch_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">build_renewable_potential</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="build_renewable_potential"></a>
+    <div class="doc doc-contents first">
+
+        <p>Functions associated with the build_renewable_potential rule.
+- Temporal Profiles are built based on the atlite cutout
+- Potentials are built based on the atlite cutout and raster data (land availability)</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="build_renewable_potential.make_offshore_wind_profile" class="doc doc-heading">
+            <code class="highlight language-python">make_offshore_wind_profile(offwind_config, cutout, outp_path)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Make the offwind geographical potentials and per unit availability time series for
+  each raster cell
+! Somewhat compute intensive !</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>offwind_config</code></b>
+                  (<code><span title="dict">dict</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the configuration for the offshore wind</p>
+              </div>
+            </li>
+            <li>
+              <b><code>cutout</code></b>
+                  (<code><span title="atlite.Cutout">Cutout</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the atlite cutout</p>
+              </div>
+            </li>
+            <li>
+              <b><code>outp_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the output path for the raster date</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/build_renewable_potential.py</code></summary>
+              <pre class="highlight"><code class="language-python">def make_offshore_wind_profile(offwind_config: dict, cutout: atlite.Cutout, outp_path: PathLike):
+    """Make the offwind geographical potentials and per unit availability time series for
+      each raster cell
+    ! Somewhat compute intensive !
+
+
+    Args:
+        offwind_config (dict): the configuration for the offshore wind
+        cutout (atlite.Cutout): the atlite cutout
+        outp_path (PathLike): the output path for the raster date
+    """
+    offwind_resource = offwind_config["resource"]
+    offwind_correction_factor = offwind_config.get(
+        "correction_factor", DEFAULT_OFFSHORE_WIND_CORR_FACTOR
+    )
+    offwind_capacity_per_sqkm = offwind_config["capacity_per_sqkm"]
+    if offwind_correction_factor != 1.0:
+        logger.info(f"offwind_correction_factor is set as {offwind_correction_factor}")
+
+    offwind_provinces = OFFSHORE_WIND_NODES
+
+    EEZ_province_shp = gpd.read_file(snakemake.input["offshore_province_shapes"]).set_index(
+        "province"
+    )
+    EEZ_province_shp = EEZ_province_shp.reindex(offwind_provinces).rename_axis("bus")
+    EEZ_country = gpd.GeoDataFrame(
+        geometry=[EEZ_province_shp.unary_union], crs=EEZ_province_shp.crs, index=["country"]
+    )
+    excluder_offwind = ExclusionContainer(crs=3035, res=500)
+
+    if "max_depth" in offwind_config:
+        func = functools.partial(np.greater, -offwind_config["max_depth"])
+        excluder_offwind.add_raster(snakemake.input.gebco, codes=func, crs=CRS, nodata=-1000)
+
+    if offwind_config["natura"]:
+        protected_shp = gpd.read_file(snakemake.input["natura1"])
+        protected_shp1 = gpd.read_file(snakemake.input["natura2"])
+        protected_shp2 = gpd.read_file(snakemake.input["natura3"])
+        protected_shp = pd.concat([protected_shp, protected_shp1], ignore_index=True)
+        protected_shp = pd.concat([protected_shp, protected_shp2], ignore_index=True)
+        protected_shp = protected_shp.geometry
+        protected_shp = gpd.GeoDataFrame(protected_shp)
+        protected_Marine_shp = gpd.tools.overlay(protected_shp, EEZ_country, how="intersection")
+        # this is to avoid atlite complaining about parallelisation
+        if not os.path.isdir(os.path.dirname(TMP)):
+            mkdir(os.path.dirname(TMP))
+        protected_Marine_shp.to_file(TMP)
+        excluder_offwind.add_geometry(TMP)
+
+    kwargs = dict(nprocesses=nprocesses, disable_progressbar=noprogress)
+    if noprogress:
+        logger.info("Calculate offwind landuse availabilities...")
+        start = time.time()
+        offwind_matrix = cutout.availabilitymatrix(EEZ_province_shp, excluder_offwind, **kwargs)
+        duration = time.time() - start
+        logger.info(f"Completed offwind availability calculation ({duration:2.2f}s)")
+    else:
+        offwind_matrix = cutout.availabilitymatrix(EEZ_province_shp, excluder_offwind, **kwargs)
+
+    offwind_potential = offwind_capacity_per_sqkm * offwind_matrix.sum("bus") * area
+
+    offwind_func = getattr(cutout, offwind_resource.pop("method"))
+    offwind_resource["dask_kwargs"] = {"num_workers": nprocesses}  # ?
+    offwind_capacity_factor = offwind_correction_factor * offwind_func(
+        capacity_factor=True, **offwind_resource
+    )
+    offwind_layout = offwind_capacity_factor * area * offwind_capacity_per_sqkm
+    offwind_profile, offwind_capacities = offwind_func(
+        matrix=offwind_matrix.stack(spatial=["y", "x"]),
+        layout=offwind_layout,
+        index=EEZ_province_shp.index,
+        per_unit=True,
+        return_capacity=True,
+        **offwind_resource,
+    )
+
+    logger.info("Calculating offwind maximal capacity per bus (method 'simple')")
+
+    offwind_p_nom_max = offwind_capacity_per_sqkm * offwind_matrix @ area
+
+    offwind_ds = xr.merge(
+        [
+            (offwind_correction_factor * offwind_profile).rename("profile"),
+            offwind_capacities.rename("weight"),
+            offwind_p_nom_max.rename("p_nom_max"),
+            offwind_potential.rename("potential"),
+        ]
+    )
+
+    offwind_ds = offwind_ds.sel(
+        bus=(
+            (offwind_ds["profile"].mean("time") &gt; offwind_config.get("min_p_max_pu", 0.0))
+            &amp; (offwind_ds["p_nom_max"] &gt; offwind_config.get("min_p_nom_max", 0.0))
+        )
+    )
+
+    if "clip_p_max_pu" in offwind_config:
+        min_p_max_pu = offwind_config["clip_p_max_pu"]
+        offwind_ds["profile"] = offwind_ds["profile"].where(
+            offwind_ds["profile"] &gt;= min_p_max_pu, 0
+        )
+    # shift back from UTC to network time
+    offwind_ds["time"] = (
+        pd.DatetimeIndex(offwind_ds["time"], tz="UTC").tz_convert(TIMEZONE).tz_localize(None).values
+    )
+    offwind_ds.to_netcdf(outp_path)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="build_renewable_potential.make_onshore_wind_profile" class="doc doc-heading">
+            <code class="highlight language-python">make_onshore_wind_profile(onwind_config, cutout, outp_path)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Make the onwind geographical potentials and per unit availability time series for
+each raster cell
+! Somewhat compute intensive !</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>onwind_config</code></b>
+                  (<code><span title="dict">dict</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the onshore wind config (from the yaml config read by snakemake)</p>
+              </div>
+            </li>
+            <li>
+              <b><code>cutout</code></b>
+                  (<code><span title="atlite.Cutout">Cutout</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the atlite cutout</p>
+              </div>
+            </li>
+            <li>
+              <b><code>outp_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the output path for the raster data</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/build_renewable_potential.py</code></summary>
+              <pre class="highlight"><code class="language-python">def make_onshore_wind_profile(onwind_config: dict, cutout: atlite.Cutout, outp_path: PathLike):
+    """Make the onwind geographical potentials and per unit availability time series for
+    each raster cell
+    ! Somewhat compute intensive !
+
+    Args:
+        onwind_config (dict): the onshore wind config (from the yaml config read by snakemake)
+        cutout (atlite.Cutout): the atlite cutout
+        outp_path (PathLike): the output path for the raster data
+    """
+
+    logger.info("Making onshore wind profile ")
+
+    onwind_resource = onwind_config["resource"]
+    onwind_correction_factor = onwind_config.get("correction_factor", 1.0)
+    onwind_capacity_per_sqkm = onwind_config["capacity_per_sqkm"]
+    if onwind_correction_factor != 1.0:
+        logger.info(f"onwind_correction_factor is set as {onwind_correction_factor}")
+
+    excluder_onwind = ExclusionContainer(crs=3035, res=500)
+
+    excluder_onwind.add_raster(grass, invert=True, crs=4326)
+    excluder_onwind.add_raster(bare, invert=True, crs=4326)
+    excluder_onwind.add_raster(shrubland, invert=True, crs=4326)
+
+    kwargs = dict(nprocesses=nprocesses, disable_progressbar=noprogress)
+    if noprogress:
+        logger.info("Calculate onwind landuse availabilities...")
+        start = time.time()
+        onwind_matrix = cutout.availabilitymatrix(provinces_shp, excluder_onwind, **kwargs)
+        duration = time.time() - start
+        logger.info(f"Completed onwind availability calculation ({duration:2.2f}s)")
+    else:
+        onwind_matrix = cutout.availabilitymatrix(provinces_shp, excluder_onwind, **kwargs)
+
+    onwind_potential = onwind_capacity_per_sqkm * onwind_matrix.sum("bus") * area
+
+    onwind_func = getattr(cutout, onwind_resource.pop("method"))
+    onwind_resource["dask_kwargs"] = {"num_workers": nprocesses}  # ?
+    onwind_capacity_factor = onwind_correction_factor * onwind_func(
+        capacity_factor=True, **onwind_resource
+    )
+    onwind_layout = onwind_capacity_factor * area * onwind_capacity_per_sqkm
+    onwind_profile, onwind_capacities = onwind_func(
+        matrix=onwind_matrix.stack(spatial=["y", "x"]),
+        layout=onwind_layout,
+        index=buses,
+        per_unit=True,
+        return_capacity=True,
+        **onwind_resource,
+    )
+
+    logger.info("Calculating onwind maximal capacity per bus (method 'simple')")
+
+    onwind_p_nom_max = onwind_capacity_per_sqkm * onwind_matrix @ area
+
+    onwind_ds = xr.merge(
+        [
+            (onwind_correction_factor * onwind_profile).rename("profile"),
+            onwind_capacities.rename("weight"),
+            onwind_p_nom_max.rename("p_nom_max"),
+            onwind_potential.rename("potential"),
+        ]
+    )
+
+    onwind_ds = onwind_ds.sel(
+        bus=(
+            (onwind_ds["profile"].mean("time") &gt; onwind_config.get("min_p_max_pu", 0.0))
+            &amp; (onwind_ds["p_nom_max"] &gt; onwind_config.get("min_p_nom_max", 0.0))
+        )
+    )
+
+    if "clip_p_max_pu" in onwind_config:
+        min_p_max_pu = onwind_config["clip_p_max_pu"]
+        onwind_ds["profile"] = onwind_ds["profile"].where(onwind_ds["profile"] &gt;= min_p_max_pu, 0)
+
+    # shift back from UTC to network time
+    onwind_ds["time"] = (
+        pd.DatetimeIndex(onwind_ds["time"], tz="UTC").tz_convert(TIMEZONE).tz_localize(None).values
+    )
+    onwind_ds.to_netcdf(outp_path)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="build_renewable_potential.make_solar_profile" class="doc doc-heading">
+            <code class="highlight language-python">make_solar_profile(solar_config, cutout, outp_path)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Make the solar geographical potentials and per unit availability time series for each
+raster cell
+! Somewhat compute intensive !</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>solar_config</code></b>
+                  (<code><span title="dict">dict</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the solar configuration (from the yaml config read by snakemake)</p>
+              </div>
+            </li>
+            <li>
+              <b><code>cutout</code></b>
+                  (<code><span title="atlite.Cutout">Cutout</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the atlite cutout</p>
+              </div>
+            </li>
+            <li>
+              <b><code>outp_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the output path for the raster data</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/build_renewable_potential.py</code></summary>
+              <pre class="highlight"><code class="language-python">def make_solar_profile(
+    solar_config: dict,
+    cutout: atlite.Cutout,
+    outp_path: PathLike,
+):
+    """Make the solar geographical potentials and per unit availability time series for each
+    raster cell
+    ! Somewhat compute intensive !
+
+    Args:
+        solar_config (dict): the solar configuration (from the yaml config read by snakemake)
+        cutout (atlite.Cutout): the atlite cutout
+        outp_path (PathLike): the output path for the raster data
+    """
+
+    logger.info("Making solar profile ")
+    solar_config = snakemake.config["renewable"]["solar"]
+    solar_resource = solar_config["resource"]
+    solar_correction_factor = solar_config.get("correction_factor", 1.0)
+    solar_capacity_per_sqkm = solar_config["capacity_per_sqkm"]
+    if solar_correction_factor != 1.0:
+        logger.info(f"solar_correction_factor is set as {solar_correction_factor}")
+
+    # TODO not hardcoded res
+    excluder_solar = ExclusionContainer(crs=3035, res=500)
+    excluder_build_up = ExclusionContainer(crs=3035, res=500)
+
+    build_up = snakemake.input["Build_up_raster"]
+
+    excluder_build_up.add_raster(build_up, invert=True, crs=CRS)
+    excluder_solar.add_raster(grass, invert=True, crs=CRS)
+    excluder_solar.add_raster(bare, invert=True, crs=CRS)
+    excluder_solar.add_raster(shrubland, invert=True, crs=CRS)
+
+    kwargs = dict(nprocesses=nprocesses, disable_progressbar=noprogress)
+    # TODO remove if else?
+    if noprogress:
+        logger.info("Calculate solar landuse availabilities...")
+        start = time.time()
+        solar_matrix = cutout.availabilitymatrix(provinces_shp, excluder_solar, **kwargs)
+        buildup_matrix = cutout.availabilitymatrix(provinces_shp, excluder_build_up, **kwargs)
+        duration = time.time() - start
+        logger.info(f"Completed solar availability calculation ({duration:2.2f}s)")
+    else:
+        solar_matrix = cutout.availabilitymatrix(
+            shapes=provinces_shp, excluder=excluder_solar, **kwargs
+        )
+        buildup_matrix = cutout.availabilitymatrix(provinces_shp, excluder_build_up, **kwargs)
+
+    solar_potential = (
+        solar_capacity_per_sqkm * solar_matrix.sum("bus") * area
+        + solar_capacity_per_sqkm * buildup_matrix.sum("bus") * area
+    )
+
+    solar_func = getattr(cutout, solar_resource.pop("method"))
+    solar_resource["dask_kwargs"] = {"num_workers": nprocesses}  # ?
+    solar_capacity_factor = solar_correction_factor * solar_func(
+        capacity_factor=True, **solar_resource
+    )
+    solar_layout = solar_capacity_factor * area * solar_capacity_per_sqkm
+    solar_profile, solar_capacities = solar_func(
+        matrix=solar_matrix.stack(spatial=["y", "x"]),
+        layout=solar_layout,
+        index=buses,
+        per_unit=True,
+        return_capacity=True,
+        **solar_resource,
+    )
+
+    logger.info("Calculating solar maximal capacity per bus (method 'simple')")
+
+    solar_p_nom_max = solar_capacity_per_sqkm * solar_matrix @ area
+
+    solar_ds = xr.merge(
+        [
+            (solar_correction_factor * solar_profile).rename("profile"),
+            solar_capacities.rename("weight"),
+            solar_p_nom_max.rename("p_nom_max"),
+            solar_potential.rename("potential"),
+        ]
+    )
+
+    solar_ds = solar_ds.sel(
+        bus=(
+            (solar_ds["profile"].mean("time") &gt; solar_config.get("min_p_max_pu", 0.0))
+            &amp; (solar_ds["p_nom_max"] &gt; solar_config.get("min_p_nom_max", 0.0))
+        )
+    )
+
+    if "clip_p_max_pu" in solar_config:
+        min_p_max_pu = solar_config["clip_p_max_pu"]
+        solar_ds["profile"] = solar_ds["profile"].where(solar_ds["profile"] &gt;= min_p_max_pu, 0)
+
+    # shift back from UTC to network time
+    solar_ds["time"] = (
+        pd.DatetimeIndex(solar_ds["time"], tz="UTC").tz_convert(TIMEZONE).tz_localize(None).values
+    )
+
+    solar_ds.to_netcdf(outp_path)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../build_province_shapes/" class="btn btn-neutral float-left" title="build_province_shapes"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../build_solar_thermal_profiles/" class="btn btn-neutral float-right" title="build_solar_thermal_profiles">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../build_province_shapes/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../build_solar_thermal_profiles/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

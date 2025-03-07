@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>fetch_shapes - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "fetch_shapes";
+        var mkdocs_page_input_path = "docs/reference/fetch_shapes.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_rasters/">fetch_rasters</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">fetch_shapes</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">fetch_shapes</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="fetch_shapes"></a>
+    <div class="doc doc-contents first">
+
+        <p>Data fetch operation for region/province/country shapes</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.eez_by_region" class="doc doc-heading">
+            <code class="highlight language-python">eez_by_region(eez, province_shapes, prov_key='region')</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>break up the eez by admin1 regions based on voronoi polygons of the centroids</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eez</code></b>
+                  (<code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>)
+              –
+              <div class="doc-md-description">
+                <p><em>description</em></p>
+              </div>
+            </li>
+            <li>
+              <b><code>province_shapes</code></b>
+                  (<code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>)
+              –
+              <div class="doc-md-description">
+                <p><em>description</em></p>
+              </div>
+            </li>
+            <li>
+              <b><code>prov_key</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;region&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>name of the provinces col in province_shapes. Defaults to "region".</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: <em>description</em></p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <pre class="highlight"><code class="language-python">def eez_by_region(
+    eez: gpd.GeoDataFrame, province_shapes: gpd.GeoDataFrame, prov_key="region"
+) -&gt; gpd.GeoDataFrame:
+    """break up the eez by admin1 regions based on voronoi polygons of the centroids
+
+    Args:
+        eez (gpd.GeoDataFrame): _description_
+        province_shapes (gpd.GeoDataFrame): _description_
+        prov_key (str, optional): name of the provinces col in province_shapes. Defaults to "region".
+
+    Returns:
+        gpd.GeoDataFrame: _description_
+    """
+
+    voronoi_cells = gpd.GeoDataFrame(
+        geometry=province_shapes.centroid.voronoi_polygons(), crs=province_shapes.crs
+    )
+    prov_centroids = province_shapes.copy()
+    prov_centroids.geometry = prov_centroids.centroid
+    # need to assign cells to province
+    voronoi_cells = voronoi_cells.sjoin(prov_centroids, predicate="contains").reset_index()
+    if "index_right" in voronoi_cells.columns:
+        voronoi_cells.drop(columns=["index_right"], inplace=True)
+    logger.debug(f"Voronoi cells: {voronoi_cells}")
+    # check the below with ez.overlay(voronoi_cells, how="intersection").boundary.plot()
+    eez_by_region = voronoi_cells.overlay(eez, how="intersection")[[prov_key, "geometry"]]
+    return eez_by_region[eez_by_region[prov_key].isin(PROV_NAMES)].set_index(prov_key)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.fetch_country_shape" class="doc doc-heading">
+            <code class="highlight language-python">fetch_country_shape(outp_path)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>fetch the country shape from natural earth and save it to the outpath</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>outp_path</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the path to save the country shape (geojson)</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <pre class="highlight"><code class="language-python">def fetch_country_shape(outp_path: PathLike):
+    """fetch the country shape from natural earth and save it to the outpath
+
+    Args:
+        outp_path (PathLike): the path to save the country shape (geojson)
+    """
+
+    country_shape = fetch_natural_earth_shape("admin_0_countries", "ADMIN", COUNTRY_NAME)
+    country_shape.set_index("region", inplace=True)
+    country_shape.to_file(outp_path, driver="GeoJSON")</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.fetch_maritime_eez" class="doc doc-heading">
+            <code class="highlight language-python">fetch_maritime_eez(zone_name)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>fetch maritime data for a country from Maritime Gazette API#
+(Royal marine institute of Flanders data base)</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>zone_name</code></b>
+                  (<code><span title="str">str</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the country's zone name, e.g "Chinese" for china</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Raises:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="requests.HTTPError">HTTPError</span></code>
+              –
+              <div class="doc-md-description">
+                <p>if the request fails</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>        <p>Returns:
+    dict: the maritime data</p>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <pre class="highlight"><code class="language-python">def fetch_maritime_eez(zone_name: str) -&gt; gpd.GeoDataFrame:
+    """fetch maritime data for a country from Maritime Gazette API#
+    (Royal marine institute of Flanders data base)
+
+    Args:
+        zone_name (str): the country's zone name, e.g "Chinese" for china
+
+    Raises:
+        requests.HTTPError: if the request fails
+    Returns:
+        dict: the maritime data
+    """
+
+    def find_record_id(zone_name: str) -&gt; int:
+        # get Maritime Gazette record ID for the country
+        # the eez ID is 70: see https://www.marineregions.org/gazetteer.php?p=webservices&amp;type=rest#/
+        url = f"https://www.marineregions.org/rest/getGazetteerRecordsByName.json/{zone_name}/?like=true&amp;fuzzy=false&amp;typeID=70&amp;offset=0&amp;count=100"
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise requests.HTTPError(
+                f"Failed to retrieve Maritime Gazette ID. Status code: {response.status_code}"
+            )
+        record_data = response.json()
+        logger.debug(record_data)
+        return [
+            data
+            for data in record_data
+            if (data["status"] == "standard")
+            and (data["preferredGazetteerName"].lower().find(zone_name.lower()) != -1)
+        ][0]["MRGID"]
+
+    mgrid = find_record_id(zone_name)
+    logger.debug(f"Found Maritime Gazette ID for {zone_name}: {mgrid}")
+    #  URL of the WFS service
+    url = "https://geo.vliz.be/geoserver/wfs"
+    # WFS request parameters + record ID filter
+    params = dict(
+        service="WFS",
+        version="1.1.0",
+        request="GetFeature",
+        typeName="MarineRegions:eez",
+        outputFormat="json",
+        filter=f"&lt;Filter&gt;&lt;PropertyIsEqualTo&gt;&lt;PropertyName&gt;mrgid_eez&lt;/PropertyName&gt;&lt;Literal&gt;{mgrid}&lt;/Literal&gt;&lt;/PropertyIsEqualTo&gt;&lt;/Filter&gt;",
+    )
+
+    # Fetch data from WFS using requests
+    response_eez = requests.get(url, params=params)
+
+    # Check for successful request
+    if response_eez.status_code == 200:
+        data = response_eez.json()
+    else:
+        logger.error(f"Error: {response_eez.status_code}")
+        raise requests.HTTPError(
+            f"Failed to retrieve Maritime Gazette data. Status code: {response_eez.status_code}"
+        )
+    if data["totalFeatures"] != 1:
+        raise ValueError(f"Expected 1 feature, got {data['totalFeatures']}\n: {data}")
+    crs = data["crs"]["properties"]["name"].split("EPSG::")[-1]
+    eez = gpd.GeoDataFrame.from_features(data["features"])
+    return eez.set_crs(epsg=crs)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.fetch_natural_earth_shape" class="doc doc-heading">
+            <code class="highlight language-python">fetch_natural_earth_shape(dataset_name, filter_key, filter_value='China', region_key=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>fetch region or country shape from natural earth dataset and filter</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>dataset_name</code></b>
+                  (<code><span title="str">str</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the name of the natural earth dataset to fetch</p>
+              </div>
+            </li>
+            <li>
+              <b><code>filter_key</code></b>
+                  (<code><span title="str">str</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>key to filter the records by</p>
+              </div>
+            </li>
+            <li>
+              <b><code>filter_value</code></b>
+                  (<code><span title="str">str</span> | <span title="list">list</span></code>, default:
+                      <code>&#39;China&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>filter pass value. Defaults to "China".</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>china country: build_natural_earth_shape("admin_0_countries", "ADMIN", "China")
+china provinces: build_natural_earth_shape("admin_1_states_provinces", "iso_a2", "CN", region_key = "name_en")</p>
+</details>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: the filtered records</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <pre class="highlight"><code class="language-python">def fetch_natural_earth_shape(
+    dataset_name: str, filter_key: str, filter_value="China", region_key=None
+) -&gt; gpd.GeoDataFrame:
+    """fetch region or country shape from natural earth dataset and filter
+
+    Args:
+        dataset_name (str): the name of the natural earth dataset to fetch
+        filter_key (str): key to filter the records by
+        filter_value (str|list, optional): filter pass value. Defaults to "China".
+
+    Example:
+        china country: build_natural_earth_shape("admin_0_countries", "ADMIN", "China")
+        china provinces: build_natural_earth_shape("admin_1_states_provinces", "iso_a2", "CN", region_key = "name_en")
+
+    Returns:
+        gpd.GeoDataFrame: the filtered records
+    """
+    shpfilename = shpreader.natural_earth(
+        resolution=NATURAL_EARTH_RESOLUTION, category="cultural", name=dataset_name
+    )
+    reader = shpreader.Reader(shpfilename)
+    records = list(reader.records())
+    if not region_key:
+        region_key = filter_key
+    if isinstance(filter_value, list):
+        gdf = gpd.GeoDataFrame(
+            [
+                {"region": c.attributes[region_key], "geometry": c.geometry}
+                for c in records
+                if c.attributes[filter_key] in filter_value
+            ]
+        )
+    else:
+        gdf = gpd.GeoDataFrame(
+            [
+                {"region": c.attributes[region_key], "geometry": c.geometry}
+                for c in records
+                if c.attributes[filter_key] == filter_value
+            ]
+        )
+    gdf.set_crs(epsg=CRS, inplace=True)
+    return gdf</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.fetch_province_shapes" class="doc doc-heading">
+            <code class="highlight language-python">fetch_province_shapes()</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>fetch the province shapes from natural earth and save it to the outpath</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: the province shapes</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <pre class="highlight"><code class="language-python">def fetch_province_shapes() -&gt; gpd.GeoDataFrame:
+    """fetch the province shapes from natural earth and save it to the outpath
+
+    Returns:
+        gpd.GeoDataFrame: the province shapes
+    """
+
+    province_shapes = fetch_natural_earth_shape(
+        "admin_1_states_provinces", "iso_a2", COUNTRY_ISO, region_key="name_en"
+    )
+    province_shapes.rename(columns={"region": "province"}, inplace=True)
+    province_shapes.province = province_shapes.province.str.replace(" ", "")
+    province_shapes.sort_values("province", inplace=True)
+    logger.debug("province shapes:\n", province_shapes)
+
+    filtered = province_shapes[province_shapes["province"].isin(PROV_NAMES)]
+    if (filtered["province"].unique() != sorted(PROV_NAMES)).all():
+        logger.warning(
+            f"Missing provinces: {set(PROV_NAMES) - set(province_shapes['province'].unique())}"
+        )
+    filtered.set_index("province", inplace=True)
+
+    return filtered.sort_index()</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../fetch_rasters/" class="btn btn-neutral float-left" title="fetch_rasters"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../functions/" class="btn btn-neutral float-right" title="functions">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../fetch_rasters/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../functions/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

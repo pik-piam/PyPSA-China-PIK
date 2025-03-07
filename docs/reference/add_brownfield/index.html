@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>add_brownfield - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "add_brownfield";
+        var mkdocs_page_input_path = "docs/reference/add_brownfield.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">add_brownfield</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_rasters/">fetch_rasters</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_shapes/">fetch_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">add_brownfield</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="add_brownfield"></a>
+    <div class="doc doc-contents first">
+
+        <p>Functions for myopic pathway network generation snakemake rules</p>
+<p>Add paid-off assets from previous planning horizon to network from next
+        planning horizon</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="add_brownfield.add_brownfield" class="doc doc-heading">
+            <code class="highlight language-python">add_brownfield(n, n_p, year)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add paid for assets as p_nom to the current network</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>n</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>next network to prep &amp; optimize in the planning horizon</p>
+              </div>
+            </li>
+            <li>
+              <b><code>n_p</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>previous optimized network</p>
+              </div>
+            </li>
+            <li>
+              <b><code>year</code></b>
+                  (<code><span title="int">int</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the planning year</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/add_brownfield.py</code></summary>
+              <pre class="highlight"><code class="language-python">def add_brownfield(n: pypsa.Network, n_p: pypsa.Network, year: int):
+    """Add paid for assets as p_nom to the current network
+
+    Args:
+        n (pypsa.Network): next network to prep &amp; optimize in the planning horizon
+        n_p (pypsa.Network): previous optimized network
+        year (int): the planning year
+    """
+
+    logger.info("Adding brownfield")
+    # electric transmission grid set optimised capacities of previous as minimum
+    n.lines.s_nom_min = n_p.lines.s_nom_opt
+    # dc_i = n.links[n.links.carrier=="DC"].index
+    # n.links.loc[dc_i, "p_nom_min"] = n_p.links.loc[dc_i, "p_nom_opt"]
+    # update links
+    n.links.loc[(n.links.length &gt; 0) &amp; (n.links.lifetime == np.inf), "p_nom"] = n_p.links.loc[
+        (n_p.links.carrier == "AC") &amp; (n_p.links.build_year == 0), "p_nom_opt"
+    ]
+    n.links.loc[(n.links.length &gt; 0) &amp; (n.links.lifetime == np.inf), "p_nom_min"] = n_p.links.loc[
+        (n_p.links.carrier == "AC") &amp; (n_p.links.build_year == 0), "p_nom_opt"
+    ]
+
+    if year == 2025:
+        add_build_year_to_new_assets(n_p, 2020)
+
+    for c in n_p.iterate_components(["Link", "Generator", "Store"]):
+
+        attr = "e" if c.name == "Store" else "p"
+
+        # first, remove generators, links and stores that track
+        # CO2 or global EU values since these are already in n
+        n_p.mremove(c.name, c.df.index[c.df.lifetime == np.inf])
+        # remove assets whose build_year + lifetime &lt; year
+        n_p.mremove(c.name, c.df.index[c.df.build_year + c.df.lifetime &lt; year])
+        # remove assets if their optimized nominal capacity is lower than a threshold
+        # since CHP heat Link is proportional to CHP electric Link, ensure threshold is compatible
+        chp_heat = c.df.index[(c.df[attr + "_nom_extendable"] &amp; c.df.index.str.contains("CHP"))]
+
+        threshold = snakemake.config["existing_capacities"]["threshold_capacity"]
+
+        if not chp_heat.empty:
+            threshold_chp_heat = (
+                threshold * c.df.loc[chp_heat].efficiency2 / c.df.loc[chp_heat].efficiency
+            )
+            n_p.mremove(
+                c.name, chp_heat[c.df.loc[chp_heat, attr + "_nom_opt"] &lt; threshold_chp_heat]
+            )
+
+        n_p.mremove(
+            c.name,
+            c.df.index[
+                c.df[attr + "_nom_extendable"]
+                &amp; ~c.df.index.isin(chp_heat)
+                &amp; (c.df[attr + "_nom_opt"] &lt; threshold)
+            ],
+        )
+
+        # copy over assets but fix their capacity
+        c.df[attr + "_nom"] = c.df[attr + "_nom_opt"]
+        c.df[attr + "_nom_extendable"] = False
+        c.df[attr + "_nom_max"] = np.inf
+
+        n.import_components_from_dataframe(c.df, c.name)
+
+        # copy time-dependent
+        selection = n.component_attrs[c.name].type.str.contains("series") &amp; n.component_attrs[
+            c.name
+        ].status.str.contains("Input")
+
+        for tattr in n.component_attrs[c.name].index[selection]:
+            n.import_series_from_dataframe(c.pnl[tattr].set_index(n.snapshots), c.name, tattr)
+
+    for tech in ["onwind", "offwind", "solar"]:
+        ds_tech = xr.open_dataset(snakemake.input["profile_" + tech])
+        p_nom_max_initial = ds_tech["p_nom_max"].to_pandas()
+
+        if tech == "offwind":
+            for node in OFFSHORE_WIND_NODES:
+                n.generators.loc[
+                    (n.generators.bus == node)
+                    &amp; (n.generators.carrier == tech)
+                    &amp; (n.generators.build_year == year),
+                    "p_nom_max",
+                ] = (
+                    p_nom_max_initial[node]
+                    - n_p.generators[
+                        (n_p.generators.bus == node) &amp; (n_p.generators.carrier == tech)
+                    ].p_nom_opt.sum()
+                )
+        else:
+            for node in PROV_NAMES:
+                n.generators.loc[
+                    (n.generators.bus == node)
+                    &amp; (n.generators.carrier == tech)
+                    &amp; (n.generators.build_year == year),
+                    "p_nom_max",
+                ] = (
+                    p_nom_max_initial[node]
+                    - n_p.generators[
+                        (n_p.generators.bus == node) &amp; (n_p.generators.carrier == tech)
+                    ].p_nom_opt.sum()
+                )
+
+    n.generators.loc[(n.generators.p_nom_max &lt; 0), "p_nom_max"] = 0
+
+    # retrofit coal power plant with carbon capture
+    n.generators.loc[n.generators.carrier == "coal power plant", "p_nom_extendable"] = True
+    n.generators.loc[
+        n.generators.index.str.contains("retrofit") &amp; ~n.generators.index.str.contains(str(year)),
+        "p_nom_extendable",
+    ] = False</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../../reference/" class="btn btn-neutral float-left" title="Reference"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../add_electricity/" class="btn btn-neutral float-right" title="add_electricity">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../../../reference/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../add_electricity/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
