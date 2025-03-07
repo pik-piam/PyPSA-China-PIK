@@ -1,3 +1,9 @@
+""" Functions for the rules to build the hourly heat and load demand profiles
+- electricity load profiles are based on scaling an hourly base year profile to yearly future projections
+- daily heating demand is based on the degree day approx (from atlite) & upscaled hourly based
+  on an intraday profile (for Denmark by default, see snakefile)
+"""
+
 import logging
 import atlite
 import pandas as pd
@@ -5,13 +11,14 @@ import scipy as sp
 import numpy as np
 from collections.abc import Iterable
 from scipy.optimize import curve_fit
-
+import os
 from _helpers import (
     configure_logging,
     mock_snakemake,
     make_periodic_snapshots,
     calc_atlite_heating_timeshift,
     shift_profile_to_planning_year,
+    get_cutout_params,
 )
 
 # TODO switch from hardocded REF_YEAR to a base year?
@@ -35,7 +42,7 @@ nodes = pd.Index(PROV_NAMES)
 def downscale_time_data(
     dt_index: pd.DatetimeIndex,
     weekly_profile: Iterable,
-    regional_tzs=pd.Series(index=PROV_NAMES, data=list(REGIONAL_GEO_TIMEZONES.values())),
+    regional_tzs: pd.Series,
 ) -> pd.DataFrame:
     """Make hourly resolved data profiles based on exogenous weekdays and weekend profiles.
     This fn takes into account that the profiles are in local time and that regions may
@@ -125,7 +132,7 @@ def build_daily_heat_demand_profiles(
         pop_map = store["population_gridcell_map"]
 
     cutout = atlite.Cutout(snakemake.input.cutout)
-    atlite_year = snakemake.config["atlite"]["weather_year"]
+    atlite_year = get_cutout_params(snakemake.config)["weather_year"]
 
     pop_matrix = sp.sparse.csr_matrix(pop_map.T)
     index = pop_map.columns
@@ -248,6 +255,7 @@ def build_heat_demand_profile(
         weekly_profile=(
             list(intraday_profiles["weekday"]) * 5 + list(intraday_profiles["weekend"]) * 2
         ),
+        regional_tzs=pd.Series(index=PROV_NAMES, data=list(REGIONAL_GEO_TIMEZONES.values())),
     )
 
     # TWh -> MWh
@@ -275,13 +283,93 @@ def build_heat_demand_profile(
     return heat_demand, space_heat_demand, space_heating_per_hdd, water_heat_demand
 
 
+def prepare_hourly_load_data(
+    hourly_load_p: os.PathLike,
+    prov_codes_p: os.PathLike,
+) -> pd.DataFrame:
+    """Read the hourly demand data and prepare it for use in the model
+
+    Args:
+        hourly_load_p (os.PathLike, optional): raw elec data from zenodo, see readme in data.
+        prov_codes_p (os.PathLike, optional): province mapping for data.
+
+    Returns:
+        pd.DataFrame: the hourly demand data with the right province names, in TWh/hr
+    """
+    TO_TWh = 1e-6
+    hourly = pd.read_csv(hourly_load_p)
+    hourly_TWh = hourly.drop(columns=["Time Series"]) * TO_TWh
+    prov_codes = pd.read_csv(prov_codes_p)
+    prov_codes.set_index("Code", inplace=True)
+    hourly_TWh.columns = hourly_TWh.columns.map(prov_codes["Full name"])
+    return hourly_TWh
+
+
+def read_yearly_projections(
+    yearly_projections_p: os.PathLike = "resources/data/load/Province_Load_2020_2060.csv",
+) -> pd.DataFrame:
+    """prepare projections for model use
+
+    Args:
+        yearly_projections_p (os.PathLike, optional): the data path.
+                Defaults to "resources/data/load/Province_Load_2020_2060.csv".
+
+    Returns:
+        pd.DataFrame: the formatted data
+    """
+    TO_TWh = 1 / 10
+    yearly_proj_TWh = pd.read_csv(yearly_projections_p)
+    yearly_proj_TWh.rename(columns={"Unnamed: 0": "province"}, inplace=True)
+    yearly_proj_TWh.set_index("province", inplace=True)
+    yearly_proj_TWh.rename(columns={c: int(c) for c in yearly_proj_TWh.columns}, inplace=True)
+
+    return yearly_proj_TWh * TO_TWh
+
+
+def project_elec_demand(
+    hourly_demand_base_yr_MWh: pd.DataFrame, yearly_projections_TWh: pd.DataFrame, year=2020
+):
+    """project the hourly demand to the future years
+
+    Args:
+        hourly_demand_base_yr_MWh (pd.DataFrame): the hourly demand in the base year
+        yearly_projections_TWh (pd.DataFrame): the yearly projections
+
+    Returns:
+        pd.DataFrame: the projected hourly demand
+    """
+    hourly_load_TWH_hr = hourly_demand_base_yr_MWh.loc[:, PROV_NAMES]
+    # normalise the hourly load
+    hourly_load_TWH_hr /= hourly_load_TWH_hr.sum(axis=0)
+
+    yearly_projections_TWh = yearly_projections_TWh.T.loc[int(year), PROV_NAMES]
+    hourly_load_projected = yearly_projections_TWh.multiply(hourly_load_TWH_hr)
+
+    if len(hourly_load_projected) == 8784:
+        # rm feb 29th
+        hourly_load_projected.drop(hourly_load_projected.index[1416:1440], inplace=True)
+    elif len(hourly_load_projected) != 8760:
+        raise ValueError("The length of the hourly load is not 8760 or 8784 (leap year, dropped)")
+
+    snapshots = make_periodic_snapshots(
+        year=year,
+        freq="1h",
+        start_day_hour="01-01 00:00:00",
+        end_day_hour="12-31 23:00",
+        bounds="both",
+    )
+
+    hourly_load_projected.index = snapshots
+    return hourly_load_projected
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
 
         snakemake = mock_snakemake(
             "build_load_profiles",
             heating_demand="positive",
-            planning_horizons="2020",
+            planning_horizons="2040",
             pathway="exponential-175",
             topology="Current+Neigbor",
         )
@@ -297,9 +385,19 @@ if __name__ == "__main__":
         start_day_hour=config["snapshots"]["start"],
         end_day_hour=config["snapshots"]["end"],
         bounds=config["snapshots"]["bounds"],
-        tz=config["snapshots"]["timezone"],
+        tz=None,
         end_year=(None if not config["snapshots"]["end_year_plus1"] else planning_horizons + 1),
     )
+
+    # project the electric load based on the demand
+    hrly_TWh_load = prepare_hourly_load_data(
+        snakemake.input.hrly_regional_ac_load, snakemake.input.province_codes
+    )
+    yearly_projs = read_yearly_projections(snakemake.input.elec_load_projs)
+    projected_demand = project_elec_demand(hrly_TWh_load, yearly_projs, planning_horizons)
+
+    with pd.HDFStore(snakemake.output.elec_load_hrly, mode="w", complevel=4) as store:
+        store["load"] = projected_demand
 
     atlite_hour_shift = calc_atlite_heating_timeshift(date_range, use_last_ts=False)
     reg_daily_hd = build_daily_heat_demand_profiles(

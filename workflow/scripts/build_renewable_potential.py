@@ -17,20 +17,30 @@ import numpy as np
 import time
 import pandas as pd
 from atlite.gis import ExclusionContainer
-from os import PathLike
+from os import PathLike, mkdir
+from shutil import rmtree
+import os.path
 
-from _helpers import mock_snakemake, configure_logging, calc_utc_timeshift
+from _helpers import mock_snakemake, configure_logging
 from readers import read_province_shapes
-from constants import PROV_NAMES, CRS, OFFSHORE_WIND_NODES, DEFAULT_OFFSHORE_WIND_CORR_FACTOR
+from constants import (
+    PROV_NAMES,
+    CRS,
+    OFFSHORE_WIND_NODES,
+    DEFAULT_OFFSHORE_WIND_CORR_FACTOR,
+    TIMEZONE,
+)
 
 logger = logging.getLogger(__name__)
+
+# for atlite multiprocessing
+TMP = "resources/derived_data/tmp/atlite_protected_marine.shp"
 
 
 def make_solar_profile(
     solar_config: dict,
     cutout: atlite.Cutout,
     outp_path: PathLike,
-    delta_t: pd.Timedelta,
 ):
     """Make the solar geographical potentials and per unit availability time series for each
     raster cell
@@ -40,7 +50,6 @@ def make_solar_profile(
         solar_config (dict): the solar configuration (from the yaml config read by snakemake)
         cutout (atlite.Cutout): the atlite cutout
         outp_path (PathLike): the output path for the raster data
-        delta_t (pd.Timedelta): the time delta to convert to ntwk time
     """
 
     logger.info("Making solar profile ")
@@ -122,14 +131,14 @@ def make_solar_profile(
         solar_ds["profile"] = solar_ds["profile"].where(solar_ds["profile"] >= min_p_max_pu, 0)
 
     # shift back from UTC to network time
-    solar_ds["time"] = solar_ds["time"].values + delta_t
+    solar_ds["time"] = (
+        pd.DatetimeIndex(solar_ds["time"], tz="UTC").tz_convert(TIMEZONE).tz_localize(None).values
+    )
 
     solar_ds.to_netcdf(outp_path)
 
 
-def make_onshore_wind_profile(
-    onwind_config: dict, cutout: atlite.Cutout, outp_path: PathLike, delta_t: pd.Timedelta
-):
+def make_onshore_wind_profile(onwind_config: dict, cutout: atlite.Cutout, outp_path: PathLike):
     """Make the onwind geographical potentials and per unit availability time series for
     each raster cell
     ! Somewhat compute intensive !
@@ -138,7 +147,6 @@ def make_onshore_wind_profile(
         onwind_config (dict): the onshore wind config (from the yaml config read by snakemake)
         cutout (atlite.Cutout): the atlite cutout
         outp_path (PathLike): the output path for the raster data
-        delta_t (pd.Timedelta): the time delta to convert to ntwk time
     """
 
     logger.info("Making onshore wind profile ")
@@ -207,13 +215,13 @@ def make_onshore_wind_profile(
         onwind_ds["profile"] = onwind_ds["profile"].where(onwind_ds["profile"] >= min_p_max_pu, 0)
 
     # shift back from UTC to network time
-    onwind_ds["time"] = onwind_ds["time"].values + delta_t
+    onwind_ds["time"] = (
+        pd.DatetimeIndex(onwind_ds["time"], tz="UTC").tz_convert(TIMEZONE).tz_localize(None).values
+    )
     onwind_ds.to_netcdf(outp_path)
 
 
-def make_offshore_wind_profile(
-    offwind_config: dict, cutout: atlite.Cutout, outp_path: PathLike, delta_t: pd.Timedelta
-):
+def make_offshore_wind_profile(offwind_config: dict, cutout: atlite.Cutout, outp_path: PathLike):
     """Make the offwind geographical potentials and per unit availability time series for
       each raster cell
     ! Somewhat compute intensive !
@@ -223,7 +231,6 @@ def make_offshore_wind_profile(
         offwind_config (dict): the configuration for the offshore wind
         cutout (atlite.Cutout): the atlite cutout
         outp_path (PathLike): the output path for the raster date
-        delta_t (pd.Timedelta): the time delta to convert to ntwk time
     """
     offwind_resource = offwind_config["resource"]
     offwind_correction_factor = offwind_config.get(
@@ -235,9 +242,13 @@ def make_offshore_wind_profile(
 
     offwind_provinces = OFFSHORE_WIND_NODES
 
-    EEZ_shp = gpd.read_file(snakemake.input["offshore_shapes"])
-    EEZ_province_shp = gpd.read_file(snakemake.input["offshore_province_shapes"]).set_index("index")
+    EEZ_province_shp = gpd.read_file(snakemake.input["offshore_province_shapes"]).set_index(
+        "province"
+    )
     EEZ_province_shp = EEZ_province_shp.reindex(offwind_provinces).rename_axis("bus")
+    EEZ_country = gpd.GeoDataFrame(
+        geometry=[EEZ_province_shp.unary_union], crs=EEZ_province_shp.crs, index=["country"]
+    )
     excluder_offwind = ExclusionContainer(crs=3035, res=500)
 
     if "max_depth" in offwind_config:
@@ -245,18 +256,19 @@ def make_offshore_wind_profile(
         excluder_offwind.add_raster(snakemake.input.gebco, codes=func, crs=CRS, nodata=-1000)
 
     if offwind_config["natura"]:
-        Protected_shp = gpd.read_file(snakemake.input["natura1"])
-        Protected_shp1 = gpd.read_file(snakemake.input["natura2"])
-        Protected_shp2 = gpd.read_file(snakemake.input["natura3"])
-        Protected_shp = pd.concat([Protected_shp, Protected_shp1], ignore_index=True)
-        Protected_shp = pd.concat([Protected_shp, Protected_shp2], ignore_index=True)
-        Protected_shp = Protected_shp.geometry
-        Protected_shp = gpd.GeoDataFrame(Protected_shp)
-        Protected_Marine_shp = gpd.tools.overlay(Protected_shp, EEZ_shp, how="intersection")
+        protected_shp = gpd.read_file(snakemake.input["natura1"])
+        protected_shp1 = gpd.read_file(snakemake.input["natura2"])
+        protected_shp2 = gpd.read_file(snakemake.input["natura3"])
+        protected_shp = pd.concat([protected_shp, protected_shp1], ignore_index=True)
+        protected_shp = pd.concat([protected_shp, protected_shp2], ignore_index=True)
+        protected_shp = protected_shp.geometry
+        protected_shp = gpd.GeoDataFrame(protected_shp)
+        protected_Marine_shp = gpd.tools.overlay(protected_shp, EEZ_country, how="intersection")
         # this is to avoid atlite complaining about parallelisation
-        Protected_Marine_shp.to_file(snakemake.output.protected_areas_offshore)
-        # excluder_offwind.add_geometry(Protected_Marine_shp.geometry)
-        excluder_offwind.add_geometry("Protected_Marine.shp")
+        if not os.path.isdir(os.path.dirname(TMP)):
+            mkdir(os.path.dirname(TMP))
+        protected_Marine_shp.to_file(TMP)
+        excluder_offwind.add_geometry(TMP)
 
     kwargs = dict(nprocesses=nprocesses, disable_progressbar=noprogress)
     if noprogress:
@@ -311,7 +323,9 @@ def make_offshore_wind_profile(
             offwind_ds["profile"] >= min_p_max_pu, 0
         )
     # shift back from UTC to network time
-    offwind_ds["time"] = offwind_ds["time"].values + delta_t
+    offwind_ds["time"] = (
+        pd.DatetimeIndex(offwind_ds["time"], tz="UTC").tz_convert(TIMEZONE).tz_localize(None).values
+    )
     offwind_ds.to_netcdf(outp_path)
 
 
@@ -321,18 +335,23 @@ if __name__ == "__main__":
         snakemake = mock_snakemake("build_renewable_potential")
 
     configure_logging(snakemake, logger=logger)
+
     pgb.streams.wrap_stderr()  # ?
 
     nprocesses = int(snakemake.threads)  # ?
     noprogress = not snakemake.config["atlite"].get("show_progress", True)
 
+    logger.info(f"Loading cutout {snakemake.input.cutout}")
     cutout = atlite.Cutout(snakemake.input.cutout)
-    cutout.prepare()
+    logger.info(f"Preparing cutout {snakemake.input.cutout}")
+    break_requests = snakemake.config["atlite"]["monthly_requests"]
+    cutout.prepare(monthly_requests=break_requests, concurrent_requests=break_requests)
+    logger.info(f"Cutout prepared from {snakemake.input.cutout}")
     provinces_shp = read_province_shapes(snakemake.input.provinces_shp)
-    provinces_shp = gpd.read_file()[["province", "geometry"]]
     provinces_shp = provinces_shp.reindex(PROV_NAMES).rename_axis("bus")
     buses = provinces_shp.index
 
+    logger.info(f"Loading raster data")
     grass = snakemake.input.Grass_raster
     bare = snakemake.input.Bare_raster
     shrubland = snakemake.input.Shrubland_raster
@@ -341,18 +360,12 @@ if __name__ == "__main__":
     area = cutout.grid.to_crs(3035).area / 1e6
     area = xr.DataArray(area.values.reshape(cutout.shape), [cutout.coords["y"], cutout.coords["x"]])
 
-    # atlite to network timedelta
-    delta_t = calc_utc_timeshift(
-        snakemake.config["snapshots"], snakemake.config["atlite"]["weather_year"]
-    )
-
+    logger.info(f"Building renewable potential profiles from cutout {snakemake.input.cutout}")
     if snakemake.config["Technique"]["solar"]:
         make_solar_profile(
             solar_config=snakemake.config["renewable"]["solar"],
             cutout=cutout,
-            path_build_up_raster=snakemake.input.Build_up_raster,
             outp_path=snakemake.output.solar_profile,
-            delta_t=delta_t,
         )
 
     if snakemake.config["Technique"]["onwind"]:
@@ -360,7 +373,6 @@ if __name__ == "__main__":
             onwind_config=snakemake.config["renewable"]["onwind"],
             cutout=cutout,
             outp_path=snakemake.output.onwind_profile,
-            delta_t=delta_t,
         )
 
     if snakemake.config["Technique"]["offwind"]:
@@ -369,7 +381,9 @@ if __name__ == "__main__":
             offwind_config=offwind_config,
             cutout=cutout,
             outp_path=snakemake.output.offwind_profile,
-            delta_t=delta_t,
         )
+
+    if os.path.isdir(os.path.dirname(TMP)):
+        rmtree(os.path.dirname(TMP))
 
     logger.info("Renewable potential profiles successfully built.")

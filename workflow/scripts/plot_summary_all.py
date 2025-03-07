@@ -14,7 +14,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-from _helpers import configure_logging, mock_snakemake
+from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from constants import PLOT_COST_UNITS, COST_UNIT, PLOT_CO2_UNITS, PLOT_CO2_LABEL, PLOT_SUPPLY_UNITS
 from _plot_utilities import set_plot_style
 
@@ -476,6 +476,7 @@ if __name__ == "__main__":
         )
 
     configure_logging(snakemake)
+    set_plot_test_backend(snakemake.config)
     logger.info(snakemake.input)
 
     set_plot_style(

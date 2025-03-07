@@ -193,8 +193,15 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         carrier="H2 fuel cell",
     )
 
-    H2_under_nodes = pd.Index(config["H2"]["geo_storage_nodes"])
-    H2_type1_nodes = nodes.difference(H2_under_nodes)
+    H2_under_nodes_ = pd.Index(config["H2"]["geo_storage_nodes"])
+    H2_type1_nodes_ = nodes.difference(H2_under_nodes_)
+    H2_under_nodes = H2_under_nodes_.intersection(nodes)
+    H2_type1_nodes = H2_type1_nodes_.intersection(nodes)
+    if not (
+        H2_under_nodes_.shape == H2_under_nodes.shape
+        and H2_type1_nodes_.shape == H2_type1_nodes.shape
+    ):
+        logger.warning("Some H2 storage nodes are not in the network buses")
 
     network.add(
         "Store",
@@ -242,9 +249,12 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         if edge_path is None:
             raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
         else:
-            edges = pd.read_csv(
+            edges_ = pd.read_csv(
                 edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
             ).fillna(0)
+            edges = edges_[edges_["bus0"].isin(nodes) & edges_["bus1"].isin(nodes)]
+            if edges_.shape[0] != edges.shape[0]:
+                logger.warning("Some edges are not in the network buses")
 
         # fix this to use map with x.y
         lengths = NON_LIN_PATH_SCALING * np.array(
@@ -327,10 +337,12 @@ def add_voltage_links(network: pypsa.Network, config: dict):
     if edge_path is None:
         raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
     else:
-        edges = pd.read_csv(
+        edges_ = pd.read_csv(
             edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
         ).fillna(0)
-
+        edges = edges_[edges_["bus0"].isin(PROV_NAMES) & edges_["bus1"].isin(PROV_NAMES)]
+        if edges_.shape[0] != edges.shape[0]:
+            logger.warning("Some edges are not in the network")
     # fix this to use map with x.y
     lengths = NON_LIN_PATH_SCALING * np.array(
         [
@@ -451,7 +463,7 @@ def add_heat_coupling(
         nodes,
         suffix=" decentral heat",
         bus=nodes + " decentral heat",
-        p_set=heat_demand[nodes].multiply(1 - central_fraction),
+        p_set=heat_demand[nodes].multiply(1 - central_fraction[nodes]),
     )
 
     network.add(
@@ -459,11 +471,11 @@ def add_heat_coupling(
         nodes,
         suffix=" central heat",
         bus=nodes + " central heat",
-        p_set=heat_demand[nodes].multiply(central_fraction),
+        p_set=heat_demand[nodes].multiply(central_fraction[nodes]),
     )
 
     if "heat pump" in config["Techs"]["vre_techs"]:
-
+        logger.info(f"loading cop profiles from {snakemake.input.cop_name}")
         with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
             ashp_cop = store["ashp_cop_profiles"]
             ashp_cop.index = ashp_cop.index.tz_localize(None)
@@ -944,7 +956,8 @@ def prepare_network(config: dict) -> pypsa.Network:
         start_day_hour=snapshot_cfg["start"],
         end_day_hour=snapshot_cfg["end"],
         bounds=snapshot_cfg["bounds"],
-        tz=snapshot_cfg["timezone"],
+        # naive local timezone
+        tz=None,
         end_year=(None if not snapshot_cfg["end_year_plus1"] else planning_horizons + 1),
     )
     network.set_snapshots(snapshots)
@@ -1018,8 +1031,7 @@ def prepare_network(config: dict) -> pypsa.Network:
     demand_path = snakemake.input.elec_load.replace("{planning_horizons}", f"{cost_year}")
     with pd.HDFStore(demand_path, mode="r") as store:
         load = LOAD_CONVERSION_FACTOR * store["load"]  # TODO add unit
-        load = load.loc[network.snapshots]
-    load.columns = PROV_NAMES
+        load = load.loc[network.snapshots, PROV_NAMES]
 
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
 
@@ -1211,7 +1223,7 @@ if __name__ == "__main__":
             topology="current+FCG",
             pathway="exp175",
             co2_reduction="0.0",
-            planning_horizons=2060,
+            planning_horizons=2040,
             heating_demand="positive",
         )
     configure_logging(snakemake)

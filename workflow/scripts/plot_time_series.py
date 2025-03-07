@@ -10,7 +10,12 @@ from _plot_utilities import (
     make_nice_tech_colors,
     fix_network_names_colors,
 )
-from _helpers import configure_logging, mock_snakemake, get_location_and_carrier
+from _helpers import (
+    configure_logging,
+    mock_snakemake,
+    get_location_and_carrier,
+    set_plot_test_backend,
+)
 from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL
 
 logger = logging.getLogger(__name__)
@@ -247,6 +252,7 @@ if __name__ == "__main__":
     YEAR = snakemake.wildcards.planning_horizons
 
     configure_logging(snakemake)
+    set_plot_test_backend(snakemake.config)
 
     set_plot_style(
         style_config_file=snakemake.config["plotting"]["network_style_config_file"],

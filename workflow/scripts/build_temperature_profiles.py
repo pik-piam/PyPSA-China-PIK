@@ -10,6 +10,7 @@ import atlite
 
 from os import PathLike
 from _helpers import configure_logging, mock_snakemake
+from constants import TIMEZONE
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +38,13 @@ def build_temp_profiles(pop_map_path: PathLike, cutout_path: PathLike, temperatu
     index.name = "provinces"
 
     temperature = cutout.temperature(matrix=pop_matrix, index=index)
-    # TODO fix hard-coded
-    temperature["time"] = temperature["time"].values + pd.Timedelta(
-        8, unit="h"
-    )  # UTC-8 instead of UTC
+    # convert the cutout UTC time to local time
+    temperature["time"] = (
+        pd.DatetimeIndex(temperature["time"], tz="UTC")
+        .tz_convert(TIMEZONE)
+        .tz_localize(None)
+        .values
+    )
 
     with pd.HDFStore(temperature_out, mode="w", complevel=4) as store:
         store["temperature"] = temperature.to_pandas().divide(pop_map.sum())

@@ -10,28 +10,35 @@ import matplotlib.axes as axes
 import pypsa
 import seaborn as sns
 import os
-
+import logging
 from pandas import DataFrame
 
-from _helpers import configure_logging, mock_snakemake
+from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import rename_index, fix_network_names_colors
 from constants import PLOT_CAP_LABEL, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, PLOT_SUPPLY_LABEL
 
 sns.set_theme("paper", style="whitegrid")
+logger = logging.getLogger(__name__)
 
 
-def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, drop_zero_vals=True):
+def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, drop_zero_vals=True):
     """Generic function to plot different statics
 
     Args:
         ds (DataFrame): the data to plot
         ax (matplotlib.axes.Axes): plotting axes
+        colors (DataFrame): colors for the carriers
         drop_zero_vals (bool, optional): Drop zeroes from data. Defaults to True.
     """
     if drop_zero_vals:
         ds = ds[ds != 0]
     ds = ds.dropna()
+    logger.info("debuggin plot stat")
+    logger.info(colors)
     c = colors[ds.index.get_level_values("carrier")]
+    logger.info(c)
+    logger.info(ds.index.get_level_values("carrier"))
+    logger.info(colors.loc[ds.index.get_level_values("carrier")])
     ds = ds.pipe(rename_index)
     label = f"{ds.attrs['name']} [{ds.attrs['unit']}]"
     ds.plot.barh(color=c.values, xlabel=label, ax=ax)
@@ -50,6 +57,8 @@ if __name__ == "__main__":
             heating_demand="positive",
         )
     configure_logging(snakemake)
+    set_plot_test_backend(snakemake.config)
+
     carrier = snakemake.params.carrier
 
     n = pypsa.Network(snakemake.input.network)
@@ -71,7 +80,7 @@ if __name__ == "__main__":
     if "capacity_factor" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.capacity_factor(bus_carrier=carrier).dropna()
-        plot_static_per_carrier(ds, ax)
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capacity_factor.png"))
 
@@ -83,7 +92,7 @@ if __name__ == "__main__":
         ds = ds.drop(("Generator", "Load"), errors="ignore")
         ds = ds.abs() / PLOT_CAP_UNITS
         ds.attrs["unit"] = PLOT_CAP_LABEL
-        plot_static_per_carrier(ds.abs(), ax)
+        plot_static_per_carrier(ds.abs(), ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "installed_capacity.png"))
 
@@ -95,28 +104,28 @@ if __name__ == "__main__":
         ds = ds.drop(("Generator", "Load"), errors="ignore")
         ds = ds.abs() / PLOT_CAP_UNITS
         ds.attrs["unit"] = PLOT_CAP_LABEL
-        plot_static_per_carrier(ds, ax)
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "optimal_capacity.png"))
 
     if "capital_expenditure" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.capex(bus_carrier=carrier)
-        plot_static_per_carrier(ds, ax)
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capex.png"))
 
     if "operational_expenditure" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.opex(bus_carrier=carrier)
-        plot_static_per_carrier(ds, ax)
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "opex.png"))
 
     if "curtailment" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.curtailment(bus_carrier=carrier)
-        plot_static_per_carrier(ds, ax)
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "curtailment.png"))
 
@@ -127,7 +136,7 @@ if __name__ == "__main__":
             ds = ds.drop("Line")
         ds = ds / PLOT_SUPPLY_UNITS
         ds.attrs["unit"] = PLOT_SUPPLY_LABEL
-        plot_static_per_carrier(ds, ax)
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "supply.png"))
 
@@ -138,13 +147,13 @@ if __name__ == "__main__":
             ds = ds.drop("Line")
         ds = ds / PLOT_SUPPLY_UNITS
         ds.attrs["unit"] = PLOT_SUPPLY_LABEL
-        plot_static_per_carrier(ds, ax)
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "withdrawal.png"))
 
     if "market_value" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.market_value(bus_carrier=carrier)
-        plot_static_per_carrier(ds, ax)
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "market_value.png"))

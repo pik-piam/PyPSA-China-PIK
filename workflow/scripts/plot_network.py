@@ -16,7 +16,12 @@ from _plot_utilities import (
     make_nice_tech_colors,
     # aggregate_small_pie_vals,
 )
-from _helpers import configure_logging, mock_snakemake, get_location_and_carrier
+from _helpers import (
+    configure_logging,
+    mock_snakemake,
+    get_location_and_carrier,
+    set_plot_test_backend,
+)
 from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, CURRENCY
 
 
@@ -592,7 +597,7 @@ if __name__ == "__main__":
             planning_horizons="2060",
             heating_demand="positive",
         )
-
+    set_plot_test_backend(snakemake.config)
     configure_logging(snakemake, logger=logger)
 
     set_plot_style(

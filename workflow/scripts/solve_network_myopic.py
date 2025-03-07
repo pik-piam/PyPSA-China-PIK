@@ -231,7 +231,7 @@ def extra_functionality(n, snapshots):
         add_retrofit_constraints(n)
 
 
-def solve_network(n, config, solving, opts="", **kwargs):
+def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
     set_of_options = solving["solver"]["options"]
     solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
     solver_name = solving["solver"]["name"]

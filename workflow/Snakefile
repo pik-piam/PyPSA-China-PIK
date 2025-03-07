@@ -9,9 +9,8 @@ import logging
 import os.path
 
 from os.path import abspath, getctime
-from scripts._helpers import PathManager
-
-# NB: duplicated parameters will be overwritten by the last read cfg
+from scripts._helpers import PathManager, get_cutout_params
+from scripts.constants import TESTS_RUNNAME
 # NB: duplicated parameters will be overwritten by the last read cfg
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
@@ -20,31 +19,40 @@ configfile: "config/plot_config.yaml"
 # ====== get paths =======
 path_manager = PathManager(config)
 RESULTS_DIR = path_manager.results_dir()
-DERIVED_DATA = path_manager.derived_data_dir( shared=False)
-DERIVED_COMMON = path_manager.derived_data_dir( shared=True)
+DERIVED_DATA = path_manager.derived_data_dir(shared=False)
+DERIVED_COMMON = path_manager.derived_data_dir(shared=True)
 LOG_DIR = path_manager.logs_dir()
 LOGS_COMMON = "logs"
+LU_RASTER = path_manager.landuse_raster_data()
+CUTOUTS_DIR = path_manager.cutouts_dir()
 
 # ====== include rules ======= (after paths are set!)
 include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
 
-localrules: plot_all, build_population, dag
+localrules: plot_all, build_population, dag, fetch_region_shapes
 
 # ====== set global parameters =======
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
-
+CUTOUT_NAME= config["atlite"]["cutout_name"]
+CUTOUT_PATH = os.path.join(CUTOUTS_DIR,CUTOUT_NAME + ".nc")
 # ====== set up snakemake providers =======
 storage:
     provider="http",
 
-# ======= PSEUDO RULE TO CALL WHOLE WORKFLOW =========
-if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
+# ======= PSEUDO RULES TO EXECUTE WORKFLOW =========
+if config["run"]["is_test"]:
+    rule test_workflow:
+        input:
+            expand(RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc',   
+            **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
+            ),
+elif config["foresight"] in ["overnight", "myopic"]:
     rule plot_all:
         input:
             expand(
                 RESULTS_DIR+ '/plots/summary/pathway_costs.png',
-                **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
+                **{k: v for k, v in config["scenario"].items() if k != "planning_horizons"},
             ),
             # network plot
             expand(
@@ -73,21 +81,21 @@ if config['enable'].get('build_cutout', False):
         input:
             regions_onshore="resources/data/regions/regions_onshore.geojson",
             regions_offshore="resources/data/regions/regions_offshore.geojson"
-        output: "resources/cutouts/{cutout}.nc"
-        log: LOGS_COMMON + "/build_cutout/{cutout}.log"
-        benchmark: "benchmarks/build_cutout_{cutout}"
+        output: CUTOUT_PATH,
+        log: LOGS_COMMON + f"/build_cutout/{CUTOUT_NAME}.log"
+        benchmark: f"benchmarks/build_cutout_{CUTOUT_NAME}"
         threads: ATLITE_NPROCESSES
         resources: mem_mb=ATLITE_NPROCESSES * 1000
         script: "scripts/build_cutout.py"
 
 rule build_population_gridcell_map:
     input:
-        cutout="resources/cutouts/China-2020.nc",
-        province_populations=DERIVED_COMMON+"/"+"population/population.h5",
-        #
-        population_density_grid="resources/data/population/CFSR_grid.nc",
+        cutout=CUTOUT_PATH,
+        province_populations=DERIVED_COMMON+"/population/population.h5",
+        population_density_grid="resources/data/population/pop_density_china.nc",
+        # TODO directly link to output of fetch region shapes
         # admin 1 level = first administrative level within country
-        province_shape="resources/data/province_shapes/CHN_adm1.shp"
+        province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
     output:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5"
     log: LOGS_COMMON+"/build_population_gridcell_map.log"
@@ -97,11 +105,11 @@ rule build_population_gridcell_map:
 
 rule build_solar_thermal_profiles:
     input:
-        cutout="resources/cutouts/China-2020.nc",
+        cutout=CUTOUT_PATH,
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5"
     output:
-        profile_solar_thermal = DERIVED_DATA+"/"+f"heating/solar_thermal-{config['solar_thermal_angle']}.h5"
-    log: LOG_DIR + "/build_solar_thermal_profiles.log"
+        profile_solar_thermal = DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5"
+    log: LOGS_COMMON + "/build_solar_thermal_profiles.log"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_solar_thermal_profiles.py"
@@ -109,10 +117,10 @@ rule build_solar_thermal_profiles:
 rule build_temperature_profiles:
     input:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
-        cutout="resources/cutouts/China-2020.nc"
+        cutout=CUTOUT_PATH
     output:
-        temp=DERIVED_DATA+"/"+"heating/temp.h5"
-    log: LOG_DIR + "/build_temperature_profiles.log"
+        temp=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/temperature.h5"
+    log: LOGS_COMMON + "/build_temperature_profiles.log"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_temperature_profiles.py"
@@ -120,53 +128,54 @@ rule build_temperature_profiles:
 rule build_cop_profiles:
     input:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
-        cutout="resources/cutouts/China-2020.nc",
-        temp=DERIVED_DATA+"/"+"heating/temp.h5"
+        cutout=CUTOUT_PATH,
+        temp=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/temperature.h5"
     output:
-        cop=DERIVED_DATA+"/"+"heating/cop.h5"
+        cop=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_cop_profiles.py"
 
 rule build_renewable_potential:
     input:
-        Build_up_raster="resources/data/landuse_availability/Build_up.tif",
-        Grass_raster="resources/data/landuse_availability/Grass.tif",
-        Bare_raster="resources/data/landuse_availability/Bare.tif",
-        Shrubland_raster="resources/data/landuse_availability/Shrubland.tif",
+        Build_up_raster=f"{LU_RASTER}/Build_up.tif",
+        Grass_raster=f"{LU_RASTER}/Grass.tif",
+        Bare_raster=f"{LU_RASTER}/Bare.tif",
+        Shrubland_raster=f"{LU_RASTER}/Shrubland.tif",
+        # GEBCO bathymetry (water depth)
+        gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2024_CN.tif",
         # natural reserves data
         natura1='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_0/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
         natura2='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_1/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
         natura3='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_2/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
-        # GEBCO bathymetry (water depth)
-        gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2024_CN.tif",
-        provinces_shp="resources/data/province_shapes/CHN_adm1.shp",
-        offshore_province_shapes="resources/data/regions/regions_offshore_province.geojson",
-        offshore_shapes="resources/data/regions/regions_offshore.geojson",
-    # TODO get cutout from config
-        cutout= "resources/cutouts/China-2020.nc"
-    # TODO make profile path cutout dependent
+        provinces_shp=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
+        offshore_province_shapes=DERIVED_COMMON + "/regions/provinces_offshore.geojson",
+        cutout= CUTOUT_PATH,
     output:
-        solar_profile="resources/profile_solar.nc",
-        onwind_profile="resources/profile_onwind.nc",
-        offwind_profile="resources/profile_offwind.nc",
-        protected_areas_offshore = DERIVED_COMMON+"/"+"landuse_availability/protected_areas_offshore.shp"
-    log: LOGS_COMMON + "/build_renewable_potential.log"
+        **{f"{tech}_profile": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
+            for tech in config['Technique']}
+    log: LOGS_COMMON + f"/build_renewable_potential_{CUTOUT_NAME}.log"
     threads: ATLITE_NPROCESSES
     resources: mem_mb=ATLITE_NPROCESSES * 5000
     script: "scripts/build_renewable_potential.py"
 
+# TODO check whether energy totals still needed
 rule build_load_profiles:
     input:
         population = DERIVED_COMMON+"/"+"population/population.h5",
         population_map = DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
-        cutout = "resources/cutouts/China-2020.nc",
+        cutout = CUTOUT_PATH,
         intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
-        space_heat_demand="resources/data/heating/SPH_2020.csv"
+        space_heat_demand="resources/data/heating/SPH_2020.csv",
+        elec_load_projs = "resources/data/load/Province_Load_2020_2060.csv",
+        province_codes = "resources/data/regions/province_codes.csv",
+        hrly_regional_ac_load = "resources/data/load/Hourly_demand_of_31_province_China_modified_V2.1.csv",
     output:
-        heat_demand_profile = DERIVED_DATA + "/" + "heating/heat_demand_profile_{planning_horizons}.h5",
-        energy_totals_name = DERIVED_DATA + "/" +"energy_totals_{planning_horizons}.h5"
-    log: LOG_DIR + "/build_load_profiles/build_{planning_horizons}.log"
+        # TODO consider splitting into two rules so elect+hrly can be used DERIVED COMMON
+        elec_load_hrly = DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
+        heat_demand_profile = DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
+        energy_totals_name = DERIVED_DATA + "/" +f"energy_totals_{CUTOUT_NAME}_"+"{planning_horizons}.h5"
+    log: LOG_DIR + "/build_load_profiles/build_{planning_horizons}"+f"_{CUTOUT_NAME}.log"
     threads: ATLITE_NPROCESSES
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_load_profiles.py"
@@ -184,22 +193,18 @@ rule build_biomass_potential:
     script: "scripts/build_biomass_potential.py"
 
 
-if config["foresight"] in ["None", "overnight", "non-pathway"]:
+if config["foresight"] in ["overnight"]:
     rule prepare_networks:
         input:
-            # overrides="resources/data/override_component_attrs",
-            temp=DERIVED_DATA+"/"+"heating/temp.h5",
-            heat_demand_profile=DERIVED_DATA+"/"+"heating/heat_demand_profile_{planning_horizons}.h5",
+            heat_demand_profile=DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
-            solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
-            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
-            elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
-            energy_totals_name=DERIVED_DATA+"/"+"energy_totals_{planning_horizons}.h5",
+            solar_thermal_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
+            cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
+            elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
             tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
-            province_shape="resources/data/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": f"resources/profile_{tech}.nc"
-               for tech in config['renewable']}
+            province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
+            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc" for tech in config['renewable']}
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         threads: 1
@@ -222,18 +227,17 @@ if config["foresight"] in ["None", "overnight", "non-pathway"]:
 elif config["foresight"] == "myopic":
     rule prepare_base_networks_2020:
         input:
-            overrides = "resources/data/override_component_attrs",
             edges= "resources/data/grids/edges.txt",
             edges_existing = "resources/data/grids/edges_current.csv",
-            heat_demand_profile= DERIVED_DATA+"/"+"heating/heat_demand_profile_{planning_horizons}.h5",
+            heat_demand_profile=DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
-            solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
-            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
-            elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
+            solar_thermal_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
+            cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
+            elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             # TODO: metadata for file, why does it need to be h5?
             tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
-            province_shape="resources/data/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": f"resources/profile_{tech}.nc"
+            province_shape=DERIVED_COMMON +"/province_shapes/CHN_adm1.shp",
+            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
@@ -245,18 +249,16 @@ elif config["foresight"] == "myopic":
 
     rule prepare_base_networks:
         input:
-            overrides = "resources/data/override_component_attrs",
-            # TODO fix me
             edges = "resources/data/grids/edges.txt",
             biomass_potental = DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",
-            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
+            cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
-            heat_demand_profile= DERIVED_DATA+"/"+"heating/heat_demand_profile_{planning_horizons}.h5",
-            solar_thermal_name=DERIVED_DATA+"/"+"heating/solar_thermal-{angle}.h5".format(angle=config['solar_thermal_angle']),
-            elec_load="resources/data/load/load_{planning_horizons}_weatheryears_1979_2016_TWh.h5",
+            heat_demand_profile= DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
+            solar_thermal_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
+            elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
-            province_shape="resources/data/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": f"resources/profile_{tech}.nc"
+            province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
+            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
                for tech in config['renewable']}
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
@@ -268,10 +270,9 @@ elif config["foresight"] == "myopic":
 
     rule add_existing_baseyear:
         input:
-            overrides="resources/data/override_component_attrs",
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
-            cop_name=DERIVED_DATA+"/"+"heating/cop.h5",
+            cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
             **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
                for tech in config['existing_infrastructure']},
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
@@ -289,11 +290,10 @@ elif config["foresight"] == "myopic":
 
     rule add_brownfield:
         input:
-            overrides="resources/data/override_component_attrs",
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             network_p=solved_previous_horizon,#solved network at previous time step
             costs="resources/data/costs/costs_{planning_horizons}.csv",
-            **{f"profile_{tech}": f"resources/profile_{tech}.nc"
+            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
                 for tech in config['renewable']}
         output:
             network_name = RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
@@ -307,7 +307,6 @@ elif config["foresight"] == "myopic":
         params:
             solving = config["solving"],
         input:
-            overrides = "resources/data/override_component_attrs",
             network=RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
             costs="resources/data/costs/costs_{planning_horizons}.csv",
             biomass_potental= DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",
@@ -341,6 +340,7 @@ rule dag:
         dot -Tpng -o {output.rules_png} {output.rules_dot}
         """
 
+    
 onerror:
     log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
@@ -355,6 +355,10 @@ onerror:
 onsuccess:
     log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
-    # log path is available as "log"
-    shutil.copy(log, log_out)
-    yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
+    try:
+        # log path is available as "log"
+        shutil.copy(log, log_out)
+        yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
+    except FileNotFoundError as e:
+        logging.warning(f"Could not copy log file: {e}")
+

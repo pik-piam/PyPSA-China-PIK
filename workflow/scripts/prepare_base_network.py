@@ -114,7 +114,8 @@ def prepare_network(config: dict) -> pypsa.Network:
         start_day_hour=snapshot_cfg["start"],
         end_day_hour=snapshot_cfg["end"],
         bounds=snapshot_cfg["bounds"],
-        tz=snapshot_cfg["timezone"],
+        # naive local tz
+        tz=None,
         end_year=(
             None
             if not snapshot_cfg["end_year_plus1"]

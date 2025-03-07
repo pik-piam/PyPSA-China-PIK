@@ -1,10 +1,11 @@
 # TODO add docu
 import logging
-from _helpers import configure_logging, mock_snakemake
-
 import atlite
 import pandas as pd
 import scipy as sp
+
+from constants import TIMEZONE
+from _helpers import configure_logging, mock_snakemake
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,9 @@ def build_solar_thermal_profiles():
         index=index,
     )
 
-    st["time"] = st["time"].values + pd.Timedelta(8, unit="h")  # UTC-8 instead of UTC
+    st["time"] = (
+        pd.DatetimeIndex(st["time"], tz="UTC").tz_convert(TIMEZONE).tz_localize(None).values
+    )
 
     with pd.HDFStore(snakemake.output.profile_solar_thermal, mode="w", complevel=4) as store:
         store["solar_thermal_profiles"] = st.to_pandas().divide(pop_map.sum())

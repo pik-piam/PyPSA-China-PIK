@@ -19,26 +19,27 @@ import time
 import pytz
 from pathlib import Path
 from types import SimpleNamespace
-import logging
-import matplotlib.pyplot as plt
-from pypsa.components import components, component_attrs
-import pypsa
 
 import pypsa
-
 
 # get root logger
 logger = logging.getLogger()
 
 DEFAULT_TUNNEL_PORT = 1080
-LOGIN_NODE = "03"
+LOGIN_NODE = "01"
 
 
+# TODO return pathlib objects? so can just use / to combine paths?
 class PathManager:
-    """A class to manage paths for the snakemake workflow"""
+    """A class to manage paths for the snakemake workflow
+
+    Returns different paths for CI/CD runs (HACK due to snamekame-pytest incompatibility)
+    """
 
     def __init__(self, snmk_config):
         self.config = snmk_config
+        # HACK for pytests CI, should really be a patch but not possible
+        self._is_test_run = self.config["run"].get("is_test", False)
 
     def _get_version(self) -> str:
         """Hacky solution to get version from workflow pseudo-package"""
@@ -50,6 +51,11 @@ class PathManager:
         return workflow.__version__
 
     def _join_scenario_vars(self) -> str:
+        """Join scenario variables into a human readable string
+
+        Returns:
+            str: human readable string to build directories
+        """
         # TODO make into a config
         exclude = ["planning_horizons", "co2_reduction"]
         short_names = {
@@ -69,7 +75,15 @@ class PathManager:
             ]
         )
 
-    def results_dir(self, extra_opts: dict = None):
+    def results_dir(self, extra_opts: dict = None) -> os.PathLike:
+        """generate the results directory
+
+        Args:
+            extra_opts (dict, optional): opt extra args. Defaults to None.
+
+        Returns:
+            Pathlike: base directory for reslts
+        """
         run, foresight = self.config["run"]["name"], self.config["foresight"]
         base_dir = "v-" + self._get_version() + "_" + run
         sub_dir = foresight + "_" + self._join_scenario_vars()
@@ -77,22 +91,59 @@ class PathManager:
             sub_dir += "_" + "".join(extra_opts.values())
         return os.path.join(self.config["results_dir"], base_dir, sub_dir)
 
-    def derived_data_dir(self, shared=False):
+    def derived_data_dir(self, shared=False) -> os.PathLike:
+        """Generate the derived data directory path.
+
+        Args:
+            shared (bool, optional): If True, return the shared derived data directory.
+                         Defaults to False.
+
+        Returns:
+            os.PathLike: The path to the derived data directory.
+        """
+
+        base_path = "tests" if self._is_test_run else "resources"
+
         foresight = self.config["foresight"]
         if not shared:
             sub_dir = foresight + "_" + self._join_scenario_vars()
-            return os.path.join("resources/derived_data", sub_dir)
+            return os.path.join(f"{base_path}/derived_data", sub_dir)
         else:
-            return "resources/derived_data"
+            return f"{base_path}/derived_data"
 
-    def logs_dir(self):
+    def logs_dir(self) -> os.PathLike:
+        """Generate logs directory.
+
+        Returns:
+            os.PathLike: The path to the derived data directory.
+        """
         run, foresight = self.config["run"]["name"], self.config["foresight"]
         base_dir = "v-" + self._get_version() + "_" + run
         sub_dir = foresight + "_" + self._join_scenario_vars()
         return os.path.join("logs", base_dir, sub_dir)
 
-    def copy_log(self):
-        pass
+    def cutouts_dir(self) -> os.PathLike:
+        """Generate cutouts directory.
+
+        Returns:
+            os.PathLike: The path to the cutouts directory."""
+
+        if self._is_test_run:
+            return "tests/testdata"
+        else:
+            return "resources/cutouts"
+
+    def landuse_raster_data(self) -> os.PathLike:
+        """Generate the landuse raster data directory path.
+
+        Returns:
+            os.PathLike: The path to the landuse raster data directory.
+        """
+
+        if self._is_test_run:
+            return "tests/testdata/landuse_availability"
+        else:
+            return "resources/data/landuse_availability"
 
 
 # ============== HPC helpers ==================
@@ -110,7 +161,7 @@ def setup_gurobi_tunnel_and_env(
         logger (logging.Logger, optional): Logger. Defaults to None.
         attempts (int, optional): ssh connection attemps. Defaults to 4.
     """
-    if tunnel_config.get("use_tunnel", False) is False:
+    if not tunnel_config.get("use_tunnel", False):
         return
     logger.info("setting up tunnel")
     user = os.getenv("USER")  # User is pulled from the environment
@@ -122,7 +173,9 @@ def setup_gurobi_tunnel_and_env(
     ssh_command = f"ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
     logger.info(f"Attempting ssh tunnel to login node {LOGIN_NODE}")
     # Run SSH in the background to establish the tunnel
-    socks_proc = subprocess.Popen(pipe_err + ssh_command, shell=True, stderr=subprocess.PIPE)
+    socks_proc = subprocess.Popen(
+        pipe_err + ssh_command, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+    )
     try:
         time.sleep(0.2)
         # [-1] because ssh is last command
@@ -351,45 +404,6 @@ def calc_atlite_heating_timeshift(date_range: pd.date_range, use_last_ts=False) 
 
     idx = 0 if not use_last_ts else -1
     return pytz.timezone(TIMEZONE).utcoffset(date_range[idx]).total_seconds() / 3600
-
-
-def calc_utc_timeshift(snapshot_config: dict, weather_year: int) -> pd.TimedeltaIndex:
-    """calculate the timeshift to UTC based on the TIMEZONE constant. This is needed
-    to bring the atlite UTC times in line with the network ones.
-
-    A complication is that the planning and weather years are not identical
-
-    Args:
-        snapshot_config (dict): the snapshots config from snakemake
-
-    Returns:
-        pd.TimedeltaIndex: the shifts to UTC
-    """
-    # import constants here to not interfere with snakemake
-    from constants import TIMEZONE
-
-    weather_snapshots = make_periodic_snapshots(
-        year=weather_year,
-        freq=snapshot_config["freq"],
-        start_day_hour=snapshot_config["start"],
-        end_day_hour=snapshot_config["end"],
-        bounds=snapshot_config["bounds"],
-        tz=TIMEZONE,
-        end_year=(None if not snapshot_config["end_year_plus1"] else weather_year + 1),
-    )
-    # for some reason convert to utc messes up the time delta
-    utc_snapshots = make_periodic_snapshots(
-        year=weather_year,
-        freq=snapshot_config["freq"],
-        start_day_hour=snapshot_config["start"],
-        end_day_hour=snapshot_config["end"],
-        bounds=snapshot_config["bounds"],
-        tz="UTC",
-        end_year=(None if not snapshot_config["end_year_plus1"] else weather_year + 1),
-    )
-
-    # time delta will be added to the utc snapshots from atlite
-    return utc_snapshots - weather_snapshots
 
 
 def define_spatial(nodes, options):
@@ -674,6 +688,32 @@ def configure_logging(
     sys.excepthook = handle_exception
 
 
+def get_cutout_params(config: dict) -> dict:
+    """Get the cutout parameters from the config file
+
+    Args:
+        config (dict): the snakemake config
+    Raises:
+        ValueError: if no parameters are found for the cutout name
+        FileNotFoundError: if the cutout is not built & build_cutout is disabled
+    Returns:
+        dict: the cutout parameters
+    """
+    cutout_name = config["atlite"]["cutout_name"]
+    cutout_params = config["atlite"]["cutouts"].get(cutout_name, None)
+
+    if cutout_params is None:
+        err = f"No cutout parameters found for {cutout_name}"
+        raise ValueError(err + " in config['atlite']['cutouts'].")
+    elif not config["enable"]["build_cutout"]:
+        cutouts_dir = PathManager(config).cutouts_dir()
+        is_built = os.path.exists(os.path.join(cutouts_dir, f"{cutout_name}.nc"))
+        if not is_built:
+            err = f"Cutout {cutout_name} not found in {cutouts_dir}, enable build_cutout"
+            raise FileNotFoundError(err)
+    return cutout_params
+
+
 def mock_snakemake(
     rulename: str,
     configfiles: list | str = None,
@@ -781,3 +821,30 @@ def mock_snakemake(
         os.chdir(curr_path)
 
     return snakemake
+
+
+def mock_solve(n: pypsa.Network) -> pypsa.Network:
+    """Mock the solving step for tests
+
+    Args:
+        n (pypsa.Network): the network object
+    """
+    for c in n.iterate_components(components=["Generator", "Link", "Store", "LineType"]):
+        opt_cols = [col for col in c.df.columns if col.endswith("opt")]
+        base_cols = [col.split("_opt")[0] for col in opt_cols]
+        c.df[opt_cols] = c.df[base_cols]
+    return n
+
+
+def set_plot_test_backend(config: dict):
+    """Hack to set the matplotlib backend to Agg for testing
+    Not possible via normal conftest.py since snakemake is a subprocess
+
+    Args:
+        config (dict): the snakemake config
+    """
+    is_test = config["run"].get("is_test", False)
+    if is_test:
+        import matplotlib
+
+        matplotlib.use("Agg")
