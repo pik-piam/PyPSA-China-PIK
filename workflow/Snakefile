@@ -41,7 +41,13 @@ storage:
     provider="http",
 
 # ======= PSEUDO RULES TO EXECUTE WORKFLOW =========
-if config["foresight"] in ["overnight", "myopic"]:
+if config["run"]["is_test"]:
+    rule test_workflow:
+        input:
+            expand(RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc',   
+            **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
+            ),
+elif config["foresight"] in ["overnight", "myopic"]:
     rule plot_all:
         input:
             expand(
