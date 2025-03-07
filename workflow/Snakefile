@@ -41,20 +41,12 @@ storage:
     provider="http",
 
 # ======= PSEUDO RULES TO EXECUTE WORKFLOW =========
-# for testing (plotting not yet integrated)
-if config["run"]["name"]==TESTS_RUNNAME:
-    rule test_workflow:
-        input:
-            expand(RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc',   
-            **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
-            ),
-# for runs
 if config["foresight"] in ["overnight", "myopic"]:
     rule plot_all:
         input:
             expand(
                 RESULTS_DIR+ '/plots/summary/pathway_costs.png',
-                **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
+                **{k: v for k, v in config["scenario"].items() if k != "planning_horizons"},
             ),
             # network plot
             expand(
