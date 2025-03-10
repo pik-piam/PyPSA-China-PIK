@@ -6,6 +6,7 @@
 
 """
 Plots energy and cost summaries for solved networks.
+This script collects functions that plot across planning horizons.
 """
 
 import os

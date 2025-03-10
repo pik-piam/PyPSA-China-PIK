@@ -41,7 +41,7 @@ storage:
     provider="http",
 
 # ======= PSEUDO RULES TO EXECUTE WORKFLOW =========
-if config["run"]["is_test"]:
+if config["run"].get("is_test", False):
     rule test_workflow:
         input:
             expand(RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc',   
