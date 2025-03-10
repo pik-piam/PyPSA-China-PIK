@@ -245,7 +245,7 @@ if __name__ == "__main__":
 
     # HACK to replace pytest monkeypatch
     # which doesn't work as snakemake is a subprocess
-    is_test = int(os.getenv("IS_TEST", 0))
+    is_test = snakemake.config["run"].get("is_test", False)
     if not is_test:
         n = solve_network(
             n,

@@ -242,9 +242,13 @@ def make_offshore_wind_profile(offwind_config: dict, cutout: atlite.Cutout, outp
 
     offwind_provinces = OFFSHORE_WIND_NODES
 
-    EEZ_shp = gpd.read_file(snakemake.input["offshore_shapes"])
-    EEZ_province_shp = gpd.read_file(snakemake.input["offshore_province_shapes"]).set_index("index")
+    EEZ_province_shp = gpd.read_file(snakemake.input["offshore_province_shapes"]).set_index(
+        "province"
+    )
     EEZ_province_shp = EEZ_province_shp.reindex(offwind_provinces).rename_axis("bus")
+    EEZ_country = gpd.GeoDataFrame(
+        geometry=[EEZ_province_shp.unary_union], crs=EEZ_province_shp.crs, index=["country"]
+    )
     excluder_offwind = ExclusionContainer(crs=3035, res=500)
 
     if "max_depth" in offwind_config:
@@ -259,7 +263,7 @@ def make_offshore_wind_profile(offwind_config: dict, cutout: atlite.Cutout, outp
         protected_shp = pd.concat([protected_shp, protected_shp2], ignore_index=True)
         protected_shp = protected_shp.geometry
         protected_shp = gpd.GeoDataFrame(protected_shp)
-        protected_Marine_shp = gpd.tools.overlay(protected_shp, EEZ_shp, how="intersection")
+        protected_Marine_shp = gpd.tools.overlay(protected_shp, EEZ_country, how="intersection")
         # this is to avoid atlite complaining about parallelisation
         if not os.path.isdir(os.path.dirname(TMP)):
             mkdir(os.path.dirname(TMP))
@@ -331,6 +335,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake("build_renewable_potential")
 
     configure_logging(snakemake, logger=logger)
+
     pgb.streams.wrap_stderr()  # ?
 
     nprocesses = int(snakemake.threads)  # ?

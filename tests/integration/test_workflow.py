@@ -3,9 +3,26 @@ import subprocess
 import logging
 import shutil
 import os
+from hashlib import sha256
 
 # Test the workflow for different foresights, years and time resolutions
 # serial needed as snakemake locks directory
+
+
+def copy_failed_config(cfg_path: os.PathLike) -> str:
+    """copy a failed config for local debugging
+
+    Args:
+        cfg_path (os.PathLike): the config path
+
+    Returns:
+        str: the hash id of the config
+    """
+
+    hash_id = sha256(cfg_path.encode()).hexdigest()
+    failed_test_config_path = f"tests/failed_test_config_{hash_id}.yaml"
+    shutil.copy(cfg_path, failed_test_config_path)
+    return hash_id
 
 
 def launch_subprocess(cmd: str, env=None) -> subprocess.CompletedProcess:
@@ -57,8 +74,8 @@ def test_dry_run(make_test_config_file):
     cmd += " --rerun-incomplete"
     res = launch_subprocess(cmd)
     if res.returncode != 0:
-        shutil.copy(cfg, "tests/failed_test_config.yaml")
-    assert res.returncode == 0, "Snakemake dry run failed"
+        hash_id = copy_failed_config(cfg)
+    assert res.returncode == 0, f"Snakemake dry run failed, config id {hash_id}"
 
 
 @pytest.mark.serial
@@ -75,8 +92,8 @@ def test_dry_run_build_cutouts(make_test_config_file):
 
     res = launch_subprocess(cmd)
     if res.returncode != 0:
-        shutil.copy(cfg, "tests/failed_test_config.yaml")
-    assert res.returncode == 0, "Snakemake dry run w build cutouts failed"
+        hash_id = copy_failed_config(cfg)
+    assert res.returncode == 0, f"Snakemake dry run w build cutouts failed, config id {hash_id}"
 
 
 # TODO use case cases pluggin
@@ -100,5 +117,5 @@ def test_workflow(make_test_config_file):
     cmd += " --rerun-incomplete"
     res = launch_subprocess(cmd, env)
     if res.returncode != 0:
-        shutil.copy(cfg, "tests/failed_test_config.yaml")
-    assert res.returncode == 0, "Snakemake run failed"
+        hash_id = copy_failed_config(cfg)
+    assert res.returncode == 0, f"Snakemake run failed, config id {hash_id}"

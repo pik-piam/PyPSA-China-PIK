@@ -24,7 +24,7 @@ from _helpers import (
 )
 from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, CURRENCY
 
-set_plot_test_backend()
+
 logger = logging.getLogger(__name__)
 
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
             planning_horizons="2060",
             heating_demand="positive",
         )
-
+    set_plot_test_backend(snakemake.config)
     configure_logging(snakemake, logger=logger)
 
     set_plot_style(
