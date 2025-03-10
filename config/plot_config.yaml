@@ -46,11 +46,14 @@ plotting:
     ref_bus_unit: "TWh"
     ref_edge_sizes : [10e3,50e3,1e5]  # in MW
     ref_bus_sizes : [5e7, 1e8, 1e9] # MWhh
-    bus_ref_title : "Electricity supply"
+    bus_ref_title : "Electricity\nconsumption"
     edge_color: "black"
-
-  costs_threshold: 2.e+6
-  energy_threshold: 5.e+6
+  capacity_tracking:
+    stores: ['water tanks','battery', "Battery Storage", "H2" ]
+    drop_links : ['battery', "battery charger", 'water tanks', "battery discharger", "H2"]
+  costs_threshold: 2.e+6 # Eur
+  energy_threshold: 5.e+6 # MWh
+  capacity_threshold: 1.e+4 # MW
 
   loads: ['electricity', 'decentral heat', 'central heat']
   vre_techs: [ "onwind", "offwind", "solar"]
@@ -85,7 +88,7 @@ plotting:
     battery: '#ace37f'
     battery storage: '#ace37f'
     battery charger: '#88a75b'
-    battery discharger: '#5d4e29'
+    battery discharger: "#ace37f" #'#5d4e29'
     home battery: '#80c944'
     home battery storage: '#80c944'
     home battery charger: '#5e8032'
@@ -122,6 +125,8 @@ plotting:
     coal cc: '#8487e8'
     coal power plant retrofit: '#8487e8'
     # gas
+    gas: '#e0986c'
+    Gas: '#e0986c'
     OCGT: '#e0986c'
     OCGT gas: '#e0986c'
     OCGT marginal: '#e0986c'
@@ -295,6 +300,7 @@ plotting:
     # power transmission
     lines: '#6c9459'
     transmission lines: '#6c9459'
+    Transmission Lines: '#6c9459'
     transmission losses: '#6c9459'
     electricity distribution grid: '#97ad8c'
     low voltage: '#97ad8c'
@@ -414,7 +420,6 @@ plotting:
   - coal power plant retrofit
   - coal boiler
   - CHP coal
-  - gas
   - OCGT
   - gas boiler
   - CHP gas
@@ -441,3 +446,4 @@ plotting:
   - battery discharger
   - battery
   - Battery
+  - gas

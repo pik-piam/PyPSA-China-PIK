@@ -9,6 +9,36 @@ import matplotlib.pyplot as plt
 from os import PathLike
 
 import logging
+from constants import PROV_NAMES
+
+
+def find_weeks_of_interest(
+    n: pypsa.Network, summer_start="2060-04-01", summer_end="2060-10-06"
+) -> tuple:
+    """Find the most expensive price times and return index ranges of ±3.5 days around them.
+
+    Args:
+        n (pypsa.Network): The network object.
+        summer_start (str, optional): start of the summer period. Defaults to "2060-04-01".
+        summer_end (str, optional): end of the summer period. Defaults to "2060-10-06".
+
+    Returns:
+        tuple: Index ranges of ±3.5 days around the winter_max and summer_max.
+    """
+    max_prices = n.buses_t["marginal_price"][PROV_NAMES].T.max()
+    summer = max_prices.loc[summer_start:summer_end].index
+
+    winter_max = max_prices.loc[~max_prices.index.isin(summer)].idxmax()
+    summer_max = max_prices.loc[summer].idxmax()
+    print(winter_max, summer_max)
+    winter_range = max_prices.loc[
+        winter_max - pd.Timedelta(days=3.5) : winter_max + pd.Timedelta(days=3.5)
+    ].index
+    summer_range = max_prices.loc[
+        summer_max - pd.Timedelta(days=3.5) : summer_max + pd.Timedelta(days=3.5)
+    ].index
+
+    return winter_range, summer_range
 
 
 def make_nice_tech_colors(tech_colors: dict, nice_names: dict) -> dict:
