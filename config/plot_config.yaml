@@ -49,9 +49,8 @@ plotting:
     bus_ref_title : "Electricity\nconsumption"
     edge_color: "black"
   capacity_tracking:
-    heat_stores: ['water tanks']
-    ac_stores : ['battery', "Battery Storage" ]
-    drop_links : ['battery', "battery charger", 'water tanks', "battery discharger", ""]
+    stores: ['water tanks','battery', "Battery Storage", "H2" ]
+    drop_links : ['battery', "battery charger", 'water tanks', "battery discharger", "H2"]
   costs_threshold: 2.e+6 # Eur
   energy_threshold: 5.e+6 # MWh
   capacity_threshold: 1.e+4 # MW

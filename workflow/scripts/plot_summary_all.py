@@ -156,12 +156,28 @@ def plot_pathway_capacities(file_list: list, config: dict, fig_name=None):
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
 
-    caps_heat, caps_h2, caps_ac = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+    caps_heat, caps_h2, caps_ac, caps_stores = (
+        pd.DataFrame(),
+        pd.DataFrame(),
+        pd.DataFrame(),
+        pd.DataFrame(),
+    )
     for results_file in file_list:
         cap_df = pd.read_csv(results_file, index_col=list(range(3)), header=[1])
         # cap_df.drop(index="component", level=0, inplace=True)
         cap_df /= PLOT_CAP_UNITS
 
+        # get relevant stores
+        stores = (
+            cap_df[
+                (cap_df.index.get_level_values(0) == "Store")
+                & (cap_df.index.get_level_values(1).isin(config["capacity_tracking"]["stores"]))
+            ]
+            .groupby(level=1)
+            .sum()
+        )
+        # drop storesfor rest
+        cap_df.drop(cap_df[cap_df.index.get_level_values(0) == "Store"].index, inplace=True)
         # drop charger/dischargers for stores
         cap_df.drop(
             cap_df[
@@ -171,43 +187,22 @@ def plot_pathway_capacities(file_list: list, config: dict, fig_name=None):
             inplace=True,
         )
 
-        # convert stores to relevant carrier
-        ac_stores = (
-            cap_df[
-                (cap_df.index.get_level_values(0) == "Store")
-                & (cap_df.index.get_level_values(1).isin(config["capacity_tracking"]["ac_stores"]))
-            ]
-            .groupby(level=1)
-            .sum()
-        )
-        heat_stores = (
-            cap_df[
-                (cap_df.index.get_level_values(0) == "Store")
-                & (
-                    cap_df.index.get_level_values(1).isin(
-                        config["capacity_tracking"]["heat_stores"]
-                    )
-                )
-            ]
-            .groupby(level=1)
-            .sum()
-        )
-        # convert to GW
+        # sum identical
         cap_ac = cap_df.loc[cap_df.index.get_level_values(2) == "AC"].groupby(level=1).sum()
-        cap_ac = pd.concat([cap_ac, ac_stores])
         cap_h2 = cap_df.loc[cap_df.index.get_level_values(2) == "H2"].groupby(level=1).sum()
         cap_heat = cap_df.loc[cap_df.index.get_level_values(2) == "heat"].groupby(level=1).sum()
-        cap_heat = pd.concat([cap_heat, heat_stores])
 
+        caps_stores = pd.concat([stores, caps_stores], axis=1)
         caps_heat = pd.concat([cap_heat, caps_heat], axis=1)
         caps_h2 = pd.concat([cap_h2, caps_h2], axis=1)
         caps_ac = pd.concat([cap_ac, caps_ac], axis=1)
 
-    fig, axes = plt.subplots(1, 3)
-    fig.set_size_inches((14, 8))
+    fig, axes = plt.subplots(2, 2)
+    fig.set_size_inches((14, 15))
 
-    for i, capacity_df in enumerate([caps_ac, caps_heat, caps_h2]):
-        ax = axes[i]
+    for i, capacity_df in enumerate([caps_ac, caps_heat, caps_stores, caps_h2]):
+        k, l = divmod(i, 2)
+        ax = axes[k, l]
         preferred_order = pd.Index(config["preferred_order"])
         new_index = preferred_order.intersection(capacity_df.index).append(
             capacity_df.index.difference(preferred_order)
@@ -228,8 +223,11 @@ def plot_pathway_capacities(file_list: list, config: dict, fig_name=None):
         handles.reverse()
         labels.reverse()
 
+        if capacity_df.index.difference(caps_stores.index).empty:
+            ax.set_ylabel(f"Installed Capacity [{PLOT_CAP_LABEL}h]")
+        else:
+            ax.set_ylabel(f"Installed Capacity [{PLOT_CAP_LABEL}]")
         ax.set_ylim([0, capacity_df.sum(axis=0).max() * 1.1])
-        ax.set_ylabel(f"Installed Capacity [{PLOT_CAP_LABEL}]")
         ax.set_xlabel("")
         ax.grid(axis="y")
         # ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.1e}"))
