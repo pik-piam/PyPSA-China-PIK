@@ -58,7 +58,7 @@ if config["foresight"] in ["overnight", "myopic"]:
             ),
             # network plot
             expand(
-                RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.pdf",      
+                RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.png",      
                 **config["scenario"]
             ),
             expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"]),
@@ -323,28 +323,29 @@ elif config["foresight"] == "myopic":
         script: "scripts/solve_network_myopic.py"
 
 
-# runme with `snakemake --allowed-rules dag --forcerun dag `
+# runme with `snakemake -t results/dag/rules_graph.png `
 rule dag:
     message:
         "Creating DAG of workflow."
     output:
-        dag_dot=f"results/dag/dag.dot",
-        dag_pdf="results/dag/dag.pdf",
-        dag_png="results/dag/dag.png",
+        # dag_dot="results/dag/dag.dot",
+        # dag_pdf="results/dag/dag.pdf",
+        # dag_png="results/dag/dag.png",
         rules_dot="results/dag/rules_graph.dot",
         rules_pdf="results/dag/rules_graph.pdf",
         rules_png="results/dag/rules_graph.png",
+    conda:
+        "envs/environment.yaml"
     shell:
-        r"""
-        snakemake --dag plot_all | sed -n "/digraph/,\$p" > {output.dag_dot}
-        dot -Tpdf -o {output.dag_pdf} {output.dag_dot}
-        dot -Tpng -o {output.dag_png} {output.dag_dot}
-        snakemake --rulegraph plot_all | sed -n "/digraph/,\$p" > {output.rules_dot}
-        dot -Tpdf -o {output.rules_pdf} {output.rules_dot}
-        dot -Tpng -o {output.rules_png} {output.rules_dot}
+        r"""&& 
+        snakemake --dag | sed -n "/digraph/,\\$p" > {output.dag_dot}&&
+        dot -Tpdf -o {output.dag_pdf} {output.dag_dot}&&
+        dot -Tpng -o {output.dag_png} {output.dag_dot}&&
+        snakemake --rulegraph plot_all | sed -n "/digraph/,\\$p" > {output.rules_dot}&&
+        dot -Tpdf -o {output.rules_pdf} {output.rules_dot}&&
+        dot -Tpng -o {output.rules_png} {output.rules_dot}&&
         """
 
-    
 onerror:
     log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
