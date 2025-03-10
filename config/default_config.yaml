@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'new_load_overnight_1hr_res_testrun'
+  name: 'new_load_overnight_1hr_res_newcoutout'
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
@@ -81,7 +81,7 @@ snapshots:
   end: "12-31 23:00"
   bounds: 'both'
   freq: '1h'
-  # for weighings -> to be improved
+  # test weighings -> to be improved
   frequency: 1.
   # in case snapshots cross the planning horizon year
   end_year_plus1: false
@@ -97,13 +97,13 @@ enable:
   retrieve_raster: false
 
 atlite:
-  cutout_name: "China-2020"
+  cutout_name: "China-2020c"
   freq: "h"
   nprocesses: 4
   show_progress: true
   monthly_requests: true
   cutouts:
-    China-2020:
+    China-2020c:
       module: era5
       dx: 0.25
       dy: 0.25
