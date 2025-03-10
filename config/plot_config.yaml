@@ -48,9 +48,13 @@ plotting:
     ref_bus_sizes : [5e7, 1e8, 1e9] # MWhh
     bus_ref_title : "Electricity\nconsumption"
     edge_color: "black"
-
-  costs_threshold: 2.e+6
-  energy_threshold: 5.e+6
+  capacity_tracking:
+    heat_stores: ['water tanks']
+    ac_stores : ['battery', "Battery Storage" ]
+    drop_links : ['battery', "battery charger", 'water tanks', "battery discharger", ""]
+  costs_threshold: 2.e+6 # Eur
+  energy_threshold: 5.e+6 # MWh
+  capacity_threshold: 1.e+4 # MW
 
   loads: ['electricity', 'decentral heat', 'central heat']
   vre_techs: [ "onwind", "offwind", "solar"]
@@ -297,6 +301,7 @@ plotting:
     # power transmission
     lines: '#6c9459'
     transmission lines: '#6c9459'
+    Transmission Lines: '#6c9459'
     transmission losses: '#6c9459'
     electricity distribution grid: '#97ad8c'
     low voltage: '#97ad8c'

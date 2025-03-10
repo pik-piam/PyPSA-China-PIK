@@ -15,7 +15,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
-from constants import PLOT_COST_UNITS, COST_UNIT, PLOT_CO2_UNITS, PLOT_CO2_LABEL, PLOT_SUPPLY_UNITS
+from constants import (
+    PLOT_COST_UNITS,
+    COST_UNIT,
+    PLOT_CO2_UNITS,
+    PLOT_CO2_LABEL,
+    PLOT_SUPPLY_UNITS,
+    PLOT_SUPPLY_LABEL,
+    PLOT_CAP_UNITS,
+    PLOT_CAP_LABEL,
+)
 from _plot_utilities import set_plot_style
 
 logger = logging.getLogger(__name__)
@@ -139,6 +148,100 @@ def plot_pathway_costs(
         fig.savefig(fig_name, transparent=True)
 
 
+def plot_pathway_capacities(file_list: list, config: dict, fig_name=None):
+    """plot the capacities
+
+    Args:
+        file_list (list): the input csvs from make_summary
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+    """
+
+    caps_heat, caps_h2, caps_ac = pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+    for results_file in file_list:
+        cap_df = pd.read_csv(results_file, index_col=list(range(3)), header=[1])
+        # cap_df.drop(index="component", level=0, inplace=True)
+        cap_df /= PLOT_CAP_UNITS
+
+        # drop charger/dischargers for stores
+        cap_df.drop(
+            cap_df[
+                (cap_df.index.get_level_values(0) == "Link")
+                & (cap_df.index.get_level_values(1).isin(config["capacity_tracking"]["drop_links"]))
+            ].index,
+            inplace=True,
+        )
+
+        # convert stores to relevant carrier
+        ac_stores = (
+            cap_df[
+                (cap_df.index.get_level_values(0) == "Store")
+                & (cap_df.index.get_level_values(1).isin(config["capacity_tracking"]["ac_stores"]))
+            ]
+            .groupby(level=1)
+            .sum()
+        )
+        heat_stores = (
+            cap_df[
+                (cap_df.index.get_level_values(0) == "Store")
+                & (
+                    cap_df.index.get_level_values(1).isin(
+                        config["capacity_tracking"]["heat_stores"]
+                    )
+                )
+            ]
+            .groupby(level=1)
+            .sum()
+        )
+        # convert to GW
+        cap_ac = cap_df.loc[cap_df.index.get_level_values(2) == "AC"].groupby(level=1).sum()
+        cap_ac = pd.concat([cap_ac, ac_stores])
+        cap_h2 = cap_df.loc[cap_df.index.get_level_values(2) == "H2"].groupby(level=1).sum()
+        cap_heat = cap_df.loc[cap_df.index.get_level_values(2) == "heat"].groupby(level=1).sum()
+        cap_heat = pd.concat([cap_heat, heat_stores])
+
+        caps_heat = pd.concat([cap_heat, caps_heat], axis=1)
+        caps_h2 = pd.concat([cap_h2, caps_h2], axis=1)
+        caps_ac = pd.concat([cap_ac, caps_ac], axis=1)
+
+    fig, axes = plt.subplots(1, 3)
+    fig.set_size_inches((14, 8))
+
+    for i, capacity_df in enumerate([caps_ac, caps_heat, caps_h2]):
+        ax = axes[i]
+        preferred_order = pd.Index(config["preferred_order"])
+        new_index = preferred_order.intersection(capacity_df.index).append(
+            capacity_df.index.difference(preferred_order)
+        )
+        new_columns = capacity_df.columns.sort_values()
+
+        logger.debug(capacity_df.loc[new_index, new_columns])
+
+        capacity_df.loc[new_index, new_columns].T.plot(
+            kind="bar",
+            ax=ax,
+            stacked=True,
+            color=[config["tech_colors"][i] for i in new_index],
+        )
+
+        handles, labels = ax.get_legend_handles_labels()
+
+        handles.reverse()
+        labels.reverse()
+
+        ax.set_ylim([0, capacity_df.sum(axis=0).max() * 1.1])
+        ax.set_ylabel(f"Installed Capacity [{PLOT_CAP_LABEL}]")
+        ax.set_xlabel("")
+        ax.grid(axis="y")
+        # ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.1e}"))
+        ax.legend(handles, labels, ncol=2, bbox_to_anchor=(0.5, -0.15), loc="upper center")
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=0.42)
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=True)
+
+
 def plot_energy(file_list: list, config: dict, fig_name=None):
     """plot the energy production and consumption
 
@@ -163,7 +266,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
     energy_df.fillna(0, inplace=True)
     energy_df.sort_index(axis=1, inplace=True)
 
-    logger.info(f"Total energy of {round(energy_df.sum()[0])} TWh/a")
+    logger.info(f"Total energy of {round(energy_df.sum()[0])} {PLOT_SUPPLY_LABEL}/a")
     preferred_order = pd.Index(config["preferred_order"])
     new_index = preferred_order.intersection(energy_df.index).append(
         energy_df.index.difference(preferred_order)
@@ -188,7 +291,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
     labels.reverse()
 
     ax.set_ylim([0, energy_df.sum(axis=0).max() * 1.1])
-    ax.set_ylabel("Energy [TWh/a]")
+    ax.set_ylabel(f"Energy [{PLOT_SUPPLY_LABEL}/a]")
     ax.set_xlabel("")
     ax.grid(axis="y")
     ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
@@ -437,7 +540,7 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
     fig, ax = plt.subplots()
     fig.set_size_inches((12, 8))
 
-    ax.plot(co2_prices.keys(), np.abs(list(co2_prices.values())), marker="o", color="black")
+    ax.plot(co2_prices.keys(), np.abs(list(co2_prices.values())), marker="o", color="black", lw=2)
     ax.set_ylabel("CO2 Shadow price")
     ax.set_xlabel("Year")
 
@@ -447,8 +550,10 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
         [v / PLOT_CO2_UNITS for v in co2_budget.values()],
         marker="D",
         color="blue",
+        lw=2,
     )
-    ax2.set_ylabel(f"CO2 Budget [{PLOT_CO2_LABEL}]")
+    ax2.set_ylabel(f"CO2 Budget [{PLOT_CO2_LABEL}]", color="blue")
+    ax2.tick_params(axis="y", colors="blue")
 
     fig.tight_layout()
 
@@ -461,8 +566,8 @@ if __name__ == "__main__":
 
         snakemake = mock_snakemake(
             "plot_summary",
-            topology="current+Neighbor",
-            pathway="ex175",
+            topology="current+FCG",
+            pathway="exp175",
             heating_demand="positive",
             planning_horizons=[
                 "2020",
@@ -500,6 +605,7 @@ if __name__ == "__main__":
         "weighted_prices": [os.path.join(p, "weighted_prices.csv") for p in paths],
         "co2_balance": [os.path.join(p, "co2_balance.csv") for p in paths],
         "energy_supply": [os.path.join(p, "supply_energy.csv") for p in paths],
+        "capacity": [os.path.join(p, "capacities.csv") for p in paths],
     }
 
     sdr = float(config["costs"]["social_discount_rate"])
@@ -508,6 +614,11 @@ if __name__ == "__main__":
         config["plotting"],
         social_discount_rate=sdr,
         fig_name=output_paths.costs,
+    )
+    plot_pathway_capacities(
+        data_paths["capacity"],
+        config["plotting"],
+        fig_name=os.path.dirname(output_paths.costs) + "/capacities.png",
     )
     plot_energy(data_paths["energy"], config["plotting"], fig_name=output_paths.energy)
     plot_electricty_heat_balance(
