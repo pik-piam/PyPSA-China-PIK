@@ -1,5 +1,6 @@
 import pytest
 import geopandas as gpd
+from pandas import DataFrame
 from shapely.geometry import Polygon
 
 from fetch_shapes import (
@@ -23,10 +24,10 @@ def mock_country_shape():
 def mock_province_shapes():
     """Fixture for mock province shapes GeoDataFrame"""
     data = {
-        "province": ["Shanghai", "Anhui"],  # must be in prov names
+        "province": ["Shanghai", "Jiangsu"],  # must be in prov names
         "geometry": [
-            Polygon([(0, 0), (0.5, 0), (0.5, 0.5), (0, 0.5), (0, 0)]),
-            Polygon([(0.5, 0), (1, 0), (1, 0.5), (0.5, 0.5), (0.5, 0)]),
+            Polygon([(0, 0), (0.6, 0), (0.6, 0.5), (0, 0.5), (0, 0)]),
+            Polygon([(0.6, 0), (1, 0), (1, 0.5), (0.6, 0.5), (0.6, 0)]),
         ],
     }
     return gpd.GeoDataFrame(data, crs="EPSG:4326")
@@ -37,6 +38,25 @@ def mock_eez():
     """Fixture for mock EEZ GeoDataFrame"""
     data = {"geometry": [Polygon([(0, 0.5), (1, 0.5), (1, 1), (0, 1), (0, 0.5)])]}
     return gpd.GeoDataFrame(data, crs="EPSG:4326")
+
+
+def calc_overlap_area(gdf: gpd.GeoDataFrame) -> DataFrame:
+    """Calculate the overlap area between rows
+
+    Args:
+        gdf (gpd.GeoDataFrame): the geodataframe for which to calculate overlap areas
+
+    Returns:
+        DataFrame: Index x Index float overlap areas dataframe
+    """
+    return gdf.apply(
+        lambda row: gdf[gdf.index != row.name].geometry.apply(
+            lambda geom: (
+                row.geometry.intersection(geom).area if row.geometry.intersects(geom) else 0
+            )
+        ),
+        axis=1,
+    )
 
 
 def test_fetch_natural_earth_shape():
@@ -69,10 +89,14 @@ def test_fetch_maritime_eez():
 
 
 def test_eez_by_region(mock_eez, mock_province_shapes):
-    result = eez_by_region(mock_eez, mock_province_shapes, prov_key="province")
+    result = eez_by_region(mock_eez, mock_province_shapes, prov_key="province", simplify_tol=0)
     assert not result.empty
     assert "geometry" in result.columns
     assert result.crs == mock_eez.crs
-    assert len(result) == 2  # Expecting two regions after splitting
-    assert result.area.iloc[0] == result.area.iloc[1]  # of same area
+    # Expecting two regions after splitting, since have a square divided in 3, with bottom half land
+    assert len(result) == 2
+    # bottom half must be of different area but given shapes, will be area preserving
+    assert result.area.sum() == mock_eez.area.sum()
     assert "Shanghai" in result.index
+    overlap_areas = calc_overlap_area(result)
+    assert overlap_areas.max().max() <= 0.01

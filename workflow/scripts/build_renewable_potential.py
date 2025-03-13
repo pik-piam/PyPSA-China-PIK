@@ -246,9 +246,15 @@ def make_offshore_wind_profile(offwind_config: dict, cutout: atlite.Cutout, outp
         "province"
     )
     EEZ_province_shp = EEZ_province_shp.reindex(offwind_provinces).rename_axis("bus")
+    if EEZ_province_shp.geometry.isnull().any():
+        empty_geoms = EEZ_province_shp[EEZ_province_shp.geometry.isnull()].index.to_list()
+        raise ValueError(
+            f"There are empty geometries in EEZ_province_shp {empty_geoms}, offshore wind will fail"
+        )
     EEZ_country = gpd.GeoDataFrame(
         geometry=[EEZ_province_shp.unary_union], crs=EEZ_province_shp.crs, index=["country"]
     )
+
     excluder_offwind = ExclusionContainer(crs=3035, res=500)
 
     if "max_depth" in offwind_config:
@@ -336,7 +342,7 @@ if __name__ == "__main__":
 
     configure_logging(snakemake, logger=logger)
 
-    pgb.streams.wrap_stderr()  # ?
+    # pgb.streams.wrap_stderr()  # ?
 
     nprocesses = int(snakemake.threads)  # ?
     noprogress = not snakemake.config["atlite"].get("show_progress", True)
