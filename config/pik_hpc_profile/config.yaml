@@ -63,6 +63,10 @@ set-resources:
     partition: io
     qos: io
     mem_mb: 20000
+  build_renewable_potential:
+    time: 300
+    cores: 4
+    mem_mb: 20000
   plot_network:
     mem_mb: 8000
     cores: 2
