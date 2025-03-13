@@ -147,13 +147,17 @@ def plot_pathway_costs(
         fig.savefig(fig_name, transparent=True)
 
 
-def plot_pathway_capacities(file_list: list, config: dict, fig_name=None):
+def plot_pathway_capacities(
+    file_list: list, config: dict, plot_heat=True, plot_h2=True, fig_name=None
+):
     """plot the capacities
 
     Args:
         file_list (list): the input csvs from make_summary
         config (dict): the configuration for plotting (snakemake.config["plotting"])
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
+        plot_heat (bool, optional): plot heat capacities. Defaults to True.
+        plot_h2 (bool, optional): plot hydrogen capacities. Defaults to True.
     """
 
     caps_heat, caps_h2, caps_ac, caps_stores = (
@@ -189,18 +193,23 @@ def plot_pathway_capacities(file_list: list, config: dict, fig_name=None):
 
         # sum identical
         cap_ac = cap_df.loc[cap_df.index.get_level_values(2) == "AC"].groupby(level=1).sum()
-        cap_h2 = cap_df.loc[cap_df.index.get_level_values(2) == "H2"].groupby(level=1).sum()
-        cap_heat = cap_df.loc[cap_df.index.get_level_values(2) == "heat"].groupby(level=1).sum()
+
+        if plot_h2:
+            cap_h2 = cap_df.loc[cap_df.index.get_level_values(2) == "H2"].groupby(level=1).sum()
+            caps_h2 = pd.concat([cap_h2, caps_h2], axis=1)
+        if plot_heat:
+            cap_heat = cap_df.loc[cap_df.index.get_level_values(2) == "heat"].groupby(level=1).sum()
+            caps_heat = pd.concat([cap_heat, caps_heat], axis=1)
 
         caps_stores = pd.concat([stores, caps_stores], axis=1)
-        caps_heat = pd.concat([cap_heat, caps_heat], axis=1)
-        caps_h2 = pd.concat([cap_h2, caps_h2], axis=1)
         caps_ac = pd.concat([cap_ac, caps_ac], axis=1)
 
     fig, axes = plt.subplots(2, 2)
     fig.set_size_inches((14, 15))
 
     for i, capacity_df in enumerate([caps_ac, caps_heat, caps_stores, caps_h2]):
+        if capacity_df.empty:
+            continue
         k, l = divmod(i, 2)
         ax = axes[k, l]
         preferred_order = pd.Index(config["preferred_order"])
@@ -298,13 +307,16 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
         fig.savefig(fig_name, transparent=True)
 
 
-def plot_electricty_heat_balance(file_list: list[os.PathLike], config: dict, fig_dir=None):
+def plot_electricty_heat_balance(
+    file_list: list[os.PathLike], config: dict, fig_dir=None, plot_heat=True
+):
     """plot the energy production and consumption
 
     Args:
         file_list (list): the input csvs  from make_dirs([year/supply_energy.csv])
         config (dict): the configuration for plotting (snamkemake.config["plotting"])
         fig_dir (os.PathLike, optional): the figure name. Defaults to None.
+        plot_heat (bool, optional): plot heat balances. Defaults to True.
     """
     elec_df = pd.DataFrame()
     heat_df = pd.DataFrame()
@@ -318,27 +330,27 @@ def plot_electricty_heat_balance(file_list: list[os.PathLike], config: dict, fig
         # this groups subgroups of the same carrier. For example, baseyar hydro = link from dams
         # but new hydro is generator from province
         elec = elec.groupby(elec.index).sum()
-
-        heat = balance_df.loc["heat"].copy()
-        heat.set_index(heat.columns[0], inplace=True)
-        heat.rename(index={"-": "heat load"}, inplace=True)
-        heat.index.rename("carrier", inplace=True)
-        heat = heat.groupby(heat.index).sum()
-
         to_drop = elec.index[
             elec.max(axis=1).abs() < config["energy_threshold"] / PLOT_SUPPLY_UNITS
         ]
         elec.loc["Other"] = elec.loc[to_drop].sum(axis=0)
         elec.drop(to_drop, inplace=True)
-
-        to_drop = heat.index[
-            heat.max(axis=1).abs() < config["energy_threshold"] / PLOT_SUPPLY_UNITS
-        ]
-        heat.loc["Other"] = heat.loc[to_drop].sum(axis=0)
-        heat.drop(to_drop, inplace=True)
-
         elec_df = pd.concat([elec, elec_df], axis=1)
-        heat_df = pd.concat([heat, heat_df], axis=1)
+
+        if plot_heat:
+            heat = balance_df.loc["heat"].copy()
+            heat.set_index(heat.columns[0], inplace=True)
+            heat.rename(index={"-": "heat load"}, inplace=True)
+            heat.index.rename("carrier", inplace=True)
+            heat = heat.groupby(heat.index).sum()
+            to_drop = heat.index[
+                heat.max(axis=1).abs() < config["energy_threshold"] / PLOT_SUPPLY_UNITS
+            ]
+            heat.loc["Other"] = heat.loc[to_drop].sum(axis=0)
+            heat.drop(to_drop, inplace=True)
+            heat_df = pd.concat([heat, heat_df], axis=1)
+        else:
+            heat_df = pd.DataFrame()
 
     elec_df.fillna(0, inplace=True)
     elec_df.sort_index(axis=1, inplace=True, ascending=True)
@@ -401,6 +413,9 @@ def plot_electricty_heat_balance(file_list: list[os.PathLike], config: dict, fig
     fig.set_size_inches((12, 8))
 
     for df in [heat_gen, heat_con]:
+        if not plot_heat:
+            break
+
         preferred_order = pd.Index(config["preferred_order"])
         new_index = preferred_order.intersection(df.index).append(
             df.index.difference(preferred_order)
@@ -420,15 +435,16 @@ def plot_electricty_heat_balance(file_list: list[os.PathLike], config: dict, fig
         handles.reverse()
         labels.reverse()
 
-    ax.set_ylim([heat_con.sum(axis=0).min() * 1.1, heat_gen.sum(axis=0).max() * 1.1])
-    ax.set_ylabel("Energy [TWh/a]")
-    ax.set_xlabel("")
-    ax.grid(axis="y")
-    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
-    fig.tight_layout()
+    if plot_heat:
+        ax.set_ylim([heat_con.sum(axis=0).min() * 1.1, heat_gen.sum(axis=0).max() * 1.1])
+        ax.set_ylabel("Energy [TWh/a]")
+        ax.set_xlabel("")
+        ax.grid(axis="y")
+        ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+        fig.tight_layout()
 
-    if fig_dir is not None:
-        fig.savefig(os.path.join(fig_dir, "heat_balance.png"), transparent=True)
+        if fig_dir is not None:
+            fig.savefig(os.path.join(fig_dir, "heat_balance.png"), transparent=True)
 
 
 def plot_prices(file_list: list, config: dict, fig_name=None):
@@ -594,6 +610,8 @@ if __name__ == "__main__":
     output_paths = snakemake.output
     paths = snakemake.input
 
+    plot_heat = config["heat_coupling"]
+    plot_h2 = config["add_H2"]
     NAN_COLOR = config["plotting"]["nan_color"]
     data_paths = {
         "energy": [os.path.join(p, "energy.csv") for p in paths],
@@ -617,12 +635,15 @@ if __name__ == "__main__":
         data_paths["capacity"],
         config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/capacities.png",
+        plot_heat=plot_heat,
+        plot_h2=plot_h2,
     )
     plot_energy(data_paths["energy"], config["plotting"], fig_name=output_paths.energy)
     plot_electricty_heat_balance(
         data_paths["energy_supply"],
         config["plotting"],
         fig_dir=os.path.dirname(output_paths.costs),
+        plot_heat=plot_heat,
     )
     plot_prices(
         data_paths["time_averaged_prices"],

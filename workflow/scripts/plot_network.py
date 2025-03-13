@@ -649,15 +649,16 @@ if __name__ == "__main__":
         components=["Generator", "Link"],
     )
 
-    p = snakemake.output.cost_map.replace("el_supply.png", "heat_supply.png")
-    plot_energy_map(
-        n,
-        opts=config["plotting"],
-        save_path=p,
-        carrier="heat",
-        energy_pannel=True,
-        components=["Generator", "Link"],
-    )
+    if config["heat_coupling"]:
+        p = snakemake.output.cost_map.replace("el_supply.png", "heat_supply.png")
+        plot_energy_map(
+            n,
+            opts=config["plotting"],
+            save_path=p,
+            carrier="heat",
+            energy_pannel=True,
+            components=["Generator", "Link"],
+        )
 
     p = snakemake.output.cost_map.replace("cost.png", "nodal_prices.png")
     plot_nodal_prices(
