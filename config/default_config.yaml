@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'new_load_overnight_1hr_res_testrun'
+  name: 'yanlei_01317'
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
@@ -80,9 +80,9 @@ snapshots:
   start: "01-01 00:00"
   end: "12-31 23:00"
   bounds: 'both'
-  freq: '1h'
+  freq: '5h'
   # for weighings -> to be improved
-  frequency: 1.
+  frequency: 5.
   # in case snapshots cross the planning horizon year
   end_year_plus1: false
 
@@ -92,8 +92,8 @@ logging:
   format: '%(levelname)s:%(name)s:%(message)s'
 
 enable:
-  build_cutout: false
-  retrieve_cutout: false
+  build_cutout: True
+  retrieve_cutout: true
   retrieve_raster: false
 
 atlite:
@@ -101,7 +101,7 @@ atlite:
   freq: "h"
   nprocesses: 4
   show_progress: true
-  monthly_requests: true
+  monthly_requests: false
   cutouts:
     China-2020:
       module: era5
@@ -153,7 +153,7 @@ Techs:
   hydrogen_lines: true # currently myopic pathway only
 
 ## add components (overwrites vre tech choice)
-heat_coupling: True
+heat_coupling: False
 add_biomass: True
 add_hydro: True
 add_H2: True
