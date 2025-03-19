@@ -165,11 +165,10 @@ def setup_gurobi_tunnel_and_env(
         return
     logger.info("setting up tunnel")
     user = os.getenv("USER")  # User is pulled from the environment
-    port = tunnel_config.get("port", DEFAULT_TUNNEL_PORT)
+    port = tunnel_config.get("tunnel_port", DEFAULT_TUNNEL_PORT)
 
     # bash commands for tunnel: reduce pipe err severity (too high from snakemake)
     pipe_err = "set -o pipefail; "
-    # ssh_command = f"ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
     ssh_command = f"ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
     logger.info(f"Attempting ssh tunnel to login node {LOGIN_NODE}")
     # Run SSH in the background to establish the tunnel

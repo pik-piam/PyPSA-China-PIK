@@ -660,7 +660,6 @@ if __name__ == "__main__":
             components=["Generator", "Link"],
         )
 
-
     p = snakemake.output.cost_map.replace("cost.png", "nodal_prices.png")
     plot_nodal_prices(
         n,
