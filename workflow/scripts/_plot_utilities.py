@@ -30,7 +30,7 @@ def find_weeks_of_interest(
 
     winter_max = max_prices.loc[~max_prices.index.isin(summer)].idxmax()
     summer_max = max_prices.loc[summer].idxmax()
-    print(winter_max, summer_max)
+
     winter_range = max_prices.loc[
         winter_max - pd.Timedelta(days=3.5) : winter_max + pd.Timedelta(days=3.5)
     ].index
