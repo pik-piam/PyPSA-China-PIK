@@ -285,7 +285,7 @@ def prepare_network(config: dict) -> pypsa.Network:
         network.add(
             "Link",
             nodes,
-            suffix=" central CHP gas generator",
+            suffix="central CHP gas generator",
             bus0=nodes + " gas",
             bus1=nodes,
             carrier="CHP gas",

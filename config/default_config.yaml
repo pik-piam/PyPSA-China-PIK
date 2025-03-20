@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'yanlei_01317'
+  name: 'yanlei_CSP_SOLAR_DIVIDE'
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
@@ -92,10 +92,10 @@ logging:
   format: '%(levelname)s:%(name)s:%(message)s'
 
 enable:
-  build_cutout: True
+  build_cutout: false
   retrieve_cutout: true
   retrieve_raster: false
-
+  check_parameters: true 
 atlite:
   cutout_name: "China-2020"
   freq: "h"
@@ -146,14 +146,14 @@ bus_carrier: {
 
 Techs:
   ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
-  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","heat pump","resistive heater","Sabatier","H2 CHP"]
+  vre_techs: [ "onwind","offwind","solar-utility","CSP","solar-rooftop","solar thermal","hydroelectricity", "nuclear","biomass","heat pump","resistive heater","Sabatier","H2 CHP"]
   conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
   coal_cc: true # currently myopic pathway only.  CC = co2 cap 
   hydrogen_lines: true # currently myopic pathway only
 
 ## add components (overwrites vre tech choice)
-heat_coupling: False
+heat_coupling: True
 add_biomass: True
 add_hydro: True
 add_H2: True

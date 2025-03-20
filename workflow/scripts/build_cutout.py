@@ -48,7 +48,7 @@ def cutout_timespan(config: dict, weather_year: int) -> list:
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        snakemake = mock_snakemake("build_cutout", cutout="China-tests-cutout")
+        snakemake = mock_snakemake("build_cutout", cutout="China-2020c")
     configure_logging(snakemake, logger=logger)
 
     config = snakemake.config
