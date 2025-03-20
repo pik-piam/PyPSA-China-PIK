@@ -318,7 +318,7 @@ def plot_cost_map(
         df["total"] = network.statistics.capex(nice_names=False).groupby(level=1).sum()
         if not capex_only:
             df["opex"] = network.statistics.opex(nice_names=False).groupby(level=1).sum()
-            df.rename(columns={"total": "capex"})
+            df.rename(columns={"total": "capex"}, inplace=True)
         elif plot_additions:
             df["added"] = (
                 df["total"]
@@ -632,7 +632,7 @@ if __name__ == "__main__":
         capex_only=not additions,
         plot_additions=additions,
     )
-    p = snakemake.output.cost_map.replace(".pdf", "_additions.pdf")
+    p = snakemake.output.cost_map.replace(".png", "_additions.png")
     plot_cost_map(
         n,
         opts=config["plotting"],
@@ -649,17 +649,18 @@ if __name__ == "__main__":
         components=["Generator", "Link"],
     )
 
-    p = snakemake.output.cost_map.replace("el_supply.pdf", "heat_supply.pdf")
-    plot_energy_map(
-        n,
-        opts=config["plotting"],
-        save_path=p,
-        carrier="heat",
-        energy_pannel=True,
-        components=["Generator", "Link"],
-    )
+    if config["heat_coupling"]:
+        p = snakemake.output.cost_map.replace("el_supply.png", "heat_supply.png")
+        plot_energy_map(
+            n,
+            opts=config["plotting"],
+            save_path=p,
+            carrier="heat",
+            energy_pannel=True,
+            components=["Generator", "Link"],
+        )
 
-    p = snakemake.output.cost_map.replace("cost.pdf", "nodal_prices.pdf")
+    p = snakemake.output.cost_map.replace("cost.png", "nodal_prices.png")
     plot_nodal_prices(
         n,
         carrier="AC",

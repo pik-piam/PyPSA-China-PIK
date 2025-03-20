@@ -189,19 +189,22 @@ def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: p
     return nodal_capacities
 
 
-def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame):
-    for c in n.iterate_components(
-        n.branch_components | n.controllable_one_port_components ^ {"Load"}
-    ):
-        capacities_grouped = (
-            c.df[opt_name.get(c.name, "p") + "_nom_opt"].groupby(c.df.carrier).sum()
-        )
-        capacities_grouped = pd.concat([capacities_grouped], keys=[c.list_name])
+def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame) -> pd.DataFrame:
+    """calculate the capacities by carrier
 
-        capacities = capacities.reindex(capacities_grouped.index.union(capacities.index))
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        capacities (pd.DataFrame): the dataframe to fill
 
-        capacities.loc[capacities_grouped.index, label] = capacities_grouped
-
+    Returns:
+        pd.Dataframe: updated capacities (bad style)
+    """
+    caps = n.statistics.optimal_capacity(
+        groupby=pypsa.statistics.get_carrier_and_bus_carrier, nice_names=False
+    )
+    caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
+    capacities[label] = caps.sort_index(level=0)
     return capacities
 
 
@@ -216,7 +219,7 @@ def calculate_co2_balance(
         co2_balance (pd.DataFrame): the df to update
 
     Returns:
-        tuple[float,float,float]: balance,
+       pd.DataFrame: updated co2_balance (bad style)
     """
 
     # year *(assumes one planning year intended),
@@ -528,11 +531,9 @@ if __name__ == "__main__":
             "make_summary",
             topology="current+FCG",
             pathway="exp175",
-            planning_horizons="2030",
+            planning_horizons="2060",
             heating_demand="positive",
         )
-
-    configure_logging(snakemake)
 
     configure_logging(snakemake)
 

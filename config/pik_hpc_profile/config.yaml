@@ -35,7 +35,8 @@ cluster-generic-submit-cmd:
     --cpus-per-task={threads}
     --mem={resources.mem_mb}
     --job-name={rule}-{wildcards}-smk
-    --output=logs/logs_slurm/{rule}/%j-{rule}-{wildcards}.out
+    --output=logs_slurm/{rule}/%j-{rule}-{wildcards}.out
+    --error=logs_slurm/{rule}/%j-{rule}-{wildcards}.out
     --parsable
     --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
 cluster-generic-cancel-cmd: scancel
@@ -57,10 +58,15 @@ set-resources:
     partition: standard
     time : 300
   build_cutout:
-    time: 500
+    time: 9000
     cores: 4
     partition: io
     qos: io
+    mem_mb: 20000
+  build_renewable_potential:
+    time: 300
+    cores: 4
+    mem_mb: 20000
   plot_network:
     mem_mb: 8000
     cores: 2
