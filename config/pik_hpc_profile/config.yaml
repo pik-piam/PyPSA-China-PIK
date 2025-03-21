@@ -28,7 +28,7 @@ verbose: false
 
 # define the cluster submission command (slurm wrapper)
 cluster-generic-submit-cmd:
-  mkdir -p logs/logs_slurm/{rule} &&
+  mkdir -p logs_slurm/{rule} &&
   sbatch
     --partition={resources.partition}
     --qos={resources.qos}

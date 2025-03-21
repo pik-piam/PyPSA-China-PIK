@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'yanlei_CSP_SOLAR_DIVIDE'
+  name: 'yanlei_CSP_SOLAR_0321'
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
@@ -96,6 +96,7 @@ enable:
   retrieve_cutout: true
   retrieve_raster: false
   check_parameters: true 
+
 atlite:
   cutout_name: "China-2020c"
   freq: "h"
@@ -185,7 +186,7 @@ bus_carrier: {
 
 Techs:
   ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
-  vre_techs: [ "onwind","offwind","solar-utility","CSP","solar-rooftop","solar thermal","hydroelectricity", "nuclear","biomass","heat pump","resistive heater","Sabatier","H2 CHP"]
+  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","heat pump","resistive heater","Sabatier","H2 CHP"]
   conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
   coal_cc: true # currently myopic pathway only.  CC = co2 cap 
@@ -239,10 +240,8 @@ solving:
     options: gurobi-default
   gurobi_hpc_tunnel:
     use_tunnel: True
-    tunnel_port: 1080
-  gurobi_hpc_tunnel:
-    use_tunnel: True
-    tunnel_port: 1080
+    tunnel_port: 1082
+
 
   solver_options:
     highs-default:

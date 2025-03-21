@@ -9,6 +9,7 @@ To be merged/consolidated with the `solve_network` script.
 """
 import logging
 import re
+import socket
 
 import numpy as np
 import pandas as pd
@@ -278,6 +279,17 @@ def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
     return n
 
 
+def check_tunnel(port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.connect(("127.0.0.1", port))
+        return True
+    except:
+        return False
+    finally:
+        sock.close()
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -296,8 +308,15 @@ if __name__ == "__main__":
     solver_config = snakemake.config["solving"]["solver"]
     gurobi_license_config = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
     logger.info(f"Solver config {solver_config} and license cfg {gurobi_license_config}")
-    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
-        setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
+
+    for attempt in range(3):
+        try:
+            # 尝试建立隧道
+            tunnel = setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
+            if check_tunnel(tunnel_port):
+                break
+        except Exception as e:
+            logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
 
     opts = snakemake.wildcards.get("opts", "")
     if "sector_opts" in snakemake.wildcards.keys():
@@ -314,6 +333,9 @@ if __name__ == "__main__":
         n = pypsa.Network(snakemake.input.network)
 
     n = prepare_network(n, solve_opts)
+
+    if not check_tunnel(tunnel_port):
+        raise RuntimeError("SSH tunnel is not accessible")
 
     n = solve_network(
         n,

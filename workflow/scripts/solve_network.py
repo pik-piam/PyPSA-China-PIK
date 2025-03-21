@@ -11,6 +11,7 @@ import numpy as np
 import pypsa
 from pandas import DatetimeIndex
 import os
+import socket
 
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
 
@@ -208,12 +209,26 @@ def solve_network(
     return n
 
 
+def check_tunnel(port):
+    """检查SSH隧道是否正常工作"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(2)
+    try:
+        sock.connect(("127.0.0.1", port))
+        logger.info(f"SSH tunnel on port {port} is accessible")
+        return True
+    except (socket.timeout, socket.error):
+        logger.error(f"SSH tunnel on port {port} is not accessible")
+        return False
+    finally:
+        sock.close()
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
             co2_reduction="0.0",
-            # opts="ll",
             planning_horizons=2020,
             pathway="exponential-175",
             topology="current+Neighbour",
@@ -221,21 +236,43 @@ if __name__ == "__main__":
         )
     configure_logging(snakemake)
 
-    # deal with the gurobi license activation, which requires a tunnel to the login nodes
+    # 添加隧道检查函数
+    def check_tunnel(port):
+        """检查SSH隧道是否正常工作"""
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        try:
+            sock.connect(("127.0.0.1", port))
+            logger.info(f"SSH tunnel on port {port} is accessible")
+            return True
+        except (socket.timeout, socket.error):
+            logger.error(f"SSH tunnel on port {port} is not accessible")
+            return False
+        finally:
+            sock.close()
+
+    # 保持原有代码不变
     solver_config = snakemake.config["solving"]["solver"]
     gurobi_tnl_cfg = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
     logger.info(f"Solver config {solver_config} and license cfg {gurobi_tnl_cfg}")
+    
+    tunnel = None
     if (solver_config["name"] == "gurobi") & (gurobi_tnl_cfg is not None):
         tunnel = setup_gurobi_tunnel_and_env(gurobi_tnl_cfg, logger=logger)
-        logger.info(tunnel)
-    else:
-        tunnel = None
+        # 添加隧道检查
+        if tunnel and check_tunnel(gurobi_tnl_cfg.get("tunnel_port", 1080)):
+            logger.info("SSH tunnel successfully established")
+        else:
+            logger.error("SSH tunnel setup failed")
 
     opts = snakemake.wildcards.get("opts", "")
     if "sector_opts" in snakemake.wildcards.keys():
         opts += "-" + snakemake.wildcards.sector_opts
     opts = [o for o in opts.split("-") if o != ""]
     solve_opts = snakemake.params.solving["options"]
+
+    # 其余代码保持不变...
 
     n = pypsa.Network(snakemake.input.network_name)
 
