@@ -51,12 +51,12 @@ default-resources:
 set-resources:
   solve_network_myopic:
     mem_mb: 80000
-    time: 300
+    time: 80
   solve_networks:
     mem_mb: 80000
     qos : short
     partition: standard
-    time : 300
+    time : 80
   build_cutout:
     time: 9000
     cores: 4
