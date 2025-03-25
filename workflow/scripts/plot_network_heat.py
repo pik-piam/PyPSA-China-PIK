@@ -10,12 +10,10 @@ from matplotlib.patches import Circle, Ellipse
 from matplotlib.legend_handler import HandlerPatch
 
 from _helpers import (
-    load_network_for_plots,
-    aggregate_p,
-    aggregate_costs,
     configure_logging,
     mock_snakemake,
 )
+from _pypsa_helpers import load_network_for_plots, aggregate_costs, aggregate_p
 from _plot_utilities import fix_network_names_colors, set_plot_style
 
 to_rgba = mpl.colors.colorConverter.to_rgba

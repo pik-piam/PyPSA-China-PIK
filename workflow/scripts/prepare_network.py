@@ -22,9 +22,8 @@ import numpy as np
 import xarray as xr
 import logging
 
-from _helpers import (
-    configure_logging,
-    mock_snakemake,
+from _helpers import configure_logging, mock_snakemake,
+from _pypsa_helpers import (
     shift_profile_to_planning_year,
     make_periodic_snapshots,
     assign_locations,
