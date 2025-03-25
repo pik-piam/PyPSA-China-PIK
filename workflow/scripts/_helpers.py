@@ -3,7 +3,7 @@
 
 # WARNING: DO NOT DO "import snakemake"
 
-""" 
+"""
 Helper functions for the PyPSA China workflow including
 - HPC helpers (gurobi tunnel setup)
 - PyPSA helpers (legacy, time handling, ntwk relabeling)
@@ -18,7 +18,6 @@ import importlib
 import time
 import pytz
 from pathlib import Path
-from types import SimpleNamespace
 
 import pypsa
 
@@ -42,7 +41,7 @@ class PathManager:
         self._is_test_run = self.config["run"].get("is_test", False)
 
     def _get_version(self) -> str:
-        """Hacky solution to get version from workflow pseudo-package"""
+        """HACK to get version from workflow pseudo-package"""
         spec = importlib.util.spec_from_file_location(
             "workflow", os.path.abspath("./workflow/__init__.py")
         )
@@ -321,7 +320,7 @@ def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
 
     for ptr in prefix_to_remove:
         if label[: len(ptr)] == ptr:
-            label = label[len(ptr) :]
+            label = label[len(ptr):]
 
     for rif in rename_if_contains:
         if rif in label:
@@ -405,98 +404,12 @@ def calc_atlite_heating_timeshift(date_range: pd.date_range, use_last_ts=False) 
     return pytz.timezone(TIMEZONE).utcoffset(date_range[idx]).total_seconds() / 3600
 
 
-def define_spatial(nodes, options):
-    """
-    Namespace for spatial
-    Parameters
-    ----------
-    nodes : list-like
-    """
-
-    spatial = SimpleNamespace()
-
-    spatial.nodes = nodes
-
-    # biomass
-
-    spatial.biomass = SimpleNamespace()
-
-    if options["biomass_transport"]:
-        spatial.biomass.nodes = nodes + " solid biomass"
-        spatial.biomass.locations = nodes
-        spatial.biomass.industry = nodes + " solid biomass for industry"
-        spatial.biomass.industry_cc = nodes + " solid biomass for industry CC"
-    else:
-        spatial.biomass.nodes = ["China solid biomass"]
-        spatial.biomass.locations = ["China"]
-        spatial.biomass.industry = ["solid biomass for industry"]
-        spatial.biomass.industry_cc = ["solid biomass for industry CC"]
-
-    spatial.biomass.df = pd.DataFrame(vars(spatial.biomass), index=nodes)
-
-    # co2
-
-    spatial.co2 = SimpleNamespace()
-
-    if options["co2_network"]:
-        spatial.co2.nodes = nodes + " co2 stored"
-        spatial.co2.locations = nodes
-        spatial.co2.vents = nodes + " co2 vent"
-    else:
-        spatial.co2.nodes = ["co2 stored"]
-        spatial.co2.locations = ["China"]
-        spatial.co2.vents = ["co2 vent"]
-
-    spatial.co2.df = pd.DataFrame(vars(spatial.co2), index=nodes)
-
-    # gas
-
-    spatial.gas = SimpleNamespace()
-
-    if options["gas_network"]:
-        spatial.gas.nodes = nodes + " gas"
-        spatial.gas.locations = nodes
-        spatial.gas.biogas = nodes + " biogas"
-        spatial.gas.industry = nodes + " gas for industry"
-        spatial.gas.industry_cc = nodes + " gas for industry CC"
-        spatial.gas.biogas_to_gas = nodes + " biogas to gas"
-    else:
-        spatial.gas.nodes = ["China gas"]
-        spatial.gas.locations = ["China"]
-        spatial.gas.biogas = ["China biogas"]
-        spatial.gas.industry = ["gas for industry"]
-        spatial.gas.industry_cc = ["gas for industry CC"]
-        spatial.gas.biogas_to_gas = ["China biogas to gas"]
-
-    spatial.gas.df = pd.DataFrame(vars(spatial.gas), index=nodes)
-
-    # oil
-    spatial.oil = SimpleNamespace()
-    spatial.oil.nodes = ["China oil"]
-    spatial.oil.locations = ["China"]
-
-    # uranium
-    spatial.uranium = SimpleNamespace()
-    spatial.uranium.nodes = ["China uranium"]
-    spatial.uranium.locations = ["China"]
-
-    # coal
-    spatial.coal = SimpleNamespace()
-    spatial.coal.nodes = ["China coal"]
-    spatial.coal.locations = ["China"]
-
-    # lignite
-    spatial.lignite = SimpleNamespace()
-    spatial.lignite.nodes = ["China lignite"]
-    spatial.lignite.locations = ["China"]
-
-    return spatial
-
-
 def is_leap_year(year: int) -> bool:
     """Determine whether a year is a leap year.
     Args:
-        year (int): the year"""
+        year (int): the year
+    Returns:
+        bool: True if leap year, False otherwise"""
     year = int(year)
     return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
