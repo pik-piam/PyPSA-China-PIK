@@ -1,9 +1,16 @@
+"""Function suite and script to define the network to be solved. Network components are added here.
+Additional constraints require the linopy model and are added in the solve_network script.
+
+These functions are currently only for the overnight mode. Myopic pathway mode contains near
+        duplicates which need to merged in the future. Idem for solve_network.py
+"""
+
+
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
 
 # for non-pathway network
-# TODO fix timezones
 # TODO WHY DO WE USE VRESUTILS ANNUITY IN ONE PLACE AND OUR OWN CALC ELSEWHERE?
 
 import pypsa
@@ -71,6 +78,54 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
 
 
+def add_co2_constraints_prices(network: pypsa.Network, config: dict, planning_horizons: int):
+    """Add co2 constraints
+
+    Args:
+        network (pypsa.Network): _description_
+        config (dict): _description_
+        planning_horizons (int): _description_
+
+    Raises:
+        ValueError: _description_
+    """
+
+    # TODO SOFT CODE BASE YEAR
+    if config["scenario"]["co2_reduction"] is None:
+        pass
+    elif isinstance(config["scenario"]["co2_reduction"], dict):
+        logger.info("Adding CO2 constraint based on scenario")
+        pathway = snakemake.wildcards["pathway"]
+        reduction = float(config["scenario"]["co2_reduction"][pathway][str(planning_horizons)])
+        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (1 - reduction)
+        network.add(
+            "GlobalConstraint",
+            "co2_limit",
+            type="primary_energy",
+            carrier_attribute="co2_emissions",
+            sense="<=",
+            constant=co2_limit,
+        )
+    elif not isinstance(config["scenario"]["co2_reduction"], tuple):
+        logger.info("Adding CO2 constraint based on scenario")
+        # TODO fix hard coded
+        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (
+            1 - float(config["scenario"]["co2_reduction"])
+        )  # Chinese 2020 CO2 emissions of electric and heating sector
+
+        network.add(
+            "GlobalConstraint",
+            "co2_limit",
+            type="primary_energy",
+            carrier_attribute="co2_emissions",
+            sense="<=",
+            constant=co2_limit,
+        )
+    else:
+        logger.error(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}.")
+        raise ValueError(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}")
+
+
 def add_conventional_generators(
     network: pypsa.Network,
     nodes: pd.Index,
@@ -110,7 +165,7 @@ def add_conventional_generators(
             marginal_cost=costs.at["gas", "fuel"],
         )
 
-        # TODO why not centralised?
+        # gas prices identical per region, pipelines ignored
         network.add(
             "Store",
             nodes + " gas Store",
@@ -121,6 +176,8 @@ def add_conventional_generators(
             e_cyclic=True,
         )
 
+    # add gas will then be true
+    if ["OCGT gas"] in config["Techs"]["conv_techs"]:
         network.add(
             "Link",
             nodes,
@@ -153,6 +210,29 @@ def add_conventional_generators(
             * costs.at["coal", "capital_cost"],  # NB: capital cost is per MWel
             lifetime=costs.at["coal", "lifetime"],
         )
+
+
+def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_co2=False):
+    """from pypsa-eur: add GHG price to marginal costs of generators and storage units
+
+    Args:
+        n (pypsa.Network): the pypsa network
+        emission_prices (dict, optional): emission prices per GHG. Defaults to {"co2": 0.0}.
+        exclude_co2 (bool, optional): do not charge for CO2 emissions. Defaults to False.
+    """ 
+    if exclude_co2:
+        emission_prices.pop("co2")
+    em_price = (
+        pd.Series(emission_prices).rename(lambda x: x + "_emissions")
+        * n.carriers.filter(like="_emissions")
+    ).sum(axis=1)
+
+    gen_em_price = n.generators.carrier.map(em_price) / n.generators.efficiency
+    n.generators["marginal_cost"] += gen_em_price
+    n.generators_t["marginal_cost"] += gen_em_price[n.generators_t["marginal_cost"].columns]
+    # storage units su
+    su_em_price = n.storage_units.carrier.map(em_price) / n.storage_units.efficiency_dispatch
+    n.storage_units["marginal_cost"] += su_em_price
 
 
 def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.DataFrame):
@@ -634,28 +714,8 @@ def add_heat_coupling(
             )
 
     if "CHP gas" in config["Techs"]["conv_techs"]:
-        # TODO merge with gas ?
-        network.add(
-            "Bus",
-            nodes,
-            suffix=" CHP gas",
-            x=prov_centroids.x,
-            y=prov_centroids.y,
-            carrier="gas",
-            location=nodes,
-        )
 
-        network.add(
-            "Generator",
-            name=nodes + " CHP gas",
-            bus=nodes + " CHP gas",
-            carrier="gas",
-            p_nom_extendable=True,
-            marginal_cost=costs.at["gas", "marginal_cost"],
-        )
-
-        # TODO why is not combined cycle?
-        # TODO efficiency to be understood - DK doc not clear
+        # OCGT
         network.add(
             "Link",
             nodes,
@@ -992,40 +1052,7 @@ def prepare_network(config: dict) -> pypsa.Network:
     onwind_p_max_pu = calc_renewable_pu_avail(ds_onwind, planning_horizons, snapshots)
     offwind_p_max_pu = calc_renewable_pu_avail(ds_offwind, planning_horizons, snapshots)
 
-    # TODO SOFT CODE BASE YEAR
-    if config["scenario"]["co2_reduction"] is None:
-        pass
-    elif isinstance(config["scenario"]["co2_reduction"], dict):
-        logger.info("Adding CO2 constraint based on scenario")
-        pathway = snakemake.wildcards["pathway"]
-        reduction = float(config["scenario"]["co2_reduction"][pathway][str(planning_horizons)])
-        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (1 - reduction)
-        network.add(
-            "GlobalConstraint",
-            "co2_limit",
-            type="primary_energy",
-            carrier_attribute="co2_emissions",
-            sense="<=",
-            constant=co2_limit,
-        )
-    elif not isinstance(config["scenario"]["co2_reduction"], tuple):
-        logger.info("Adding CO2 constraint based on scenario")
-        # TODO fix hard coded
-        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (
-            1 - float(config["scenario"]["co2_reduction"])
-        )  # Chinese 2020 CO2 emissions of electric and heating sector
-
-        network.add(
-            "GlobalConstraint",
-            "co2_limit",
-            type="primary_energy",
-            carrier_attribute="co2_emissions",
-            sense="<=",
-            constant=co2_limit,
-        )
-    else:
-        logger.error(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}.")
-        raise ValueError(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}")
+    add_co2_constraints_prices(network, config, planning_horizons)
 
     # load electricity demand data
     demand_path = snakemake.input.elec_load.replace("{planning_horizons}", f"{cost_year}")
