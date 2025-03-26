@@ -1,4 +1,6 @@
 
+"""Helper functions for pypsa network handling
+"""
 import os
 import pandas as pd
 import logging

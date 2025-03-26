@@ -6,18 +6,16 @@
 """
 Helper functions for the PyPSA China workflow including
 - HPC helpers (gurobi tunnel setup)
-- PyPSA helpers (legacy, time handling, ntwk relabeling)
 - Snakemake helpers (logging, path management and emulators for testing)
 """
 import os
 import sys
 import subprocess
-import pandas as pd
 import logging
 import importlib
 import time
-
 from pathlib import Path
+from copy import deepcopy
 
 import pypsa
 
@@ -27,14 +25,128 @@ logger = logging.getLogger()
 DEFAULT_TUNNEL_PORT = 1080
 LOGIN_NODE = "01"
 
+# ============== Path & config Management ==================
+
+
+class ConfigManager:
+    """Config manager class for the snakemake configs
+    """
+    def __init__(self, config: dict):
+        self._raw_config = deepcopy(config)
+        self.config = deepcopy(config)
+        self.wildcards = {}
+
+    def handle_scenarios(self) -> dict:
+        """Unpack & filter scenarios from the config
+
+        Returns:
+            dict: processed config
+        """
+        self.config["scenario"]["planning_horizons"] = [
+            int(v) for v in self._raw_config["scenario"]["planning_horizons"]]
+        ghg_handler = GHGConfigHandler(self.config.copy())
+        self.config = ghg_handler.handle_ghg_scenarios()
+
+        return self.config
+
+    def fetch_co2_restriction(self, pthw_name: str, year: str) -> dict:
+        """Fetch a restriction from the config
+
+        Args:
+            pthw_name (str): the scenario name
+            year (str): the year
+
+        Returns:
+            dict: the pathway
+        """
+        scenario = self.config["co2_scenarios"][pthw_name]
+        return {"co2": scenario["pathway"][year], "control": scenario["control"]}
+
+    def make_wildcards(self) -> list:
+        """Expand wildcards in config"""
+        raise NotImplementedError
+
+
+class GHGConfigHandler:
+    """A class to handle & validate GHG scenarios in the config"""
+    def __init__(self, config: dict):
+        self.config = deepcopy(config)
+        self._raw_config = deepcopy(config)
+        self._validate_scenarios()
+
+    def handle_ghg_scenarios(self) -> dict:
+        """handle ghg scenarios (parse, valdiate & unpack to config[scenario])
+
+        Returns:
+            dict: validated and parsed
+        """
+        # TODO add to _raw_config, move into CO2Scenario.__init__
+        if self.config["heat_coupling"]:
+            # HACK import here for snakemake access
+            from scripts.constants import CO2_BASEYEAR_EM as base_year_ems
+        else:
+            from scripts.constants import CO2_EL_2020 as base_year_ems
+
+        self._reduction_to_budget(base_year_ems)
+        self._filter_active_scenarios()
+        return self.config
+
+    def _filter_active_scenarios(self):
+        """select active ghg scenarios
+        """
+        scenarios = self.config["scenario"].get("co2_pathways", [])
+        if not isinstance(scenarios, list):
+            scenarios = [scenarios]
+
+        self.config["co2_scenarios"] = {
+            k: v for k, v in self.config["co2_scenarios"].items() if k in scenarios
+            }
+
+    def _reduction_to_budget(self, base_yr_ems: float):
+        """transform reduction to budget
+
+        Args:
+        """
+        for name, co2_scen in self.config["co2_scenarios"].items():
+            if co2_scen["control"] == "reduction":
+                budget = {yr: base_yr_ems*(1 - redu) for yr, redu in co2_scen["pathway"].items()}
+                self.config["co2_scenarios"][name]["pathway"] = budget
+                self.config["co2_scenarios"][name]["control"] = "budget_from_reduction"
+
+    # TODO switch to config validate, see
+    # https://snakemake.readthedocs.io/en/stable/snakefiles/configuration.html#validation
+    def _validate_scenarios(self):
+        """Validate CO2 scenarios"""
+
+        for name, scen in self._raw_config["co2_scenarios"].items():
+            if not isinstance(scen, dict):
+                raise ValueError(f"Expected a dictionary for co2 scenario but got {scen}")
+
+            if "control" in set(scen) and scen["control"] is None:
+                continue
+
+            if {"control", "pathway"} - set(scen):
+                raise ValueError(f"Scenario {scen} must contain 'control' and 'pathway'")
+
+            ALLOWED = ["price", "reduction", "budget", None]
+            if not scen["control"] in ALLOWED:
+                err = f"Control must be {",".join(ALLOWED)} but was {name}:{scen["control"]}"
+                raise ValueError(err)
+
+            years_int = set(map(int, self.config["scenario"]["planning_horizons"]))
+            missing_yrs = years_int - set(map(int, scen["pathway"]))
+            if missing_yrs:
+                raise ValueError(f"Years in scenario {scen["pathway"]} missing {missing_yrs}")
+
+
 # TODO return pathlib objects? so can just use / to combine paths?
 class PathManager:
-    """A class to manage paths for the snakemake workflow
+    """A class to manage paths for the snakemake workflow and return paths based on the wildcard
 
     Returns different paths for CI/CD runs (HACK due to snamekame-pytest incompatibility)
     """
 
-    def __init__(self, snmk_config):
+    def __init__(self, snmk_config, wildcards_map: dict = None):
         self.config = snmk_config
         # HACK for pytests CI, should really be a patch but not possible
         self._is_test_run = self.config["run"].get("is_test", False)
@@ -57,11 +169,9 @@ class PathManager:
         # TODO make into a config
         exclude = ["planning_horizons", "co2_reduction"]
         short_names = {
-            "planning_horizons": "ph",
-            "co2_reduction": "co2",
-            "opts": "opts",
+            "planning_horizons": "yr",
             "topology": "topo",
-            "pathway": "pthw",
+            "co2_pathways": "co2pw",
             "heating_demand": "proj",
         }
         # remember need place holders for snakemake
@@ -202,9 +312,7 @@ def setup_gurobi_tunnel_and_env(
     return socks_proc
 
 
-
 # ====== SNAKEMAKE HELPERS =========
-
 
 def configure_logging(
     snakemake: object, logger: logging.Logger = None, skip_handlers=False, level="INFO"
