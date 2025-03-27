@@ -10,7 +10,7 @@ from _plot_utilities import (
     make_nice_tech_colors,
     fix_network_names_colors,
 )
-from _pypsa_helpers import get_location_and_carrier,
+from _pypsa_helpers import get_location_and_carrier
 from _helpers import (
     configure_logging,
     mock_snakemake,
