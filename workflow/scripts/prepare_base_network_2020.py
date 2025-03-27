@@ -734,7 +734,7 @@ if __name__ == "__main__":
             "prepare_base_networks_2020",
             opts="ll",
             topology="current+Neighbor",
-            pathway="exponential175",
+            co2_pathway="exp175default",
             planning_horizons="2020",
             heating_demand="positive",
         )

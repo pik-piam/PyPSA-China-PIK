@@ -581,7 +581,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_summary",
             topology="current+FCG",
-            pathway="exp175",
+            co2_pathway="exp175default",
             heating_demand="positive",
             planning_horizons=[
                 "2020",
@@ -670,3 +670,13 @@ if __name__ == "__main__":
     )
 
     logger.info(f"Successfully plotted summary for {wildcards}")
+
+    # make a summary of the co2 prices
+    co2_prices = {}
+    co2_budget = {}
+    for i, results_file in enumerate(data_paths["co2_price"]):
+        df_metrics = pd.read_csv(results_file, index_col=list(range(1)), header=[1])
+        co2_prices.update(dict(df_metrics.loc["co2_shadow"]))
+        co2_budget.update(dict(df_metrics.loc["co2_budget"]))
+    co2_df = pd.DataFrame([co2_budget, co2_prices]).T
+    outp_file = os.path.join(snakemake.output.results_dir, "summary", "co2_prices_budget.csv")

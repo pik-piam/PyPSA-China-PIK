@@ -52,7 +52,7 @@ if __name__ == "__main__":
             "plot_statistics",
             carrier="AC",
             planning_horizons="2030",
-            pathway="exp175",
+            co2_pathway="exp175default",
             topology="current+FCG",
             heating_demand="positive",
         )

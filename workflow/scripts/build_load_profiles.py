@@ -372,7 +372,7 @@ if __name__ == "__main__":
             "build_load_profiles",
             heating_demand="positive",
             planning_horizons="2040",
-            pathway="exponential-175",
+            co2_pathway="exp175default",
             topology="Current+Neigbor",
         )
 

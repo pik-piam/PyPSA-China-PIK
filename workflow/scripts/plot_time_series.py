@@ -243,7 +243,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_snapshots",
             topology="current+FCG",
-            pathway="exp175",
+            co2_pathway="exp175default",
             planning_horizons="2060",
             heating_demand="positive",
             winter_day1="12-10 21:00",  # mm-dd HH:MM

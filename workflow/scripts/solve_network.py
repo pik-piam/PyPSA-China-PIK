@@ -212,10 +212,8 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_reduction="0.0",
-            # opts="ll",
             planning_horizons=2020,
-            pathway="exponential-175",
+            co2_pathway="exp175default",
             topology="current+Neighbour",
             heating_demand="positive",
         )
