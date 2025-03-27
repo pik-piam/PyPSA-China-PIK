@@ -453,7 +453,7 @@ def plot_prices(file_list: list, config: dict, fig_name=None):
 
     Args:
         file_list (list): the input csvs from make_summary
-        config (dict): the configuration for plotting
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
     """
     prices_df = pd.DataFrame()
@@ -465,7 +465,7 @@ def plot_prices(file_list: list, config: dict, fig_name=None):
     fig, ax = plt.subplots()
     fig.set_size_inches((12, 8))
 
-    colors = config["plotting"]["tech_colors"]
+    colors = config["tech_colors"]
 
     prices_df.plot(
         ax=ax,
@@ -507,7 +507,7 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
 
     fig, ax = plt.subplots()
     bar_width = 0.6
-    colors = co2_balance_df.T.index.map(config["plotting"]["tech_colors"]).values
+    colors = co2_balance_df.T.index.map(config["tech_colors"]).values
     co2_balance_df = co2_balance_df / PLOT_CO2_UNITS
     co2_balance_df.plot(
         kind="bar",
@@ -648,24 +648,24 @@ if __name__ == "__main__":
     )
     plot_prices(
         data_paths["time_averaged_prices"],
-        config,
+        config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/time_averaged_prices.png",
     )
 
     plot_prices(
         data_paths["weighted_prices"],
-        config,
+        config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/weighted_prices.png",
     )
     plot_co2_shadow_price(
         data_paths["co2_price"],
-        config,
+        config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/co2_shadow_prices.png",
     )
 
     plot_pathway_co2(
         data_paths["co2_balance"],
-        config,
+        config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/co2_balance.png",
     )
 
