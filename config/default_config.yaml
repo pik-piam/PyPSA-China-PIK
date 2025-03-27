@@ -3,66 +3,15 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'new_load_overnight_5hr_newcutout'
+  # name: 'new_load_overnight_5hr_newcutout'
+  name: test_co2_pr_baseline
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
 
 scenario:
-  pathway: ['exp175'] # ,'beta25175']
+  co2_pathway: ['exp175default'] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
-  # relative CO2 reduction, TODO soft code base year (ideally also fetch data)
-  co2_reduction:
-    exp175:
-      '2020': 0.0
-      '2025': 0.22623418
-      '2030': 0.41175086
-      '2035': 0.56387834
-      '2040': 0.688626
-      '2045': 0.79092165
-      '2050': 0.87480618
-      '2055': 0.94359322
-      '2060': 1.0
-    linear175:
-      '2020': 0.
-      '2025': 0.16666667
-      '2030': 0.33333333
-      '2035': 0.5
-      '2040': 0.66666667
-      '2045': 0.83333333
-      '2050': 1.0
-      '2055': 1.0
-      '2060': 1.0
-    beta05175:
-      '2020': 0.
-      '2025': 0.41489656
-      '2030': 0.5139467
-      '2035': 0.58764476
-      '2040': 0.65150003
-      '2045': 0.71196579
-      '2050': 0.77403968
-      '2055': 0.84573191
-      '2060': 1.0
-    beta25175:
-      '2020': 0.0 #0.
-      '2025': 0.05096974 #0.06949544
-      '2030': 0.23251132 #0.27330722
-      '2035': 0.5 #0.52741596
-      '2040': 0.76748868 #0.75163934
-      '2045': 0.94903026 #0.90276156
-      '2050': 1.0 #0.97687314
-      '2055': 1.0 #0.99829624
-      '2060': 1.0 #1.0
-    mean175:
-      '2020': 0.
-      '2025': 0.12193339
-      '2030': 0.29252381
-      '2035': 0.53193917
-      '2040': 0.75766462
-      '2045': 0.88664452
-      '2050': 0.93740309
-      '2055': 0.97179661
-      '2060': 1.0
   planning_horizons:
     - 2020
     - 2025
@@ -74,6 +23,20 @@ scenario:
     - 2055
     - 2060
   heating_demand: ['positive']
+
+co2_scenarios: 
+  exp175default:
+    control: "reduction" # price | reduction | budget | None
+    pathway:
+      '2020': 0.0
+      '2025': 0.22623418
+      '2030': 0.41175086
+      '2035': 0.56387834
+      '2040': 0.688626
+      '2045': 0.79092165
+      '2050': 0.87480618
+      '2055': 0.94359322
+      '2060': 1.0
 
 # TODO Need to test timezones and functionality of end_year_plus1
 snapshots:
@@ -237,9 +200,6 @@ solving:
   solver:
     name: gurobi
     options: gurobi-default
-  gurobi_hpc_tunnel:
-    use_tunnel: True
-    tunnel_port: 1080
   gurobi_hpc_tunnel:
     use_tunnel: True
     tunnel_port: 1080

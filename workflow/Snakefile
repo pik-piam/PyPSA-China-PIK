@@ -9,14 +9,17 @@ import logging
 import os.path
 
 from os.path import abspath, getctime
-from scripts._helpers import PathManager, get_cutout_params
-from scripts.constants import TESTS_RUNNAME
+from scripts._helpers import PathManager, get_cutout_params, ConfigManager
+
 # NB: duplicated parameters will be overwritten by the last read cfg
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
 
-# ====== get paths =======
+# ====== make paths =======
+config_manager = ConfigManager(config)
+config = config_manager.handle_scenarios()
+
 path_manager = PathManager(config)
 RESULTS_DIR = path_manager.results_dir()
 DERIVED_DATA = path_manager.derived_data_dir(shared=False)
@@ -47,6 +50,7 @@ if config["run"].get("is_test", False):
             expand(RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc',   
             **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
             ),
+
 elif config["foresight"] in ["overnight", "myopic"]:
     rule plot_all:
         input:
@@ -65,6 +69,11 @@ elif config["foresight"] in ["overnight", "myopic"]:
 else:
     raise ValueError("Invalid scenario config: {}".format(config["foresight"]))
 
+rule process_config:
+    output:
+        config="config_test.yaml"
+    script:
+        "scripts/process_config.py"
 #    ======== Workflow ===========
 rule build_population:
     input:
