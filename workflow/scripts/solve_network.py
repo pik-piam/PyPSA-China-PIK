@@ -10,7 +10,7 @@ import logging
 import numpy as np
 import pypsa
 from pandas import DatetimeIndex
-import os
+
 
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
 

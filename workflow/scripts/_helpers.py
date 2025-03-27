@@ -60,7 +60,7 @@ class ConfigManager:
             dict: the pathway
         """
         scenario = self.config["co2_scenarios"][pthw_name]
-        return {"co2": scenario["pathway"][year], "control": scenario["control"]}
+        return {"co2_pr_limit": scenario["pathway"][year], "control": scenario["control"]}
 
     def make_wildcards(self) -> list:
         """Expand wildcards in config"""
@@ -86,7 +86,9 @@ class GHGConfigHandler:
             from scripts.constants import CO2_BASEYEAR_EM as base_year_ems
         else:
             from scripts.constants import CO2_EL_2020 as base_year_ems
-
+        
+        for name, co2_scen in self.config["co2_scenarios"].items():
+            co2_scen["pathway"] = {int(k): v for k, v in co2_scen.get("pathway",{}).items()}
         self._reduction_to_budget(base_year_ems)
         self._filter_active_scenarios()
         return self.config
@@ -94,7 +96,7 @@ class GHGConfigHandler:
     def _filter_active_scenarios(self):
         """select active ghg scenarios
         """
-        scenarios = self.config["scenario"].get("co2_pathways", [])
+        scenarios = self.config["scenario"].get("co2_pathway", [])
         if not isinstance(scenarios, list):
             scenarios = [scenarios]
 
@@ -171,7 +173,7 @@ class PathManager:
         short_names = {
             "planning_horizons": "yr",
             "topology": "topo",
-            "co2_pathways": "co2pw",
+            "co2_pathway": "co2pw",
             "heating_demand": "proj",
         }
         # remember need place holders for snakemake

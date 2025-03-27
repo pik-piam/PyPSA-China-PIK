@@ -22,7 +22,7 @@ import numpy as np
 import xarray as xr
 import logging
 
-from _helpers import configure_logging, mock_snakemake,
+from _helpers import configure_logging, mock_snakemake, ConfigManager
 from _pypsa_helpers import (
     shift_profile_to_planning_year,
     make_periodic_snapshots,
@@ -77,41 +77,27 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
 
 
-def add_co2_constraints_prices(network: pypsa.Network, config: dict, planning_horizons: int):
-    """Add co2 constraints
+def add_co2_constraints_prices(network: pypsa.Network, co2_control:dict):
+    """Add co2 constraints or prices
 
     Args:
-        network (pypsa.Network): _description_
-        config (dict): _description_
-        planning_horizons (int): _description_
+        network (pypsa.Network): the network to which prices or constraints are to be added
+        co2_control (dict): the config
+
 
     Raises:
         ValueError: _description_
     """
 
-    # TODO SOFT CODE BASE YEAR
-    if config["scenario"]["co2_reduction"] is None:
+    if co2_control["control"] is None:
         pass
-    elif isinstance(config["scenario"]["co2_reduction"], dict):
-        logger.info("Adding CO2 constraint based on scenario")
-        pathway = snakemake.wildcards["pathway"]
-        reduction = float(config["scenario"]["co2_reduction"][pathway][str(planning_horizons)])
-        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (1 - reduction)
-        network.add(
-            "GlobalConstraint",
-            "co2_limit",
-            type="primary_energy",
-            carrier_attribute="co2_emissions",
-            sense="<=",
-            constant=co2_limit,
-        )
-    elif not isinstance(config["scenario"]["co2_reduction"], tuple):
-        logger.info("Adding CO2 constraint based on scenario")
-        # TODO fix hard coded
-        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (
-            1 - float(config["scenario"]["co2_reduction"])
-        )  # Chinese 2020 CO2 emissions of electric and heating sector
+    elif co2_control["control"] == "price":
+        logger.info("Adding CO2 price to marginal costs of generators and storage units")
+        add_emission_prices(network, emission_prices={"co2": co2_control["co2_pr_limit"]} ) 
 
+    elif co2_control["control"].startswith("budget"):
+        co2_limit = co2_control["co2_pr_limit"]
+        logger.info("Adding CO2 constraint based on scenario {co2_limit}")
         network.add(
             "GlobalConstraint",
             "co2_limit",
@@ -121,7 +107,7 @@ def add_co2_constraints_prices(network: pypsa.Network, config: dict, planning_ho
             constant=co2_limit,
         )
     else:
-        logger.error(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}.")
+        logger.error(f"Unhandled CO2 control config {co2_control} due to unknown control.")
         raise ValueError(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}")
 
 
@@ -243,20 +229,32 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         nodes (pd.Index): the buses
         costs (pd.DataFrame): the cost database
     """
-
-    network.add(
-        "Link",
-        name=nodes + " H2 Electrolysis",
-        bus0=nodes,
-        bus1=nodes + " H2",
-        bus2=nodes + " central heat",
-        p_nom_extendable=True,
-        carrier="H2 Electrolysis",
-        efficiency=costs.at["electrolysis", "efficiency"],
-        efficiency2=costs.at["electrolysis", "efficiency-heat"],
-        capital_cost=costs.at["electrolysis", "capital_cost"],
-        lifetime=costs.at["electrolysis", "lifetime"],
-    )
+    if config["heat_coupling"]:
+        network.add(
+            "Link",
+            name=nodes + " H2 Electrolysis",
+            bus0=nodes,
+            bus1=nodes + " H2",
+            bus2=nodes + " central heat",
+            p_nom_extendable=True,
+            carrier="H2 Electrolysis",
+            efficiency=costs.at["electrolysis", "efficiency"],
+            efficiency2=costs.at["electrolysis", "efficiency-heat"],
+            capital_cost=costs.at["electrolysis", "capital_cost"],
+            lifetime=costs.at["electrolysis", "lifetime"],
+        )
+    else:
+        network.add(
+            "Link",
+            name=nodes + " H2 Electrolysis",
+            bus0=nodes,
+            bus1=nodes + " H2",
+            p_nom_extendable=True,
+            carrier="H2 Electrolysis",
+            efficiency=costs.at["electrolysis", "efficiency"],
+            capital_cost=costs.at["electrolysis", "capital_cost"],
+            lifetime=costs.at["electrolysis", "lifetime"],
+        )
 
     # TODO consider switching to turbines and making a switch for off
     # TODO understand MVs
@@ -1051,8 +1049,6 @@ def prepare_network(config: dict) -> pypsa.Network:
     onwind_p_max_pu = calc_renewable_pu_avail(ds_onwind, planning_horizons, snapshots)
     offwind_p_max_pu = calc_renewable_pu_avail(ds_offwind, planning_horizons, snapshots)
 
-    add_co2_constraints_prices(network, config, planning_horizons)
-
     # load electricity demand data
     demand_path = snakemake.input.elec_load.replace("{planning_horizons}", f"{cost_year}")
     with pd.HDFStore(demand_path, mode="r") as store:
@@ -1247,18 +1243,29 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_networks",
             topology="current+FCG",
-            pathway="exp175",
-            co2_reduction="0.0",
+            co2_pathway="exp175default",
+            # co2_reduction="0.0",
             planning_horizons=2040,
             heating_demand="positive",
         )
+    
     configure_logging(snakemake)
 
+    config = snakemake.config
+    logging.info(config["scenario"])
+    logging.info(config["co2_scenarios"])
+    yr = int(snakemake.wildcards.planning_horizons)
+    logging.info(f"Preparing network for {yr}")
+    pathway = snakemake.wildcards.co2_pathway
+
+    co2_opts = ConfigManager(config).fetch_co2_restriction(pathway, yr)
+
     network = prepare_network(snakemake.config)
+    add_co2_constraints_prices(network, co2_opts)
     sanitize_carriers(network, snakemake.config)
-    sanitize_carriers(network, snakemake.config)
+
 
     network.export_to_netcdf(snakemake.output.network_name)
 
     outp = {snakemake.output.network_name}
-    logger.info(f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {outp}")
+    logger.info(f"Network for {yr} prepared and saved to {outp}")
