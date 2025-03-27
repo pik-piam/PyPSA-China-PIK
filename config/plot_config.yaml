@@ -2,6 +2,7 @@
 plot: True
 plotting:
   network_style_config_file: "config/plotting_styles/network_map.mplstyle"
+  transparent: false
   cost_panel:
     y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
   cost_map:
@@ -126,6 +127,7 @@ plotting:
     coal power plant retrofit: '#8487e8'
     # gas
     gas: '#e0986c'
+    # gas: '#e05b09'
     Gas: '#e0986c'
     OCGT: '#e0986c'
     OCGT gas: '#e0986c'
@@ -139,7 +141,6 @@ plotting:
     services rural gas boiler: '#c4813f'
     services urban decentral gas boiler: '#ba8947'
     urban central gas boiler: '#b0904f'
-    gas: '#e05b09'
     fossil gas: '#e05b09'
     natural gas: '#e05b09'
     biogas to gas: '#e36311'

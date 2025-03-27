@@ -336,7 +336,7 @@ def plot_cost_map(
     fig.set_size_inches(opts["cost_map"][f"figsize{'_w_additions' if plot_additions else ''}"])
     fig.tight_layout()
     if save_path:
-        fig.savefig(save_path, transparent=False, bbox_inches="tight")
+        fig.savefig(save_path, transparent=opts["transparent"], bbox_inches="tight")
 
 
 def plot_energy_map(
@@ -453,7 +453,7 @@ def plot_energy_map(
     fig.tight_layout()
 
     if save_path:
-        fig.savefig(save_path, transparent=True, bbox_inches="tight")
+        fig.savefig(save_path, transparent=opts["transparent"], bbox_inches="tight")
 
 
 def add_energy_pannel(
@@ -585,7 +585,7 @@ def plot_nodal_prices(
     cbar.set_label(f"Nodal Prices ${CURRENCY}/MWh")
 
     if save_path:
-        fig.savefig(save_path, transparent=True, bbox_inches="tight")
+        fig.savefig(save_path, transparent=config["transparent"], bbox_inches="tight")
 
 
 if __name__ == "__main__":

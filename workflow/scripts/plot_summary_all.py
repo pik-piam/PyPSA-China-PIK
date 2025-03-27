@@ -58,7 +58,7 @@ def rename_techs(label):
 
     for ptr in prefix_to_remove:
         if label[: len(ptr)] == ptr:
-            label = label[len(ptr) :]
+            label = label[len(ptr):]
 
     for old, new in rename_if_contains_dict.items():
         if old in label:
@@ -144,7 +144,7 @@ def plot_pathway_costs(
     fig.tight_layout()
 
     if fig_name is not None:
-        fig.savefig(fig_name, transparent=True)
+        fig.savefig(fig_name, transparent=config["transparent"])
 
 
 def plot_pathway_capacities(
@@ -210,8 +210,8 @@ def plot_pathway_capacities(
     for i, capacity_df in enumerate([caps_ac, caps_heat, caps_stores, caps_h2]):
         if capacity_df.empty:
             continue
-        k, l = divmod(i, 2)
-        ax = axes[k, l]
+        k, j = divmod(i, 2)
+        ax = axes[k, j]
         preferred_order = pd.Index(config["preferred_order"])
         new_index = preferred_order.intersection(capacity_df.index).append(
             capacity_df.index.difference(preferred_order)
@@ -245,7 +245,7 @@ def plot_pathway_capacities(
     fig.subplots_adjust(wspace=0.42)
 
     if fig_name is not None:
-        fig.savefig(fig_name, transparent=True)
+        fig.savefig(fig_name, transparent=config["transparent"])
 
 
 def plot_energy(file_list: list, config: dict, fig_name=None):
@@ -304,7 +304,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
     fig.tight_layout()
 
     if fig_name is not None:
-        fig.savefig(fig_name, transparent=True)
+        fig.savefig(fig_name, transparent=config["transparent"])
 
 
 def plot_electricty_heat_balance(
@@ -406,7 +406,7 @@ def plot_electricty_heat_balance(
     fig.tight_layout()
 
     if fig_dir is not None:
-        fig.savefig(os.path.join(fig_dir, "elec_balance.png"), transparent=True)
+        fig.savefig(os.path.join(fig_dir, "elec_balance.png"), transparent=config["transparent"])
 
     # =================     heat     =================
     fig, ax = plt.subplots()
@@ -444,7 +444,8 @@ def plot_electricty_heat_balance(
         fig.tight_layout()
 
         if fig_dir is not None:
-            fig.savefig(os.path.join(fig_dir, "heat_balance.png"), transparent=True)
+            fig.savefig(os.path.join(fig_dir, "heat_balance.png"),
+                        transparent=config["transparent"])
 
 
 def plot_prices(file_list: list, config: dict, fig_name=None):
@@ -532,7 +533,7 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
 
     fig.tight_layout()
     if fig_name is not None:
-        fig.savefig(fig_name, transparent=True)
+        fig.savefig(fig_name, transparent=config["transparent"])
 
 
 def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
@@ -571,7 +572,7 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
     fig.tight_layout()
 
     if fig_name is not None:
-        fig.savefig(fig_name, transparent=True)
+        fig.savefig(fig_name, transparent=config["transparent"])
 
 
 if __name__ == "__main__":
