@@ -162,7 +162,8 @@ def add_conventional_generators(
         )
 
     # add gas will then be true
-    if ["OCGT gas"] in config["Techs"]["conv_techs"]:
+    if "OCGT gas" in config["Techs"]["conv_techs"]:
+        logger.info("adding OCGT")
         network.add(
             "Link",
             nodes,
@@ -176,7 +177,7 @@ def add_conventional_generators(
             p_nom_extendable=True,
             efficiency=costs.at["OCGT", "efficiency"],
             lifetime=costs.at["OCGT", "lifetime"],
-            carrier="gas",
+            carrier="gas OCGT",
         )
 
     if config["add_coal"]:
@@ -712,7 +713,27 @@ def add_heat_coupling(
 
     if "CHP gas" in config["Techs"]["conv_techs"]:
 
-        # OCGT
+        # TODO merge with gas ?
+        network.add(
+            "Bus",
+            nodes,
+            suffix=" CHP gas",
+            x=prov_centroids.x,
+            y=prov_centroids.y,
+            carrier="gas",
+            location=nodes,
+        )
+
+        network.add(
+            "Generator",
+            name=nodes + " CHP gas",
+            bus=nodes + " CHP gas",
+            carrier="gas",
+            p_nom_extendable=True,
+            marginal_cost=costs.at["gas", "marginal_cost"],
+        )
+
+        # OCGT CHP
         network.add(
             "Link",
             nodes,
@@ -994,6 +1015,7 @@ def prepare_network(config: dict) -> pypsa.Network:
     config["add_gas"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "gas" in tech] else False
     )
+    logger.info(f"Adding gas?: {config['add_gas']}")
     config["add_coal"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False
     )
