@@ -14,7 +14,7 @@ import logging
 from pandas import DataFrame
 
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
-from _plot_utilities import rename_index, fix_network_names_colors
+from _plot_utilities import rename_index, fix_network_names_colors, filter_carriers
 from constants import PLOT_CAP_LABEL, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, PLOT_SUPPLY_LABEL
 
 sns.set_theme("paper", style="whitegrid")
@@ -51,7 +51,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_statistics",
             carrier="AC",
-            planning_horizons="2030",
+            planning_horizons="2050",
             co2_pathway="exp175default",
             topology="current+FCG",
             heating_demand="positive",
@@ -77,16 +77,23 @@ if __name__ == "__main__":
 
     stats_list = snakemake.params.stat_types
 
+    attached_carriers = filter_carriers(n, carrier)
     if "capacity_factor" in stats_list:
         fig, ax = plt.subplots()
-        ds = n.statistics.capacity_factor(bus_carrier=carrier).dropna()
+        ds = n.statistics.capacity_factor(groupby=["carrier"]).dropna()
+        ds = ds.groupby(level=1).sum()
+        ds = ds.loc[ds.index.isin(attached_carriers)]
+        ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
         plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capacity_factor.png"))
 
     if "installed_capacity" in stats_list:
         fig, ax = plt.subplots()
-        ds = n.statistics.installed_capacity(bus_carrier=carrier).dropna()
+        ds = n.statistics.installed_capacity(groupby=["carrier"]).dropna()
+        ds = ds.groupby(level=1).sum()
+        ds = ds.loc[ds.index.isin(attached_carriers)]
+        ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
         if "Line" in ds.index:
             ds = ds.drop("Line")
         ds = ds.drop(("Generator", "Load"), errors="ignore")
@@ -98,7 +105,10 @@ if __name__ == "__main__":
 
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
-        ds = n.statistics.optimal_capacity(bus_carrier=carrier)
+        ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+        ds = ds.groupby(level=1).sum()
+        ds = ds.loc[ds.index.isin(attached_carriers)]
+        ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
         if "Line" in ds.index:
             ds = ds.drop("Line")
         ds = ds.drop(("Generator", "Load"), errors="ignore")
@@ -110,14 +120,21 @@ if __name__ == "__main__":
 
     if "capital_expenditure" in stats_list:
         fig, ax = plt.subplots()
-        ds = n.statistics.capex(bus_carrier=carrier)
+        ds = n.statistics.capex(groupby=["carrier"]).dropna()
+        ds = ds.groupby(level=1).sum()
+        ds = ds.loc[ds.index.isin(attached_carriers)]
+        ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
         plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capex.png"))
 
     if "operational_expenditure" in stats_list:
         fig, ax = plt.subplots()
-        ds = n.statistics.opex(bus_carrier=carrier)
+        attached_carriers = filter_carriers(n, carrier)
+        ds = n.statistics.opex(groupby=["carrier"]).dropna()
+        ds = ds.groupby(level=1).sum()
+        ds = ds.loc[ds.index.isin(attached_carriers)]
+        ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
         plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "opex.png"))
