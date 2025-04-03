@@ -202,7 +202,9 @@ solving:
     options: gurobi-default
   gurobi_hpc_tunnel:
     use_tunnel: True
-    tunnel_port: 1080
+    tunnel_port: 1082
+    timeout_s: 15
+    login_node: "01"
 
   solver_options:
     highs-default:
