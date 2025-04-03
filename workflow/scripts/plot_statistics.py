@@ -15,6 +15,7 @@ from pandas import DataFrame
 
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import rename_index, fix_network_names_colors, filter_carriers
+from _pypsa_helpers import calc_lcoe
 from constants import PLOT_CAP_LABEL, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, PLOT_SUPPLY_LABEL
 
 sns.set_theme("paper", style="whitegrid")
@@ -51,7 +52,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_statistics",
             carrier="AC",
-            planning_horizons="2050",
+            planning_horizons="2055",
             co2_pathway="exp175default",
             topology="current+FCG",
             heating_demand="positive",
@@ -174,3 +175,20 @@ if __name__ == "__main__":
         plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "market_value.png"))
+
+    if "lcoe" in stats_list:
+        rev_costs = calc_lcoe(n, groupby=None)
+        ds = rev_costs["LCOE"]
+        ds.attrs = {"name": "LCOE", "unit": "€/MWh"}
+        fig, ax = plt.subplots()
+        plot_static_per_carrier(ds, ax,  colors=colors)
+        fig.tight_layout()
+        fig.savefig(os.path.join(outp_dir, "LCOE.png"))
+
+        rev_costs = calc_lcoe(n, groupby=None)
+        ds = rev_costs["profit_pu"]
+        ds.attrs = {"name": "MV - LCOE", "unit": "€/MWh"}
+        fig, ax = plt.subplots()
+        plot_static_per_carrier(ds, ax, colors=colors)
+        fig.tight_layout()
+        fig.savefig(os.path.join(outp_dir, "MV_minus_LCOE.png"))

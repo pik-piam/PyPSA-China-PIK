@@ -11,6 +11,7 @@ import pypsa
 # get root logger
 logger = logging.getLogger()
 
+
 def get_location_and_carrier(
     n: pypsa.Network, c: str, port: str = "", nice_names: bool = True
 ) -> list[pd.Series]:
@@ -75,7 +76,46 @@ def aggregate_p(n: pypsa.Network) -> pd.Series:
     )
 
 
-# TODO is thsi really goo? useful?
+def calc_lcoe(n: pypsa.Network, grouper=pypsa.statistics.get_carrier_and_bus_carrier, **kwargs
+              ) -> pd.DataFrame:
+    """calculate the LCOE for the network: (capex+opex)/supply.
+
+    Args:
+        n (pypsa.Network): the network for which LCOE is to be calaculated
+        grouper (function | list, optional): function to group the data in network.statistics.
+                Overwritten if groupby is passed in kwargs.
+                Defaults to pypsa.statistics.get_carrier_and_bus_carrier.
+        **kwargs: other arguments to be passed to network.statistics
+    Returns:
+        pd.DataFrame: The LCOE for the network  with or without brownfield CAPEX. MV and delta
+
+    """
+    if "groupby" in kwargs:
+        grouper = kwargs.pop("groupby")
+
+    rev = n.statistics.revenue(groupby=grouper, **kwargs)
+    opex = n.statistics.opex(groupby=grouper, **kwargs)
+    capex = n.statistics.expanded_capex(groupby=grouper, **kwargs)
+    tot_capex = n.statistics.capex(groupby=grouper, **kwargs)
+    supply = n.statistics.supply(groupby=grouper, **kwargs)
+
+    profits = pd.concat(
+        [opex, capex, tot_capex, rev, supply],
+        axis=1,
+        keys=["OPEX", "CAPEX", "CAPEX_wBROWN", "Revenue", "supply"]
+        ).fillna(0)
+    profits["rev-costs"] = profits.apply(lambda row: row.Revenue-row.CAPEX-row.OPEX, axis=1)
+    profits["LCOE"] = profits.apply(lambda row: (row.CAPEX + row.OPEX)/row.supply, axis=1)
+    profits["LCOE_wbrownfield"] = profits.apply(
+        lambda row: (row.CAPEX_wBROWN + row.OPEX)/row.supply, axis=1)
+    profits["MV"] = profits.apply(lambda row: row.Revenue/row.supply, axis=1)
+    profits["profit_pu"] = profits["rev-costs"]/profits.supply
+    profits.sort_values("profit_pu", ascending=False, inplace=True)
+
+    return profits[profits.supply > 0]
+
+
+# TODO is thsi really good? useful?
 # TODO make a standard apply/str op instead ofmap in add_electricity.sanitize_carriers
 def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
     """Rename technology labels for better readability. Removes some prefixes

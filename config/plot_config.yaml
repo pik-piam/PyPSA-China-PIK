@@ -3,6 +3,8 @@ plot: True
 plotting:
   network_style_config_file: "config/plotting_styles/network_map.mplstyle"
   transparent: false
+  statistics:
+    clip_numerical_zeroes: false
   cost_panel:
     y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
   cost_map:
@@ -378,6 +380,7 @@ plotting:
     lines: "Transmission Lines"
     CHP: "Combined Heat and Power"
     OCGT: "Open-Cycle Gas"
+    gas OCGT: "Open-Cycle Gas"
     CCGT: "Combined-Cycle Gas"
     heat pump: "Heat Pump"
     stations-AC: "Reservoir & Dam"
