@@ -51,9 +51,18 @@ def add_buses(
     network: pypsa.Network,
     nodes: list | pd.Index,
     suffix: str,
-    carrier,
+    carrier: str,
     prov_centroids: gpd.GeoSeries,
 ):
+    """Add buses
+
+    Args:
+        network (pypsa.Network): _description_
+        nodes (list | pd.Index): _description_
+        suffix (str): _description_
+        carrier (str): _description_
+        prov_centroids (gpd.GeoSeries): _description_
+    """
 
     network.add(
         "Bus",

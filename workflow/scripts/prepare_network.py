@@ -20,6 +20,8 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import xarray as xr
+import os
+
 import logging
 
 from _helpers import configure_logging, mock_snakemake, ConfigManager
@@ -35,8 +37,6 @@ from prepare_network_common import calc_renewable_pu_avail
 from constants import (
     PROV_NAMES,
     CRS,
-    CO2_HEATING_2020,
-    CO2_EL_2020,
     LOAD_CONVERSION_FACTOR,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
@@ -163,7 +163,20 @@ def add_conventional_generators(
 
     # add gas will then be true
     if "OCGT gas" in config["Techs"]["conv_techs"]:
-        logger.info("adding OCGT")
+        # network.add(
+        #     "Generator",
+        #     nodes,
+        #     suffix=" OCGT",
+        #     bus=nodes,
+        #     carrier="gas",
+        #     p_nom_extendable=True,
+        #     marginal_cost=costs.at["OCGT", "marginal_cost"], 
+        #     capital_cost=costs.at["OCGT", "efficiency"]
+        #     * costs.at["OCGT", "capital_cost"],  # NB: capital cost is per MWel
+        #     efficiency=costs.at["OCGT", "efficiency"],
+        #     lifetime=costs.at["OCGT", "lifetime"],
+        # )
+
         network.add(
             "Link",
             nodes,
@@ -205,7 +218,7 @@ def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_
         n (pypsa.Network): the pypsa network
         emission_prices (dict, optional): emission prices per GHG. Defaults to {"co2": 0.0}.
         exclude_co2 (bool, optional): do not charge for CO2 emissions. Defaults to False.
-    """ 
+    """
     if exclude_co2:
         emission_prices.pop("co2")
     em_price = (
@@ -213,12 +226,19 @@ def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_
         * n.carriers.filter(like="_emissions")
     ).sum(axis=1)
 
+    n.meta.update({"emission_prices": emission_prices})
+
     gen_em_price = n.generators.carrier.map(em_price) / n.generators.efficiency
+
     n.generators["marginal_cost"] += gen_em_price
     n.generators_t["marginal_cost"] += gen_em_price[n.generators_t["marginal_cost"].columns]
     # storage units su
     su_em_price = n.storage_units.carrier.map(em_price) / n.storage_units.efficiency_dispatch
     n.storage_units["marginal_cost"] += su_em_price
+
+    logger.info("Added emission prices to marginal costs of generators and storage units")
+    logger.info(f"\tEmission prices: {emission_prices}")
+    logger.info(f"\t generators marginal costs: {n.generators.groupby("carrier").first()['marginal_cost']}")
 
 
 def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.DataFrame):
@@ -970,7 +990,7 @@ def add_hydro(
             inflow_station + " inflow",
             bus=inflow_station + " station",
             carrier="hydro_inflow",
-            p_max_pu=p_pu.clip(1.0e-6),
+            p_max_pu = p_pu.clip(1.0e-6),
             # p_min_pu=p_pu.clip(1.0e-6),
             p_nom=p_nom,
         )
@@ -1000,12 +1020,14 @@ def generate_periodic_profiles(
     return week_df
 
 
-def prepare_network(config: dict) -> pypsa.Network:
+def prepare_network(config: dict, costs: pd.DataFrame, snapshots: pd.date_range ) -> pypsa.Network:
     """Prepares/makes the network object for overnight mode according to config &
     at 1 node per region/province
 
     Args:
         config (dict): the snakemake config
+        costs (pd.DataFrame): the costs dataframe (anualised capex and marginal costs)
+        snapshots (pd.date_range): the snapshots for the network
 
     Returns:
         pypsa.Network: the pypsa network object
@@ -1024,31 +1046,11 @@ def prepare_network(config: dict) -> pypsa.Network:
 
     # Build the Network object, which stores all other objects
     network = pypsa.Network()
+    network.set_snapshots(snapshots)
+    network.snapshot_weightings[:] = config["snapshots"]["frequency"]
     # load graph
     nodes = pd.Index(PROV_NAMES)
 
-    # make snapshots (drop leap days) -> possibly do all the unpacking in the function
-    snapshot_cfg = config["snapshots"]
-    snapshots = make_periodic_snapshots(
-        year=planning_horizons,
-        freq=snapshot_cfg["freq"],
-        start_day_hour=snapshot_cfg["start"],
-        end_day_hour=snapshot_cfg["end"],
-        bounds=snapshot_cfg["bounds"],
-        # naive local timezone
-        tz=None,
-        end_year=(None if not snapshot_cfg["end_year_plus1"] else planning_horizons + 1),
-    )
-    network.set_snapshots(snapshots)
-
-    network.snapshot_weightings[:] = config["snapshots"]["frequency"]
-    represented_hours = network.snapshot_weightings.sum()[0]
-    n_years = represented_hours / 8760.0
-
-    # load costs
-    tech_costs = snakemake.input.tech_costs
-    cost_year = planning_horizons
-    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
     # TODO check crs projection correct
     # load provinces
@@ -1265,7 +1267,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_networks",
             topology="current+FCG",
-            co2_pathway="exp175default",
+            co2_pathway="exp175price",
             # co2_reduction="0.0",
             planning_horizons=2040,
             heating_demand="positive",
@@ -1276,18 +1278,42 @@ if __name__ == "__main__":
     config = snakemake.config
     logging.info(config["scenario"])
     logging.info(config["co2_scenarios"])
+
     yr = int(snakemake.wildcards.planning_horizons)
     logging.info(f"Preparing network for {yr}")
     pathway = snakemake.wildcards.co2_pathway
 
     co2_opts = ConfigManager(config).fetch_co2_restriction(pathway, yr)
 
-    network = prepare_network(snakemake.config)
+    # make snapshots (drop leap days) -> possibly do all the unpacking in the function
+    snapshot_cfg = config["snapshots"]
+    snapshots = make_periodic_snapshots(
+        year=yr,
+        freq=snapshot_cfg["freq"],
+        start_day_hour=snapshot_cfg["start"],
+        end_day_hour=snapshot_cfg["end"],
+        bounds=snapshot_cfg["bounds"],
+        # naive local timezone
+        tz=None,
+        end_year=(None if not snapshot_cfg["end_year_plus1"] else yr + 1),
+    )
+
+    # load costs
+    n_years = config["snapshots"]["frequency"]*len(snapshots)/8760.0
+    tech_costs = snakemake.input.tech_costs
+    cost_year = yr
+    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
+
+    network = prepare_network(snakemake.config, costs, snapshots)
     add_co2_constraints_prices(network, co2_opts)
     sanitize_carriers(network, snakemake.config)
 
+    outp = snakemake.output.network_name
+    network.export_to_netcdf(outp)
 
-    network.export_to_netcdf(snakemake.output.network_name)
-
-    outp = {snakemake.output.network_name}
     logger.info(f"Network for {yr} prepared and saved to {outp}")
+    
+    costs_outp = os.path.dirname(outp) + f"/costs_{yr}.csv"
+    costs.to_csv(costs_outp)
+
+    
