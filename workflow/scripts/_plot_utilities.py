@@ -8,7 +8,6 @@ import os.path
 import matplotlib.pyplot as plt
 from os import PathLike
 
-import logging
 from constants import PROV_NAMES
 
 
@@ -32,10 +31,10 @@ def find_weeks_of_interest(
     summer_max = max_prices.loc[summer].idxmax()
 
     winter_range = max_prices.loc[
-        winter_max - pd.Timedelta(days=3.5) : winter_max + pd.Timedelta(days=3.5)
+        winter_max - pd.Timedelta(days=3.5): winter_max + pd.Timedelta(days=3.5)
     ].index
     summer_range = max_prices.loc[
-        summer_max - pd.Timedelta(days=3.5) : summer_max + pd.Timedelta(days=3.5)
+        summer_max - pd.Timedelta(days=3.5): summer_max + pd.Timedelta(days=3.5)
     ].index
 
     return winter_range, summer_range
@@ -88,14 +87,51 @@ def get_stat_colors(
     return pd.concat([carrier_colors, pd.Series(nice_tech_colors)]).groupby(level=0).first()
 
 
-def rename_techs(label):
+def get_solver_tolerance(config: dict, tol_name="BarConvTol") -> float:
+    """get the solver tolerance from the config
+
+    Args:
+        config (dict): the config
+        tol_name (str): the name of the tolerance option. Defaults to "BarConvTol"
+
+    Returns:
+        float: the value
+    """
+    solver_opts = config["solving"]["solver"]["options"]
+    return config["solving"]["solver_options"][solver_opts][tol_name]
+
+
+def find_numerical_zeros(n, config, tolerance_name="BarConvTol") -> list:
+    """
+    Identify numerical zeros in the network's optimization results.
+
+    This function checks for numerical zeros in the network's optimization results, 
+    such as link capacities or weighted prices, based on a specified solver tolerance.
+
+    Args:
+        n (pypsa.Network): The PyPSA network object containing optimization results.
+        config (dict): Configuration dictionary containing solver options.
+        tolerance_name (str): The name of the solver tolerance option to use. 
+                Defaults to "BarConvTol".
+
+    Returns:
+        list: A list of items (e.g., links or buses) where numerical zeros are detected.
+    """
+
+    tol = get_solver_tolerance(config, tolerance_name)
+    threshold = n.objective*float(tol)
+    costs = pd.concat([n.statistics.expanded_capex(), n.statistics.opex()], axis=1)
+    return costs.fillna(0).sum(axis=1).loc[costs.sum(axis=1) < threshold].index
+
+
+def rename_techs(label: list) -> list:
     """From pypsa-Eur
 
     Args:
-        label (_type_): _description_
+        label (str): a list of labels
 
     Returns:
-        _type_: _description_
+        list: renamed labels
     """
     prefix_to_remove = [
         "central ",
@@ -124,7 +160,7 @@ def rename_techs(label):
 
     for ptr in prefix_to_remove:
         if label[: len(ptr)] == ptr:
-            label = label[len(ptr) :]
+            label = label[len(ptr):]
 
     for old, new in rename_if_contains_dict.items():
         if old in label:
@@ -246,6 +282,30 @@ def set_plot_style(
     # plt.style.use only overwrites the specified parts of the previous style -> possible to combine
     plt.style.use(base_styles)
     plt.style.use(style_config_file)
+
+
+def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Link"]) -> list:
+    """filter carriers for links that attach to a bus of the target carrier
+
+    Args:
+        n (pypsa.Network): the pypsa network object
+        bus_carrier (str, optional): the bus carrier. Defaults to "AC".
+        comps (list, optional): the components to check. Defaults to ["Generator", "Link"].
+
+    Returns:
+        list: list of carriers that are attached to the bus carrier
+    """
+    carriers = []
+    for c in comps:
+        comp = n.static(c)
+        ports = [c for c in comp.columns if c.startswith("bus")]
+        comp_df = comp[ports+["carrier"]]
+        is_attached = comp_df[ports].apply(lambda x: x.map(n.buses.carrier) == bus_carrier).T.any()
+        carriers += comp_df.loc[is_attached].carrier.unique().tolist()
+
+    if bus_carrier not in carriers:
+        carriers += [bus_carrier]
+    return carriers
 
 
 def aggregate_small_pie_vals(pie: pd.Series, threshold: float) -> pd.Series:

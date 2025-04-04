@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 """ 
-MAths calculations """
+Maths calculations used in the PyPSA-China workflow."""
 import numpy as np
 from scipy import interpolate
 import pyproj

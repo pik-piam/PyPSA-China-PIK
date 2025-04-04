@@ -10,10 +10,10 @@ from _plot_utilities import (
     make_nice_tech_colors,
     fix_network_names_colors,
 )
+from _pypsa_helpers import get_location_and_carrier
 from _helpers import (
     configure_logging,
     mock_snakemake,
-    get_location_and_carrier,
     set_plot_test_backend,
 )
 from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL
@@ -243,7 +243,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_snapshots",
             topology="current+FCG",
-            pathway="exp175",
+            co2_pathway="exp175default",
             planning_horizons="2060",
             heating_demand="positive",
             winter_day1="12-10 21:00",  # mm-dd HH:MM

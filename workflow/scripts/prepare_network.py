@@ -1,9 +1,16 @@
+"""Function suite and script to define the network to be solved. Network components are added here.
+Additional constraints require the linopy model and are added in the solve_network script.
+
+These functions are currently only for the overnight mode. Myopic pathway mode contains near
+        duplicates which need to merged in the future. Idem for solve_network.py
+"""
+
+
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
 
 # for non-pathway network
-# TODO fix timezones
 # TODO WHY DO WE USE VRESUTILS ANNUITY IN ONE PLACE AND OUR OWN CALC ELSEWHERE?
 
 import pypsa
@@ -13,11 +20,12 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import xarray as xr
+import os
+
 import logging
 
-from _helpers import (
-    configure_logging,
-    mock_snakemake,
+from _helpers import configure_logging, mock_snakemake, ConfigManager
+from _pypsa_helpers import (
     shift_profile_to_planning_year,
     make_periodic_snapshots,
     assign_locations,
@@ -29,8 +37,6 @@ from prepare_network_common import calc_renewable_pu_avail
 from constants import (
     PROV_NAMES,
     CRS,
-    CO2_HEATING_2020,
-    CO2_EL_2020,
     LOAD_CONVERSION_FACTOR,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
@@ -69,6 +75,40 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         network.add("Carrier", "gas", co2_emissions=costs.at["gas", "co2_emissions"])
     if config["add_coal"]:
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
+
+
+def add_co2_constraints_prices(network: pypsa.Network, co2_control:dict):
+    """Add co2 constraints or prices
+
+    Args:
+        network (pypsa.Network): the network to which prices or constraints are to be added
+        co2_control (dict): the config
+
+
+    Raises:
+        ValueError: _description_
+    """
+
+    if co2_control["control"] is None:
+        pass
+    elif co2_control["control"] == "price":
+        logger.info("Adding CO2 price to marginal costs of generators and storage units")
+        add_emission_prices(network, emission_prices={"co2": co2_control["co2_pr_limit"]} ) 
+
+    elif co2_control["control"].startswith("budget"):
+        co2_limit = co2_control["co2_pr_limit"]
+        logger.info("Adding CO2 constraint based on scenario {co2_limit}")
+        network.add(
+            "GlobalConstraint",
+            "co2_limit",
+            type="primary_energy",
+            carrier_attribute="co2_emissions",
+            sense="<=",
+            constant=co2_limit,
+        )
+    else:
+        logger.error(f"Unhandled CO2 control config {co2_control} due to unknown control.")
+        raise ValueError(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}")
 
 
 def add_conventional_generators(
@@ -110,7 +150,7 @@ def add_conventional_generators(
             marginal_cost=costs.at["gas", "fuel"],
         )
 
-        # TODO why not centralised?
+        # gas prices identical per region, pipelines ignored
         network.add(
             "Store",
             nodes + " gas Store",
@@ -120,6 +160,22 @@ def add_conventional_generators(
             e_nom=1e7,
             e_cyclic=True,
         )
+
+    # add gas will then be true
+    if "OCGT gas" in config["Techs"]["conv_techs"]:
+        # network.add(
+        #     "Generator",
+        #     nodes,
+        #     suffix=" OCGT",
+        #     bus=nodes,
+        #     carrier="gas",
+        #     p_nom_extendable=True,
+        #     marginal_cost=costs.at["OCGT", "marginal_cost"], 
+        #     capital_cost=costs.at["OCGT", "efficiency"]
+        #     * costs.at["OCGT", "capital_cost"],  # NB: capital cost is per MWel
+        #     efficiency=costs.at["OCGT", "efficiency"],
+        #     lifetime=costs.at["OCGT", "lifetime"],
+        # )
 
         network.add(
             "Link",
@@ -134,7 +190,7 @@ def add_conventional_generators(
             p_nom_extendable=True,
             efficiency=costs.at["OCGT", "efficiency"],
             lifetime=costs.at["OCGT", "lifetime"],
-            carrier="gas",
+            carrier="gas OCGT",
         )
 
     if config["add_coal"]:
@@ -155,6 +211,36 @@ def add_conventional_generators(
         )
 
 
+def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_co2=False):
+    """from pypsa-eur: add GHG price to marginal costs of generators and storage units
+
+    Args:
+        n (pypsa.Network): the pypsa network
+        emission_prices (dict, optional): emission prices per GHG. Defaults to {"co2": 0.0}.
+        exclude_co2 (bool, optional): do not charge for CO2 emissions. Defaults to False.
+    """
+    if exclude_co2:
+        emission_prices.pop("co2")
+    em_price = (
+        pd.Series(emission_prices).rename(lambda x: x + "_emissions")
+        * n.carriers.filter(like="_emissions")
+    ).sum(axis=1)
+
+    n.meta.update({"emission_prices": emission_prices})
+
+    gen_em_price = n.generators.carrier.map(em_price) / n.generators.efficiency
+
+    n.generators["marginal_cost"] += gen_em_price
+    n.generators_t["marginal_cost"] += gen_em_price[n.generators_t["marginal_cost"].columns]
+    # storage units su
+    su_em_price = n.storage_units.carrier.map(em_price) / n.storage_units.efficiency_dispatch
+    n.storage_units["marginal_cost"] += su_em_price
+
+    logger.info("Added emission prices to marginal costs of generators and storage units")
+    logger.info(f"\tEmission prices: {emission_prices}")
+    logger.info(f"\t generators marginal costs: {n.generators.groupby("carrier").first()['marginal_cost']}")
+
+
 def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.DataFrame):
     """add H2 generators, storage and links to the network - currently all or nothing
 
@@ -164,20 +250,32 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         nodes (pd.Index): the buses
         costs (pd.DataFrame): the cost database
     """
-
-    network.add(
-        "Link",
-        name=nodes + " H2 Electrolysis",
-        bus0=nodes,
-        bus1=nodes + " H2",
-        bus2=nodes + " central heat",
-        p_nom_extendable=True,
-        carrier="H2 Electrolysis",
-        efficiency=costs.at["electrolysis", "efficiency"],
-        efficiency2=costs.at["electrolysis", "efficiency-heat"],
-        capital_cost=costs.at["electrolysis", "capital_cost"],
-        lifetime=costs.at["electrolysis", "lifetime"],
-    )
+    if config["heat_coupling"]:
+        network.add(
+            "Link",
+            name=nodes + " H2 Electrolysis",
+            bus0=nodes,
+            bus1=nodes + " H2",
+            bus2=nodes + " central heat",
+            p_nom_extendable=True,
+            carrier="H2 Electrolysis",
+            efficiency=costs.at["electrolysis", "efficiency"],
+            efficiency2=costs.at["electrolysis", "efficiency-heat"],
+            capital_cost=costs.at["electrolysis", "capital_cost"],
+            lifetime=costs.at["electrolysis", "lifetime"],
+        )
+    else:
+        network.add(
+            "Link",
+            name=nodes + " H2 Electrolysis",
+            bus0=nodes,
+            bus1=nodes + " H2",
+            p_nom_extendable=True,
+            carrier="H2 Electrolysis",
+            efficiency=costs.at["electrolysis", "efficiency"],
+            capital_cost=costs.at["electrolysis", "capital_cost"],
+            lifetime=costs.at["electrolysis", "lifetime"],
+        )
 
     # TODO consider switching to turbines and making a switch for off
     # TODO understand MVs
@@ -634,6 +732,7 @@ def add_heat_coupling(
             )
 
     if "CHP gas" in config["Techs"]["conv_techs"]:
+
         # TODO merge with gas ?
         network.add(
             "Bus",
@@ -654,8 +753,7 @@ def add_heat_coupling(
             marginal_cost=costs.at["gas", "marginal_cost"],
         )
 
-        # TODO why is not combined cycle?
-        # TODO efficiency to be understood - DK doc not clear
+        # OCGT CHP
         network.add(
             "Link",
             nodes,
@@ -892,7 +990,7 @@ def add_hydro(
             inflow_station + " inflow",
             bus=inflow_station + " station",
             carrier="hydro_inflow",
-            p_max_pu=p_pu.clip(1.0e-6),
+            p_max_pu = p_pu.clip(1.0e-6),
             # p_min_pu=p_pu.clip(1.0e-6),
             p_nom=p_nom,
         )
@@ -922,12 +1020,14 @@ def generate_periodic_profiles(
     return week_df
 
 
-def prepare_network(config: dict) -> pypsa.Network:
+def prepare_network(config: dict, costs: pd.DataFrame, snapshots: pd.date_range ) -> pypsa.Network:
     """Prepares/makes the network object for overnight mode according to config &
     at 1 node per region/province
 
     Args:
         config (dict): the snakemake config
+        costs (pd.DataFrame): the costs dataframe (anualised capex and marginal costs)
+        snapshots (pd.date_range): the snapshots for the network
 
     Returns:
         pypsa.Network: the pypsa network object
@@ -937,6 +1037,7 @@ def prepare_network(config: dict) -> pypsa.Network:
     config["add_gas"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "gas" in tech] else False
     )
+    logger.info(f"Adding gas?: {config['add_gas']}")
     config["add_coal"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False
     )
@@ -945,31 +1046,11 @@ def prepare_network(config: dict) -> pypsa.Network:
 
     # Build the Network object, which stores all other objects
     network = pypsa.Network()
+    network.set_snapshots(snapshots)
+    network.snapshot_weightings[:] = config["snapshots"]["frequency"]
     # load graph
     nodes = pd.Index(PROV_NAMES)
 
-    # make snapshots (drop leap days) -> possibly do all the unpacking in the function
-    snapshot_cfg = config["snapshots"]
-    snapshots = make_periodic_snapshots(
-        year=planning_horizons,
-        freq=snapshot_cfg["freq"],
-        start_day_hour=snapshot_cfg["start"],
-        end_day_hour=snapshot_cfg["end"],
-        bounds=snapshot_cfg["bounds"],
-        # naive local timezone
-        tz=None,
-        end_year=(None if not snapshot_cfg["end_year_plus1"] else planning_horizons + 1),
-    )
-    network.set_snapshots(snapshots)
-
-    network.snapshot_weightings[:] = config["snapshots"]["frequency"]
-    represented_hours = network.snapshot_weightings.sum()[0]
-    n_years = represented_hours / 8760.0
-
-    # load costs
-    tech_costs = snakemake.input.tech_costs
-    cost_year = planning_horizons
-    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
     # TODO check crs projection correct
     # load provinces
@@ -991,41 +1072,6 @@ def prepare_network(config: dict) -> pypsa.Network:
     solar_p_max_pu = calc_renewable_pu_avail(ds_solar, planning_horizons, snapshots)
     onwind_p_max_pu = calc_renewable_pu_avail(ds_onwind, planning_horizons, snapshots)
     offwind_p_max_pu = calc_renewable_pu_avail(ds_offwind, planning_horizons, snapshots)
-
-    # TODO SOFT CODE BASE YEAR
-    if config["scenario"]["co2_reduction"] is None:
-        pass
-    elif isinstance(config["scenario"]["co2_reduction"], dict):
-        logger.info("Adding CO2 constraint based on scenario")
-        pathway = snakemake.wildcards["pathway"]
-        reduction = float(config["scenario"]["co2_reduction"][pathway][str(planning_horizons)])
-        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (1 - reduction)
-        network.add(
-            "GlobalConstraint",
-            "co2_limit",
-            type="primary_energy",
-            carrier_attribute="co2_emissions",
-            sense="<=",
-            constant=co2_limit,
-        )
-    elif not isinstance(config["scenario"]["co2_reduction"], tuple):
-        logger.info("Adding CO2 constraint based on scenario")
-        # TODO fix hard coded
-        co2_limit = (CO2_EL_2020 + CO2_HEATING_2020) * (
-            1 - float(config["scenario"]["co2_reduction"])
-        )  # Chinese 2020 CO2 emissions of electric and heating sector
-
-        network.add(
-            "GlobalConstraint",
-            "co2_limit",
-            type="primary_energy",
-            carrier_attribute="co2_emissions",
-            sense="<=",
-            constant=co2_limit,
-        )
-    else:
-        logger.error(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}.")
-        raise ValueError(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}")
 
     # load electricity demand data
     demand_path = snakemake.input.elec_load.replace("{planning_horizons}", f"{cost_year}")
@@ -1221,18 +1267,53 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_networks",
             topology="current+FCG",
-            pathway="exp175",
-            co2_reduction="0.0",
+            co2_pathway="exp175price",
+            # co2_reduction="0.0",
             planning_horizons=2040,
             heating_demand="positive",
         )
+    
     configure_logging(snakemake)
 
-    network = prepare_network(snakemake.config)
-    sanitize_carriers(network, snakemake.config)
+    config = snakemake.config
+    logging.info(config["scenario"])
+    logging.info(config["co2_scenarios"])
+
+    yr = int(snakemake.wildcards.planning_horizons)
+    logging.info(f"Preparing network for {yr}")
+    pathway = snakemake.wildcards.co2_pathway
+
+    co2_opts = ConfigManager(config).fetch_co2_restriction(pathway, yr)
+
+    # make snapshots (drop leap days) -> possibly do all the unpacking in the function
+    snapshot_cfg = config["snapshots"]
+    snapshots = make_periodic_snapshots(
+        year=yr,
+        freq=snapshot_cfg["freq"],
+        start_day_hour=snapshot_cfg["start"],
+        end_day_hour=snapshot_cfg["end"],
+        bounds=snapshot_cfg["bounds"],
+        # naive local timezone
+        tz=None,
+        end_year=(None if not snapshot_cfg["end_year_plus1"] else yr + 1),
+    )
+
+    # load costs
+    n_years = config["snapshots"]["frequency"]*len(snapshots)/8760.0
+    tech_costs = snakemake.input.tech_costs
+    cost_year = yr
+    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
+
+    network = prepare_network(snakemake.config, costs, snapshots)
+    add_co2_constraints_prices(network, co2_opts)
     sanitize_carriers(network, snakemake.config)
 
-    network.export_to_netcdf(snakemake.output.network_name)
+    outp = snakemake.output.network_name
+    network.export_to_netcdf(outp)
 
-    outp = {snakemake.output.network_name}
-    logger.info(f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {outp}")
+    logger.info(f"Network for {yr} prepared and saved to {outp}")
+    
+    costs_outp = os.path.dirname(outp) + f"/costs_{yr}.csv"
+    costs.to_csv(costs_outp)
+
+    

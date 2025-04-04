@@ -15,10 +15,12 @@ import os
 from _helpers import (
     configure_logging,
     mock_snakemake,
+    get_cutout_params
+)
+from _pypsa_helpers import (
     make_periodic_snapshots,
     calc_atlite_heating_timeshift,
-    shift_profile_to_planning_year,
-    get_cutout_params,
+    shift_profile_to_planning_year
 )
 
 # TODO switch from hardocded REF_YEAR to a base year?
@@ -370,7 +372,7 @@ if __name__ == "__main__":
             "build_load_profiles",
             heating_demand="positive",
             planning_horizons="2040",
-            pathway="exponential-175",
+            co2_pathway="exp175default",
             topology="Current+Neigbor",
         )
 

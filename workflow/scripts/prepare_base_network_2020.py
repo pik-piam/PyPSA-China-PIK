@@ -28,8 +28,8 @@ from constants import (
 )
 from _helpers import (
     configure_logging,
-    override_component_attrs,
-    mock_snakemake,
+    mock_snakemake)
+from _pypsa_helpers import (
     make_periodic_snapshots,
 )
 from functions import HVAC_cost_curve
@@ -54,11 +54,8 @@ def prepare_network(config):
         True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False
     )
 
-    if "overrides" in snakemake.input.keys():
-        overrides = override_component_attrs(snakemake.input.overrides)
-        network = pypsa.Network(override_component_attrs=overrides)
-    else:
-        network = pypsa.Network()
+
+    network = pypsa.Network()
 
     # set times
     planning_horizons = snakemake.wildcards["planning_horizons"]
@@ -737,7 +734,7 @@ if __name__ == "__main__":
             "prepare_base_networks_2020",
             opts="ll",
             topology="current+Neighbor",
-            pathway="exponential175",
+            co2_pathway="exp175default",
             planning_horizons="2020",
             heating_demand="positive",
         )

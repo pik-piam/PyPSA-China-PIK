@@ -3,22 +3,19 @@
 
 # WARNING: DO NOT DO "import snakemake"
 
-""" 
+"""
 Helper functions for the PyPSA China workflow including
 - HPC helpers (gurobi tunnel setup)
-- PyPSA helpers (legacy, time handling, ntwk relabeling)
 - Snakemake helpers (logging, path management and emulators for testing)
 """
 import os
 import sys
 import subprocess
-import pandas as pd
 import logging
 import importlib
 import time
-import pytz
 from pathlib import Path
-from types import SimpleNamespace
+from copy import deepcopy
 
 import pypsa
 
@@ -28,21 +25,136 @@ logger = logging.getLogger()
 DEFAULT_TUNNEL_PORT = 1080
 LOGIN_NODE = "01"
 
+# ============== Path & config Management ==================
+
+
+class ConfigManager:
+    """Config manager class for the snakemake configs
+    """
+    def __init__(self, config: dict):
+        self._raw_config = deepcopy(config)
+        self.config = deepcopy(config)
+        self.wildcards = {}
+
+    def handle_scenarios(self) -> dict:
+        """Unpack & filter scenarios from the config
+
+        Returns:
+            dict: processed config
+        """
+        self.config["scenario"]["planning_horizons"] = [
+            int(v) for v in self._raw_config["scenario"]["planning_horizons"]]
+        ghg_handler = GHGConfigHandler(self.config.copy())
+        self.config = ghg_handler.handle_ghg_scenarios()
+
+        return self.config
+
+    def fetch_co2_restriction(self, pthw_name: str, year: str) -> dict:
+        """Fetch a restriction from the config
+
+        Args:
+            pthw_name (str): the scenario name
+            year (str): the year
+
+        Returns:
+            dict: the pathway
+        """
+        scenario = self.config["co2_scenarios"][pthw_name]
+        return {"co2_pr_limit": scenario["pathway"][year], "control": scenario["control"]}
+
+    def make_wildcards(self) -> list:
+        """Expand wildcards in config"""
+        raise NotImplementedError
+
+
+class GHGConfigHandler:
+    """A class to handle & validate GHG scenarios in the config"""
+    def __init__(self, config: dict):
+        self.config = deepcopy(config)
+        self._raw_config = deepcopy(config)
+        self._validate_scenarios()
+
+    def handle_ghg_scenarios(self) -> dict:
+        """handle ghg scenarios (parse, valdiate & unpack to config[scenario])
+
+        Returns:
+            dict: validated and parsed
+        """
+        # TODO add to _raw_config, move into CO2Scenario.__init__
+        if self.config["heat_coupling"]:
+            # HACK import here for snakemake access
+            from scripts.constants import CO2_BASEYEAR_EM as base_year_ems
+        else:
+            from scripts.constants import CO2_EL_2020 as base_year_ems
+        
+        for name, co2_scen in self.config["co2_scenarios"].items():
+            co2_scen["pathway"] = {int(k): v for k, v in co2_scen.get("pathway",{}).items()}
+        self._reduction_to_budget(base_year_ems)
+        self._filter_active_scenarios()
+        return self.config
+
+    def _filter_active_scenarios(self):
+        """select active ghg scenarios
+        """
+        scenarios = self.config["scenario"].get("co2_pathway", [])
+        if not isinstance(scenarios, list):
+            scenarios = [scenarios]
+
+        self.config["co2_scenarios"] = {
+            k: v for k, v in self.config["co2_scenarios"].items() if k in scenarios
+            }
+
+    def _reduction_to_budget(self, base_yr_ems: float):
+        """transform reduction to budget
+
+        Args:
+        """
+        for name, co2_scen in self.config["co2_scenarios"].items():
+            if co2_scen["control"] == "reduction":
+                budget = {yr: base_yr_ems*(1 - redu) for yr, redu in co2_scen["pathway"].items()}
+                self.config["co2_scenarios"][name]["pathway"] = budget
+                self.config["co2_scenarios"][name]["control"] = "budget_from_reduction"
+
+    # TODO switch to config validate, see
+    # https://snakemake.readthedocs.io/en/stable/snakefiles/configuration.html#validation
+    def _validate_scenarios(self):
+        """Validate CO2 scenarios"""
+
+        for name, scen in self._raw_config["co2_scenarios"].items():
+            if not isinstance(scen, dict):
+                raise ValueError(f"Expected a dictionary for co2 scenario but got {scen}")
+
+            if "control" in set(scen) and scen["control"] is None:
+                continue
+
+            if {"control", "pathway"} - set(scen):
+                raise ValueError(f"Scenario {scen} must contain 'control' and 'pathway'")
+
+            ALLOWED = ["price", "reduction", "budget", None]
+            if not scen["control"] in ALLOWED:
+                err = f"Control must be {",".join(ALLOWED)} but was {name}:{scen["control"]}"
+                raise ValueError(err)
+
+            years_int = set(map(int, self.config["scenario"]["planning_horizons"]))
+            missing_yrs = years_int - set(map(int, scen["pathway"]))
+            if missing_yrs:
+                raise ValueError(f"Years in scenario {scen["pathway"]} missing {missing_yrs}")
+
 
 # TODO return pathlib objects? so can just use / to combine paths?
 class PathManager:
-    """A class to manage paths for the snakemake workflow
+    """A class to manage paths for the snakemake workflow and return paths based on the wildcard
 
     Returns different paths for CI/CD runs (HACK due to snamekame-pytest incompatibility)
     """
 
-    def __init__(self, snmk_config):
+    def __init__(self, snmk_config, wildcards_map: dict = None):
         self.config = snmk_config
         # HACK for pytests CI, should really be a patch but not possible
         self._is_test_run = self.config["run"].get("is_test", False)
 
     def _get_version(self) -> str:
-        """Hacky solution to get version from workflow pseudo-package"""
+        """HACK to get version from workflow pseudo-package"""
         spec = importlib.util.spec_from_file_location(
             "workflow", os.path.abspath("./workflow/__init__.py")
         )
@@ -59,11 +171,9 @@ class PathManager:
         # TODO make into a config
         exclude = ["planning_horizons", "co2_reduction"]
         short_names = {
-            "planning_horizons": "ph",
-            "co2_reduction": "co2",
-            "opts": "opts",
+            "planning_horizons": "yr",
             "topology": "topo",
-            "pathway": "pthw",
+            "co2_pathway": "co2pw",
             "heating_demand": "proj",
         }
         # remember need place holders for snakemake
@@ -204,428 +314,7 @@ def setup_gurobi_tunnel_and_env(
     return socks_proc
 
 
-# =========== PyPSA Helpers =============
-
-
-def get_location_and_carrier(
-    n: pypsa.Network, c: str, port: str = "", nice_names: bool = True
-) -> list[pd.Series]:
-    """Get component location and carrier.
-
-    Args:
-        n (pypsa.Network): the network object
-        c (str): component name
-        port (str, optional): port name. Defaults to "".
-        nice_names (bool, optional): use nice names. Defaults to True.
-
-    Returns:
-        list[pd.Series]: list of location and carrier series
-    """
-
-    # bus = f"bus{port}"
-    bus, carrier = pypsa.statistics.get_bus_and_carrier(n, c, port, nice_names=nice_names)
-    location = bus.map(n.buses.location).rename("location")
-    return [location, carrier]
-
-
-def assign_locations(n: pypsa.Network):
-    """Assign location based on the node location
-
-    Args:
-        n (pypsa.Network): the pypsa network object
-    """
-    for c in n.iterate_components(n.one_port_components):
-        c.df["location"] = c.df.bus.map(n.buses.location)
-
-    for c in n.iterate_components(n.branch_components):
-        # use bus1 and bus2
-        c.df["_loc1"] = c.df.bus0.map(n.buses.location)
-        c.df["_loc2"] = c.df.bus1.map(n.buses.location)
-        # if only one of buses is in the ntwk node list, make it a loop to the location
-        c.df["_loc2"] = c.df.apply(lambda row: row._loc1 if row._loc2 == "" else row._loc2, axis=1)
-        c.df["_loc1"] = c.df.apply(lambda row: row._loc2 if row._loc1 == "" else row._loc1, axis=1)
-        # add location to loops. Links between nodes have ambiguos location
-        c.df["location"] = c.df.apply(
-            lambda row: row._loc1 if row._loc1 == row._loc2 else "", axis=1
-        )
-        c.df.drop(columns=["_loc1", "_loc2"], inplace=True)
-
-
-def aggregate_p(n: pypsa.Network) -> pd.Series:
-    """Make a single series for generators, storage units, loads, and stores power,
-    summed over all carriers
-
-    Args:
-        n (pypsa.Network): the network object
-
-    Returns:
-        pd.Series: the aggregated p data
-    """
-    return pd.concat(
-        [
-            n.generators_t.p.sum().groupby(n.generators.carrier).sum(),
-            n.storage_units_t.p.sum().groupby(n.storage_units.carrier).sum(),
-            n.stores_t.p.sum().groupby(n.stores.carrier).sum(),
-            -n.loads_t.p.sum().groupby(n.loads.carrier).sum(),
-        ]
-    )
-
-
-# TODO is thsi really goo? useful?
-# TODO make a standard apply/str op instead ofmap in add_electricity.sanitize_carriers
-def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
-    """Rename technology labels for better readability. Removes some prefixes
-        and renames if certain conditions  defined in function body are met.
-
-    Args:
-        label (str): original technology label
-        nice_names (dict, optional): nice names that will overwrite defaults
-
-    Returns:
-        str: renamed tech label
-    """
-
-    prefix_to_remove = [
-        "residential ",
-        "services ",
-        "urban ",
-        "rural ",
-        "central ",
-        "decentral ",
-    ]
-
-    rename_if_contains = [
-        "CHP",
-        "gas boiler",
-        "biogas",
-        "solar thermal",
-        "air heat pump",
-        "ground heat pump",
-        "resistive heater",
-        "Fischer-Tropsch",
-    ]
-
-    rename_if_contains_dict = {
-        "water tanks": "hot water storage",
-        "retrofitting": "building retrofitting",
-        # "H2 Electrolysis": "hydrogen storage",
-        # "H2 Fuel Cell": "hydrogen storage",
-        # "H2 pipeline": "hydrogen storage",
-        "battery": "battery storage",
-        "H2 for industry": "H2 for industry",
-        "land transport fuel cell": "land transport fuel cell",
-        "land transport oil": "land transport oil",
-        "oil shipping": "shipping oil",
-        # "CC": "CC"
-    }
-
-    for ptr in prefix_to_remove:
-        if label[: len(ptr)] == ptr:
-            label = label[len(ptr) :]
-
-    for rif in rename_if_contains:
-        if rif in label:
-            label = rif
-
-    for old, new in rename_if_contains_dict.items():
-        if old in label:
-            label = new
-    # import here to not mess with snakemake
-    from constants import NICE_NAMES_DEFAULT
-
-    names_new = NICE_NAMES_DEFAULT.copy()
-    names_new.update(nice_names)
-    for old, new in names_new.items():
-        if old == label:
-            label = new
-    return label
-
-
-def aggregate_costs(
-    n: pypsa.Network,
-    flatten=False,
-    opts: dict = None,
-    existing_only=False,
-) -> pd.Series | pd.DataFrame:
-
-    components = dict(
-        Link=("p_nom", "p0"),
-        Generator=("p_nom", "p"),
-        StorageUnit=("p_nom", "p"),
-        Store=("e_nom", "p"),
-        Line=("s_nom", None),
-        Transformer=("s_nom", None),
-    )
-
-    costs = {}
-    for c, (p_nom, p_attr) in zip(
-        n.iterate_components(components.keys(), skip_empty=True), components.values()
-    ):
-        if not existing_only:
-            p_nom += "_opt"
-        costs[(c.list_name, "capital")] = (
-            (c.df[p_nom] * c.df.capital_cost).groupby(c.df.carrier).sum()
-        )
-        if p_attr is not None:
-            p = c.dynamic[p_attr].sum()
-            if c.name == "StorageUnit":
-                p = p.loc[p > 0]
-            costs[(c.list_name, "marginal")] = (p * c.df.marginal_cost).groupby(c.df.carrier).sum()
-    costs = pd.concat(costs)
-
-    if flatten:
-        assert opts is not None
-        conv_techs = opts["conv_techs"]
-
-        costs = costs.reset_index(level=0, drop=True)
-        costs = costs["capital"].add(
-            costs["marginal"].rename({t: t + " marginal" for t in conv_techs}), fill_value=0.0
-        )
-
-    return costs
-
-
-def calc_atlite_heating_timeshift(date_range: pd.date_range, use_last_ts=False) -> int:
-    """Imperfect function to calculate the heating time shift for atlite
-    Atlite is in xarray, which does not have timezone handling. Adapting the UTC ERA5 data
-    to the network local time, is therefore limited to a single shift, which is based on the first
-    entry of the time range. For a whole year, in the northern Hemisphere -> winter
-
-    Args:
-        date_range (pd.date_range): the date range for which the shift is calc
-        use_last_ts (bool, optional): use last instead of first. Defaults to False.
-
-    Returns:
-        int: a single timezone shift to utc in hours
-    """
-    # import constants here to not interfere with snakemake
-    from constants import TIMEZONE
-
-    idx = 0 if not use_last_ts else -1
-    return pytz.timezone(TIMEZONE).utcoffset(date_range[idx]).total_seconds() / 3600
-
-
-def define_spatial(nodes, options):
-    """
-    Namespace for spatial
-    Parameters
-    ----------
-    nodes : list-like
-    """
-
-    spatial = SimpleNamespace()
-
-    spatial.nodes = nodes
-
-    # biomass
-
-    spatial.biomass = SimpleNamespace()
-
-    if options["biomass_transport"]:
-        spatial.biomass.nodes = nodes + " solid biomass"
-        spatial.biomass.locations = nodes
-        spatial.biomass.industry = nodes + " solid biomass for industry"
-        spatial.biomass.industry_cc = nodes + " solid biomass for industry CC"
-    else:
-        spatial.biomass.nodes = ["China solid biomass"]
-        spatial.biomass.locations = ["China"]
-        spatial.biomass.industry = ["solid biomass for industry"]
-        spatial.biomass.industry_cc = ["solid biomass for industry CC"]
-
-    spatial.biomass.df = pd.DataFrame(vars(spatial.biomass), index=nodes)
-
-    # co2
-
-    spatial.co2 = SimpleNamespace()
-
-    if options["co2_network"]:
-        spatial.co2.nodes = nodes + " co2 stored"
-        spatial.co2.locations = nodes
-        spatial.co2.vents = nodes + " co2 vent"
-    else:
-        spatial.co2.nodes = ["co2 stored"]
-        spatial.co2.locations = ["China"]
-        spatial.co2.vents = ["co2 vent"]
-
-    spatial.co2.df = pd.DataFrame(vars(spatial.co2), index=nodes)
-
-    # gas
-
-    spatial.gas = SimpleNamespace()
-
-    if options["gas_network"]:
-        spatial.gas.nodes = nodes + " gas"
-        spatial.gas.locations = nodes
-        spatial.gas.biogas = nodes + " biogas"
-        spatial.gas.industry = nodes + " gas for industry"
-        spatial.gas.industry_cc = nodes + " gas for industry CC"
-        spatial.gas.biogas_to_gas = nodes + " biogas to gas"
-    else:
-        spatial.gas.nodes = ["China gas"]
-        spatial.gas.locations = ["China"]
-        spatial.gas.biogas = ["China biogas"]
-        spatial.gas.industry = ["gas for industry"]
-        spatial.gas.industry_cc = ["gas for industry CC"]
-        spatial.gas.biogas_to_gas = ["China biogas to gas"]
-
-    spatial.gas.df = pd.DataFrame(vars(spatial.gas), index=nodes)
-
-    # oil
-    spatial.oil = SimpleNamespace()
-    spatial.oil.nodes = ["China oil"]
-    spatial.oil.locations = ["China"]
-
-    # uranium
-    spatial.uranium = SimpleNamespace()
-    spatial.uranium.nodes = ["China uranium"]
-    spatial.uranium.locations = ["China"]
-
-    # coal
-    spatial.coal = SimpleNamespace()
-    spatial.coal.nodes = ["China coal"]
-    spatial.coal.locations = ["China"]
-
-    # lignite
-    spatial.lignite = SimpleNamespace()
-    spatial.lignite.nodes = ["China lignite"]
-    spatial.lignite.locations = ["China"]
-
-    return spatial
-
-
-def is_leap_year(year: int) -> bool:
-    """Determine whether a year is a leap year.
-    Args:
-        year (int): the year"""
-    year = int(year)
-    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
-
-
-def load_network_for_plots(
-    network_file: os.PathLike,
-    tech_costs: os.PathLike,
-    config: dict,
-    cost_year: int,
-    combine_hydro_ps=True,
-) -> pypsa.Network:
-    """load network object
-
-    Args:
-        network_file (os.PathLike): the path to the network file
-        tech_costs (os.PathLike): the path to the costs file
-        config (dict): the snamekake config
-        cost_year (int): the year for the costs
-        combine_hydro_ps (bool, optional): combine the hydro & PHS carriers. Defaults to True.
-
-    Returns:
-        pypsa.Network: the network object
-    """
-
-    from add_electricity import update_transmission_costs, load_costs
-
-    n = pypsa.Network(network_file)
-
-    n.loads["carrier"] = n.loads.bus.map(n.buses.carrier) + " load"
-    n.stores["carrier"] = n.stores.bus.map(n.buses.carrier)
-
-    n.links["carrier"] = n.links.bus0.map(n.buses.carrier) + "-" + n.links.bus1.map(n.buses.carrier)
-    n.lines["carrier"] = "AC line"
-    n.transformers["carrier"] = "AC transformer"
-
-    # n.lines['s_nom'] = n.lines['s_nom_min']
-    # n.links['p_nom'] = n.links['p_nom_min']
-
-    if combine_hydro_ps:
-        n.storage_units.loc[n.storage_units.carrier.isin({"PHS", "hydro"}), "carrier"] = "hydro+PHS"
-
-    # if the carrier was not set on the heat storage units
-    # bus_carrier = n.storage_units.bus.map(n.buses.carrier)
-    # n.storage_units.loc[bus_carrier == "heat","carrier"] = "water tanks"
-
-    Nyears = n.snapshot_weightings.objective.sum() / 8760.0
-    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, Nyears)
-    update_transmission_costs(n, costs)
-
-    return n
-
-
-def make_periodic_snapshots(
-    year: int,
-    freq: int,
-    start_day_hour="01-01 00:00:00",
-    end_day_hour="12-31 23:00",
-    bounds="both",
-    end_year: int = None,
-    tz: str = None,
-) -> pd.date_range:
-    """Centralised function to make regular snapshots.
-    REMOVES LEAP DAYS
-
-    Args:
-        year (int): start time stamp year (end year if end_year None)
-        freq (int): snapshot frequency in hours
-        start_day_hour (str, optional): Day and hour. Defaults to "01-01 00:00:00".
-        end_day_hour (str, optional): _description_. Defaults to "12-31 23:00".
-        bounds (str, optional):  bounds behaviour (pd.data_range) . Defaults to "both".
-        tz (str, optional): timezone (UTC, None or a timezone). Defaults to None (naive).
-        end_year (int, optional): end time stamp year. Defaults to None (use year).
-
-    Returns:
-        pd.date_range: the snapshots for the network
-    """
-    if not end_year:
-        end_year = year
-    snapshots = pd.date_range(
-        f"{int(year)}-{start_day_hour}",
-        f"{int(end_year)}-{end_day_hour}",
-        freq=freq,
-        inclusive=bounds,
-        tz=tz,
-    )
-
-    if is_leap_year(int(year)):
-        snapshots = snapshots[~((snapshots.month == 2) & (snapshots.day == 29))]
-    return snapshots
-
-
-def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -> pd.DataFrame:
-    """Shift the profile to the planning year - this harmonises weather and network timestamps
-       which is needed for pandas loc operations
-    Args:
-        data (pd.DataFrame): profile data, for 1 year
-        planning_yr (int): planning year
-    Returns:
-        pd.DataFrame: shifted profile data
-    Raises:
-        ValueError: if the profile data crosses years
-    """
-
-    years = data.index.year.unique()
-    if not len(years) == 1:
-        raise ValueError(f"Data should be for one year only but got {years}")
-
-    ref_year = years[0]
-    # remove all planning year leap days
-    if is_leap_year(ref_year):  # and not is_leap_year(planning_yr):
-        data = data.loc[~((data.index.month == 2) & (data.index.day == 29))]
-
-    # TODO CONSIDER CHANGING METHOD TO REINDEX inex = daterange w new year method = FORWARDFILL
-    data.index = data.index.map(lambda t: t.replace(year=int(planning_yr)))
-
-    return data
-
-
-def update_p_nom_max(n: pypsa.Network) -> None:
-    # if extendable carriers (solar/onwind/...) have capacity >= 0,
-    # e.g. existing assets from the OPSD project are included to the network,
-    # the installed capacity might exceed the expansion limit.
-    # Hence, we update the assumptions.
-
-    n.generators.p_nom_max = n.generators[["p_nom_min", "p_nom_max"]].max(1)
-
-
 # ====== SNAKEMAKE HELPERS =========
-
 
 def configure_logging(
     snakemake: object, logger: logging.Logger = None, skip_handlers=False, level="INFO"
