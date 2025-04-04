@@ -34,7 +34,7 @@ from constants import (
 logger = logging.getLogger(__name__)
 
 # for atlite multiprocessing
-TMP = "resources/derived_data/tmp/atlite_protected_marine.shp"
+TMP = "./resources/derived_data/tmp/atlite_protected_marine.shp"
 
 
 def make_solar_profile(
@@ -353,6 +353,7 @@ if __name__ == "__main__":
     break_requests = snakemake.config["atlite"]["monthly_requests"]
     cutout.prepare(monthly_requests=break_requests, concurrent_requests=break_requests)
     logger.info(f"Cutout prepared from {snakemake.input.cutout}")
+    
     provinces_shp = read_province_shapes(snakemake.input.provinces_shp)
     provinces_shp = provinces_shp.reindex(PROV_NAMES).rename_axis("bus")
     buses = provinces_shp.index
