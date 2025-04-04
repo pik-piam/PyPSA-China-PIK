@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>add_electricity - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "add_electricity";
+        var mkdocs_page_input_path = "docs/reference/add_electricity.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">add_electricity</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_rasters/">fetch_rasters</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_shapes/">fetch_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../_helpers.md">helper_fns</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../_plot_utilities.md">plot_utilities</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">add_electricity</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="add_electricity"></a>
+    <div class="doc doc-contents first">
+
+        <p>Misc collection of functions supporting network prep
+    still to be cleaned up</p>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="add_electricity.add_missing_carriers" class="doc doc-heading">
+            <code class="highlight language-python">add_missing_carriers(n, carriers)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Function to add missing carriers to the network without raising errors.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>n</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the pypsa network object</p>
+              </div>
+            </li>
+            <li>
+              <b><code>carriers</code></b>
+                  (<code><span title="list">list</span> | <span title="set">set</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>a list of carriers that should be included</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/add_electricity.py</code></summary>
+              <pre class="highlight"><code class="language-python">def add_missing_carriers(n: pypsa.Network, carriers: list | set) -&gt; None:
+    """Function to add missing carriers to the network without raising errors.
+
+    Args:
+        n (pypsa.Network): the pypsa network object
+        carriers (list | set): a list of carriers that should be included
+    """
+    missing_carriers = set(carriers) - set(n.carriers.index)
+    if len(missing_carriers) &gt; 0:
+        n.add("Carrier", missing_carriers)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="add_electricity.calculate_annuity" class="doc doc-heading">
+            <code class="highlight language-python">calculate_annuity(lifetime, discount_rate)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate the annuity factor for an asset with lifetime n years and
+discount rate of r, e.g. annuity(20, 0.05) * 20 = 1.6</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>lifetime</code></b>
+                  (<code><span title="int">int</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>ecomic asset lifetime for discounting/NPV calc</p>
+              </div>
+            </li>
+            <li>
+              <b><code>discount_rate</code></b>
+                  (<code><span title="float">float</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the WACC</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>float</code></b>(                  <code><span title="float">float</span></code>
+)              –
+              <div class="doc-md-description">
+                <p>the annuity factor</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/add_electricity.py</code></summary>
+              <pre class="highlight"><code class="language-python">def calculate_annuity(lifetime: int, discount_rate: float) -&gt; float:
+    """Calculate the annuity factor for an asset with lifetime n years and
+    discount rate of r, e.g. annuity(20, 0.05) * 20 = 1.6
+
+    Args:
+        lifetime (int): ecomic asset lifetime for discounting/NPV calc
+        discount_rate (float): the WACC
+
+    Returns:
+        float: the annuity factor
+    """
+    r = discount_rate
+    n = lifetime
+
+    if isinstance(r, pd.Series):
+        if r.any() &lt; 0:
+            raise ValueError("Discount rate must be positive")
+        if r.any() &lt; 0:
+            raise ValueError("Discount rate must be positive")
+        return pd.Series(1 / n, index=r.index).where(r == 0, r / (1.0 - 1.0 / (1.0 + r) ** n))
+    elif r &lt; 0:
+        raise ValueError("Discount rate must be positive")
+    elif r &lt; 0:
+        raise ValueError("Discount rate must be positive")
+    elif r &gt; 0:
+        return r / (1.0 - 1.0 / (1.0 + r) ** n)
+    else:
+        return 1 / n</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="add_electricity.load_costs" class="doc doc-heading">
+            <code class="highlight language-python">load_costs(tech_costs, cost_config, elec_config, cost_year, n_years)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate the anualised capex costs and OM costs for the technologies based on the input data</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>tech_costs</code></b>
+                  (<code><span title="os.PathLike">PathLike</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the csv containing the costs</p>
+              </div>
+            </li>
+            <li>
+              <b><code>cost_config</code></b>
+                  (<code><span title="dict">dict</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the snakemake pypsa-china cost config</p>
+              </div>
+            </li>
+            <li>
+              <b><code>elec_config</code></b>
+                  (<code><span title="dict">dict</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the snakemake pypsa-china electricity config</p>
+              </div>
+            </li>
+            <li>
+              <b><code>cost_year</code></b>
+                  (<code><span title="int">int</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the year for which the costs are retrived</p>
+              </div>
+            </li>
+            <li>
+              <b><code>n_years</code></b>
+                  (<code><span title="int">int</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the # of years over which the investment is annuitised</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>pd.DataFrame: costs dataframe in [CURRENCY] per MW_ ... or per MWh_ ...</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/add_electricity.py</code></summary>
+              <pre class="highlight"><code class="language-python">def load_costs(
+    tech_costs: PathLike, cost_config: dict, elec_config: dict, cost_year: int, n_years: int
+) -&gt; pd.DataFrame:
+    """Calculate the anualised capex costs and OM costs for the technologies based on the input data
+
+    Args:
+        tech_costs (PathLike): the csv containing the costs
+        cost_config (dict): the snakemake pypsa-china cost config
+        elec_config (dict): the snakemake pypsa-china electricity config
+        cost_year (int): the year for which the costs are retrived
+        n_years (int): the # of years over which the investment is annuitised
+
+    Returns:
+        pd.DataFrame: costs dataframe in [CURRENCY] per MW_ ... or per MWh_ ...
+    """
+
+    # set all asset costs and other parameters
+    costs = pd.read_csv(tech_costs, index_col=list(range(3))).sort_index()
+
+    # correct units to MW and EUR
+    costs.loc[costs.unit.str.contains("/kW"), "value"] *= 1e3
+    costs.loc[costs.unit.str.contains("USD"), "value"] *= cost_config["USD2013_to_EUR2013"]
+    costs.loc[costs.unit.str.contains("USD"), "value"] *= cost_config["USD2013_to_EUR2013"]
+
+    cost_year = float(cost_year)
+    costs = (
+        costs.loc[idx[:, cost_year, :], "value"]
+        .unstack(level=2)
+        .groupby("technology")
+        .sum(min_count=1)
+    )
+
+    # TODO set default lifetime as option
+    costs = costs.fillna(
+        {
+            "CO2 intensity": 0,
+            "FOM": 0,
+            "VOM": 0,
+            "discount rate": cost_config["discountrate"],
+            "discount rate": cost_config["discountrate"],
+            "efficiency": 1,
+            "fuel": 0,
+            "investment": 0,
+            "lifetime": 25,
+        }
+    )
+
+    costs["capital_cost"] = (
+        (calculate_annuity(costs["lifetime"], costs["discount rate"]) + costs["FOM"] / 100.0)
+        * costs["investment"]
+        * n_years
+    )
+
+    costs.at["OCGT", "fuel"] = costs.at["gas", "fuel"]
+    costs.at["CCGT", "fuel"] = costs.at["gas", "fuel"]
+
+    costs["marginal_cost"] = costs["VOM"] + costs["fuel"] / costs["efficiency"]
+
+    costs = costs.rename(columns={"CO2 intensity": "co2_emissions"})
+
+    costs.at["OCGT", "co2_emissions"] = costs.at["gas", "co2_emissions"]
+    costs.at["CCGT", "co2_emissions"] = costs.at["gas", "co2_emissions"]
+
+    if not 0 &lt;= cost_config["pv_utility_fraction"] &lt;= 1:
+        raise ValueError("pv_utility_fraction must be between 0 and 1 in cost config")
+    f_util = cost_config["pv_utility_fraction"]
+    costs.at["solar", "capital_cost"] = (
+        f_util * costs.at["solar-utility", "capital_cost"]
+        + (1 - f_util) * costs.at["solar-rooftop", "capital_cost"]
+    )
+
+    def costs_for_storage(store, link1, link2=None, max_hours=1.0):
+        capital_cost = link1["capital_cost"] + max_hours * store["capital_cost"]
+        if link2 is not None:
+            capital_cost += link2["capital_cost"]
+        return pd.Series(dict(capital_cost=capital_cost, marginal_cost=0.0, co2_emissions=0.0))
+
+    max_hours = elec_config["max_hours"]
+    costs.loc["battery"] = costs_for_storage(
+        costs.loc["battery storage"], costs.loc["battery inverter"], max_hours=max_hours["battery"]
+    )
+    costs.loc["H2"] = costs_for_storage(
+        costs.loc["hydrogen storage tank type 1"],
+        costs.loc["fuel cell"],
+        costs.loc["electrolysis"],
+        max_hours=max_hours["H2"],
+    )
+
+    for attr in ("marginal_cost", "capital_cost"):
+        overwrites = cost_config.get(attr)
+        overwrites = cost_config.get(attr)
+        if overwrites is not None:
+            overwrites = pd.Series(overwrites)
+            costs.loc[overwrites.index, attr] = overwrites
+
+    return costs</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="add_electricity.sanitize_carriers" class="doc doc-heading">
+            <code class="highlight language-python">sanitize_carriers(n, config)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Sanitize the carrier information in a PyPSA Network object.</p>
+<p>The function ensures that all unique carrier names are present in the network's
+carriers attribute, and adds nice names and colors for each carrier according
+to the provided configuration dictionary.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>n</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>PyPSA Network object representing the electrical power system.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>config</code></b>
+                  (<code><span title="dict">dict</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>A dictionary containing configuration information, specifically the
+   "plotting" key with "nice_names" and "tech_colors" keys for carriers.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/add_electricity.py</code></summary>
+              <pre class="highlight"><code class="language-python">def sanitize_carriers(n: pypsa.Network, config: dict) -&gt; None:
+    """Sanitize the carrier information in a PyPSA Network object.
+
+    The function ensures that all unique carrier names are present in the network's
+    carriers attribute, and adds nice names and colors for each carrier according
+    to the provided configuration dictionary.
+
+    Args:
+        n (pypsa.Network): PyPSA Network object representing the electrical power system.
+        config (dict): A dictionary containing configuration information, specifically the
+               "plotting" key with "nice_names" and "tech_colors" keys for carriers.
+    """
+    # update default nice names w user settings
+    nice_names = NICE_NAMES_DEFAULT.update(config["plotting"].get("nice_names", {}))
+    for c in n.iterate_components():
+        if "carrier" in c.df:
+            add_missing_carriers(n, c.df.carrier)
+
+    # sort the nice names to match carriers and fill missing with "ugly" names
+    carrier_i = n.carriers.index
+    nice_names = pd.Series(nice_names).reindex(carrier_i).fillna(carrier_i.to_series())
+    # replace empty nice names with nice names
+    n.carriers.nice_name.where(n.carriers.nice_name != "", nice_names, inplace=True)
+
+    # TODO make less messy, avoid using map
+    tech_colors = config["plotting"]["tech_colors"]
+    colors = pd.Series(tech_colors).reindex(carrier_i)
+    # try to fill missing colors with tech_colors after renaming
+    missing_colors_i = colors[colors.isna()].index
+    colors[missing_colors_i] = missing_colors_i.map(lambda x: rename_techs(x, nice_names)).map(
+        tech_colors
+    )
+    if colors.isna().any():
+        missing_i = list(colors.index[colors.isna()])
+        logger.warning(f"tech_colors for carriers {missing_i} not defined in config.")
+    n.carriers["color"] = n.carriers.color.where(n.carriers.color != "", colors)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../add_brownfield/" class="btn btn-neutral float-left" title="add_brownfield"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../add_existing_baseyear/" class="btn btn-neutral float-right" title="add_existing_baseyear">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../add_brownfield/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../add_existing_baseyear/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

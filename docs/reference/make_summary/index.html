@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>make_summary - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "make_summary";
+        var mkdocs_page_input_path = "docs/reference/make_summary.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_rasters/">fetch_rasters</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_shapes/">fetch_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">make_summary</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../_helpers.md">helper_fns</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../_plot_utilities.md">plot_utilities</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">make_summary</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="make_summary"></a>
+    <div class="doc doc-contents first">
+
+        <p>Create summary CSV files for all scenario runs including costs, capacities,
+capacity factors, curtailment, energy balances, prices and other metrics.</p>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="make_summary.calculate_capacities" class="doc doc-heading">
+            <code class="highlight language-python">calculate_capacities(n, label, capacities)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>calculate the capacities by carrier</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>n</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the network object</p>
+              </div>
+            </li>
+            <li>
+              <b><code>label</code></b>
+                  (<code><span title="str">str</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the label used by make summaries</p>
+              </div>
+            </li>
+            <li>
+              <b><code>capacities</code></b>
+                  (<code><span title="pandas.DataFrame">DataFrame</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the dataframe to fill</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>pd.Dataframe: updated capacities (bad style)</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/make_summary.py</code></summary>
+              <pre class="highlight"><code class="language-python">def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame) -&gt; pd.DataFrame:
+    """calculate the capacities by carrier
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        capacities (pd.DataFrame): the dataframe to fill
+
+    Returns:
+        pd.Dataframe: updated capacities (bad style)
+    """
+    caps = n.statistics.optimal_capacity(
+        groupby=pypsa.statistics.get_carrier_and_bus_carrier, nice_names=False
+    )
+    caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
+    capacities[label] = caps.sort_index(level=0)
+    return capacities</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="make_summary.calculate_co2_balance" class="doc doc-heading">
+            <code class="highlight language-python">calculate_co2_balance(n, label, co2_balance, withdrawal_stores=['CO2 capture'])</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>calc the co2 balance [DOES NOT INCLUDE EMISSION GENERATING LINKSs]
+Args:
+    n (pypsa.Network): the network object
+    withdrawal_stores (list, optional): names of stores. Defaults to ["CO2 capture"].
+    label (str): the label for the column
+    co2_balance (pd.DataFrame): the df to update</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>pd.DataFrame: updated co2_balance (bad style)</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/make_summary.py</code></summary>
+              <pre class="highlight"><code class="language-python">def calculate_co2_balance(
+    n: pypsa.Network, label: str, co2_balance: pd.DataFrame, withdrawal_stores=["CO2 capture"]
+) -&gt; pd.DataFrame:
+    """calc the co2 balance [DOES NOT INCLUDE EMISSION GENERATING LINKSs]
+    Args:
+        n (pypsa.Network): the network object
+        withdrawal_stores (list, optional): names of stores. Defaults to ["CO2 capture"].
+        label (str): the label for the column
+        co2_balance (pd.DataFrame): the df to update
+
+    Returns:
+       pd.DataFrame: updated co2_balance (bad style)
+    """
+
+    # year *(assumes one planning year intended),
+    year = int(np.round(n.snapshots.year.values.mean(), 0))
+
+    # emissions from generators (from fneumann course)
+    emissions = (
+        n.generators_t.p
+        / n.generators.efficiency
+        * n.generators.carrier.map(n.carriers.co2_emissions)
+    )  # t/h
+    emissions_carrier = (
+        (n.snapshot_weightings.generators @ emissions).groupby(n.generators.carrier).sum()
+    )
+
+    # format and drop 0 values
+    emissions_carrier = emissions_carrier.where(emissions_carrier &gt; 0).dropna()
+    emissions_carrier.rename(year, inplace=True)
+    emissions_carrier = emissions_carrier.to_frame()
+    # CO2 withdrawal
+    stores = n.stores_t.e.T.groupby(n.stores.carrier).sum()
+    co2_stores = stores.index.intersection(withdrawal_stores)
+    co2_withdrawal = stores.iloc[:, -1].loc[co2_stores] * -1
+    co2_withdrawal.rename(year, inplace=True)
+    co2_withdrawal = co2_withdrawal.to_frame()
+    year_balance = pd.concat([emissions_carrier, co2_withdrawal])
+
+    #  combine with previous
+    co2_balance = co2_balance.reindex(year_balance.index.union(co2_balance.index))
+    co2_balance.loc[year_balance.index, label] = year_balance[year]
+
+    return co2_balance</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="make_summary.calculate_peak_dispatch" class="doc doc-heading">
+            <code class="highlight language-python">calculate_peak_dispatch(n, label, supply)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate the MAX dispatch of each component at the buses aggregated by
+carrier.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>n</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the network object</p>
+              </div>
+            </li>
+            <li>
+              <b><code>label</code></b>
+                  (<code><span title="str">str</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the labe representing the pathway</p>
+              </div>
+            </li>
+            <li>
+              <b><code>supply</code></b>
+                  (<code><span title="pandas.DataFrame">DataFrame</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>supply energy balance (empty df)</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>pd.DataFrame: updated supply DF</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/make_summary.py</code></summary>
+              <pre class="highlight"><code class="language-python">def calculate_peak_dispatch(n: pypsa.Network, label: str, supply: pd.DataFrame) -&gt; pd.DataFrame:
+    """Calculate the MAX dispatch of each component at the buses aggregated by
+    carrier.
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the labe representing the pathway
+        supply (pd.DataFrame): supply energy balance (empty df)
+
+    Returns:
+        pd.DataFrame: updated supply DF
+    """
+
+    sup_ = n.statistics.supply(
+        groupby=pypsa.statistics.get_carrier_and_bus_carrier, aggregate_time="max"
+    )
+    supply_reordered = sup_.reorder_levels([2, 0, 1])
+    supply_reordered.sort_index(inplace=True)
+    supply[label] = supply_reordered
+
+    return supply</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="make_summary.calculate_supply_energy" class="doc doc-heading">
+            <code class="highlight language-python">calculate_supply_energy(n, label, supply_energy)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Calculate the total energy supply/consuption of each component at the buses
+aggregated by carrier.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>n</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the network object</p>
+              </div>
+            </li>
+            <li>
+              <b><code>label</code></b>
+                  (<code><span title="str">str</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the labe representing the pathway</p>
+              </div>
+            </li>
+            <li>
+              <b><code>supply_energy</code></b>
+                  (<code><span title="pandas.DataFrame">DataFrame</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>supply energy balance (empty df)</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>pd.DataFrame: updated supply energy balance</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/make_summary.py</code></summary>
+              <pre class="highlight"><code class="language-python">def calculate_supply_energy(
+    n: pypsa.Network, label: str, supply_energy: pd.DataFrame
+) -&gt; pd.DataFrame:
+    """Calculate the total energy supply/consuption of each component at the buses
+    aggregated by carrier.
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the labe representing the pathway
+        supply_energy (pd.DataFrame): supply energy balance (empty df)
+
+    Returns:
+        pd.DataFrame: updated supply energy balance
+    """
+
+    eb = n.statistics.energy_balance(groupby=pypsa.statistics.get_carrier_and_bus_carrier)
+    # fragile
+    eb_reordered = eb.reorder_levels([2, 0, 1])
+    eb_reordered.sort_index(inplace=True)
+    eb_reordered.rename(index={"AC": "transmission losses"}, level=2, inplace=True)
+
+    supply_energy[label] = eb_reordered
+
+    return supply_energy</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="make_summary.calculate_weighted_prices" class="doc doc-heading">
+            <code class="highlight language-python">calculate_weighted_prices(n, label, weighted_prices)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Demand-weighed prices for stores and loads.
+    For stores if withdrawal is zero, use supply instead.
+Args:
+    n (pypsa.Network): the network object
+    label (str): the label representing the pathway (not needed, refactor)
+    weighted_prices (pd.DataFrame): the dataframe to write to (not needed, refactor)</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+              –
+              <div class="doc-md-description">
+                <p>pd.DataFrame: updated weighted_prices</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/make_summary.py</code></summary>
+              <pre class="highlight"><code class="language-python">def calculate_weighted_prices(
+    n: pypsa.Network, label: str, weighted_prices: pd.DataFrame
+) -&gt; pd.DataFrame:
+    """Demand-weighed prices for stores and loads.
+        For stores if withdrawal is zero, use supply instead.
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label representing the pathway (not needed, refactor)
+        weighted_prices (pd.DataFrame): the dataframe to write to (not needed, refactor)
+
+    Returns:
+        pd.DataFrame: updated weighted_prices
+    """
+    entries = pd.Index(["electricity", "heat", "H2", "CO2 capture", "gas", "biomass"])
+    weighted_prices = weighted_prices.reindex(entries)
+
+    # loads
+    loads = (
+        n.statistics.revenue(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
+        / n.statistics.withdrawal(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
+        * -1
+    )
+    loads.rename(index={"AC": "electricity"}, inplace=True)
+
+    # stores
+    w = n.statistics.withdrawal(comps="Store")
+    # biomass stores have no withdrawal for some reason
+    w[w == 0] = n.statistics.supply(comps="Store")[w == 0]
+    weighted_prices[label] = pd.concat([loads, n.statistics.revenue(comps="Store") / w])
+    return weighted_prices</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../functions/" class="btn btn-neutral float-left" title="functions"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../plot_heatmap/" class="btn btn-neutral float-right" title="plot_heatmap">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../functions/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../plot_heatmap/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

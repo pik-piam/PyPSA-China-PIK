@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>prepare_base_network - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "prepare_base_network";
+        var mkdocs_page_input_path = "docs/reference/prepare_base_network.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_rasters/">fetch_rasters</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_shapes/">fetch_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">prepare_base_network</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../_helpers.md">helper_fns</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../_plot_utilities.md">plot_utilities</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">prepare_base_network</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="prepare_base_network"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="prepare_base_network.add_buses" class="doc doc-heading">
+            <code class="highlight language-python">add_buses(network, nodes, suffix, carrier, prov_centroids)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add buses</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>network</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p><em>description</em></p>
+              </div>
+            </li>
+            <li>
+              <b><code>nodes</code></b>
+                  (<code><span title="list">list</span> | <span title="pandas.Index">Index</span></code>)
+              –
+              <div class="doc-md-description">
+                <p><em>description</em></p>
+              </div>
+            </li>
+            <li>
+              <b><code>suffix</code></b>
+                  (<code><span title="str">str</span></code>)
+              –
+              <div class="doc-md-description">
+                <p><em>description</em></p>
+              </div>
+            </li>
+            <li>
+              <b><code>carrier</code></b>
+                  (<code><span title="str">str</span></code>)
+              –
+              <div class="doc-md-description">
+                <p><em>description</em></p>
+              </div>
+            </li>
+            <li>
+              <b><code>prov_centroids</code></b>
+                  (<code><span title="geopandas.GeoSeries">GeoSeries</span></code>)
+              –
+              <div class="doc-md-description">
+                <p><em>description</em></p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/prepare_base_network.py</code></summary>
+              <pre class="highlight"><code class="language-python">def add_buses(
+    network: pypsa.Network,
+    nodes: list | pd.Index,
+    suffix: str,
+    carrier: str,
+    prov_centroids: gpd.GeoSeries,
+):
+    """Add buses
+
+    Args:
+        network (pypsa.Network): _description_
+        nodes (list | pd.Index): _description_
+        suffix (str): _description_
+        carrier (str): _description_
+        prov_centroids (gpd.GeoSeries): _description_
+    """
+
+    network.add(
+        "Bus",
+        nodes,
+        suffix=suffix,
+        x=prov_centroids.x,
+        y=prov_centroids.y,
+        carrier=carrier,
+        location=nodes,
+    )</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="prepare_base_network.add_carriers" class="doc doc-heading">
+            <code class="highlight language-python">add_carriers(network, config, costs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>ad the various carriers to the network based on the config file</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>network</code></b>
+                  (<code><span title="pypsa.Network">Network</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the pypsa network</p>
+              </div>
+            </li>
+            <li>
+              <b><code>config</code></b>
+                  (<code><span title="dict">dict</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the config file</p>
+              </div>
+            </li>
+            <li>
+              <b><code>costs</code></b>
+                  (<code><span title="pandas.DataFrame">DataFrame</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the costs dataframe</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/prepare_base_network.py</code></summary>
+              <pre class="highlight"><code class="language-python">def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
+    """ad the various carriers to the network based on the config file
+
+    Args:
+        network (pypsa.Network): the pypsa network
+        config (dict): the config file
+        costs (pd.DataFrame): the costs dataframe
+    """
+
+    network.add("Carrier", "AC")
+    if config["heat_coupling"]:
+        network.add("Carrier", "heat")
+    for carrier in config["Techs"]["vre_techs"]:
+        network.add("Carrier", carrier)
+        if carrier == "hydroelectricity":
+            network.add("Carrier", "hydro_inflow")
+    for carrier in config["Techs"]["store_techs"]:
+        network.add("Carrier", carrier)
+        if carrier == "battery":
+            network.add("Carrier", "battery discharger")
+
+    if "coal power plant" in config["Techs"]["conv_techs"] and config["Techs"]["coal_cc"]:
+        network.add("Carrier", "coal cc", co2_emissions=0.034)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../plot_time_series/" class="btn btn-neutral float-left" title="plot_time_series"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../prepare_base_network_2020/" class="btn btn-neutral float-right" title="prepare_base_network_2020">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../plot_time_series/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../prepare_base_network_2020/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
