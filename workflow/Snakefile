@@ -33,7 +33,9 @@ CUTOUTS_DIR = path_manager.cutouts_dir()
 include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
 
-localrules: plot_all, build_population, dag, fetch_region_shapes
+if config["run"].get("is_test", False):
+    localrules: plot_all, build_population, dag, fetch_region_shapes
+
 
 # ====== set global parameters =======
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
@@ -367,6 +369,8 @@ onsuccess:
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
     try:
         # log path is available as "log"
+        logging.info(f"Copying log file to {log_out}")
+        logging.info(f"Copying config file to {res_dir}/run_config.yaml")
         shutil.copy(log, log_out)
         yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
     except FileNotFoundError as e:
