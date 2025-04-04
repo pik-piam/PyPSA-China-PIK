@@ -363,16 +363,20 @@ onerror:
     # log path is available from snakemake as "log"
     shutil.copy(log, os.path.dirname(log_out))
     yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
+    except TypeError as e:
+        logging.warning(f"Could not copy config file: {e}")
+        logging.warning(f"Copying log file to {str(log_out)} failed?")
+        logging.warning(f"saving config file to {str(res_dir)}/run_config.yaml failed?")
 
 onsuccess:
     log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
     try:
-        # log path is available as "log"
-        logging.info(f"Copying log file to {log_out}")
-        logging.info(f"Copying config file to {res_dir}/run_config.yaml")
         shutil.copy(log, log_out)
         yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
     except FileNotFoundError as e:
         logging.warning(f"Could not copy log file: {e}")
-
+    except TypeError as e:
+        logging.warning(f"Could not copy config file: {e}")
+        logging.warning(f"Copying log file to {str(log_out)} failed?")
+        logging.warning(f"savig config file to {str(res_dir)}/run_config.yaml failed?")
