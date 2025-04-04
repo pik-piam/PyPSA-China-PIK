@@ -34,7 +34,7 @@ from constants import (
 logger = logging.getLogger(__name__)
 
 # for atlite multiprocessing
-TMP = "./resources/derived_data/tmp/atlite_protected_marine.shp"
+TMP = "resources/derived_data/tmp/atlite_protected_marine.shp"
 
 
 def make_solar_profile(
@@ -271,6 +271,8 @@ def make_offshore_wind_profile(offwind_config: dict, cutout: atlite.Cutout, outp
         protected_shp = gpd.GeoDataFrame(protected_shp)
         protected_Marine_shp = gpd.tools.overlay(protected_shp, EEZ_country, how="intersection")
         # this is to avoid atlite complaining about parallelisation
+        logger.info("Creating tmp directory for protected marine shapefile")
+        logger.info(f"parent exists: {os.path.isdir(os.path.dirname(TMP))}")
         if not os.path.isdir(os.path.dirname(TMP)):
             mkdir(os.path.dirname(TMP))
         protected_Marine_shp.to_file(TMP)
