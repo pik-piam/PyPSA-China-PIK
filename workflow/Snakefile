@@ -361,8 +361,11 @@ onerror:
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
     # log path is available from snakemake as "log"
-    shutil.copy(log, os.path.dirname(log_out))
-    yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
+    try:
+        shutil.copy(log, os.path.dirname(log_out))
+        yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
+    except FileNotFoundError as e:
+        logging.warning(f"Could not copy log file: {e}")
     except TypeError as e:
         logging.warning(f"Could not copy config file: {e}")
         logging.warning(f"Copying log file to {str(log_out)} failed?")
@@ -379,4 +382,4 @@ onsuccess:
     except TypeError as e:
         logging.warning(f"Could not copy config file: {e}")
         logging.warning(f"Copying log file to {str(log_out)} failed?")
-        logging.warning(f"savig config file to {str(res_dir)}/run_config.yaml failed?")
+        logging.warning(f"sav config file to {str(res_dir)}/run_config.yaml failed?")
