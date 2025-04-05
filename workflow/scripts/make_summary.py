@@ -180,6 +180,121 @@ def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame):
 
     return costs
 
+def calculate_costs_by_region(n: pypsa.Network, label: str, costs: pd.DataFrame) -> pd.DataFrame:
+    records = []
+    
+    try:
+        for c in n.iterate_components(
+            n.branch_components | n.controllable_one_port_components ^ {"Load"}
+        ):
+            if "bus" in c.df.columns:
+                region_map = c.df["bus"].map(n.buses["name"])
+            elif "bus0" in c.df.columns:
+                region_map = c.df["bus0"].map(n.buses["name"])
+            else:
+                continue
+
+            if c.name == "Link":
+                p = c.pnl.p0.multiply(n.snapshot_weightings.generators, axis=0)
+            elif c.name == "Line":
+                continue
+            elif c.name == "StorageUnit":
+                p = c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0)
+                p[p < 0.0] = 0.0
+            else:
+                p = c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0)
+
+            total_energy = p.sum()
+            nom_col = opt_name.get(c.name, "p") + "_nom_opt"
+            capital_costs = c.df.capital_cost * c.df[nom_col]
+
+            energy_grouped = total_energy.groupby([c.df.carrier, region_map]).sum()
+            capital_costs_grouped = capital_costs.groupby([c.df.carrier, region_map]).sum()
+
+            # 记录总量以便计算全国平均
+            national_energy_cap = {}
+            national_cost_cap = {}
+
+            for (carrier, region) in capital_costs_grouped.index:
+                energy = energy_grouped.get((carrier, region), 0)
+                cost = capital_costs_grouped.loc[(carrier, region)]
+                if energy > 0:
+                    unit_capital_cost = cost / energy
+                    records.append({
+                        "component": c.list_name,
+                        "cost_type": "capital",
+                        "carrier": carrier,
+                        "region": region,
+                        label: unit_capital_cost
+                    })
+                    # 累加全国数据
+                    national_energy_cap[carrier] = national_energy_cap.get(carrier, 0) + energy
+                    national_cost_cap[carrier] = national_cost_cap.get(carrier, 0) + cost
+
+            for carrier in national_cost_cap:
+                if national_energy_cap[carrier] > 0:
+                    unit_national_capital_cost = national_cost_cap[carrier] / national_energy_cap[carrier]
+                    records.append({
+                        "component": c.list_name,
+                        "cost_type": "capital",
+                        "carrier": carrier,
+                        "region": "National",
+                        label: unit_national_capital_cost
+                    })
+
+            # === Marginal ===
+            if c.name == "Store":
+                items = c.df.index[(c.df.carrier == "co2 stored") & (c.df.marginal_cost <= -100.0)]
+                c.df.loc[items, "marginal_cost"] = -20.0
+
+            marginal_costs = (p * c.df.marginal_cost).sum()
+            marginal_costs_grouped = marginal_costs.groupby([c.df.carrier, region_map]).sum()
+
+            national_energy_mar = {}
+            national_cost_mar = {}
+
+            for (carrier, region) in marginal_costs_grouped.index:
+                energy = energy_grouped.get((carrier, region), 0)
+                cost = marginal_costs_grouped.loc[(carrier, region)]
+                if energy > 0:
+                    unit_marginal_cost = cost / energy
+                    records.append({
+                        "component": c.list_name,
+                        "cost_type": "marginal",
+                        "carrier": carrier,
+                        "region": region,
+                        label: unit_marginal_cost
+                    })
+                    national_energy_mar[carrier] = national_energy_mar.get(carrier, 0) + energy
+                    national_cost_mar[carrier] = national_cost_mar.get(carrier, 0) + cost
+
+            for carrier in national_cost_mar:
+                if national_energy_mar[carrier] > 0:
+                    unit_national_marginal_cost = national_cost_mar[carrier] / national_energy_mar[carrier]
+                    records.append({
+                        "component": c.list_name,
+                        "cost_type": "marginal",
+                        "carrier": carrier,
+                        "region": "National",
+                        label: unit_national_marginal_cost
+                    })
+
+        df = pd.DataFrame(records)
+        
+        if df.empty:
+            logger.warning("No records generated in calculate_costs_by_region")
+            # 返回空DataFrame而不是None
+            return pd.DataFrame(columns=["component", "cost_type", "carrier", "region", label])
+            
+        return df.set_index(["tech", "region"]).sort_index()
+        
+    except Exception as e:
+        logger.error(f"Error in calculate_costs_by_region: {str(e)}")
+        # 返回空DataFrame而不是None
+        return pd.DataFrame(columns=["component", "cost_type", "carrier", "region", label])
+
+
+
 
 def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: pd.DataFrame):
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide
@@ -272,29 +387,34 @@ def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFram
 
 def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame):
     for c in n.iterate_components(n.one_port_components | n.branch_components):
-        if c.name in n.one_port_components:
-            c_energies = (
-                c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0)
-                .sum()
-                .multiply(c.df.sign)
-                .groupby(c.df.carrier)
-                .sum()
-            )
-        else:
-            c_energies = pd.Series(0.0, c.df.carrier.unique())
-            for port in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
-                totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
-                # remove values where bus is missing (bug in nomopyomo)
-                no_bus = c.df.index[c.df["bus" + port] == ""]
-                totals.loc[no_bus] = float(n.component_attrs[c.name].loc["p" + port, "default"])
-                c_energies -= totals.groupby(c.df.carrier).sum()
-
-        c_energies = pd.concat([c_energies], keys=[c.list_name])
-
-        energy = energy.reindex(c_energies.index.union(energy.index))
-
-        energy.loc[c_energies.index, label] = c_energies
-
+        try:
+            if c.name in n.one_port_components:
+                c_energies = (
+                    c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0)
+                    .sum()
+                    .multiply(c.df.sign)
+                    .groupby(c.df.carrier)
+                    .sum()
+                )
+            else:
+                c_energies = pd.Series(0.0, c.df.carrier.unique())
+                for port in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
+                    totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
+                    # 检查bus是否存在
+                    bus_col = "bus" + port
+                    if bus_col not in c.df.columns:
+                        logger.warning(f"Missing bus column {bus_col} for {c.name}")
+                        continue
+                    c_energies -= totals.groupby(c.df.carrier).sum()
+            
+            c_energies = pd.concat([c_energies], keys=[c.list_name])
+            energy = energy.reindex(c_energies.index.union(energy.index))
+            energy.loc[c_energies.index, label] = c_energies
+            
+        except Exception as e:
+            logger.warning(f"Error processing component {c.name}: {str(e)}")
+            continue
+            
     return energy
 
 
@@ -421,7 +541,7 @@ def calculate_weighted_prices(
 
 def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.DataFrame):
     # Warning: doesn't include storage units
-
+        
     carrier = "AC"
 
     buses = n.buses.index[n.buses.carrier == carrier]
@@ -450,7 +570,6 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
         market_values.at[tech, label] = revenue.sum().sum() / dispatch.sum().sum()
 
     # === Now do market value of links  ===
-    # === Now do market value of links  ===
 
     for i in ["0", "1"]:
         carrier_links = n.links[n.links["bus" + i].isin(buses)].index
@@ -475,6 +594,90 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
 
     return market_values
 
+def calculate_market_values_by_region(n: pypsa.Network, label: str, market_values: pd.DataFrame):
+    """
+    计算按 region (bus) 分解的市场价值，并添加 "National" 平均值。
+    """
+        
+    carrier = "AC"
+    buses = n.buses.index[n.buses.carrier == carrier]
+    records = []
+
+    # === generators ===
+    generators = n.generators.index[n.buses.loc[n.generators.bus, "carrier"] == carrier]
+    gen_techs = n.generators.loc[generators, "carrier"].unique()
+
+    for tech in gen_techs:
+        gens = generators[n.generators.loc[generators, "carrier"] == tech]
+        gen_buses = n.generators.loc[gens, "bus"]
+
+        dispatch = (
+            n.generators_t.p[gens]
+            .groupby(gen_buses, axis=1)
+            .sum()
+            .reindex(columns=buses, fill_value=0.0)
+        )
+        revenue = dispatch * n.buses_t.marginal_price[buses]
+
+        revenue_by_bus = revenue.sum()
+        dispatch_by_bus = dispatch.sum()
+
+        total_revenue = 0.0
+        total_dispatch = 0.0
+
+        for bus in buses:
+            if dispatch_by_bus[bus] > 0:
+                mv = revenue_by_bus[bus] / dispatch_by_bus[bus]
+                records.append({"tech": tech, "region": bus, label: mv})
+                total_revenue += revenue_by_bus[bus]
+                total_dispatch += dispatch_by_bus[bus]
+
+        if total_dispatch > 0:
+            national_mv = total_revenue / total_dispatch
+            records.append({"tech": tech, "region": "National", label: national_mv})
+
+    # === links ===
+    for i in ["0", "1"]:
+        links_i = n.links.index[n.links["bus" + i].isin(buses)]
+        if len(links_i) == 0:
+            continue
+
+        link_techs = n.links.loc[links_i, "carrier"].unique()
+
+        for tech in link_techs:
+            links_tech = links_i[n.links.loc[links_i, "carrier"] == tech]
+            link_buses = n.links.loc[links_tech, "bus" + i]
+
+            dispatch = (
+                n.links_t["p" + i][links_tech]
+                .groupby(link_buses, axis=1)
+                .sum()
+                .reindex(columns=buses, fill_value=0.0)
+            )
+            revenue = dispatch * n.buses_t.marginal_price[buses]
+
+            revenue_by_bus = revenue.sum()
+            dispatch_by_bus = dispatch.sum()
+
+            total_revenue = 0.0
+            total_dispatch = 0.0
+
+            for bus in buses:
+                if dispatch_by_bus[bus] > 0:
+                    mv = revenue_by_bus[bus] / dispatch_by_bus[bus]
+                    records.append({"tech": "link_" + tech, "region": bus, label: mv})
+                    total_revenue += revenue_by_bus[bus]
+                    total_dispatch += dispatch_by_bus[bus]
+
+            if total_dispatch > 0:
+                national_mv = total_revenue / total_dispatch
+                records.append({"tech": "link_" + tech, "region": "National", label: national_mv})
+
+    df = pd.DataFrame(records)
+    df = df.set_index(["tech", "region"]).sort_index()
+    return df
+
+
 
 def make_summaries(networks_dict: dict[tuple, os.PathLike]):
     output_funcs = {
@@ -483,6 +686,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         "nodal_cfs": calculate_nodal_cfs,
         "cfs": calculate_cfs,
         "costs": calculate_costs,
+        "costs_by_region": calculate_costs_by_region,
         "co2_balance": calculate_co2_balance,
         "capacities": calculate_capacities,
         "curtailment_pc": calculate_curtailment,
@@ -493,6 +697,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         "weighted_prices": calculate_weighted_prices,
         # "price_statistics": calculate_price_statistics,
         "market_values": calculate_market_values,
+        "market_values_by_region": calculate_market_values_by_region,
         "metrics": calculate_metrics,
     }
 
@@ -511,9 +716,21 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         n = pypsa.Network(filename)
         assign_carriers(n)
         assign_locations(n)
+    if "name" not in n.buses.columns:
+        n.buses["name"] = n.buses.index.astype(str)
 
         for output, output_fn in output_funcs.items():
-            dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
+            logger.info(f"Processing function: {output}")
+            try:
+                result = output_fn(n, label, dataframes_dict[output])
+                if result is None:
+                    logger.error(f"Function {output} returned None")
+                    # 使用空DataFrame替代None
+                    result = pd.DataFrame()
+                dataframes_dict[output] = result
+            except Exception as e:
+                logger.error(f"Error in {output}: {str(e)}")
+                dataframes_dict[output] = pd.DataFrame()
 
     return dataframes_dict
 
@@ -558,12 +775,45 @@ if __name__ == "__main__":
 
     networks_dict = {(pathway, planning_horizons): snakemake.input.network}
 
+    logger.info("Starting summary generation...")
+    logger.info(f"Processing network: {snakemake.input.network}")
+    
     df = make_summaries(networks_dict)
-    df["metrics"].loc["total costs"] = df["costs"].sum()
-
+    
+    if df is None:
+        logger.error("make_summaries returned None")
+        sys.exit(1)
+    
+    if not df:
+        logger.error("make_summaries returned empty dict")
+        sys.exit(1)
+        
+    logger.info(f"Available keys in df: {list(df.keys())}")
+    
+    logger.info("Calculating total costs...")
+    try:
+        if "costs" not in df:
+            logger.error("costs not found in results")
+            sys.exit(1)
+        if "metrics" not in df:
+            logger.error("metrics not found in results")
+            sys.exit(1)
+            
+        df["metrics"].loc["total costs"] = df["costs"].sum()
+    except Exception as e:
+        logger.error(f"Error calculating total costs: {str(e)}")
+        sys.exit(1)
+        
+    logger.info("Writing output files...")
     def to_csv(dfs, dir):
+        if not isinstance(dfs, dict):
+            logger.error(f"Expected dict, got {type(dfs)}")
+            sys.exit(1)
         os.makedirs(dir, exist_ok=True)
         for key, df in dfs.items():
+            if df is None:
+                logger.error(f"DataFrame for key {key} is None")
+                continue
             df.to_csv(os.path.join(dir, f"{key}.csv"))
 
     to_csv(df, snakemake.output[0])

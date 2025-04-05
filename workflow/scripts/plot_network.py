@@ -164,6 +164,8 @@ def add_cost_pannel(
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
     colors = {k.lower(): v for k, v in tech_colors.items()}
+    print("DEBUG df in add_cost_pannel:\n", df)
+    print("DEBUG reordered:\n", reordered)
     df.loc[reordered, df.columns].T.plot(
         kind="bar",
         ax=ax3,
@@ -225,7 +227,9 @@ def plot_cost_map(
     # ============ === Stats by bus ===
     # calc costs & sum over component types to keep bus & carrier (remove no loc)
     costs = network.statistics.capex(groupby=["location", "carrier"])
-    costs = costs.groupby(level=[1, 2]).sum().drop("")
+    costs = costs.groupby(level=[1, 2]).sum()
+    if "" in costs.index:
+        costs = costs.drop("")    
     # we miss some buses by grouping epr location, fill w 0s
     bus_idx = pd.MultiIndex.from_product([network.buses.index, ["AC"]])
     costs = costs.reindex(bus_idx.union(costs.index), fill_value=0)

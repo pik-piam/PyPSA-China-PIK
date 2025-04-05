@@ -12,9 +12,15 @@ from os.path import abspath, getctime
 from scripts._helpers import PathManager, get_cutout_params
 from scripts.constants import TESTS_RUNNAME
 # NB: duplicated parameters will be overwritten by the last read cfg
+
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
+
+# # 设置环境变量
+# selected_provinces = config.get("regions", {}).get("selected", [])
+# if selected_provinces:
+#     os.environ["PROV_NAMES"] = str(selected_provinces)
 
 # ====== get paths =======
 path_manager = PathManager(config)
@@ -373,4 +379,5 @@ onsuccess:
         yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
     except FileNotFoundError as e:
         logging.warning(f"Could not copy log file: {e}")
+
 

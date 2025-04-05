@@ -975,6 +975,12 @@ def prepare_network(config: dict) -> pypsa.Network:
     # load provinces
     prov_shapes = read_province_shapes(snakemake.input.province_shape)
     prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
+    # 在添加Bus之前，先对齐数据
+    prov_centroids = prov_centroids.reindex(nodes)
+    network.add("Bus", nodes, x=prov_centroids.x, y=prov_centroids.y, location=nodes)
+    # 检查两边的索引
+    print("Nodes:", nodes)
+    print("Centroids index:", prov_centroids.index)
 
     # add AC buses
     network.add("Bus", nodes, x=prov_centroids.x, y=prov_centroids.y, location=nodes)
@@ -1028,11 +1034,27 @@ def prepare_network(config: dict) -> pypsa.Network:
         raise ValueError(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}")
 
     # load electricity demand data
+    # 1. 首先获取路径
     demand_path = snakemake.input.elec_load.replace("{planning_horizons}", f"{cost_year}")
-    with pd.HDFStore(demand_path, mode="r") as store:
-        load = LOAD_CONVERSION_FACTOR * store["load"]  # TODO add unit
-        load = load.loc[network.snapshots, PROV_NAMES]
+    print("Demand path:", demand_path)
 
+    # 2. 检查文件是否存在
+    import os
+    print("File exists:", os.path.exists(demand_path))
+
+    # 3. 读取并检查数据
+    with pd.HDFStore(demand_path, mode="r") as store:
+        raw_load = store["load"]
+        print("Raw load data columns:", raw_load.columns)
+        print("Raw load data shape:", raw_load.shape)
+        
+        # 应用转换因子
+        load = LOAD_CONVERSION_FACTOR * raw_load
+        print("Load data columns after conversion:", load.columns)
+        print("Load data index:", load.index)
+        
+        # 最后再选择需要的数据
+        load = load.loc[network.snapshots, PROV_NAMES]
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
 
     # add renewables
@@ -1043,14 +1065,14 @@ def prepare_network(config: dict) -> pypsa.Network:
         bus=nodes,
         carrier="onwind",
         p_nom_extendable=True,
-        p_nom_max=ds_onwind["p_nom_max"].to_pandas(),
+        p_nom_max=ds_onwind["p_nom_max"].to_pandas()[nodes],  # 使用 nodes 选择数据
         capital_cost=costs.at["onwind", "capital_cost"],
         marginal_cost=costs.at["onwind", "marginal_cost"],
-        p_max_pu=onwind_p_max_pu,
+        p_max_pu=onwind_p_max_pu[nodes],  # 使用 nodes 选择数据
         lifetime=costs.at["onwind", "lifetime"],
     )
 
-    offwind_nodes = ds_offwind["bus"].to_pandas().index
+    offwind_nodes = ds_offwind["bus"].to_pandas().index.intersection(nodes)  # 只保留需要的节点
     network.add(
         "Generator",
         offwind_nodes,
@@ -1058,10 +1080,10 @@ def prepare_network(config: dict) -> pypsa.Network:
         bus=offwind_nodes,
         carrier="offwind",
         p_nom_extendable=True,
-        p_nom_max=ds_offwind["p_nom_max"].to_pandas(),
+        p_nom_max=ds_offwind["p_nom_max"].to_pandas()[offwind_nodes],  # 使用 offwind_nodes 选择数据
         capital_cost=costs.at["offwind", "capital_cost"],
         marginal_cost=costs.at["offwind", "marginal_cost"],
-        p_max_pu=offwind_p_max_pu,
+        p_max_pu=offwind_p_max_pu[offwind_nodes],  # 使用 offwind_nodes 选择数据
         lifetime=costs.at["offwind", "lifetime"],
     )
 
@@ -1072,10 +1094,10 @@ def prepare_network(config: dict) -> pypsa.Network:
         bus=nodes,
         carrier="solar",
         p_nom_extendable=True,
-        p_nom_max=ds_solar["p_nom_max"].to_pandas(),
+        p_nom_max=ds_solar["p_nom_max"].to_pandas()[nodes],  # 使用 nodes 选择数据
         capital_cost=costs.at["solar", "capital_cost"],
         marginal_cost=costs.at["solar", "marginal_cost"],
-        p_max_pu=solar_p_max_pu,
+        p_max_pu=solar_p_max_pu[nodes],  # 使用 nodes 选择数据
         lifetime=costs.at["solar", "lifetime"],
     )
 
@@ -1130,7 +1152,13 @@ def prepare_network(config: dict) -> pypsa.Network:
         )
 
     if config["add_hydro"]:
-        add_hydro(network, config, nodes, prov_centroids, costs, planning_horizons)
+        # 检查选定省份中是否有水电站
+        df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
+        dams = df[df["Province"].isin(nodes)]
+        if not dams.empty:
+            add_hydro(network, config, nodes, prov_centroids, costs, planning_horizons)
+        else:
+            logger.info(f"No hydro dams in selected provinces {nodes.tolist()}, skipping hydro")
 
     if config["add_H2"]:
         # do beore heat coupling to avoid warning
@@ -1208,7 +1236,21 @@ def prepare_network(config: dict) -> pypsa.Network:
     # TODO make not lossless optional (? - increases computing cost)
 
     if not config["no_lines"]:
-        add_voltage_links(network, config)
+        edge_path = config["edge_paths"].get(config["scenario"]["topology"], None)
+        if edge_path is None:
+            raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
+        else:
+            edges_ = pd.read_csv(
+                edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
+            ).fillna(0)
+            # 只保留选定省份之间的连接
+            edges = edges_[
+                edges_["bus0"].isin(nodes) & edges_["bus1"].isin(nodes)
+            ]
+            if not edges.empty:
+                add_voltage_links(network, config)
+            else:
+                logger.info(f"No transmission lines between selected provinces {nodes.tolist()}, skipping lines")
 
     assign_locations(network)
     return network

@@ -79,9 +79,22 @@ def plot_energy_balance(
     charge = p.where(p < 0).dropna(how="all", axis=1)
 
     # fix names and order
+    battery_names = {
+        "Battery Storage": "Battery",
+        "Battery Discharger": "Battery",
+        "battery": "Battery",
+        "battery storage": "Battery"
+    }
 
-    charge.rename(columns={"Battery Storage": "Battery"}, inplace=True)
-    supply.rename(columns={"Battery Discharger": "Battery"}, inplace=True)
+    # 只重命名存在的列
+    for old_name, new_name in battery_names.items():
+        if old_name in charge.columns:
+            charge.rename(columns={old_name: new_name}, inplace=True)
+        if old_name in supply.columns:
+            supply.rename(columns={old_name: new_name}, inplace=True)
+        if old_name in color_series.index:
+            color_series.rename({old_name: new_name}, inplace=True)
+
     color_series = color_series[charge.columns.union(supply.columns)]
     color_series.rename(
         {"Battery Discharger": "Battery", "Battery Storage": "Battery"},
@@ -89,14 +102,20 @@ def plot_energy_balance(
     )
 
     preferred_order = plot_config["preferred_order"]
-    plot_order = (
+    plot_order = list(dict.fromkeys(
         supply.columns.intersection(preferred_order).to_list()
         + supply.columns.difference(preferred_order).to_list()
-    )
+    ))
 
-    plot_order_charge = [name for name in preferred_order if name in charge.columns] + [
-        name for name in charge.columns if name not in preferred_order
-    ]
+    plot_order_charge = list(dict.fromkeys(
+        [name for name in preferred_order if name in charge.columns] 
+        + [name for name in charge.columns if name not in preferred_order]
+    ))
+
+    # 如果有重复的Battery列，需要合并它们
+    if supply.columns.duplicated().any():
+        # 合并重复的列
+        supply = supply.groupby(supply.columns, axis=1).sum()
 
     supply = supply.reindex(columns=plot_order)
     charge = charge.reindex(columns=plot_order_charge)

@@ -3,10 +3,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: 'yanlei_CSP_SOLAR_0321'
+  name: 'yanlei_0.1onwind_heatcoupling_SDIM'
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
+
+# 区域设置
+regions:
+  # selected: ["Guangdong", "Fujian"]  # 如果要运行所有省份，可以注释掉这一行
 
 scenario:
   pathway: ['exp175'] # ,'beta25175']
@@ -102,7 +106,7 @@ atlite:
   freq: "h"
   nprocesses: 1
   show_progress: true
-  monthly_requests: false
+  monthly_requests: true
   cutouts:
     China-2020c:
       module: era5
@@ -193,7 +197,7 @@ Techs:
   hydrogen_lines: true # currently myopic pathway only
 
 ## add components (overwrites vre tech choice)
-heat_coupling: false
+heat_coupling: True
 add_biomass: True
 add_hydro: True
 add_H2: True
@@ -240,7 +244,7 @@ solving:
     options: gurobi-default
   gurobi_hpc_tunnel:
     use_tunnel: True
-    tunnel_port: 1082
+    tunnel_port: 1080
 
 
   solver_options:
