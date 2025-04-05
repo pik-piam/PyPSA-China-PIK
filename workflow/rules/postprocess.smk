@@ -12,6 +12,7 @@ STATISTICS_BARPLOTS = [
     "supply",
     "withdrawal",
     "market_value",
+    "lcoe",
 ]
 
 

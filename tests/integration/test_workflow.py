@@ -48,7 +48,6 @@ def launch_subprocess(cmd: str, env=None) -> subprocess.CompletedProcess:
     return res
 
 
-@pytest.mark.serial
 @pytest.mark.parametrize(
     "make_test_config_file",
     [
@@ -78,7 +77,6 @@ def test_dry_run(make_test_config_file):
     assert res.returncode == 0, f"Snakemake dry run failed, config id {hash_id}"
 
 
-@pytest.mark.serial
 @pytest.mark.parametrize(
     "make_test_config_file",
     [({"time_res": 1752, "plan_year": 2040, "heat_coupling": True, "foresight": "overnight"})],
@@ -97,7 +95,6 @@ def test_dry_run_build_cutouts(make_test_config_file):
 
 
 # TODO use case cases pluggin
-@pytest.mark.serial
 @pytest.mark.parametrize(
     "make_test_config_file",
     [({"time_res": 8, "plan_year": 2040, "heat_coupling": True, "foresight": "overnight"})],

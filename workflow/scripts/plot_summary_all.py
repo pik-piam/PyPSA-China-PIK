@@ -58,7 +58,7 @@ def rename_techs(label):
 
     for ptr in prefix_to_remove:
         if label[: len(ptr)] == ptr:
-            label = label[len(ptr) :]
+            label = label[len(ptr):]
 
     for old, new in rename_if_contains_dict.items():
         if old in label:
@@ -91,7 +91,6 @@ def plot_pathway_costs(
         cost_df = pd.read_csv(results_file, index_col=list(range(3)), header=[1])
         df_ = cost_df.groupby(cost_df.index.get_level_values(2)).sum()
         # do this here so aggregate costs of small items only for that year
-        # TODO centralise unit
         df_ = df_ * COST_UNIT / PLOT_COST_UNITS
         df_ = df_.groupby(df_.index.map(rename_techs)).sum()
         to_drop = df_.index[df_.max(axis=1) < config["costs_threshold"] / PLOT_COST_UNITS]
@@ -144,7 +143,7 @@ def plot_pathway_costs(
     fig.tight_layout()
 
     if fig_name is not None:
-        fig.savefig(fig_name, transparent=True)
+        fig.savefig(fig_name, transparent=config["transparent"])
 
 
 def plot_pathway_capacities(
@@ -210,8 +209,8 @@ def plot_pathway_capacities(
     for i, capacity_df in enumerate([caps_ac, caps_heat, caps_stores, caps_h2]):
         if capacity_df.empty:
             continue
-        k, l = divmod(i, 2)
-        ax = axes[k, l]
+        k, j = divmod(i, 2)
+        ax = axes[k, j]
         preferred_order = pd.Index(config["preferred_order"])
         new_index = preferred_order.intersection(capacity_df.index).append(
             capacity_df.index.difference(preferred_order)
@@ -245,7 +244,7 @@ def plot_pathway_capacities(
     fig.subplots_adjust(wspace=0.42)
 
     if fig_name is not None:
-        fig.savefig(fig_name, transparent=True)
+        fig.savefig(fig_name, transparent=config["transparent"])
 
 
 def plot_energy(file_list: list, config: dict, fig_name=None):
@@ -304,7 +303,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
     fig.tight_layout()
 
     if fig_name is not None:
-        fig.savefig(fig_name, transparent=True)
+        fig.savefig(fig_name, transparent=config["transparent"])
 
 
 def plot_electricty_heat_balance(
@@ -406,7 +405,7 @@ def plot_electricty_heat_balance(
     fig.tight_layout()
 
     if fig_dir is not None:
-        fig.savefig(os.path.join(fig_dir, "elec_balance.png"), transparent=True)
+        fig.savefig(os.path.join(fig_dir, "elec_balance.png"), transparent=config["transparent"])
 
     # =================     heat     =================
     fig, ax = plt.subplots()
@@ -444,16 +443,18 @@ def plot_electricty_heat_balance(
         fig.tight_layout()
 
         if fig_dir is not None:
-            fig.savefig(os.path.join(fig_dir, "heat_balance.png"), transparent=True)
+            fig.savefig(os.path.join(fig_dir, "heat_balance.png"),
+                        transparent=config["transparent"])
 
 
-def plot_prices(file_list: list, config: dict, fig_name=None):
+def plot_prices(file_list: list, config: dict, fig_name=None, ax:object=None):
     """plot the prices
 
     Args:
         file_list (list): the input csvs from make_summary
-        config (dict): the configuration for plotting
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
+        ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
     """
     prices_df = pd.DataFrame()
     for results_file in file_list:
@@ -461,10 +462,13 @@ def plot_prices(file_list: list, config: dict, fig_name=None):
 
         prices_df = pd.concat([df_year, prices_df])
     prices_df.sort_index(axis=0, inplace=True)
-    fig, ax = plt.subplots()
+    if not ax:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
     fig.set_size_inches((12, 8))
 
-    colors = config["plotting"]["tech_colors"]
+    colors = config["tech_colors"]
 
     prices_df.plot(
         ax=ax,
@@ -506,7 +510,7 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
 
     fig, ax = plt.subplots()
     bar_width = 0.6
-    colors = co2_balance_df.T.index.map(config["plotting"]["tech_colors"]).values
+    colors = co2_balance_df.T.index.map(config["tech_colors"]).values
     co2_balance_df = co2_balance_df / PLOT_CO2_UNITS
     co2_balance_df.plot(
         kind="bar",
@@ -532,7 +536,7 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
 
     fig.tight_layout()
     if fig_name is not None:
-        fig.savefig(fig_name, transparent=True)
+        fig.savefig(fig_name, transparent=config["transparent"])
 
 
 def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
@@ -571,8 +575,48 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
     fig.tight_layout()
 
     if fig_name is not None:
-        fig.savefig(fig_name, transparent=True)
+        fig.savefig(fig_name, transparent=config["transparent"])
 
+
+# TODO move to a separate rule
+def write_data(data_paths:dict, outp_dir: os.PathLike):
+    """Write some selected data
+
+    Args:
+        data_paths (dict): the paths to the summary data (different per year and type)
+        outp_dir (os.PathLike): target file (summary dir)
+    """
+    # make a summary of the co2 prices
+    co2_prices = {}
+    co2_budget = {}
+    for i, results_file in enumerate(data_paths["co2_price"]):
+        df_metrics = pd.read_csv(results_file, index_col=list(range(1)), header=[1])
+        co2_prices.update(dict(df_metrics.loc["co2_shadow"]))
+        co2_budget.update(dict(df_metrics.loc["co2_budget"]))
+    years = list(co2_budget.keys())
+    co2_df = pd.DataFrame({
+        "Year": years,
+        "CO2 Budget": [co2_budget[year] for year in years],
+        "CO2 Shadow Price": [co2_prices[year]*-1 for year in years]
+    })
+    outp_p = os.path.join(outp_dir, "co2_prices.csv")
+    co2_df.to_csv(outp_p,  index=False)
+
+    df = pd.DataFrame()
+    for results_file in data_paths["costs"]:
+        cost_df = pd.read_csv(results_file, index_col=list(range(3)), header=[1])
+        df_ = cost_df.groupby(level=[1, 2]).sum()
+        df_ = df_ * COST_UNIT / PLOT_COST_UNITS
+        df = pd.concat([df_, df], axis=1)
+    df.to_csv(os.path.join(outp_dir, "pathway_costs_not_discounted.csv"))
+
+
+    prices_df = pd.DataFrame()
+    for results_file in data_paths["weighted_prices"]:
+        df_year = pd.read_csv(results_file, index_col=list(range(1)), header=[1]).T
+
+        prices_df = pd.concat([df_year, prices_df])
+    prices_df.to_csv(os.path.join(outp_dir, "weighted_prices.csv"))
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -580,18 +624,18 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_summary",
             topology="current+FCG",
-            pathway="exp175",
+            co2_pathway="exp175default",
             heating_demand="positive",
             planning_horizons=[
-                "2020",
-                "2025",
-                "2030",
-                "2035",
-                "2040",
-                "2045",
-                "2050",
-                "2055",
-                "2060",
+                2020,
+                2025,
+                2030,
+                2035,
+                2040,
+                2045,
+                2050,
+                2055,
+                2060,
             ],
         )
 
@@ -647,25 +691,28 @@ if __name__ == "__main__":
     )
     plot_prices(
         data_paths["time_averaged_prices"],
-        config,
+        config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/time_averaged_prices.png",
     )
 
     plot_prices(
         data_paths["weighted_prices"],
-        config,
+        config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/weighted_prices.png",
     )
     plot_co2_shadow_price(
         data_paths["co2_price"],
-        config,
+        config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/co2_shadow_prices.png",
     )
 
     plot_pathway_co2(
         data_paths["co2_balance"],
-        config,
+        config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/co2_balance.png",
     )
 
     logger.info(f"Successfully plotted summary for {wildcards}")
+
+    data_dir = os.path.dirname(paths[0])
+    write_data(data_paths, data_dir)

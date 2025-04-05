@@ -271,6 +271,10 @@ def make_offshore_wind_profile(offwind_config: dict, cutout: atlite.Cutout, outp
         protected_shp = gpd.GeoDataFrame(protected_shp)
         protected_Marine_shp = gpd.tools.overlay(protected_shp, EEZ_country, how="intersection")
         # this is to avoid atlite complaining about parallelisation
+        logger.info("Creating tmp directory for protected marine shapefile")
+        logger.info(f"parent exists: {os.path.isdir(os.path.dirname(os.path.dirname(TMP)))}")
+        if not os.path.isdir(os.path.dirname(os.path.dirname(TMP))):
+            mkdir(os.path.dirname(os.path.dirname(TMP)))
         if not os.path.isdir(os.path.dirname(TMP)):
             mkdir(os.path.dirname(TMP))
         protected_Marine_shp.to_file(TMP)
@@ -353,6 +357,7 @@ if __name__ == "__main__":
     break_requests = snakemake.config["atlite"]["monthly_requests"]
     cutout.prepare(monthly_requests=break_requests, concurrent_requests=break_requests)
     logger.info(f"Cutout prepared from {snakemake.input.cutout}")
+    
     provinces_shp = read_province_shapes(snakemake.input.provinces_shp)
     provinces_shp = provinces_shp.reindex(PROV_NAMES).rename_axis("bus")
     buses = provinces_shp.index

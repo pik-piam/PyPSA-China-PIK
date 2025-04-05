@@ -296,7 +296,7 @@ if __name__ == "__main__":
             "solve_network_myopic",
             # opts="ll",
             topology="current+Neighbor",
-            pathway="exponential175",
+            co2_pathway="exp175default",
             co2_reduction="0.0",
             planning_horizons="2025",
             heat_demand="positive",

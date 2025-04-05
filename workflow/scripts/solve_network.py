@@ -11,7 +11,6 @@ import numpy as np
 import pypsa
 from pandas import DatetimeIndex
 import os
-import socket
 
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
 
@@ -228,9 +227,8 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_reduction="0.0",
             planning_horizons=2020,
-            pathway="exponential-175",
+            co2_pathway="exp175default",
             topology="current+Neighbour",
             heating_demand="positive",
         )
@@ -295,8 +293,10 @@ if __name__ == "__main__":
         logging.info("Mocking the solve step")
         n = mock_solve(n)
 
-    # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
-    n.links_t.p2 = n.links_t.p2.astype(float)
+    if "p2" in n.links_t:
+        n.links_t.p2 = n.links_t.p2.astype(float)
+
+    n.meta.update(dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards))))
     n.export_to_netcdf(snakemake.output[0])
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")

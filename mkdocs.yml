@@ -53,5 +53,7 @@ nav:
     - readers: docs/reference/readers.md
     - solve_network: docs/reference/solve_network.md
     - solve_network_myopic: docs/reference/solve_network_myopic.md
+    - helper_fns: docs/reference/_helpers.md
+    - plot_utilities: docs/reference/_plot_utilities.md
   # - About: about.md
   # - Workflow Overview: workflow_overview.md

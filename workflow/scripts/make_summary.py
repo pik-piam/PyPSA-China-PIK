@@ -15,7 +15,7 @@ import numpy as np
 import pypsa
 
 from _helpers import mock_snakemake, configure_logging
-from _helpers import assign_locations
+from _pypsa_helpers import assign_locations
 
 # import numpy as np
 # from add_electricity import load_costs, update_transmission_costs
@@ -702,7 +702,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
     }
 
     columns = pd.MultiIndex.from_tuples(
-        networks_dict.keys(), names=["pathway", "planning_horizons"]
+        networks_dict.keys(), names=["co2_pathway", "planning_horizons"]
     )
     dataframes_dict = {}
 
@@ -747,7 +747,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "make_summary",
             topology="current+FCG",
-            pathway="exp175",
+            co2_pathway="exp175default",
             planning_horizons="2060",
             heating_demand="positive",
         )
@@ -765,7 +765,7 @@ if __name__ == "__main__":
     # or hope that snamek wildcards are ordered in a sensible way
 
     # == here would be the way to get the list of possible wildcards
-    pathways = expand_from_wildcard("pathway", config)
+    pathways = expand_from_wildcard("co2_pathway", config)
     years = expand_from_wildcard("planning_horizons", config)
 
     if len(pathways) != 1 or len(years) != 1:

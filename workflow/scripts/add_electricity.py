@@ -6,10 +6,9 @@ Misc collection of functions supporting network prep
 import logging
 import pandas as pd
 import pypsa
-import pypsa
 from os import PathLike
 
-from _helpers import rename_techs
+from _pypsa_helpers import rename_techs
 from constants import NICE_NAMES_DEFAULT
 
 idx = pd.IndexSlice

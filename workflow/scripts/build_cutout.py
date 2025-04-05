@@ -10,7 +10,8 @@ import atlite
 import geopandas as gpd
 import pandas as pd
 
-from _helpers import configure_logging, mock_snakemake, make_periodic_snapshots, get_cutout_params
+from _helpers import configure_logging, mock_snakemake, get_cutout_params
+from _pypsa_helpers import make_periodic_snapshots
 from constants import TIMEZONE
 
 logger = logging.getLogger(__name__)
