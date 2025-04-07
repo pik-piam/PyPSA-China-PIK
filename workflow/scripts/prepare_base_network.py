@@ -34,6 +34,8 @@ from functions import HVAC_cost_curve
 from _helpers import (
     configure_logging,
     mock_snakemake,
+)
+from _pypsa_helpers import (
     make_periodic_snapshots,
     shift_profile_to_planning_year,
 )
@@ -49,9 +51,18 @@ def add_buses(
     network: pypsa.Network,
     nodes: list | pd.Index,
     suffix: str,
-    carrier,
+    carrier: str,
     prov_centroids: gpd.GeoSeries,
 ):
+    """Add buses
+
+    Args:
+        network (pypsa.Network): _description_
+        nodes (list | pd.Index): _description_
+        suffix (str): _description_
+        carrier (str): _description_
+        prov_centroids (gpd.GeoSeries): _description_
+    """
 
     network.add(
         "Bus",
@@ -1169,7 +1180,7 @@ if __name__ == "__main__":
             "prepare_base_networks",
             opts="ll",
             topology="current+Neighbor",
-            pathway="exponential175",
+            co2_pathway="exp175default",
             planning_horizons="2030",
             heating_demand="positive",
         )

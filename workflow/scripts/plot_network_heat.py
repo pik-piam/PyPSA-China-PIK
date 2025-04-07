@@ -1,3 +1,7 @@
+"""Legacy functions that are not currently included in the workflow
+
+"""
+
 import logging
 
 import pandas as pd
@@ -10,12 +14,10 @@ from matplotlib.patches import Circle, Ellipse
 from matplotlib.legend_handler import HandlerPatch
 
 from _helpers import (
-    load_network_for_plots,
-    aggregate_p,
-    aggregate_costs,
     configure_logging,
     mock_snakemake,
 )
+from _pypsa_helpers import load_network_for_plots, aggregate_costs, aggregate_p
 from _plot_utilities import fix_network_names_colors, set_plot_style
 
 to_rgba = mpl.colors.colorConverter.to_rgba
@@ -93,13 +95,6 @@ def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
         link_widths_cur = n.links.p_nom_min
     else:
         raise "plotting of {} has not been implemented yet".format(attribute)
-
-    line_colors_with_alpha = (line_widths_cur / n.lines.s_nom > 1e-3).map(
-        {True: line_colors["cur"], False: to_rgba(line_colors["cur"], 0.0)}
-    )
-    link_colors_with_alpha = (link_widths_cur / n.links.p_nom > 1e-3).map(
-        {True: line_colors["cur"], False: to_rgba(line_colors["cur"], 0.0)}
-    )
 
     # FORMAT
     linewidth_factor = plot_config["map"]["linewidth_factor"]
@@ -350,7 +345,7 @@ if __name__ == "__main__":
 
     energy_ax = fig.add_axes([-0.115, 0.625, 0.2, 0.2])
     plot_total_energy_pie(n, config["plotting"], ax=energy_ax)
-    fig.savefig(snakemake.output.ext, transparent=True, bbox_inches="tight")
+    fig.savefig(snakemake.output.ext, transparent=config["plotting"]["transparent"], bbox_inches="tight")
 
     costs_ax = fig.add_axes([-0.075, 0.1, 0.1, 0.45])
     plot_total_cost_bar(n, config["plotting"], ax=costs_ax)

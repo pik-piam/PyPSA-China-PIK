@@ -8,7 +8,7 @@ from shapely.geometry import Point
 
 import logging
 
-from _helpers import shift_profile_to_planning_year
+from _pypsa_helpers import shift_profile_to_planning_year
 from functions import HVAC_cost_curve, haversine
 from vresutils.costdata import annuity
 

@@ -141,7 +141,7 @@ if __name__ == "__main__":
             "add_brownfield",
             opts="ll",
             topology="current+FCG",
-            pathway="linear-275",
+            co2_pathway="exp175default",
             co2_reduction="1.0",
             planning_horizons=2025,
         )
