@@ -35,15 +35,10 @@ CUTOUTS_DIR = path_manager.cutouts_dir()
 # ====== include rules ======= (after paths are set!)
 include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
+include: "rules/parameter_check.smk"
 
-# 只有当 check_parameters 为 true 时才包含参数检查规则
-if config["enable"].get("check_parameters", True):
-    include: "rules/parameter_check.smk"
-    # 添加 plot_parameters 到 localrules
+if config["run"].get("is_test", False):
     localrules: plot_all, build_population, dag, fetch_region_shapes, plot_parameters
-elseif config["run"].get("is_test", False):
-    # 不包含 plot_parameters
-    localrules: plot_all, build_population, dag, fetch_region_shapes
 
 
 # ====== set global parameters =======
@@ -76,8 +71,6 @@ elif config["foresight"] in ["overnight", "myopic"]:
             ),
             expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"]),
             expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"]),
-            # 如果启用了参数检查，则添加参数检查图
-            # 使用与其他规则相同的通配符展开策略
             expand(RESULTS_DIR + "/plots/costs/parameters_comparison.pdf", 
                    **{k: v for k, v in config["scenario"].items() if k != "planning_horizons"}) if config["enable"].get("check_parameters", True) else []
 

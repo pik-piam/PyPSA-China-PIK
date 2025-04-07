@@ -4,14 +4,11 @@
 
 run:
   # name: 'new_load_overnight_5hr_newcutout'
-  name: test_co2_pr_baseline
+  name: test_co2_pr_baseline_0405SD
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
 
-# 区域设置
-regions:
-  # selected: ["Guangdong", "Fujian"]  # 如果要运行所有省份，可以注释掉这一行
 
 scenario:
   co2_pathway: ['exp175default'] # co2_scenarios that will be used
