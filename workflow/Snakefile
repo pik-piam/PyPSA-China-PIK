@@ -33,7 +33,9 @@ CUTOUTS_DIR = path_manager.cutouts_dir()
 include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
 
-localrules: plot_all, build_population, dag, fetch_region_shapes
+if config["run"].get("is_test", False):
+    localrules: plot_all, build_population, dag, fetch_region_shapes
+
 
 # ====== set global parameters =======
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
@@ -359,16 +361,26 @@ onerror:
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
     # log path is available from snakemake as "log"
-    shutil.copy(log, os.path.dirname(log_out))
-    yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
+    try:
+        shutil.copy(log, os.path.dirname(log_out))
+        yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
+    except FileNotFoundError as e:
+        logging.warning(f"Could not copy log file: {e}")
+    except TypeError as e:
+        logging.warning(f"Could not copy config file: {e}")
+        logging.warning(f"Copying log file to {str(log_out)} failed?")
+        logging.warning(f"saving config file to {str(res_dir)}/run_config.yaml failed?")
 
 onsuccess:
     log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
     try:
-        # log path is available as "log"
         shutil.copy(log, log_out)
         yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
     except FileNotFoundError as e:
         logging.warning(f"Could not copy log file: {e}")
-
+    except TypeError as e:
+        logging.warning(f"Could not copy config file: {e}")
+        logging.warning(f"Copying log file to {str(log_out)} (type {type(log_out)}) failed?")
+        logging.info(f"source was {str(log)}")
+        logging.warning(f"sav config file to {str(res_dir)}/run_config.yaml failed?")
