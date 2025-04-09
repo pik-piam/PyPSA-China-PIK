@@ -30,6 +30,7 @@ from _pypsa_helpers import (
     make_periodic_snapshots,
     assign_locations,
 )
+from build_biomass_potential import estimate_co2_intensity_xing
 from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
 from readers import read_province_shapes
@@ -47,6 +48,105 @@ from constants import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def add_biomass(network: pypsa.Network,
+                costs: pd.DataFrame,
+                nodes: pd.Index,
+                biomass_potential: pd.DataFrame,
+                prov_centroids: gpd.GeoDataFrame
+                ):
+    """add biomass to the network. Biomass is here a new build (and not a retrofit)
+    and is not co-fired with coal. An optional CC can be added to biomass
+
+    NOTE THAT THE CC IS NOT CONSTRAINED TO THE BIOMASS?
+
+    Args:
+        network (pypsa.Network): the pypsa network
+        costs (pd.DataFrame): the costs dataframe
+        nodes (pd.Index): the nodes
+        biomass_potential (pd.DataFrame): the biomass potential
+        prov_centroids (gpd.GeoDataFrame): the x,y locations of the nodes
+    """
+
+    suffix = " biomass"
+    biomass_potential.index += suffix
+    
+    network.add(
+        "Bus",
+        nodes,
+        suffix=suffix,
+        x=prov_centroids.x,
+        y=prov_centroids.y,
+        carrier="biomass",
+    )
+
+    # aggricultural residue biomass
+    # NOTE THIS CURRENTLY DOESN'T INCLUDE TRANSPORT between nodes
+    # NOTE additional emissions from treatment/remedials are missing
+    network.add(
+        "Store",
+        nodes + suffix,
+        bus=nodes + suffix,
+        e_nom_extendable=False,
+        e_nom=biomass_potential,
+        e_initial=biomass_potential,
+        carrier="biomass",
+    )
+    biomass_co2_intsty = estimate_co2_intensity_xing()
+    network.add(
+        "Link",
+        nodes + " central biomass CHP",
+        bus0=nodes + " biomass",
+        bus1=nodes,
+        bus2=nodes + " central heat",
+        bus3=nodes + " CO2",
+        p_nom_extendable=True,
+        carrier="biomass",
+        efficiency=costs.at["biomass CHP", "efficiency"],
+        efficiency2=costs.at["biomass CHP", "efficiency-heat"],
+        efficiency3=biomass_co2_intsty,
+        capital_cost=costs.at["biomass CHP", "efficiency"]
+        * costs.at["biomass CHP", "capital_cost"],
+        marginal_cost=costs.at["biomass CHP", "efficiency"]
+        * costs.at["biomass CHP", "marginal_cost"]
+        + costs.at["solid biomass", "fuel"],
+        lifetime=costs.at["biomass CHP", "lifetime"],
+    )
+
+    network.add(
+        "Link",
+        nodes + " central biomass CHP capture",
+        bus0=nodes + " CO2",
+        bus1=nodes + " CO2 capture",
+        bus2=nodes,
+        p_nom_extendable=True,
+        carrier="CO2 capture",
+        efficiency=costs.at["biomass CHP capture", "capture_rate"],
+        efficiency2=-1
+        * costs.at["biomass CHP capture", "capture_rate"]
+        * costs.at["biomass CHP capture", "electricity-input"],
+        capital_cost=costs.at["biomass CHP capture", "capture_rate"]
+        * costs.at["biomass CHP capture", "capital_cost"],
+        lifetime=costs.at["biomass CHP capture", "lifetime"],
+    )
+
+    network.add(
+        "Link",
+        nodes + " decentral biomass boiler",
+        bus0=nodes + " biomass",
+        bus1=nodes + " decentral heat",
+        p_nom_extendable=True,
+        carrier="biomass",
+        efficiency=costs.at["biomass boiler", "efficiency"],
+        capital_cost=costs.at["biomass boiler", "efficiency"]
+        * costs.at["biomass boiler", "capital_cost"],
+        marginal_cost=costs.at["biomass boiler", "efficiency"]
+        * costs.at["biomass boiler", "marginal_cost"]
+        + costs.at["biomass boiler", "pelletizing cost"]
+        + costs.at["solid biomass", "fuel"],
+        lifetime=costs.at["biomass boiler", "lifetime"],
+    )
 
 
 def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
@@ -77,7 +177,47 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
 
 
-def add_co2_constraints_prices(network: pypsa.Network, co2_control:dict):
+def add_co2_capture_support(network: pypsa.Network, nodes: pd.Index, prov_centroids: gpd.GeoDataFrame):
+    """add the necessary CO2 capture carriers & stores to the network
+    Args:
+        network (pypsa.Network): the network object
+        nodes (pd.Index): the nodes
+        prov_centroids (gpd.GeoDataFrame): the x,y locations of the nodes
+    """
+
+    network.add("Carrier", "CO2", co2_emissions=0)
+    network.add(
+        "Bus",
+        nodes,
+        suffix=" CO2",
+        x=prov_centroids.x,
+        y=prov_centroids.y,
+        carrier="CO2",
+    )
+
+    network.add("Store", nodes + " CO2", bus=nodes + " CO2", carrier="CO2")
+    # normally taking away from carrier generates CO2, but here we are
+    # adding CO2 stored, so the emissions will point the other way ?
+    network.add("Carrier", "CO2 capture", co2_emissions=1)
+    network.add(
+        "Bus",
+        nodes,
+        suffix=" CO2 capture",
+        x=prov_centroids.x,
+        y=prov_centroids.y,
+        carrier="CO2 capture",
+    )
+
+    network.add(
+        "Store",
+        nodes + " CO2 capture",
+        bus=nodes + " CO2 capture",
+        e_nom_extendable=True,
+        carrier="CO2 capture",
+    )
+
+
+def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
     """Add co2 constraints or prices
 
     Args:
@@ -93,7 +233,7 @@ def add_co2_constraints_prices(network: pypsa.Network, co2_control:dict):
         pass
     elif co2_control["control"] == "price":
         logger.info("Adding CO2 price to marginal costs of generators and storage units")
-        add_emission_prices(network, emission_prices={"co2": co2_control["co2_pr_limit"]} ) 
+        add_emission_prices(network, emission_prices={"co2": co2_control["co2_pr_limit"]})
 
     elif co2_control["control"].startswith("budget"):
         co2_limit = co2_control["co2_pr_limit"]
@@ -108,7 +248,7 @@ def add_co2_constraints_prices(network: pypsa.Network, co2_control:dict):
         )
     else:
         logger.error(f"Unhandled CO2 control config {co2_control} due to unknown control.")
-        raise ValueError(f"Unhandled CO2 config {config["scenario"]["co2_reduction"]}")
+        raise ValueError(f"Unhandled CO2 config {config['scenario']['co2_reduction']}")
 
 
 def add_conventional_generators(
@@ -163,19 +303,6 @@ def add_conventional_generators(
 
     # add gas will then be true
     if "OCGT gas" in config["Techs"]["conv_techs"]:
-        # network.add(
-        #     "Generator",
-        #     nodes,
-        #     suffix=" OCGT",
-        #     bus=nodes,
-        #     carrier="gas",
-        #     p_nom_extendable=True,
-        #     marginal_cost=costs.at["OCGT", "marginal_cost"], 
-        #     capital_cost=costs.at["OCGT", "efficiency"]
-        #     * costs.at["OCGT", "capital_cost"],  # NB: capital cost is per MWel
-        #     efficiency=costs.at["OCGT", "efficiency"],
-        #     lifetime=costs.at["OCGT", "lifetime"],
-        # )
 
         network.add(
             "Link",
@@ -238,7 +365,6 @@ def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_
 
     logger.info("Added emission prices to marginal costs of generators and storage units")
     logger.info(f"\tEmission prices: {emission_prices}")
-    logger.info(f"\t generators marginal costs: {n.generators.groupby("carrier").first()['marginal_cost']}")
 
 
 def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.DataFrame):
@@ -746,11 +872,11 @@ def add_heat_coupling(
 
         network.add(
             "Generator",
-            name=nodes + " CHP gas",
+            name=nodes + " CHP gas fuel",
             bus=nodes + " CHP gas",
             carrier="gas",
             p_nom_extendable=True,
-            marginal_cost=costs.at["gas", "marginal_cost"],
+            marginal_cost=costs.at["gas", "fuel"],
         )
 
         # OCGT CHP
@@ -990,7 +1116,7 @@ def add_hydro(
             inflow_station + " inflow",
             bus=inflow_station + " station",
             carrier="hydro_inflow",
-            p_max_pu = p_pu.clip(1.0e-6),
+            p_max_pu=p_pu.clip(1.0e-6),
             # p_min_pu=p_pu.clip(1.0e-6),
             p_nom=p_nom,
         )
@@ -1020,7 +1146,11 @@ def generate_periodic_profiles(
     return week_df
 
 
-def prepare_network(config: dict, costs: pd.DataFrame, snapshots: pd.date_range ) -> pypsa.Network:
+def prepare_network(config: dict,
+                    costs: pd.DataFrame,
+                    snapshots: pd.date_range,
+                    biomass_potential:
+                    pd.DataFrame = None) -> pypsa.Network:
     """Prepares/makes the network object for overnight mode according to config &
     at 1 node per region/province
 
@@ -1028,6 +1158,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, snapshots: pd.date_range 
         config (dict): the snakemake config
         costs (pd.DataFrame): the costs dataframe (anualised capex and marginal costs)
         snapshots (pd.date_range): the snapshots for the network
+        biomass_potential (Optional, pd.DataFrame): biomass potential dataframe. Defaults to None.
 
     Returns:
         pypsa.Network: the pypsa network object
@@ -1050,7 +1181,6 @@ def prepare_network(config: dict, costs: pd.DataFrame, snapshots: pd.date_range 
     network.snapshot_weightings[:] = config["snapshots"]["frequency"]
     # load graph
     nodes = pd.Index(PROV_NAMES)
-
 
     # TODO check crs projection correct
     # load provinces
@@ -1192,6 +1322,15 @@ def prepare_network(config: dict, costs: pd.DataFrame, snapshots: pd.date_range 
 
     if config["heat_coupling"]:
         add_heat_coupling(network, config, nodes, prov_centroids, costs, planning_horizons)
+        if config["add_biomass"]:
+            add_co2_capture_support(network, nodes, prov_centroids)
+            add_biomass(
+                network,
+                costs,
+                nodes,
+                biomass_potential,
+                prov_centroids,
+                )
 
     if config["add_H2"]:
         add_H2(network, config, nodes, costs)
@@ -1208,7 +1347,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, snapshots: pd.date_range 
             location=nodes,
         )
 
-        # TODO Why no standing loss?
+        # TODO Why no standing loss?: test with
         network.add(
             "Store",
             nodes + " battery",
@@ -1267,7 +1406,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_networks",
             topology="current+FCG",
-            co2_pathway="exp175price",
+            co2_pathway="exp175default",
             # co2_reduction="0.0",
             planning_horizons=2040,
             heating_demand="positive",
@@ -1304,7 +1443,13 @@ if __name__ == "__main__":
     cost_year = yr
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
-    network = prepare_network(snakemake.config, costs, snapshots)
+    # biomass
+    if config["add_biomass"]:
+        biomass_potential = pd.read_hdf(snakemake.input.biomass_potential)
+    else:
+        biomass_potential = None
+        
+    network = prepare_network(snakemake.config, costs, snapshots, biomass_potential)
     add_co2_constraints_prices(network, co2_opts)
     sanitize_carriers(network, snakemake.config)
 
@@ -1312,8 +1457,6 @@ if __name__ == "__main__":
     network.export_to_netcdf(outp)
 
     logger.info(f"Network for {yr} prepared and saved to {outp}")
-    
+
     costs_outp = os.path.dirname(outp) + f"/costs_{yr}.csv"
     costs.to_csv(costs_outp)
-
-    
