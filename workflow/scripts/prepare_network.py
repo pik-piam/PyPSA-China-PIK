@@ -1009,7 +1009,7 @@ def add_hydro(
     hourly_rng = pd.date_range(
         config["hydro_dams"]["inflow_date_start"],
         config["hydro_dams"]["inflow_date_end"],
-        freq="1h",
+        freq="1h", # THIS IS THE INFLOW RES
         inclusive="left",
     )
     # TODO implement inflow calc, understand resolution (seems daily!)
@@ -1142,8 +1142,32 @@ def add_hydro(
 
         # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
-    # TODO clarify that accounting for hydro is working
 
+        # ======= add other existing hydro power (not lattitude resolved) ===
+        hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
+        hydro_p_max_pu = pd.read_hdf(
+            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+        ).tz_localize(None)
+
+        hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
+        # sort buses (columns) otherwise stuff will break
+        hydro_p_max_pu.sort_index(axis=1, inplace=True)
+
+        hydro_p_max_pu = hydro_p_max_pu.loc[snapshots]
+        hydro_p_max_pu.index = network.snapshots
+
+        network.add(
+            "Generator",
+            nodes,
+            suffix=" hydroelectricity",
+            bus=nodes,
+            carrier="hydroelectricity",
+            p_nom=hydro_p_nom,
+            p_nom_min=hydro_p_nom,
+            p_nom_extendable=False,
+            capital_cost=costs.at["hydro", "capital_cost"],
+            p_max_pu=hydro_p_max_pu,
+        )
 
 # TODO fix timezones/centralsie, think Shanghai won't work on its own
 def generate_periodic_profiles(
