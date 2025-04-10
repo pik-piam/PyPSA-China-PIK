@@ -88,7 +88,7 @@ class GHGConfigHandler:
             from scripts.constants import CO2_EL_2020 as base_year_ems
         
         for name, co2_scen in self.config["co2_scenarios"].items():
-            co2_scen["pathway"] = {int(k): v for k, v in co2_scen.get("pathway",{}).items()}
+            co2_scen["pathway"] = {int(k): v for k, v in co2_scen.get("pathway", {}).items()}
         self._reduction_to_budget(base_year_ems)
         self._filter_active_scenarios()
         return self.config

@@ -58,8 +58,7 @@ def build_biomass_potential_xing(biomass_potentials_path: PathLike):
     heat_content *= 1000/3600  # GJ/t -> MWh
     df = df * heat_content
 
-    return df
-    
+    return df   
 
 
 if __name__ == "__main__":
