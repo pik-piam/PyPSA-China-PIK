@@ -70,9 +70,6 @@ set-resources:
   plot_network:
     mem_mb: 8000
     cores: 2
-  plot_costs:
-    mem_mb: 8000
-    cores: 2
   retrieve_build_up_raster:
     time: 300
     cores: 1

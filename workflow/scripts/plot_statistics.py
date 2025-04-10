@@ -34,16 +34,26 @@ def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, dro
     if drop_zero_vals:
         ds = ds[ds != 0]
     ds = ds.dropna()
+
     logger.info("debuggin plot stat")
+    logger.info("all colors:")
     logger.info(colors)
-    c = colors[ds.index.get_level_values("carrier")]
+
+    carriers = ds.index.get_level_values("carrier")
+    c = colors.reindex(carriers).fillna("lightgrey")
+
+    if c.isnull().all():
+        logger.warning("All carrier colors missing for: %s", list(carriers))
+        c[:] = "lightgrey"
+
+    logger.info("final color mapping:")
     logger.info(c)
-    logger.info(ds.index.get_level_values("carrier"))
-    logger.info(colors.loc[ds.index.get_level_values("carrier")])
+
     ds = ds.pipe(rename_index)
-    label = f"{ds.attrs['name']} [{ds.attrs['unit']}]"
+    label = f"{ds.attrs.get('name', '')} [{ds.attrs.get('unit', '')}]"
     ds.plot.barh(color=c.values, xlabel=label, ax=ax)
     ax.grid(axis="y")
+
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@
 
 run:
   # name: 'new_load_overnight_5hr_newcutout'
-  name: test_co2_pr_baseline_0405SD
+  name: test_co2_pr_baseline_0410allregions
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
@@ -30,15 +30,23 @@ co2_scenarios:
     control: "reduction" # price | reduction | budget | None
     pathway:
       '2020': 0.0
-      '2025': 0.22623418
-      '2030': 0.41175086
-      '2035': 0.56387834
-      '2040': 0.688626
-      '2045': 0.79092165
-      '2050': 0.87480618
-      '2055': 0.94359322
-      '2060': 1.0
-
+      '2025': 0.0
+      '2030': 0.0
+      '2035': 0.0
+      '2040': 0.0
+      '2045': 0.0
+      '2050': 0.0
+      '2055': 0.0
+      '2060': 0.0
+      # '2020': 0.0
+      # '2025': 0.22623418
+      # '2030': 0.41175086
+      # '2035': 0.56387834
+      # '2040': 0.688626
+      # '2045': 0.79092165
+      # '2050': 0.87480618
+      # '2055': 0.94359322
+      # '2060': 1.0
 # TODO Need to test timezones and functionality of end_year_plus1
 snapshots:
   start: "01-01 00:00"
@@ -157,7 +165,7 @@ Techs:
   hydrogen_lines: true # currently myopic pathway only
 
 ## add components (overwrites vre tech choice)
-heat_coupling: True
+heat_coupling: false
 add_biomass: True
 add_hydro: True
 add_H2: True
@@ -204,7 +212,7 @@ solving:
     options: gurobi-default
   gurobi_hpc_tunnel:
     use_tunnel: True
-    tunnel_port: 1080
+    tunnel_port: 3031
 
   solver_options:
     highs-default:
@@ -229,6 +237,7 @@ solving:
       PreDual: 0
       GURO_PAR_BARDENSETHRESH: 200
       DualReductions: 0
+      assign_all_duals: true
 #      BarConvTol: 1.e-6
 #      Seed: 123
 #      AggFill: 0

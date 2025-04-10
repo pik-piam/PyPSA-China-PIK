@@ -211,7 +211,6 @@ def calculate_costs_by_region(n: pypsa.Network, label: str, costs: pd.DataFrame)
             energy_grouped = total_energy.groupby([c.df.carrier, region_map]).sum()
             capital_costs_grouped = capital_costs.groupby([c.df.carrier, region_map]).sum()
 
-            # 记录总量以便计算全国平均
             national_energy_cap = {}
             national_cost_cap = {}
 
@@ -227,7 +226,6 @@ def calculate_costs_by_region(n: pypsa.Network, label: str, costs: pd.DataFrame)
                         "region": region,
                         label: unit_capital_cost
                     })
-                    # 累加全国数据
                     national_energy_cap[carrier] = national_energy_cap.get(carrier, 0) + energy
                     national_cost_cap[carrier] = national_cost_cap.get(carrier, 0) + cost
 
@@ -283,14 +281,12 @@ def calculate_costs_by_region(n: pypsa.Network, label: str, costs: pd.DataFrame)
         
         if df.empty:
             logger.warning("No records generated in calculate_costs_by_region")
-            # 返回空DataFrame而不是None
             return pd.DataFrame(columns=["component", "cost_type", "carrier", "region", label])
             
         return df.set_index(["tech", "region"]).sort_index()
         
     except Exception as e:
         logger.error(f"Error in calculate_costs_by_region: {str(e)}")
-        # 返回空DataFrame而不是None
         return pd.DataFrame(columns=["component", "cost_type", "carrier", "region", label])
 
 
@@ -400,12 +396,21 @@ def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame):
                 c_energies = pd.Series(0.0, c.df.carrier.unique())
                 for port in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
                     totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
-                    # 检查bus是否存在
                     bus_col = "bus" + port
                     if bus_col not in c.df.columns:
                         logger.warning(f"Missing bus column {bus_col} for {c.name}")
                         continue
+
+                    totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
+
+                    # fallback for empty bus entries
+                    no_bus = c.df.index[c.df[bus_col] == ""]
+                    if not no_bus.empty:
+                        default_val = float(n.component_attrs[c.name].loc["p" + port, "default"])
+                        totals.loc[no_bus] = default_val
+
                     c_energies -= totals.groupby(c.df.carrier).sum()
+
             
             c_energies = pd.concat([c_energies], keys=[c.list_name])
             energy = energy.reindex(c_energies.index.union(energy.index))
@@ -596,7 +601,7 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
 
 def calculate_market_values_by_region(n: pypsa.Network, label: str, market_values: pd.DataFrame):
     """
-    计算按 region (bus) 分解的市场价值，并添加 "National" 平均值。
+    Calculate the market value broken down by region (bus) and add the "National" average.
     """
         
     carrier = "AC"
@@ -725,7 +730,6 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
                 result = output_fn(n, label, dataframes_dict[output])
                 if result is None:
                     logger.error(f"Function {output} returned None")
-                    # 使用空DataFrame替代None
                     result = pd.DataFrame()
                 dataframes_dict[output] = result
             except Exception as e:

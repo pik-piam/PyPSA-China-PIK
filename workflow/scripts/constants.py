@@ -23,37 +23,64 @@ CURRENCY = "Eur"
 YEARBOOK_DATA2POP = 1e4
 POP_YEAR = "2020"
 
-# ========= SETUP REGIONS ==========
 TIMEZONE = "Asia/Shanghai"
 
-def read_province_data():
-    """读取省份数据，如果没有特定配置则运行所有省份（除港澳台）"""
+
+def read_province_data(path: str = "resources/data/regions/province_codes.csv") -> list[str]:
+    """
+    Read province names from a CSV file, excluding Hong Kong, Macau, and Taiwan.
+
+    Args:
+        path (str): Path to the CSV file containing province names.
+
+    Returns:
+        list[str]: List of province names.
+    """
     try:
-        df = pd.read_csv("resources/data/regions/province_codes.csv")
-        # 排除港澳台
-        excluded = ['HongKong', 'Macau', 'Taiwan']
-        df = df[~df['Full name'].isin(excluded)]
-        provinces = df['Full name'].tolist()
-        print(f"Loaded {len(provinces)} mainland provinces")
-        return provinces
+        df = pd.read_csv(path)
+        excluded = ["HongKong", "Macau", "Taiwan"]
+        df = df[~df["Full name"].isin(excluded)]
+        return df["Full name"].tolist()
     except Exception as e:
-        print(f"Warning: Could not read province codes: {e}")
+        print(f"Warning: Could not read province codes from {path}: {e}")
         return []
 
-def get_province_names() -> list:
-    """获取省份名称列表"""
-    default_prov_names = read_province_data()
-    return default_prov_names
 
-# 初始化省份相关的常量
+def get_province_names() -> list[str]:
+    """
+    Get list of provinces to include in the model.
+
+    If the environment variable PROV_NAMES is set (e.g., "Jiangsu Zhejiang"),
+    it overrides the default list from the CSV. Used for testing or regional modeling.
+
+    Returns:
+        list[str]: List of province names to model.
+
+    Raises:
+        ValueError: If unknown provinces are specified via PROV_NAMES.
+    """
+    default_provs = read_province_data()
+    env_input = os.getenv("PROV_NAMES")
+
+    if env_input:
+        provs = re.findall(r"[\w']+", env_input)
+        unknown = set(provs) - set(default_provs)
+        if unknown:
+            raise ValueError(f"Unknown provinces in PROV_NAMES: {unknown}")
+        return provs
+
+    return default_provs
+
+
+# Constants derived from province configuration
 PROV_NAMES = get_province_names()
 REGIONAL_GEO_TIMEZONES_DEFAULT = {prov: TIMEZONE for prov in PROV_NAMES}
 REGIONAL_GEO_TIMEZONES = REGIONAL_GEO_TIMEZONES_DEFAULT
 
+
 def filter_buses(names) -> list:
     return [name for name in names if name in PROV_NAMES]
 
-# 更新其他依赖于省份的常量
 NUCLEAR_EXTENDABLE_DEFAULT = [
     "Liaoning", "Shandong", "Jiangsu", "Zhejiang",
     "Fujian", "Guangdong", "Hainan", "Guangxi"
