@@ -71,7 +71,7 @@ def add_biomass(network: pypsa.Network,
 
     suffix = " biomass"
     biomass_potential.index += suffix
-    
+
     network.add(
         "Bus",
         nodes,
@@ -303,7 +303,6 @@ def add_conventional_generators(
 
     # add gas will then be true
     if "OCGT gas" in config["Techs"]["conv_techs"]:
-
         network.add(
             "Link",
             nodes,
@@ -834,51 +833,17 @@ def add_heat_coupling(
             bus1=nodes,
             bus2=nodes + " central heat",
             p_nom_extendable=True,
-            carrier="H2 CHP",
             efficiency=costs.at["central hydrogen CHP", "efficiency"],
             efficiency2=costs.at["central hydrogen CHP", "efficiency"]
             / costs.at["central hydrogen CHP", "c_b"],
             capital_cost=costs.at["central hydrogen CHP", "efficiency"]
             * costs.at["central hydrogen CHP", "capital_cost"],
             lifetime=costs.at["central hydrogen CHP", "lifetime"],
+            carrier="H2 CHP",
         )
-    if "gas boiler" in config["Techs"]["conv_techs"]:
-        for cat in [" decentral ", " central "]:
-            network.add(
-                "Link",
-                nodes + cat + "gas boiler",
-                p_nom_extendable=True,
-                bus0=nodes + " gas",
-                bus1=nodes + cat + "heat",
-                efficiency=costs.at[cat.lstrip() + "gas boiler", "efficiency"],
-                marginal_cost=costs.at[cat.lstrip() + "gas boiler", "VOM"],
-                capital_cost=costs.at[cat.lstrip() + "gas boiler", "efficiency"]
-                * costs.at[cat.lstrip() + "gas boiler", "capital_cost"],
-                lifetime=costs.at[cat.lstrip() + "gas boiler", "lifetime"],
-            )
 
     if "CHP gas" in config["Techs"]["conv_techs"]:
-
-        # TODO merge with gas ?
-        network.add(
-            "Bus",
-            nodes,
-            suffix=" CHP gas",
-            x=prov_centroids.x,
-            y=prov_centroids.y,
-            carrier="gas",
-            location=nodes,
-        )
-
-        network.add(
-            "Generator",
-            name=nodes + " CHP gas fuel",
-            bus=nodes + " CHP gas",
-            carrier="gas",
-            p_nom_extendable=True,
-            marginal_cost=costs.at["gas", "fuel"],
-        )
-
+        # TODO apply same as for coal
         # OCGT CHP
         network.add(
             "Link",
@@ -892,18 +857,19 @@ def add_heat_coupling(
             * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
             capital_cost=costs.at["central gas CHP", "efficiency"]
             * costs.at["central gas CHP", "capital_cost"],  # NB: capital cost is per MWel
-            efficiency=config["chp_parameters"]["eff_el"],
+            efficiency=costs.at["central gas CHP", "efficiency"],
             efficiency2=config["chp_parameters"]["eff_th"],
             lifetime=costs.at["central gas CHP", "lifetime"],
+            carrier="CHP gas"
         )
 
     if "CHP coal" in config["Techs"]["conv_techs"]:
+        logging.info("Adding CHP coal to network")
 
-        # TODO merge with normal coal?
         network.add(
             "Bus",
             nodes,
-            suffix=" CHP coal",
+            suffix=" coal fuel",
             x=prov_centroids.x,
             y=prov_centroids.y,
             carrier="coal",
@@ -912,29 +878,80 @@ def add_heat_coupling(
 
         network.add(
             "Generator",
-            name=nodes + " CHP coal",
-            bus=nodes + " CHP coal",
+            nodes + " coal fuel",
+            bus=nodes + " coal fuel",
             carrier="coal",
-            p_nom_extendable=True,
-            marginal_cost=costs.at["coal", "marginal_cost"],
+            p_nom_extendable=False,
+            p_nom=1e8,
+            marginal_cost=costs.at["coal", "fuel"],
         )
 
+        # NOTE generator | boiler is a key word for the constraint
         network.add(
             "Link",
             name=nodes,
-            suffix=" CHP coal",
-            bus0=nodes + " CHP coal",
+            suffix=" CHP coal generator",
+            bus0=nodes + " coal fuel",
             bus1=nodes,
-            bus2=nodes + " central heat",
             p_nom_extendable=True,
             marginal_cost=costs.at["central coal CHP", "efficiency"]
             * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
             capital_cost=costs.at["central coal CHP", "efficiency"]
             * costs.at["central coal CHP", "capital_cost"],  # NB: capital cost is per MWel
-            efficiency=config["chp_parameters"]["eff_el"],
-            efficiency2=config["chp_parameters"]["eff_th"],
+            efficiency=costs.at["central coal CHP", "efficiency"],
+            c_b=costs.at["central coal CHP", "c_b"],
+            p_nom_ratio=1.0,
+            lifetime=costs.at["central coal CHP", "lifetime"],
+            carrier="CHP coal",
+        )
+
+        network.add(
+            "Link",
+            nodes,
+            suffix=" central CHP coal boiler",
+            bus0=nodes + " coal fuel",
+            bus1=nodes + " central heat",
+            carrier="CHP coal",
+            p_nom_extendable=True,
+            marginal_cost=costs.at["central coal CHP", "efficiency"]
+            * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
+            efficiency=costs.at["central coal CHP", "efficiency"]
+            / costs.at["central coal CHP", "c_v"],
             lifetime=costs.at["central coal CHP", "lifetime"],
         )
+
+    if "coal boiler" in config["Techs"]["conv_techs"]:
+        for cat in ["decentral", "central"]:
+            network.add(
+                "Link",
+                nodes + f" {cat} coal boiler",
+                p_nom_extendable=True,
+                bus0=nodes + " coal fuel",
+                bus1=nodes + f" {cat} heat",
+                efficiency=costs.at[f"{cat} coal boiler", "efficiency"],
+                marginal_cost=costs.at[f"{cat} coal boiler", "efficiency"]
+                * costs.at[f"{cat} coal boiler", "VOM"],
+                capital_cost=costs.at[f"{cat} coal boiler", "efficiency"]
+                * costs.at[f"{cat} coal boiler", "capital_cost"],
+                lifetime=costs.at[f"{cat} coal boiler", "lifetime"],
+                carrier=f"coal boiler {cat}",
+            )
+
+    if "gas boiler" in config["Techs"]["conv_techs"]:
+        for cat in ["decentral", "central"]:
+            network.add(
+                "Link",
+                nodes + cat + "gas boiler",
+                p_nom_extendable=True,
+                bus0=nodes + " gas",
+                bus1=nodes + f" {cat} heat",
+                efficiency=costs.at[f"{cat} gas boiler", "efficiency"],
+                marginal_cost=costs.at[f"{cat} gas boiler", "VOM"],
+                capital_cost=costs.at[f"{cat} gas boiler", "efficiency"]
+                * costs.at[f"{cat} gas boiler", "capital_cost"],
+                lifetime=costs.at[f"{cat} gas boiler", "lifetime"],
+                carrier=f"gas boiler {cat}"
+            )
 
     if "solar thermal" in config["Techs"]["vre_techs"]:
 
@@ -1016,6 +1033,7 @@ def add_hydro(
         carrier="stations",
         x=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(prov_shapes.crs).x,
         y=dams["geometry"].to_crs("+proj=cea").centroid.to_crs(prov_shapes.crs).y,
+        location=dams["Province"],
     )
 
     dam_buses = network.buses[network.buses.carrier == "stations"]
@@ -1067,6 +1085,7 @@ def add_hydro(
         network.links.at[bus0, "bus2"] = bus2
         network.links.at[bus0, "efficiency2"] = 1.0
 
+    # === spillage ====
     # TODO WHY EXTENDABLE - weather year?
     for row in dam_edges.iterrows():
         bus0 = row[1].bus0 + " station"
