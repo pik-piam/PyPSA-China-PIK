@@ -10,7 +10,7 @@ dependencies:
   - python>=3.12
   - pip
 
-  - pypsa>=0.31
+  - pypsa=0.31
   - atlite>=0.2.6
   - dask
   - snakemake-storage-plugin-http
