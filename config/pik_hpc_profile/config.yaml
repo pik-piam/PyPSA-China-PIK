@@ -1,6 +1,7 @@
 # A cluster profile for the PIK HPC
 # Profile allows to activeate the gurobi license via an ssh tunnel and solve pypsa
-# adapted from jdblischak/smk-simple-slurm/ & jhemmp https://github.com/aodenweller/pypsa-eur/blob/remind_develop_pypsa_v0.10.0/cluster_config/config.yaml
+# adapted from https://github.com/jdblischak/smk-simple-slurm/ 
+# & jhemmp https://github.com/aodenweller/pypsa-eur/blob/remind_develop_pypsa_v0.10.0/cluster_config/config.yaml
 # PIK-2024
 
 # define the executor
@@ -13,7 +14,7 @@ max-jobs-per-second: 10
 max-status-checks-per-second: 1
 # local-cores: 1
 latency-wait: 60
-# retries: 2
+retries: 3
 keep-going: False
 rerun-incomplete: True
 printshellcmds: True
@@ -27,6 +28,7 @@ rerun-trigger:
 verbose: false
 
 # define the cluster submission command (slurm wrapper)
+# email command --mail-user for master rule (email on end | fail)
 cluster-generic-submit-cmd:
   mkdir -p logs_slurm/{rule} &&
   sbatch
@@ -36,17 +38,21 @@ cluster-generic-submit-cmd:
     --mem={resources.mem_mb}
     --job-name={rule}-{wildcards}-smk
     --output=logs_slurm/{rule}/%j-{rule}-{wildcards}.out
-    --error=logs_slurm/{rule}/%j-{rule}-{wildcards}.out
     --parsable
     --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
+    {resources.extra}
+cluster-generic-status-cmd: "python config/pik_hpc_profile/status-check.py"
 cluster-generic-cancel-cmd: scancel
+# --error=logs_slurm/{rule}/%j-{rule}-{wildcards}.out
 
 # now define the resources
 default-resources:
-  partition: standard
-  qos: short
-  mem_mb: 2000
-  cores: 8
+  - partition=standard
+  - qos=short
+  - mem_mb=2000
+  - cores=8
+  - time=10
+  - extra=""
 
 set-resources:
   solve_network_myopic:
@@ -65,7 +71,7 @@ set-resources:
     mem_mb: 20000
   build_renewable_potential:
     time: 300
-    cores: 4
+    cores: 8
     mem_mb: 20000
   plot_network:
     mem_mb: 8000
