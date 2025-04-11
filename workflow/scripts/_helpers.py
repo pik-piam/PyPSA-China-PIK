@@ -29,8 +29,8 @@ LOGIN_NODE = "01"
 
 
 class ConfigManager:
-    """Config manager class for the snakemake configs
-    """
+    """Config manager class for the snakemake configs"""
+
     def __init__(self, config: dict):
         self._raw_config = deepcopy(config)
         self.config = deepcopy(config)
@@ -43,7 +43,8 @@ class ConfigManager:
             dict: processed config
         """
         self.config["scenario"]["planning_horizons"] = [
-            int(v) for v in self._raw_config["scenario"]["planning_horizons"]]
+            int(v) for v in self._raw_config["scenario"]["planning_horizons"]
+        ]
         ghg_handler = GHGConfigHandler(self.config.copy())
         self.config = ghg_handler.handle_ghg_scenarios()
 
@@ -69,6 +70,7 @@ class ConfigManager:
 
 class GHGConfigHandler:
     """A class to handle & validate GHG scenarios in the config"""
+
     def __init__(self, config: dict):
         self.config = deepcopy(config)
         self._raw_config = deepcopy(config)
@@ -86,7 +88,7 @@ class GHGConfigHandler:
             from scripts.constants import CO2_BASEYEAR_EM as base_year_ems
         else:
             from scripts.constants import CO2_EL_2020 as base_year_ems
-        
+
         for name, co2_scen in self.config["co2_scenarios"].items():
             co2_scen["pathway"] = {int(k): v for k, v in co2_scen.get("pathway", {}).items()}
         self._reduction_to_budget(base_year_ems)
@@ -94,15 +96,14 @@ class GHGConfigHandler:
         return self.config
 
     def _filter_active_scenarios(self):
-        """select active ghg scenarios
-        """
+        """select active ghg scenarios"""
         scenarios = self.config["scenario"].get("co2_pathway", [])
         if not isinstance(scenarios, list):
             scenarios = [scenarios]
 
         self.config["co2_scenarios"] = {
             k: v for k, v in self.config["co2_scenarios"].items() if k in scenarios
-            }
+        }
 
     def _reduction_to_budget(self, base_yr_ems: float):
         """transform reduction to budget
@@ -111,7 +112,7 @@ class GHGConfigHandler:
         """
         for name, co2_scen in self.config["co2_scenarios"].items():
             if co2_scen["control"] == "reduction":
-                budget = {yr: base_yr_ems*(1 - redu) for yr, redu in co2_scen["pathway"].items()}
+                budget = {yr: base_yr_ems * (1 - redu) for yr, redu in co2_scen["pathway"].items()}
                 self.config["co2_scenarios"][name]["pathway"] = budget
                 self.config["co2_scenarios"][name]["control"] = "budget_from_reduction"
 
@@ -315,6 +316,7 @@ def setup_gurobi_tunnel_and_env(
 
 
 # ====== SNAKEMAKE HELPERS =========
+
 
 def configure_logging(
     snakemake: object, logger: logging.Logger = None, skip_handlers=False, level="INFO"
