@@ -13,6 +13,10 @@ __pycache__
 
 /site/**
 /resources/**/*
+!resources/
+!resources/data_check/
+!resources/data_check/*.csv
+
 !/resources/data/shapefiles/
 !/resources/**/*.csv
 /resources/derived_data/
