@@ -21,6 +21,7 @@ __pycache__
 /results
 !/results/.gitkeep
 /cutouts
+/workflow/scripts/*.pdf
 /logs
 /benchmarks
 /tests/derived_data/**
