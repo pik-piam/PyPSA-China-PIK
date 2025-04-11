@@ -41,12 +41,9 @@ electricity:
   conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
   renewable_capacities_from_OPSD: [] # onwind, offwind, solar
 
-  # estimate_renewable_capacities_from_capacity_stats:
-  #   # Wind is the Fueltype in ppm.data.Capacity_stats, onwind, offwind-{ac,dc} the carrier in PyPSA-Eur
-  #   Wind: [onwind, offwind-ac, offwind-dc]
-  #   Solar: [solar]
 
-# TODO move to brownfield
+
+# TODO move to brownfield?
 hydro:
   hydro_capital_cost: True
   PHS_max_hours: 24.
