@@ -4,7 +4,7 @@
 
 run:
   # name: 'new_load_overnight_5hr_newcutout'
-  name: test_co2_pr_baseline_0410allregions
+  name: test_co2_pr_baseline_0411_NM_lowCB
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
@@ -30,23 +30,23 @@ co2_scenarios:
     control: "reduction" # price | reduction | budget | None
     pathway:
       '2020': 0.0
-      '2025': 0.0
-      '2030': 0.0
-      '2035': 0.0
-      '2040': 0.0
-      '2045': 0.0
-      '2050': 0.0
-      '2055': 0.0
-      '2060': 0.0
-      # '2020': 0.0
-      # '2025': 0.22623418
-      # '2030': 0.41175086
-      # '2035': 0.56387834
-      # '2040': 0.688626
-      # '2045': 0.79092165
-      # '2050': 0.87480618
-      # '2055': 0.94359322
-      # '2060': 1.0
+      # '2025': 0.0
+      # '2030': 0.0
+      # '2035': 0.0
+      # '2040': 0.0
+      # '2045': 0.0
+      # '2050': 0.0
+      # '2055': 0.0
+      # '2060': 0.0
+      '2020': 0.0
+      '2025': 0.22623418
+      '2030': 0.41175086
+      '2035': 0.56387834
+      '2040': 0.688626
+      '2045': 0.79092165
+      '2050': 0.87480618
+      '2055': 0.94359322
+      '2060': 0.94359322
 # TODO Need to test timezones and functionality of end_year_plus1
 snapshots:
   start: "01-01 00:00"
