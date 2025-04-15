@@ -41,6 +41,7 @@ if config["run"].get("is_test", False):
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 CUTOUT_NAME= config["atlite"]["cutout_name"]
 CUTOUT_PATH = os.path.join(CUTOUTS_DIR,CUTOUT_NAME + ".nc")
+
 # ====== set up snakemake providers =======
 storage:
     provider="http",
@@ -147,28 +148,49 @@ rule build_cop_profiles:
     resources: mem_mb=30000
     script: "scripts/build_cop_profiles.py"
 
-rule build_renewable_potential:
+rasters = ["Build_up", "Grass", "Bare", "Shrubland"]
+rule build_availability_matrix:
     input:
-        Build_up_raster=f"{LU_RASTER}/Build_up.tif",
-        Grass_raster=f"{LU_RASTER}/Grass.tif",
-        Bare_raster=f"{LU_RASTER}/Bare.tif",
-        Shrubland_raster=f"{LU_RASTER}/Shrubland.tif",
         # GEBCO bathymetry (water depth)
         gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2024_CN.tif",
-        # natural reserves data
-        natura1='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_0/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
-        natura2='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_1/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
-        natura3='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_2/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
-        provinces_shp=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
+        cutout=CUTOUT_PATH,
+        # TODO directly link to output of fetch region shapes
+        # admin 1 level = first administrative level within country
+        province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
         offshore_province_shapes=DERIVED_COMMON + "/regions/provinces_offshore.geojson",
-        cutout= CUTOUT_PATH,
+        # natural reserves from WPGDA, available land
+        **{
+            f"natura{i+1}": "resources/data/landuse_availability/"
+                        + f"WDPA_WDOECM_Oct2024_Public_CN_shp_{i}/"
+                        + "WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp"
+            for i in range(3)
+        },
+        # available land:
+        **{
+            f"{raster}_raster": f"{LU_RASTER}/{raster}.tif"
+            for raster in rasters
+        },
     output:
-        **{f"{tech}_profile": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
-            for tech in config['Technique']}
-    log: LOGS_COMMON + f"/build_renewable_potential_{CUTOUT_NAME}.log"
-    threads: ATLITE_NPROCESSES
-    resources: mem_mb=ATLITE_NPROCESSES * 5000
-    script: "scripts/build_renewable_potential.py"
+        availability_matrix=DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/" + "availability_matrix_{technology}.nc",
+    log: LOGS_COMMON + "/build_availability_matrix_{technology}.log"
+    script: "scripts/determine_availability_matrix.py"
+
+rule build_renewable_profiles:
+    input:
+        availability_matrix=DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/" + "availability_matrix_{technology}.nc",
+        province_shape=DERIVED_COMMON + "/province_shapes/CHN_adm1.shp",
+        offshore_province_shapes=DERIVED_COMMON + "/regions/provinces_offshore.geojson",
+        cutout=CUTOUT_PATH,
+    output:
+        profile= DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/"+"profile_{technology}.nc",
+        class_regions= DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/"+"regions_by_class_{technology}.geojson",
+    log:
+        LOGS_COMMON +f"/cutout_{CUTOUT_NAME}/" +"build_renewable_profile_{technology}.log",
+    threads: config["atlite"].get("nprocesses", 4)
+    wildcard_constraints:
+        technology="(?!hydro).*",  # Any technology other than hydro
+    script:
+        "../scripts/build_renewable_profiles.py"
 
 # TODO check whether energy totals still needed
 rule build_load_profiles:
@@ -321,9 +343,6 @@ elif config["foresight"] == "myopic":
             solving = config["solving"],
         input:
             network=RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
-            costs="resources/data/costs/costs_{planning_horizons}.csv",
-            biomass_potental= DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",
-        output:
             network_name = RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc'
         log:
             solver = LOG_DIR + "/solve_network_myopic/{planning_horizons}.log"
