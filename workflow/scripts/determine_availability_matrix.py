@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     if "snakemake" not in globals():
 
-        snakemake = mock_snakemake("build_availability_matrix", technology="offwind")
+        snakemake = mock_snakemake("build_availability_matrix", technology="solar")
 
     configure_logging(snakemake)
 

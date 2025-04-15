@@ -89,7 +89,9 @@ def read_province_shapes(shape_file: os.PathLike) -> gpd.GeoDataFrame:
     return prov_shapes
 
 
-def read_offshore_province_shapes(shape_file: os.PathLike, index_name = "province") -> gpd.GeoDataFrame:
+def read_offshore_province_shapes(
+    shape_file: os.PathLike, index_name="province"
+) -> gpd.GeoDataFrame:
     """read the offshore province shape files (based on the eez)
 
     Args:

@@ -5,7 +5,6 @@ These functions are currently only for the overnight mode. Myopic pathway mode c
         duplicates which need to merged in the future. Idem for solve_network.py
 """
 
-
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
@@ -50,12 +49,13 @@ from constants import (
 logger = logging.getLogger(__name__)
 
 
-def add_biomass(network: pypsa.Network,
-                costs: pd.DataFrame,
-                nodes: pd.Index,
-                biomass_potential: pd.DataFrame,
-                prov_centroids: gpd.GeoDataFrame
-                ):
+def add_biomass(
+    network: pypsa.Network,
+    costs: pd.DataFrame,
+    nodes: pd.Index,
+    biomass_potential: pd.DataFrame,
+    prov_centroids: gpd.GeoDataFrame,
+):
     """add biomass to the network. Biomass is here a new build (and not a retrofit)
     and is not co-fired with coal. An optional CC can be added to biomass
 
@@ -177,7 +177,9 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
 
 
-def add_co2_capture_support(network: pypsa.Network, nodes: pd.Index, prov_centroids: gpd.GeoDataFrame):
+def add_co2_capture_support(
+    network: pypsa.Network, nodes: pd.Index, prov_centroids: gpd.GeoDataFrame
+):
     """add the necessary CO2 capture carriers & stores to the network
     Args:
         network (pypsa.Network): the network object
@@ -636,6 +638,74 @@ def add_voltage_links(network: pypsa.Network, config: dict):
         )
 
 
+def add_wind_and_solar(
+    network: pypsa.Network,
+    techs: list,
+    paths: os.PathLike,
+    year: int,
+    costs: pd.DataFrame,
+):
+    """
+    Adds wind and solar generators for each grade of renewable energy technology
+
+    Args:
+        network (pypsa.Network): The PyPSA network to which the generators will be added
+        techs (list): A list of renewable energy technologies to add (e.g., ["solar", "onwind", "offwind"])
+        paths (os.PathLike): file paths containing renewable profiles (snakemake.inputs)
+        year (int): planning year
+        costs (pd.DataFrame): cost parameters for each technology
+    Raises:
+        ValueError: for unsupported technologies or missing paths.
+    """
+
+    unsupported = set(techs).difference({"solar", "onwind", "offwind"})
+    if unsupported:
+        raise ValueError(f"Carrier(s) {unsupported} not wind or solar pv")
+    prof_paths = {f"profile_{tech}": paths[f"profile_{tech}"] for tech in techs}
+    if len(prof_paths) != len(techs):
+        raise ValueError(f"Paths do not correspond to techs  ({prof_paths} vs {techs})")
+
+    for tech in techs:
+        # load the renewable profiles
+        logging.info(f"Attaching {tech} to network")
+        with xr.open_dataset(prof_paths[f"profile_{tech}"]) as ds:
+            if ds.indexes["bus"].empty:
+                continue
+            if "year" in ds.indexes:
+                ds = ds.sel(year=ds.year.min(), drop=True)
+
+            timestamps = pd.DatetimeIndex(ds.time)
+            shift_weather_to_planning_yr = lambda t: t.replace(year=int(year))
+            ds.assign_coords(time=timestamps.map(shift_weather_to_planning_yr))
+            ds = ds.stack(bus_bin=["bus", "bin"])
+
+        # bins represent renewable generation grades
+        flatten = lambda t: " grade".join(map(str, t))
+        buses = ds.indexes["bus_bin"].get_level_values("bus")
+        bus_bins = ds.indexes["bus_bin"].map(flatten)
+
+        p_nom_max = ds["p_nom_max"].to_pandas()
+        p_nom_max.index = p_nom_max.index.map(flatten)
+
+        p_max_pu = ds["profile"].to_pandas()
+        p_max_pu.columns = p_max_pu.columns.map(flatten)
+
+        # add renewables
+        network.add(
+            "Generator",
+            bus_bins,
+            suffix=f" {tech}",
+            bus=buses,
+            carrier=tech,
+            p_nom_extendable=True,
+            p_nom_max=p_nom_max,
+            capital_cost=costs.at[tech, "capital_cost"],
+            marginal_cost=costs.at[tech, "marginal_cost"],
+            p_max_pu=p_max_pu,
+            lifetime=costs.at[tech, "lifetime"],
+        )
+
+
 def add_heat_coupling(
     network: pypsa.Network,
     config: dict,
@@ -643,6 +713,7 @@ def add_heat_coupling(
     prov_centroids: gpd.GeoDataFrame,
     costs: pd.DataFrame,
     planning_year: int,
+    paths: dict,
 ):
     """add the heat-coupling links and generators to the network
 
@@ -652,10 +723,11 @@ def add_heat_coupling(
         nodes (pd.Index): the node names. Defaults to pd.Index.
         prov_centroids (gpd.GeoDataFrame): the node locations.
         costs (pd.DataFrame): the costs dataframe for emissions
+        paths (dict): the paths to the data files
     """
 
-    central_fraction = pd.read_hdf(snakemake.input.central_fraction)
-    with pd.HDFStore(snakemake.input.heat_demand_profile, mode="r") as store:
+    central_fraction = pd.read_hdf(paths["central_fraction"])
+    with pd.HDFStore(paths["heat_demand_profile"], mode="r") as store:
         heat_demand = store["heat_demand_profiles"]
         # TODO fix this if not working
         heat_demand.index = heat_demand.index.tz_localize(None)
@@ -698,8 +770,8 @@ def add_heat_coupling(
     )
 
     if "heat pump" in config["Techs"]["vre_techs"]:
-        logger.info(f"loading cop profiles from {snakemake.input.cop_name}")
-        with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
+        logger.info(f"loading cop profiles from {paths["cop_name"]}")
+        with pd.HDFStore(paths["cop_name"], mode="r") as store:
             ashp_cop = store["ashp_cop_profiles"]
             ashp_cop.index = ashp_cop.index.tz_localize(None)
             ashp_cop = shift_profile_to_planning_year(
@@ -753,7 +825,6 @@ def add_heat_coupling(
         )
 
     if "water tanks" in config["Techs"]["store_techs"]:
-
         for cat in [" decentral ", " central "]:
             network.add(
                 "Bus",
@@ -860,7 +931,7 @@ def add_heat_coupling(
             efficiency=costs.at["central gas CHP", "efficiency"],
             efficiency2=config["chp_parameters"]["eff_th"],
             lifetime=costs.at["central gas CHP", "lifetime"],
-            carrier="CHP gas"
+            carrier="CHP gas",
         )
 
     if "CHP coal" in config["Techs"]["conv_techs"]:
@@ -950,14 +1021,14 @@ def add_heat_coupling(
                 capital_cost=costs.at[f"{cat} gas boiler", "efficiency"]
                 * costs.at[f"{cat} gas boiler", "capital_cost"],
                 lifetime=costs.at[f"{cat} gas boiler", "lifetime"],
-                carrier=f"gas boiler {cat}"
+                carrier=f"gas boiler {cat}",
             )
 
     if "solar thermal" in config["Techs"]["vre_techs"]:
 
         # this is the amount of heat collected in W per m^2, accounting
         # for efficiency
-        with pd.HDFStore(snakemake.input.solar_thermal_name, mode="r") as store:
+        with pd.HDFStore(paths["solar_thermal_name"], mode="r") as store:
             # 1e3 converts from W/m^2 to MW/(1000m^2) = kW/m^2
             solar_thermal = config["solar_cf_correction"] * store["solar_thermal_profiles"] / 1e3
 
@@ -1009,7 +1080,7 @@ def add_hydro(
     hourly_rng = pd.date_range(
         config["hydro_dams"]["inflow_date_start"],
         config["hydro_dams"]["inflow_date_end"],
-        freq="1h", # THIS IS THE INFLOW RES
+        freq="1h",  # THIS IS THE INFLOW RES
         inclusive="left",
     )
     # TODO implement inflow calc, understand resolution (seems daily!)
@@ -1142,7 +1213,6 @@ def add_hydro(
 
         # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
-
         # ======= add other existing hydro power (not lattitude resolved) ===
         hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
         hydro_p_max_pu = pd.read_hdf(
@@ -1169,6 +1239,7 @@ def add_hydro(
             p_max_pu=hydro_p_max_pu,
         )
 
+
 # TODO fix timezones/centralsie, think Shanghai won't work on its own
 def generate_periodic_profiles(
     dt_index=None,
@@ -1189,11 +1260,13 @@ def generate_periodic_profiles(
     return week_df
 
 
-def prepare_network(config: dict,
-                    costs: pd.DataFrame,
-                    snapshots: pd.date_range,
-                    biomass_potential:
-                    pd.DataFrame = None) -> pypsa.Network:
+def prepare_network(
+    config: dict,
+    costs: pd.DataFrame,
+    snapshots: pd.date_range,
+    biomass_potential: pd.DataFrame = None,
+    paths: dict = None,
+) -> pypsa.Network:
     """Prepares/makes the network object for overnight mode according to config &
     at 1 node per region/province
 
@@ -1211,7 +1284,6 @@ def prepare_network(config: dict,
     config["add_gas"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "gas" in tech] else False
     )
-    logger.info(f"Adding gas?: {config['add_gas']}")
     config["add_coal"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False
     )
@@ -1227,7 +1299,7 @@ def prepare_network(config: dict,
 
     # TODO check crs projection correct
     # load provinces
-    prov_shapes = read_province_shapes(snakemake.input.province_shape)
+    prov_shapes = read_province_shapes(paths["province_shape"])
     prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
 
     # add AC buses
@@ -1236,67 +1308,16 @@ def prepare_network(config: dict,
     # add carriers
     add_carriers(network, config, costs)
 
-    # load datasets calculated by build_renewable_profiles
-    ds_solar = xr.open_dataset(snakemake.input.profile_solar)
-    ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)
-    ds_offwind = xr.open_dataset(snakemake.input.profile_offwind)
-
-    # == shift datasets from reference to planning year, sort columns to match network bus order ==
-    solar_p_max_pu = calc_renewable_pu_avail(ds_solar, planning_horizons, snapshots)
-    onwind_p_max_pu = calc_renewable_pu_avail(ds_onwind, planning_horizons, snapshots)
-    offwind_p_max_pu = calc_renewable_pu_avail(ds_offwind, planning_horizons, snapshots)
-
     # load electricity demand data
-    demand_path = snakemake.input.elec_load.replace("{planning_horizons}", f"{cost_year}")
+    demand_path = paths["elec_load"].replace("{planning_horizons}", f"{cost_year}")
     with pd.HDFStore(demand_path, mode="r") as store:
         load = LOAD_CONVERSION_FACTOR * store["load"]  # TODO add unit
         load = load.loc[network.snapshots, PROV_NAMES]
 
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
 
-    # add renewables
-    network.add(
-        "Generator",
-        nodes,
-        suffix=" onwind",
-        bus=nodes,
-        carrier="onwind",
-        p_nom_extendable=True,
-        p_nom_max=ds_onwind["p_nom_max"].to_pandas(),
-        capital_cost=costs.at["onwind", "capital_cost"],
-        marginal_cost=costs.at["onwind", "marginal_cost"],
-        p_max_pu=onwind_p_max_pu,
-        lifetime=costs.at["onwind", "lifetime"],
-    )
-
-    offwind_nodes = ds_offwind["bus"].to_pandas().index
-    network.add(
-        "Generator",
-        offwind_nodes,
-        suffix=" offwind",
-        bus=offwind_nodes,
-        carrier="offwind",
-        p_nom_extendable=True,
-        p_nom_max=ds_offwind["p_nom_max"].to_pandas(),
-        capital_cost=costs.at["offwind", "capital_cost"],
-        marginal_cost=costs.at["offwind", "marginal_cost"],
-        p_max_pu=offwind_p_max_pu,
-        lifetime=costs.at["offwind", "lifetime"],
-    )
-
-    network.add(
-        "Generator",
-        nodes,
-        suffix=" solar",
-        bus=nodes,
-        carrier="solar",
-        p_nom_extendable=True,
-        p_nom_max=ds_solar["p_nom_max"].to_pandas(),
-        capital_cost=costs.at["solar", "capital_cost"],
-        marginal_cost=costs.at["solar", "marginal_cost"],
-        p_max_pu=solar_p_max_pu,
-        lifetime=costs.at["solar", "lifetime"],
-    )
+    ws_carriers = [c for c in config["Techs"]["vre_techs"] if c.find("wind") >= 0 or c == "solar"]
+    add_wind_and_solar(network, ws_carriers, paths, planning_horizons, costs)
 
     add_conventional_generators(network, nodes, config, prov_centroids, costs)
 
@@ -1373,7 +1394,7 @@ def prepare_network(config: dict,
                 nodes,
                 biomass_potential,
                 prov_centroids,
-                )
+            )
 
     if config["add_H2"]:
         add_H2(network, config, nodes, costs)
@@ -1454,10 +1475,12 @@ if __name__ == "__main__":
             planning_horizons=2040,
             heating_demand="positive",
         )
-    
+
     configure_logging(snakemake)
 
     config = snakemake.config
+
+    logging.info("Preparing network for scenario:")
     logging.info(config["scenario"])
     logging.info(config["co2_scenarios"])
 
@@ -1481,18 +1504,22 @@ if __name__ == "__main__":
     )
 
     # load costs
-    n_years = config["snapshots"]["frequency"]*len(snapshots)/8760.0
-    tech_costs = snakemake.input.tech_costs
+    n_years = config["snapshots"]["frequency"] * len(snapshots) / 8760.0
+    tech_costs = snakemake.input["tech_costs"]
+    input_paths = {k: v for k, v in snakemake.input.items()}
+
     cost_year = yr
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
     # biomass
     if config["add_biomass"]:
-        biomass_potential = pd.read_hdf(snakemake.input.biomass_potential)
+        biomass_potential = pd.read_hdf(input_paths["biomass_potential"])
     else:
         biomass_potential = None
-        
-    network = prepare_network(snakemake.config, costs, snapshots, biomass_potential)
+
+    network = prepare_network(
+        snakemake.config, costs, snapshots, biomass_potential, paths=input_paths
+    )
     add_co2_constraints_prices(network, co2_opts)
     sanitize_carriers(network, snakemake.config)
 
