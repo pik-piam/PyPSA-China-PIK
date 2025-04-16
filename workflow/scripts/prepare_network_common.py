@@ -227,12 +227,9 @@ def add_HV_links(network: pypsa.Network, config: dict, n_years: int):
     """add high voltage connections as links in the lossy transport model (see Neumann et al)
 
     Args:
-        network (pypsa.Network): _description_
-        config (dict): _description_
-        n_years (int): _description_
-
-    Raises:
-        ValueError: _description_
+        network (pypsa.Network): the pypsa network
+        config (dict): the configuration dictionary
+        n_years (int): the number of years for discounting
     """
 
     edge_path = config["edge_paths"].get(config["scenario"]["topology"], None)

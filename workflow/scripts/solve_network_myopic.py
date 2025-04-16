@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 # coding: utf-8
-""" Functions to add constraints and prepare the network for the solver. 
+"""Functions to add constraints and prepare the network for the solver.
 Associated with the `solve_network_myopic` rule in the Snakefile.
 To be merged/consolidated with the `solve_network` script.
 """
@@ -13,19 +13,14 @@ import re
 import numpy as np
 import pandas as pd
 import pypsa
-import xarray as xr
 from _helpers import (
     configure_logging,
-    override_component_attrs,
-    mock_snakemake,
-    setup_gurobi_tunnel_and_env,
     mock_snakemake,
     setup_gurobi_tunnel_and_env,
 )
 
 logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
-from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 
 def prepare_network(
@@ -222,8 +217,7 @@ def extra_functionality(n, snapshots):
     If you want to enforce additional custom constraints, this is a good location to add them.
     The arguments ``opts`` and ``snakemake.config`` are expected to be attached to the network.
     """
-    opts = n.opts
-    config = n.config
+
     add_chp_constraints(n)
     add_battery_constraints(n)
     add_transimission_constraints(n)
@@ -307,11 +301,7 @@ if __name__ == "__main__":
 
     np.random.seed(solve_opts.get("seed", 123))
 
-    if "overrides" in snakemake.input.keys():
-        overrides = override_component_attrs(snakemake.input.overrides)
-        n = pypsa.Network(snakemake.input.network, override_component_attrs=overrides)
-    else:
-        n = pypsa.Network(snakemake.input.network)
+    n = pypsa.Network(snakemake.input.network)
 
     n = prepare_network(n, solve_opts)
 
