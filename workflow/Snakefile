@@ -196,9 +196,9 @@ rule build_biomass_potential:
         # from doi.org/10.1038/s41467-021-23282-x
         biomass_feedstocks = "resources/data/p_nom/41467_2021_23282_MOESM4_ESM.xlsx"
     log:
-        LOG_DIR + "/build_biomass_potential.log"
+        LOGS_COMMON + "/build_biomass_potential.log"
     output:
-        biomass_potential = DERIVED_DATA+"/"+"p_nom/biomass_potential.h5"
+        biomass_potential=DERIVED_COMMON+"/"+"p_nom/biomass_potential.h5"
     threads: ATLITE_NPROCESSES
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
@@ -215,7 +215,9 @@ if config["foresight"] in ["overnight"]:
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
             tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc" for tech in config['renewable']}
+            biomass_potential=DERIVED_COMMON+f"{'/p_nom/biomass_potential.h5' if config["add_biomass"] else ''}",
+            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc" for tech in config['renewable']},
+
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         threads: 1
@@ -261,7 +263,7 @@ elif config["foresight"] == "myopic":
     rule prepare_base_networks:
         input:
             edges = "resources/data/grids/edges.txt",
-            biomass_potental = DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",
+            biomass_potential=DERIVED_COMMON+"/"+"p_nom/biomass_potential.h5",
             cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
             heat_demand_profile= DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",

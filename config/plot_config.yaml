@@ -81,6 +81,8 @@ plotting:
     coal power plant: '#545454'
     Coal Power Plant: '#545454'
     coal boiler: '#787575'
+    coal boiler decentral: '#787575'
+    coal boiler central: '#787575'
     Coal marginal: '#545454'
     solid: '#545454'
     Lignite: '#826837'
@@ -137,6 +139,8 @@ plotting:
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
     gas boiler: '#db6a25'
+    gas boiler decentral: '#db6a25'
+    gas boiler central: '#db6a25'
     gas boilers: '#db6a25'
     gas boiler marginal: '#db6a25'
     residential rural gas boiler: '#d4722e'
@@ -210,7 +214,7 @@ plotting:
     CHP: '#8a5751'
     CHP coal: '#8a5751'
     CHP coal generator: '#8a5751'
-    CHP coal boiler: '#8a7f7d'
+    coal heat: '#8a7f7d'
     urban central gas CHP: '#8f6e6a'
     CHP gas: '#8f6e6a'
     CHP gas generator: '#8f6e6a'
@@ -424,9 +428,13 @@ plotting:
   - coal power plant
   - coal power plant retrofit
   - coal boiler
+  - coal boiler decentral
+  - coal boiler central
   - CHP coal
   - OCGT
   - gas boiler
+  - gas boiler decentral
+  - gas boiler central
   - CHP gas
   - biomass
   - biomass carbon capture
