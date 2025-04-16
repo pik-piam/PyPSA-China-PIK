@@ -178,13 +178,15 @@ def localize_cutout_time(cutout: Cutout, drop_leap=True) -> Cutout:
     """
 
     data = cutout.data
-    if drop_leap:
-        cutout.data = data.sel(time=~((data.time.dt.month == 2) & (data.time.dt.day == 29)))
-        data = cutout.data
+
     timestamps = pd.DatetimeIndex(data.time)
     # go from ECMWF/atlite UTC to local time
     ts_naive = timestamps.tz_localize("UTC").tz_convert(TIMEZONE).tz_localize(None)
     cutout.data = cutout.data.assign_coords(time=ts_naive)
+
+    if drop_leap:
+        data = cutout.data
+        cutout.data = data.sel(time=~((data.time.dt.month == 2) & (data.time.dt.day == 29)))
 
     return cutout
 

@@ -33,7 +33,7 @@ from build_biomass_potential import estimate_co2_intensity_xing
 from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
 from readers import read_province_shapes
-from prepare_network_common import calc_renewable_pu_avail
+
 from constants import (
     PROV_NAMES,
     CRS,
@@ -651,7 +651,7 @@ def add_wind_and_solar(
     Args:
         network (pypsa.Network): The PyPSA network to which the generators will be added
         techs (list): A list of renewable energy technologies to add (e.g., ["solar", "onwind", "offwind"])
-        paths (os.PathLike): file paths containing renewable profiles (snakemake.inputs)
+        paths (os.PathLike): file paths containing renewable profiles (snakemake.input)
         year (int): planning year
         costs (pd.DataFrame): cost parameters for each technology
     Raises:
@@ -676,7 +676,16 @@ def add_wind_and_solar(
 
             timestamps = pd.DatetimeIndex(ds.time)
             shift_weather_to_planning_yr = lambda t: t.replace(year=int(year))
-            ds.assign_coords(time=timestamps.map(shift_weather_to_planning_yr))
+            timestamps = timestamps.map(shift_weather_to_planning_yr)
+            ds = ds.assign_coords(time=timestamps)
+
+            mask = ds.time.isin(network.snapshots)
+            ds = ds.sel(time=mask)
+
+            if not len(ds.time) == len(network.snapshots):
+                raise ValueError(
+                    f"Mismatch in profile and network timestamps {len(ds.time)} and {len(network.snapshots)}"
+                )
             ds = ds.stack(bus_bin=["bus", "bin"])
 
         # bins represent renewable generation grades
@@ -1072,6 +1081,8 @@ def add_hydro(
         planning_horizons (int): the year
     """
 
+    logger.info("\tAdding dam cascade")
+
     # load dams
     df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
     points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
@@ -1226,6 +1237,7 @@ def add_hydro(
         hydro_p_max_pu = hydro_p_max_pu.loc[snapshots]
         hydro_p_max_pu.index = network.snapshots
 
+        logger.info("\tAdding extra hydro capacity (regionally aggregated)")
         network.add(
             "Generator",
             nodes,
@@ -1370,9 +1382,11 @@ def prepare_network(
         )
 
     if config["add_hydro"]:
+        logger.info("Adding hydro to network")
         add_hydro(network, config, nodes, prov_centroids, costs, planning_horizons)
 
     if config["add_H2"]:
+        logger.info("Adding H2 buses to network")
         # do beore heat coupling to avoid warning
         network.add(
             "Bus",
@@ -1385,8 +1399,11 @@ def prepare_network(
         )
 
     if config["heat_coupling"]:
-        add_heat_coupling(network, config, nodes, prov_centroids, costs, planning_horizons)
+        logger.info("Adding heat and CHP to the network")
+        add_heat_coupling(network, config, nodes, prov_centroids, costs, planning_horizons, paths)
+
         if config["add_biomass"]:
+            logger.info("Adding biomass to network")
             add_co2_capture_support(network, nodes, prov_centroids)
             add_biomass(
                 network,
@@ -1397,6 +1414,7 @@ def prepare_network(
             )
 
     if config["add_H2"]:
+        logging.info("Adding H2 to network")
         add_H2(network, config, nodes, costs)
 
     if "battery" in config["Techs"]["store_techs"]:
