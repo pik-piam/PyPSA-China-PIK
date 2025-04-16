@@ -322,7 +322,6 @@ elif config["foresight"] == "myopic":
         input:
             network=RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
             costs="resources/data/costs/costs_{planning_horizons}.csv",
-            biomass_potental= DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",
         output:
             network_name = RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc'
         log:

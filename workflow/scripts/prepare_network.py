@@ -5,7 +5,6 @@ These functions are currently only for the overnight mode. Myopic pathway mode c
         duplicates which need to merged in the future. Idem for solve_network.py
 """
 
-
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
@@ -50,12 +49,13 @@ from constants import (
 logger = logging.getLogger(__name__)
 
 
-def add_biomass(network: pypsa.Network,
-                costs: pd.DataFrame,
-                nodes: pd.Index,
-                biomass_potential: pd.DataFrame,
-                prov_centroids: gpd.GeoDataFrame
-                ):
+def add_biomass(
+    network: pypsa.Network,
+    costs: pd.DataFrame,
+    nodes: pd.Index,
+    biomass_potential: pd.DataFrame,
+    prov_centroids: gpd.GeoDataFrame,
+):
     """add biomass to the network. Biomass is here a new build (and not a retrofit)
     and is not co-fired with coal. An optional CC can be added to biomass
 
@@ -70,7 +70,9 @@ def add_biomass(network: pypsa.Network,
     """
 
     suffix = " biomass"
-    biomass_potential.index += suffix
+    biomass_potential.index = biomass_potential.index.map(
+        lambda x: x + suffix if not x.endswith(suffix) else x
+    )
 
     network.add(
         "Bus",
@@ -80,7 +82,9 @@ def add_biomass(network: pypsa.Network,
         y=prov_centroids.y,
         carrier="biomass",
     )
-
+    logger.info(f"Adding biomass buses")
+    logger.info(f"{nodes + suffix}")
+    logger.info("potentials")
     # aggricultural residue biomass
     # NOTE THIS CURRENTLY DOESN'T INCLUDE TRANSPORT between nodes
     # NOTE additional emissions from treatment/remedials are missing
@@ -177,7 +181,9 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
 
 
-def add_co2_capture_support(network: pypsa.Network, nodes: pd.Index, prov_centroids: gpd.GeoDataFrame):
+def add_co2_capture_support(
+    network: pypsa.Network, nodes: pd.Index, prov_centroids: gpd.GeoDataFrame
+):
     """add the necessary CO2 capture carriers & stores to the network
     Args:
         network (pypsa.Network): the network object
@@ -860,7 +866,7 @@ def add_heat_coupling(
             efficiency=costs.at["central gas CHP", "efficiency"],
             efficiency2=config["chp_parameters"]["eff_th"],
             lifetime=costs.at["central gas CHP", "lifetime"],
-            carrier="CHP gas"
+            carrier="CHP gas",
         )
 
     if "CHP coal" in config["Techs"]["conv_techs"]:
@@ -950,7 +956,7 @@ def add_heat_coupling(
                 capital_cost=costs.at[f"{cat} gas boiler", "efficiency"]
                 * costs.at[f"{cat} gas boiler", "capital_cost"],
                 lifetime=costs.at[f"{cat} gas boiler", "lifetime"],
-                carrier=f"gas boiler {cat}"
+                carrier=f"gas boiler {cat}",
             )
 
     if "solar thermal" in config["Techs"]["vre_techs"]:
@@ -1009,7 +1015,7 @@ def add_hydro(
     hourly_rng = pd.date_range(
         config["hydro_dams"]["inflow_date_start"],
         config["hydro_dams"]["inflow_date_end"],
-        freq="1h",
+        freq="1h",  # THIS IS THE INFLOW RES
         inclusive="left",
     )
     # TODO implement inflow calc, understand resolution (seems daily!)
@@ -1142,7 +1148,41 @@ def add_hydro(
 
         # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
-    # TODO clarify that accounting for hydro is working
+        # ======= add other existing hydro power (not lattitude resolved) ===
+        hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
+        hydro_p_nom = hydro_p_nom.loc[PROV_NAMES]
+
+        hydro_p_max_pu = pd.read_hdf(
+            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+        ).tz_localize(None)
+        hydro_p_max_pu = hydro_p_max_pu[PROV_NAMES]
+
+        hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
+        # sort buses (columns) otherwise stuff will break
+        hydro_p_max_pu.sort_index(axis=1, inplace=True)
+
+        hydro_p_max_pu = hydro_p_max_pu.loc[snapshots]
+        hydro_p_max_pu.index = network.snapshots
+
+        logger.info(hydro_p_max_pu.columns)
+        logger.info(hydro_p_max_pu.index)
+        logger.info(PROV_NAMES)
+
+        logger.info(hydro_p_nom.index)
+        logger.info(network.set_snapshots)
+
+        network.add(
+            "Generator",
+            nodes,
+            suffix=" hydroelectricity",
+            bus=nodes,
+            carrier="hydroelectricity",
+            p_nom=hydro_p_nom,
+            p_nom_min=hydro_p_nom,
+            p_nom_extendable=False,
+            capital_cost=costs.at["hydro", "capital_cost"],
+            p_max_pu=hydro_p_max_pu,
+        )
 
 
 # TODO fix timezones/centralsie, think Shanghai won't work on its own
@@ -1165,11 +1205,12 @@ def generate_periodic_profiles(
     return week_df
 
 
-def prepare_network(config: dict,
-                    costs: pd.DataFrame,
-                    snapshots: pd.date_range,
-                    biomass_potential:
-                    pd.DataFrame = None) -> pypsa.Network:
+def prepare_network(
+    config: dict,
+    costs: pd.DataFrame,
+    snapshots: pd.date_range,
+    biomass_potential: pd.DataFrame = None,
+) -> pypsa.Network:
     """Prepares/makes the network object for overnight mode according to config &
     at 1 node per region/province
 
@@ -1349,7 +1390,7 @@ def prepare_network(config: dict,
                 nodes,
                 biomass_potential,
                 prov_centroids,
-                )
+            )
 
     if config["add_H2"]:
         add_H2(network, config, nodes, costs)
@@ -1430,7 +1471,7 @@ if __name__ == "__main__":
             planning_horizons=2040,
             heating_demand="positive",
         )
-    
+
     configure_logging(snakemake)
 
     config = snakemake.config
@@ -1457,7 +1498,7 @@ if __name__ == "__main__":
     )
 
     # load costs
-    n_years = config["snapshots"]["frequency"]*len(snapshots)/8760.0
+    n_years = config["snapshots"]["frequency"] * len(snapshots) / 8760.0
     tech_costs = snakemake.input.tech_costs
     cost_year = yr
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
@@ -1465,9 +1506,13 @@ if __name__ == "__main__":
     # biomass
     if config["add_biomass"]:
         biomass_potential = pd.read_hdf(snakemake.input.biomass_potential)
+        biomass_regions = biomass_potential.index.str.replace(" biomass", "")
+        mask = biomass_regions.isin(PROV_NAMES)
+        biomass_potential = biomass_potential.loc[mask]
+        logger.info(f"Biomass potential loaded for {biomass_potential}")
     else:
         biomass_potential = None
-        
+
     network = prepare_network(snakemake.config, costs, snapshots, biomass_potential)
     add_co2_constraints_prices(network, co2_opts)
     sanitize_carriers(network, snakemake.config)
