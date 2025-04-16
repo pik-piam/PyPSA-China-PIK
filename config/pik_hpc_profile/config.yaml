@@ -43,8 +43,8 @@ cluster-generic-cancel-cmd: scancel
 
 # now define the resources
 default-resources:
-  partition: standard
-  qos: short
+  partition: priority
+  qos: priority
   mem_mb: 2000
   threads: 4
 
@@ -54,8 +54,8 @@ set-resources:
     time: 80
   solve_networks:
     mem_mb: 80000
-    qos: priority
-    partition: priority
+    # qos: priority
+    # partition: priority
     time : 80
     threads: 6
   build_cutout:
@@ -71,6 +71,10 @@ set-resources:
     time: 300
     threads: 4
     mem_mb: 20000
+  build_renewable_profiles:
+    time: 300
+    threads: 4
+    mem_mb: 30000
   plot_network:
     mem_mb: 8000
     threads: 2
