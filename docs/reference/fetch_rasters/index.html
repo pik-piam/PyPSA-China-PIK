@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>fetch_rasters - PyPSA China Model (PIK edition) Documentation</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "fetch_rasters";
+        var mkdocs_page_input_path = "docs/reference/fetch_rasters.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> PyPSA China Model (PIK edition) Documentation
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../tutorials/">Tutorials</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../../../reference/">Reference</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_brownfield/">add_brownfield</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_electricity/">add_electricity</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../add_existing_baseyear/">add_existing_baseyear</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_biomass_potential/">build_biomass_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cop_profiles/">build_cop_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_cutout/">build_cutout</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_load_profiles/">build_load_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population/">build_population</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_population_gridcell_map/">build_population_gridcell_map</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_province_shapes/">build_province_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_renewable_potential/">build_renewable_potential</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_solar_thermal_profiles/">build_solar_thermal_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build_temperature_profiles/">build_temperature_profiles</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../constants/">constants</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">fetch_rasters</a>
+    <ul class="current">
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../fetch_shapes/">fetch_shapes</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../functions/">functions</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../make_summary/">make_summary</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_heatmap/">plot_heatmap</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network/">plot_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_network_heat/">plot_network_heat</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_statistics/">plot_statistics</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_summary_all/">plot_summary_all</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../plot_time_series/">plot_time_series</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network/">prepare_base_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_base_network_2020/">prepare_base_network_2020</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network/">prepare_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../prepare_network_common/">prepare_network_common</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../readers/">readers</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network/">solve_network</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../solve_network_myopic/">solve_network_myopic</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../_helpers.md">helper_fns</a>
+                  </li>
+                  <li class="toctree-l1"><a class="" href="../_plot_utilities.md">plot_utilities</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">PyPSA China Model (PIK edition) Documentation</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Reference</li>
+      <li class="breadcrumb-item active">fetch_rasters</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="fetch_rasters"></a>
+    <div class="doc doc-contents first">
+
+        <p>Methods to fetch raster data from copernicus archive.
+Requires sentinelHub API. </p>
+<p>EXAMPLE SCRIPT</p>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_rasters.authenticate" class="doc doc-heading">
+            <code class="highlight language-python">authenticate()</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>authenticae with the copernicus API</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>dict</code></b>(                  <code><span title="dict">dict</span></code>
+)              –
+              <div class="doc-md-description">
+                <p>the access token dict</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_rasters.py</code></summary>
+              <pre class="highlight"><code class="language-python">def authenticate() -&gt; dict:
+    """authenticae with the copernicus API
+
+    Returns:
+        dict: the access token dict
+    """
+    service_key = json.load(open(TOKEN_PATH, "rb"))
+
+    private_key = service_key["private_key"].encode("utf-8")
+
+    claim_set = {
+        "iss": service_key["client_id"],
+        "sub": service_key["user_id"],
+        "aud": service_key["token_uri"],
+        "iat": int(time.time()),
+        "exp": int(time.time() + (60 * 60)),
+    }
+    grant = jwt.encode(claim_set, private_key, algorithm="RS256")
+    base_url = claim_set["aud"]
+    token_request = requests.post(
+        base_url,
+        headers={"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"},
+        data=f"grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&amp;assertion={grant}",
+    )
+    if token_request.status_code != 200:
+        print(token_request.text)
+        exit(1)
+    token = token_request.json()
+    return token</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_rasters.find_dataset_ids" class="doc doc-heading">
+            <code class="highlight language-python">find_dataset_ids(name='global-dynamic-land-cover')</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>find the catalogue ID of the dataset</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>name</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;global-dynamic-land-cover&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>dataset product name. Defaults to "global-dynamic-land-cover".</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>tuple</code></b>(                  <code><span title="tuple">tuple</span>[<span title="str">str</span>]</code>
+)              –
+              <div class="doc-md-description">
+                <p>the results (download_info_id, download_id)</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_rasters.py</code></summary>
+              <pre class="highlight"><code class="language-python">def find_dataset_ids(name="global-dynamic-land-cover") -&gt; tuple[str]:
+    """find the catalogue ID of the dataset
+
+    Args:
+        name (str, optional): dataset product name. Defaults to "global-dynamic-land-cover".
+
+    Returns:
+        tuple: the results (download_info_id, download_id)
+    """
+    bid = 0
+    # batches of 25
+    while True:
+        batch = "" if bid == 0 else f"b_start={bid}&amp;"
+        search_req = requests.get(
+            f"https://land.copernicus.eu/api/@search?{batch}portal_type=DataSet&amp;metadata_fields=UID&amp;metadata_fields=dataset_full_format&amp;&amp;metadata_fields=dataset_download_information",
+            headers={"Accept": "application/json"},
+        )
+        if search_req.status_code != 200:
+            logger.error(f"failed request: {search_req.text}")
+            exit(1)
+        search_results = search_req.json()
+        res = search_items(search_results, target_name=name)
+        if res == []:
+            bid += 25
+        else:
+            break
+
+    res_list = [r for r in search_results["items"] if r["@id"].find("2019") != -1]
+    download_info_id = res_list[0]["dataset_download_information"]["items"][0]["@id"]
+    download_id = res_list[0]["UID"]
+    # dataset_url = res_list[0]["@id"]
+    return download_info_id, download_id</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_rasters.post_data_request" class="doc doc-heading">
+            <code class="highlight language-python">post_data_request(token, download_info_id, download_id)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>post the request to the copernicus API</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>token</code></b>
+                  (<code><span title="dict">dict</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the access token</p>
+              </div>
+            </li>
+            <li>
+              <b><code>download_info_id</code></b>
+                  (<code><span title="str">str</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>output of find_dataset_ids</p>
+              </div>
+            </li>
+            <li>
+              <b><code>download_id</code></b>
+                  (<code><span title="str">str</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>output of find_dataset_ids</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>tuple</code></b>(                  <code><span title="tuple">tuple</span>[<span title="dict">dict</span>, <span title="str">str</span>]</code>
+)              –
+              <div class="doc-md-description">
+                <p>the data request (json dict) and task id (string?)</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_rasters.py</code></summary>
+              <pre class="highlight"><code class="language-python">def post_data_request(token: dict, download_info_id: str, download_id: str) -&gt; tuple[dict, str]:
+    """post the request to the copernicus API
+
+    Args:
+        token (dict): the access token
+        download_info_id (str): output of find_dataset_ids
+        download_id (str): output of find_dataset_ids
+
+    Returns:
+        tuple: the data request (json dict) and task id (string?)
+    """
+    base_url = "https://land.copernicus.eu"
+    data_req = requests.post(
+        f"{base_url}/api/@datarequest_post",
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token['access_token']}",
+        },
+        json={
+            "Datasets": [
+                {
+                    "DatasetID": download_id,
+                    "DatasetDownloadInformationID": download_info_id,
+                    "Layer": "Cover Fraction: Built-up ",
+                    "NUTS": "CN",
+                    "OutputFormat": "Geotiff",
+                    "OutputGCS": "EPSG:4326",
+                }
+            ]
+        },
+    )
+
+    return data_req.json(), data_req.json()["TaskIds"][0]["TaskID"]</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_rasters.search_items" class="doc doc-heading">
+            <code class="highlight language-python">search_items(json_items, target_name='global-dynamic-land-cover')</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>filter items for target name</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>json_items</code></b>
+                  (<code><span title="dict">dict</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>the json response to the seach query</p>
+              </div>
+            </li>
+            <li>
+              <b><code>target_name</code></b>
+                  (<code><span title="str">str</span></code>, default:
+                      <code>&#39;global-dynamic-land-cover&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The items to find. Defaults to "global-dynamic-land-cover".</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>list</code></b>(                  <code><span title="list">list</span></code>
+)              –
+              <div class="doc-md-description">
+                <p>the items list</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_rasters.py</code></summary>
+              <pre class="highlight"><code class="language-python">def search_items(json_items: dict, target_name="global-dynamic-land-cover") -&gt; list:
+    """filter items for target name
+
+    Args:
+        json_items (dict): the json response to the seach query
+        target_name (str, optional): The items to find. Defaults to "global-dynamic-land-cover".
+
+    Returns:
+        list: the items list
+    """
+
+    return [itm["@id"] for itm in json_items["items"] if itm["@id"].find(target_name) != -1]</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../constants/" class="btn btn-neutral float-left" title="constants"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../fetch_shapes/" class="btn btn-neutral float-right" title="fetch_shapes">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../constants/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../fetch_shapes/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
