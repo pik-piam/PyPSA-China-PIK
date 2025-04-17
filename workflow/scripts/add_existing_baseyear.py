@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from constants import YEAR_HRS, CARRIERS
 from add_electricity import load_costs
 from _helpers import mock_snakemake, configure_logging
+from _pypsa_helpers import shift_profile_to_planning_year
 
 logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
@@ -52,7 +53,7 @@ def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
             c.pnl[attr].rename(columns=rename, inplace=True)
 
 
-def add_existing_capacities(df_agg):
+def add_existing_capacities() -> pd.DataFrame:
     # TODO fix/centralise ()
     carrier = {
         "coal": "coal power plant",
@@ -67,9 +68,11 @@ def add_existing_capacities(df_agg):
         "ground heat pump": "heat pump",
         "nuclear": "nuclear",
     }
+    df_agg = pd.DataFrame()
     # TODO fix centralise (make a dict from start?)
     for tech in CARRIERS:
 
+        # TODO make argument
         df = pd.read_csv(snakemake.input[f"existing_{tech}"], index_col=0).fillna(0.0)
         df.columns = df.columns.astype(int)
         df = df.sort_index()
@@ -84,6 +87,23 @@ def add_existing_capacities(df_agg):
                     df_agg.at[name, "Capacity"] = capacity
                     df_agg.at[name, "DateIn"] = year
                     df_agg.at[name, "cluster_bus"] = node
+
+    return df_agg
+
+
+def distribute_vres_by_grade(p_max_nom: pd.DataFrame, df_agg: pd.DataFrame, config: dict):
+    """Assign the built up capacity to the best vre grades
+
+    Args:
+
+        df_agg (_type_): _description_
+        config (_type_): _description_
+
+    Raises:
+        NotImplementedError: _description_
+    """
+
+    raise NotImplementedError("This function is not implemented yet.")
 
 
 def add_power_capacities_installed_before_baseyear(
@@ -101,10 +121,8 @@ def add_power_capacities_installed_before_baseyear(
     """
     logger.info("adding power capacities installed before baseyear")
 
-    df_agg = pd.DataFrame()
-
     # include renewables in df_agg
-    add_existing_capacities(df_agg)
+    df_agg = add_existing_capacities()
 
     df_agg["grouping_year"] = np.take(
         grouping_years, np.digitize(df_agg.DateIn, grouping_years, right=True)
@@ -130,6 +148,7 @@ def add_power_capacities_installed_before_baseyear(
         "nuclear": "nuclear",
     }
 
+    # generator seems to be a carrier here
     for grouping_year, generator in df.index:
 
         # capacity is the capacity in MW at each node for this
@@ -137,8 +156,11 @@ def add_power_capacities_installed_before_baseyear(
         capacity = capacity[~capacity.isna()]
         capacity = capacity[capacity > config["existing_capacities"]["threshold_capacity"]]
 
-        if generator in ["solar", "onwind", "offwind"]:
-            p_max_pu = n.generators_t.p_max_pu[capacity.index + " " + generator]
+        vre_carriers = ["solar", "onwind", "offwind"]
+        if generator in vre_carriers:
+            continue
+            mask = n.generators_t.p_max_pu.columns.map(n.generators.carrier) == generator
+            p_max_pu = n.generators_t.p_max_pu.loc[:, mask]
             n.add(
                 "Generator",
                 capacity.index,
@@ -345,9 +367,11 @@ def add_power_capacities_installed_before_baseyear(
 
             with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
                 gshp_cop = store["gshp_cop_profiles"]
-                gshp_cop.index = gshp_cop.index.tz_localize("Asia/shanghai")
-                gshp_cop = gshp_cop.loc[date_range].set_index(n.snapshots)
-
+                gshp_cop.index = gshp_cop.index.tz_localize(None)
+                gshp_cop = shift_profile_to_planning_year(
+                    gshp_cop, snakemake.wildcards.planning_horizons
+                )
+                gshp_cop = gshp_cop.loc[n.snapshots]
             n.add(
                 "Link",
                 capacity.index,
@@ -376,10 +400,10 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "add_existing_baseyear",
-            opts="ll",
-            topology="current+Neighbor",
-            pathway="exponential175",
+            topology="current+FCG",
+            co2_pathway="exp175default",
             planning_horizons="2020",
+            heating_demand="positive",
         )
 
     configure_logging(snakemake, logger=logger)
@@ -403,25 +427,6 @@ if __name__ == "__main__":
 
     grouping_years = config["existing_capacities"]["grouping_years"]
     add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear, config)
-
-    # -====== update renewable potentials
-
-    # for tech in ["onwind", "offwind", "solar"]:
-    #     if tech == "offwind":
-    #         for node in offwind_nodes:
-    #             n.generators.p_nom_max.loc[
-    #                 (n.generators.bus == node) & (n.generators.carrier == tech)
-    #             ] -= n.generators[
-    #                 (n.generators.bus == node) & (n.generators.carrier == tech)
-    #             ].p_nom.sum()
-    #     else:
-    #         for node in pro_names:
-    #             n.generators.p_nom_max.loc[
-    #                 (n.generators.bus == node) & (n.generators.carrier == tech)
-    #             ] -= n.generators[
-    #                 (n.generators.bus == node) & (n.generators.carrier == tech)
-    #             ].p_nom.sum()
-
     n.export_to_netcdf(snakemake.output[0])
 
     logger.info("Existing capacities successfully added to network")

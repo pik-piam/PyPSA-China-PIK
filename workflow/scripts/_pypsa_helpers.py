@@ -334,17 +334,19 @@ def make_periodic_snapshots(
     """
     if not end_year:
         end_year = year
+
+    # do not apply freq yet or get inconsistencies with leap years
     snapshots = pd.date_range(
         f"{int(year)}-{start_day_hour}",
         f"{int(end_year)}-{end_day_hour}",
-        freq=freq,
+        freq="1h",
         inclusive=bounds,
         tz=tz,
     )
-
     if is_leap_year(int(year)):
         snapshots = snapshots[~((snapshots.month == 2) & (snapshots.day == 29))]
-    return snapshots
+    freq_hours = int("".join(filter(str.isdigit, str(freq))))
+    return snapshots[::freq_hours]  # every freq hour
 
 
 def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -> pd.DataFrame:

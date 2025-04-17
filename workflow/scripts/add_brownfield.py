@@ -139,10 +139,9 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "add_brownfield",
-            opts="ll",
             topology="current+FCG",
             co2_pathway="exp175default",
-            co2_reduction="1.0",
+            heating_demand="positive",
             planning_horizons=2025,
         )
 
