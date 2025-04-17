@@ -349,7 +349,8 @@ elif config["foresight"] == "myopic":
         params:
             solving = config["solving"],
         input:
-            network=RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
+            network=RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
+        output:
             network_name = RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc'
         log:
             solver = LOG_DIR + "/solve_network_myopic/{planning_horizons}.log"
