@@ -61,7 +61,7 @@ class ConfigManager:
             dict: the pathway
         """
         scenario = self.config["co2_scenarios"][pthw_name]
-        return {"co2_pr_limit": scenario["pathway"][year], "control": scenario["control"]}
+        return {"co2_pr_or_limit": scenario["pathway"][year], "control": scenario["control"]}
 
     def make_wildcards(self) -> list:
         """Expand wildcards in config"""
@@ -255,6 +255,22 @@ class PathManager:
             return "tests/testdata/landuse_availability"
         else:
             return "resources/data/landuse_availability"
+
+    def profile_base_p(self, technology: str) -> os.PathLike:
+        """Generate the profile data directory base path.
+
+        Args:
+            technology (str): The technology name.
+
+        Returns:
+            os.PathLike: The path to the profile data directory.
+        """
+        cutout_name = self.config["atlite"]["cutout_name"]
+        base_p = self.derived_data_dir(shared=True) + f"/cutout_{cutout_name}/"
+        resource_cfg = self.config["renewable"][technology]
+        rsrc = "_".join([f"{k}{v}" for k, v in resource_cfg.items()])
+
+        return base_p + rsrc
 
 
 # ============== HPC helpers ==================

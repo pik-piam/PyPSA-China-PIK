@@ -122,7 +122,9 @@ def build_resource_classes(
         gpd.GeoSeries: multi-indexed series [bus, bin]: geometry
     """
 
-    nbins = params.get("resource_classes", 1)
+    resource_classes = params.get("resource_classes", {})
+    nbins = resource_classes.get("n", 1)
+    # min_cf_delta = resource_classes.get("min_cf_delta", 0.0)
     buses = regions.index
 
     # indicator matrix for which cells touch which regions
@@ -218,7 +220,7 @@ if __name__ == "__main__":
         buses = regions.index
 
     cutout = Cutout(snakemake.input.cutout)
-    localize_cutout_time(cutout, drop_leap=True)
+    cutout = localize_cutout_time(cutout, drop_leap=True)
 
     func = getattr(cutout, resource.pop("method"))
     availability = xr.open_dataarray(snakemake.input.availability_matrix)
