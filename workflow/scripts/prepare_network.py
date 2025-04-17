@@ -228,17 +228,17 @@ def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
 
 
     Raises:
-        ValueError: _description_
+        ValueError: unrecognised co2 control option
     """
 
     if co2_control["control"] is None:
         pass
     elif co2_control["control"] == "price":
         logger.info("Adding CO2 price to marginal costs of generators and storage units")
-        add_emission_prices(network, emission_prices={"co2": co2_control["co2_pr_limit"]})
+        add_emission_prices(network, emission_prices={"co2": co2_control["co2_pr_or_limit"]})
 
     elif co2_control["control"].startswith("budget"):
-        co2_limit = co2_control["co2_pr_limit"]
+        co2_limit = co2_control["co2_pr_or_limit"]
         logger.info("Adding CO2 constraint based on scenario {co2_limit}")
         network.add(
             "GlobalConstraint",
@@ -667,7 +667,7 @@ def add_wind_and_solar(
 
     for tech in techs:
         # load the renewable profiles
-        logging.info(f"Attaching {tech} to network")
+        logger.info(f"Attaching {tech} to network")
         with xr.open_dataset(prof_paths[f"profile_{tech}"]) as ds:
             if ds.indexes["bus"].empty:
                 continue
@@ -944,7 +944,7 @@ def add_heat_coupling(
         )
 
     if "CHP coal" in config["Techs"]["conv_techs"]:
-        logging.info("Adding CHP coal to network")
+        logger.info("Adding CHP coal to network")
 
         network.add(
             "Bus",
@@ -1224,32 +1224,32 @@ def add_hydro(
 
         # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
-        # ======= add other existing hydro power (not lattitude resolved) ===
-        hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
-        hydro_p_max_pu = pd.read_hdf(
-            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
-        ).tz_localize(None)
+    # ======= add other existing hydro power (not lattitude resolved) ===
+    hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
+    hydro_p_max_pu = pd.read_hdf(
+        config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+    ).tz_localize(None)
 
-        hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
-        # sort buses (columns) otherwise stuff will break
-        hydro_p_max_pu.sort_index(axis=1, inplace=True)
+    hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
+    # sort buses (columns) otherwise stuff will break
+    hydro_p_max_pu.sort_index(axis=1, inplace=True)
 
-        hydro_p_max_pu = hydro_p_max_pu.loc[snapshots]
-        hydro_p_max_pu.index = network.snapshots
+    hydro_p_max_pu = hydro_p_max_pu.loc[snapshots]
+    hydro_p_max_pu.index = network.snapshots
 
-        logger.info("\tAdding extra hydro capacity (regionally aggregated)")
-        network.add(
-            "Generator",
-            nodes,
-            suffix=" hydroelectricity",
-            bus=nodes,
-            carrier="hydroelectricity",
-            p_nom=hydro_p_nom,
-            p_nom_min=hydro_p_nom,
-            p_nom_extendable=False,
-            capital_cost=costs.at["hydro", "capital_cost"],
-            p_max_pu=hydro_p_max_pu,
-        )
+    logger.info("\tAdding extra hydro capacity (regionally aggregated)")
+    network.add(
+        "Generator",
+        nodes,
+        suffix=" hydroelectricity",
+        bus=nodes,
+        carrier="hydroelectricity",
+        p_nom=hydro_p_nom,
+        p_nom_min=hydro_p_nom,
+        p_nom_extendable=False,
+        capital_cost=costs.at["hydro", "capital_cost"],
+        p_max_pu=hydro_p_max_pu,
+    )
 
 
 # TODO fix timezones/centralsie, think Shanghai won't work on its own
@@ -1287,6 +1287,7 @@ def prepare_network(
         costs (pd.DataFrame): the costs dataframe (anualised capex and marginal costs)
         snapshots (pd.date_range): the snapshots for the network
         biomass_potential (Optional, pd.DataFrame): biomass potential dataframe. Defaults to None.
+        paths (Optional, dict): the paths to the data files. Defaults to None.
 
     Returns:
         pypsa.Network: the pypsa network object
@@ -1414,7 +1415,7 @@ def prepare_network(
             )
 
     if config["add_H2"]:
-        logging.info("Adding H2 to network")
+        logger.info("Adding H2 to network")
         add_H2(network, config, nodes, costs)
 
     if "battery" in config["Techs"]["store_techs"]:
@@ -1489,7 +1490,6 @@ if __name__ == "__main__":
             "prepare_networks",
             topology="current+FCG",
             co2_pathway="exp175default",
-            # co2_reduction="0.0",
             planning_horizons=2040,
             heating_demand="positive",
         )
@@ -1498,14 +1498,14 @@ if __name__ == "__main__":
 
     config = snakemake.config
 
-    logging.info("Preparing network for scenario:")
-    logging.info(config["scenario"])
-    logging.info(config["co2_scenarios"])
+    logger.info("Preparing network for scenario:")
+    logger.info(config["scenario"])
+    logger.info(config["co2_scenarios"])
 
     yr = int(snakemake.wildcards.planning_horizons)
-    logging.info(f"Preparing network for {yr}")
-    pathway = snakemake.wildcards.co2_pathway
+    logger.info(f"Preparing network for {yr}")
 
+    pathway = snakemake.wildcards.co2_pathway
     co2_opts = ConfigManager(config).fetch_co2_restriction(pathway, yr)
 
     # make snapshots (drop leap days) -> possibly do all the unpacking in the function
