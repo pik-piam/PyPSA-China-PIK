@@ -204,7 +204,7 @@ def prepare_network(config: dict, paths: dict):
         hourly_rng = pd.date_range(
             config["hydro_dams"]["inflow_date_start"],
             config["hydro_dams"]["inflow_date_end"],
-            freq=config["snapshots"]["freq"],
+            freq="1h",
             inclusive="left",
         )
         inflow = pd.read_pickle(config["hydro_dams"]["inflow_path"]).reindex(
@@ -214,7 +214,8 @@ def prepare_network(config: dict, paths: dict):
         inflow.index = inflow.index.tz_localize("UTC").tz_convert(TIMEZONE).tz_localize(None)
 
         inflow = inflow.loc[str(INFLOW_DATA_YR)]
-        inflow = shift_profile_to_planning_year(inflow, plann)
+        inflow = shift_profile_to_planning_year(inflow, planning_horizons)
+        inflow = inflow.loc[network.snapshots]
 
         water_consumption_factor = (
             dams.loc[:, "Water_consumption_factor_avg"] * 1e3
@@ -313,7 +314,7 @@ def prepare_network(config: dict, paths: dict):
 
             p_nom = (inflow / water_consumption_factor).iloc[:, inflow_station].max()
             p_pu = (inflow / water_consumption_factor).iloc[:, inflow_station] / p_nom
-            p_pu.index = network.snapshots
+
             network.add(
                 "Generator",
                 dams.index[inflow_station] + " inflow",
@@ -380,16 +381,9 @@ def prepare_network(config: dict, paths: dict):
             # 1e3 converts from W/m^2 to MW/(1000m^2) = kW/m^2
             solar_thermal = config["solar_cf_correction"] * store["solar_thermal_profiles"] / 1e3
 
-        date_range = pd.date_range(
-            "2025-01-01 00:00",
-            "2025-12-31 23:00",
-            freq=config["snapshots"]["freq"],
-            tz="Asia/shanghai",
-        )
-        date_range = date_range.map(lambda t: t.replace(year=2020))
-
-        solar_thermal.index = solar_thermal.index.tz_localize("Asia/shanghai")
-        solar_thermal = solar_thermal.loc[date_range].set_index(network.snapshots)
+        solar_thermal.index = solar_thermal.index.tz_localize(None)
+        solar_thermal = shift_profile_to_planning_year(solar_thermal, planning_horizons)
+        solar_thermal = solar_thermal.loc[network.snapshots]
 
         for cat in [" central "]:
             network.add(
@@ -657,7 +651,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_base_networks_2020",
             opts="ll",
-            topology="current+FCG,
+            topology="current+FCG",
             co2_pathway="exp175default",
             planning_horizons="2020",
             heating_demand="positive",

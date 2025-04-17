@@ -622,7 +622,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         hourly_rng = pd.date_range(
             config["hydro_dams"]["inflow_date_start"],
             config["hydro_dams"]["inflow_date_end"],
-            freq=config["snapshots"]["freq"],
+            freq="1h",
             inclusive="left",
         )
         inflow = pd.read_pickle(config["hydro_dams"]["inflow_path"]).reindex(
@@ -633,6 +633,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         inflow.index = inflow.index.tz_localize("UTC").tz_convert(TIMEZONE).tz_localize(None)
         inflow = inflow.loc[str(INFLOW_DATA_YR)]
         inflow = shift_profile_to_planning_year(inflow, planning_horizons)
+        inflow = inflow.loc[network.snapshots]
 
         water_consumption_factor = (
             dams.loc[:, "Water_consumption_factor_avg"] * 1e3
@@ -732,7 +733,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
 
             p_nom = (inflow / water_consumption_factor).iloc[:, inflow_station].max()
             p_pu = (inflow / water_consumption_factor).iloc[:, inflow_station] / p_nom
-            p_pu.index = network.snapshots
+
             network.add(
                 "Generator",
                 dams.index[inflow_station] + " inflow",
