@@ -120,7 +120,7 @@ def add_chp_constraints(n: pypsa.Network):
             p.loc[:, heat] * (n.links.efficiency[heat] * n.links.c_b[electric].values)
             - p.loc[:, electric] * n.links.efficiency[electric]
         )
-        n.model.add_constraints(lhs <= rhs, name="chplink-backpressure")
+        n.model.add_constraints(lhs <= 0, name="chplink-backpressure")
 
 
 def add_transimission_constraints(n: pypsa.Network):
@@ -214,7 +214,7 @@ if __name__ == "__main__":
             "solve_networks",
             planning_horizons=2020,
             co2_pathway="exp175default",
-            topology="current+Neighbour",
+            topology="current+FCG",
             heating_demand="positive",
         )
     configure_logging(snakemake)
