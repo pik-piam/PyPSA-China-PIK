@@ -8,7 +8,6 @@ Associated with the `solve_network_myopic` rule in the Snakefile.
 To be merged/consolidated with the `solve_network` script.
 """
 import logging
-import re
 
 import numpy as np
 import pandas as pd

@@ -1,5 +1,5 @@
 # coding: utf-8
-""" 
+"""
 Functions supporting myopic pathway network creation
 """
 # TODO improve docstring
@@ -11,7 +11,7 @@ import pypsa
 from types import SimpleNamespace
 from constants import YEAR_HRS, CARRIERS
 from add_electricity import load_costs
-from _helpers import override_component_attrs, mock_snakemake, configure_logging
+from _helpers import mock_snakemake, configure_logging
 
 logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
@@ -389,8 +389,7 @@ if __name__ == "__main__":
 
     baseyear = snakemake.config["scenario"]["planning_horizons"][0]
 
-    overrides = override_component_attrs(snakemake.input.overrides)
-    n = pypsa.Network(snakemake.input.network, override_component_attrs=overrides)
+    n = pypsa.Network(snakemake.input.network)
     # define spatial resolution of carriers
     # spatial = define_spatial(n.buses[n.buses.carrier=="AC"].index, options)
     # add_build_year_to_new_assets(n, baseyear)
