@@ -1148,41 +1148,41 @@ def add_hydro(
 
         # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
-        # ======= add other existing hydro power (not lattitude resolved) ===
-        hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
-        hydro_p_nom = hydro_p_nom.loc[PROV_NAMES]
+    # ======= add other existing hydro power (not lattitude resolved) ===
+    hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
+    hydro_p_nom = hydro_p_nom.loc[PROV_NAMES]
 
-        hydro_p_max_pu = pd.read_hdf(
-            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
-        ).tz_localize(None)
-        hydro_p_max_pu = hydro_p_max_pu[PROV_NAMES]
+    hydro_p_max_pu = pd.read_hdf(
+        config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+    ).tz_localize(None)
+    hydro_p_max_pu = hydro_p_max_pu[PROV_NAMES]
 
-        hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
-        # sort buses (columns) otherwise stuff will break
-        hydro_p_max_pu.sort_index(axis=1, inplace=True)
+    hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
+    # sort buses (columns) otherwise stuff will break
+    hydro_p_max_pu.sort_index(axis=1, inplace=True)
 
-        hydro_p_max_pu = hydro_p_max_pu.loc[snapshots]
-        hydro_p_max_pu.index = network.snapshots
+    hydro_p_max_pu = hydro_p_max_pu.loc[snapshots]
+    hydro_p_max_pu.index = network.snapshots
 
-        logger.info(hydro_p_max_pu.columns)
-        logger.info(hydro_p_max_pu.index)
-        logger.info(PROV_NAMES)
+    logger.info(hydro_p_max_pu.columns)
+    logger.info(hydro_p_max_pu.index)
+    logger.info(PROV_NAMES)
 
-        logger.info(hydro_p_nom.index)
-        logger.info(network.set_snapshots)
+    logger.info(hydro_p_nom.index)
+    logger.info(network.set_snapshots)
 
-        network.add(
-            "Generator",
-            nodes,
-            suffix=" hydroelectricity",
-            bus=nodes,
-            carrier="hydroelectricity",
-            p_nom=hydro_p_nom,
-            p_nom_min=hydro_p_nom,
-            p_nom_extendable=False,
-            capital_cost=costs.at["hydro", "capital_cost"],
-            p_max_pu=hydro_p_max_pu,
-        )
+    network.add(
+        "Generator",
+        nodes,
+        suffix=" hydroelectricity",
+        bus=nodes,
+        carrier="hydroelectricity",
+        p_nom=hydro_p_nom,
+        p_nom_min=hydro_p_nom,
+        p_nom_extendable=False,
+        capital_cost=costs.at["hydro", "capital_cost"],
+        p_max_pu=hydro_p_max_pu,
+    )
 
 
 # TODO fix timezones/centralsie, think Shanghai won't work on its own
