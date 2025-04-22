@@ -109,6 +109,7 @@ def build_resource_classes(
     cutout: Cutout, nbins: int, regions: gpd.GeoSeries, capacity_factor: xr.DataArray, params: dict
 ) -> tuple[xr.DataArray, gpd.GeoSeries]:
     """Bin resources based on their capacity factor
+    The number of bins can be dynamically reduced based on a min delta cf
 
     Args:
         cutout (Cutout): the atlite cutout
@@ -121,10 +122,9 @@ def build_resource_classes(
         xr.DataArray: the mask for the resource classes
         gpd.GeoSeries: multi-indexed series [bus, bin]: geometry
     """
-
     resource_classes = params.get("resource_classes", {})
     nbins = resource_classes.get("n", 1)
-    # min_cf_delta = resource_classes.get("min_cf_delta", 0.0)
+    min_cf_delta = resource_classes.get("min_cf_delta", 0.0)
     buses = regions.index
 
     # indicator matrix for which cells touch which regions
@@ -137,7 +137,15 @@ def build_resource_classes(
         cf_by_bus.max(dim=["x", "y"]) + epsilon,
     )
 
-    normed_bins = xr.DataArray(np.linspace(0, 1, nbins + 1), dims=["bin"])
+    # avoid binning resources that are very similar
+    nbins_per_bus = [int(min(nbins, x)) for x in (cf_max - cf_min) // min_cf_delta]
+    normed_bins = xr.DataArray(
+        np.vstack(
+            [np.hstack([[0] * (nbins - n), np.linspace(0, 1, n + 1)]) for n in nbins_per_bus]
+        ),
+        dims=["bus", "bin"],
+        coords={"bus": regions.index},
+    )
     bins = cf_min + (cf_max - cf_min) * normed_bins
 
     cf_by_bus_bin = cf_by_bus.expand_dims(bin=range(nbins))
@@ -148,6 +156,7 @@ def build_resource_classes(
     if nbins == 1:
         bus_bin_mi = pd.MultiIndex.from_product([regions.index, [0]], names=["bus", "bin"])
         class_regions = regions.set_axis(bus_bin_mi)
+        class_regions["cf"] = bins.to_series()
     else:
         grid = cutout.grid.set_index(["y", "x"])
         class_regions = {}
@@ -196,7 +205,9 @@ def localize_cutout_time(cutout: Cutout, drop_leap=True) -> Cutout:
 if __name__ == "__main__":
 
     if "snakemake" not in globals():
-        snakemake = mock_snakemake("build_renewable_profiles", technology="solar")
+        snakemake = mock_snakemake(
+            "build_renewable_profiles", technology="solar", rc_params="n3_min_cf_0.05"
+        )
 
     configure_logging(snakemake)
 
@@ -325,6 +336,7 @@ if __name__ == "__main__":
         average_distance.append((distances * (row / row.sum())).sum())
 
     average_distance = xr.DataArray(average_distance, [bus_bins]).unstack("bus_bin")
+    average_distance.to_netcdf(snakemake.output.average_distance)
 
     ds = xr.merge(
         [

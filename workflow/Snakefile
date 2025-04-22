@@ -37,6 +37,7 @@ CUTOUT_PATH = os.path.join(path_manager.cutouts_dir(),CUTOUT_NAME + ".nc")
 # ====== include rules ======= (after paths are set!)
 include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
+include: "rules/visualize_inputs.smk"
 
 if config["run"].get("is_test", False):
     localrules: plot_all, build_population, dag, fetch_region_shapes
@@ -185,8 +186,9 @@ rule build_renewable_profiles:
         offshore_province_shapes=DERIVED_COMMON + "/regions/provinces_offshore.geojson",
         cutout=CUTOUT_PATH,
     output:
-        profile=  DERIVED_CUTOUT+"/"+"profile_{technology}-{rc_params}.nc",
-        class_regions=  DERIVED_CUTOUT+"/"+"{technology}_regions_by_class_{rc_params}.geojson",
+        profile=DERIVED_CUTOUT+"/"+"profile_{technology}-{rc_params}.nc",
+        class_regions=DERIVED_CUTOUT+"/"+"{technology}_regions_by_class_{rc_params}.geojson",
+        average_distance=DERIVED_CUTOUT+"/"+"average_distance_{technology}-{rc_params}.h5",
     log:
         LOGS_COMMON +f"/cutout_{CUTOUT_NAME}/" +"build_renewable_profile_{technology}-{rc_params}.log",
     threads: config["atlite"].get("nprocesses", 4)
