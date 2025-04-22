@@ -417,6 +417,7 @@ plotting:
   - heat load
   - Load
   - Transmission Lines
+  - transmission lines
   - transmission losses
   - nuclear
   - Nuclear
@@ -440,7 +441,6 @@ plotting:
   - biomass carbon capture
   - heat pump
   - Heat Pump
-  - resistive heater
   - methanation
   - H2
   - Hydrogen Storage
@@ -450,13 +450,19 @@ plotting:
   - hydrogen storage
   - solar thermal
   - offshore wind
+  - onwind
+  - offwind
   - Offshore Wind
   - onshore wind
   - Onshore Wind
   - solar PV
   - Solar
+  - solar
   - battery storage
+  - gas
+  - gas OCGT
   - battery discharger
   - battery
+  - resistive heater
   - Battery
-  - gas
+  - Other

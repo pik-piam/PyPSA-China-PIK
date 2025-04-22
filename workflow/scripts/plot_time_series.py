@@ -42,6 +42,8 @@ def plot_energy_balance(
     """
     if not ax:
         fig, ax = plt.subplots(figsize=(16, 8))
+    else:
+        fig = ax.get_figure()
 
     p = (
         n.statistics.energy_balance(aggregate_time=False, bus_carrier=bus_carrier)
@@ -118,6 +120,8 @@ def plot_energy_balance(
     ax.grid(axis="y")
     ax.set_xlim(supply.index.min(), supply.index.max())
 
+    fig.tight_layout()
+
     return ax
 
 
@@ -137,6 +141,9 @@ def plot_load_duration_curve(
 
     if not ax:
         fig, ax = plt.subplots(figsize=(16, 8))
+    else:
+        fig = ax.get_figure()
+
     load = network.statistics.withdrawal(
         groupby=get_location_and_carrier,
         aggregate_time=False,
@@ -148,6 +155,7 @@ def plot_load_duration_curve(
     ax.set_ylabel(f"Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")
 
+    fig.tight_layout()
     return ax
 
 
@@ -166,6 +174,8 @@ def plot_regional_load_durations(
     """
     if not ax:
         fig, ax = plt.subplots(figsize=(10, 8))
+    else:
+        fig = ax.get_figure()
 
     loads_all = network.statistics.withdrawal(
         groupby=get_location_and_carrier, aggregate_time=False, bus_carrier=carrier, comps="Load"
@@ -190,6 +200,9 @@ def plot_regional_load_durations(
         fancybox=True,
         shadow=True,
     )
+
+    fig.tight_layout()
+
     return ax
 
 
