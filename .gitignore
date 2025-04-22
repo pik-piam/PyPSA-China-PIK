@@ -13,11 +13,16 @@ __pycache__
 
 /site/**
 /resources/**/*
+!resources/
+!resources/data_check/
+!resources/data_check/*.csv
+
 !/resources/data/shapefiles/
 !/resources/**/*.csv
 /resources/derived_data/
 /resources/data/province_shapes
 /resources/data/landuse_availability/World_EEZ/*eez*
+/workflow/scripts/*.pdf
 /results
 !/results/.gitkeep
 /cutouts
