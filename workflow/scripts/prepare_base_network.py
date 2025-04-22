@@ -443,7 +443,7 @@ def prepare_network(config: dict) -> pypsa.Network:
             carrier="biomass",
         )
 
-        biomass_potential = pd.read_hdf(snakemake.input.biomass_potental)
+        biomass_potential = pd.read_hdf(snakemake.input.biomass_potential)
         network.add(
             "Store",
             nodes + " biomass",

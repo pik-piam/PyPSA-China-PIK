@@ -85,7 +85,6 @@ def load_costs(
             "FOM": 0,
             "VOM": 0,
             "discount rate": cost_config["discountrate"],
-            "discount rate": cost_config["discountrate"],
             "efficiency": 1,
             "fuel": 0,
             "investment": 0,
