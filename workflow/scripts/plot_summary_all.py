@@ -452,13 +452,14 @@ def plot_electricty_heat_balance(
             )
 
 
-def plot_prices(file_list: list, config: dict, fig_name=None, ax: object = None):
+def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax: object = None):
     """plot the prices
 
     Args:
         file_list (list): the input csvs from make_summary
         config (dict): the configuration for plotting (snakemake.config["plotting"])
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
+        absolute (bool, optional): plot absolute prices. Defaults to False.
         ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
     """
     prices_df = pd.DataFrame()
@@ -474,6 +475,9 @@ def plot_prices(file_list: list, config: dict, fig_name=None, ax: object = None)
     fig.set_size_inches((12, 8))
 
     colors = config["tech_colors"]
+
+    if absolute:
+        prices_df = prices_df.abs()
 
     prices_df.plot(
         ax=ax,
@@ -706,6 +710,7 @@ if __name__ == "__main__":
         data_paths["weighted_prices"],
         config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/weighted_prices.png",
+        absolute=True,
     )
     plot_co2_shadow_price(
         data_paths["co2_price"],
