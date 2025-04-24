@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
-""" 
+"""
 Functions associated with the build_renewable_potential rule.
 - Temporal Profiles are built based on the atlite cutout
 - Potentials are built based on the atlite cutout and raster data (land availability)
@@ -262,14 +262,15 @@ def make_offshore_wind_profile(offwind_config: dict, cutout: atlite.Cutout, outp
         excluder_offwind.add_raster(snakemake.input.gebco, codes=func, crs=CRS, nodata=-1000)
 
     if offwind_config["natura"]:
-        protected_shp = gpd.read_file(snakemake.input["natura1"])
-        protected_shp1 = gpd.read_file(snakemake.input["natura2"])
-        protected_shp2 = gpd.read_file(snakemake.input["natura3"])
-        protected_shp = pd.concat([protected_shp, protected_shp1], ignore_index=True)
-        protected_shp = pd.concat([protected_shp, protected_shp2], ignore_index=True)
-        protected_shp = protected_shp.geometry
-        protected_shp = gpd.GeoDataFrame(protected_shp)
+        nat1 = gpd.read_file(snakemake.input["natura1"])
+        nat2 = gpd.read_file(snakemake.input["natura2"])
+        nat3 = gpd.read_file(snakemake.input["natura3"])
+
+        protected_shp = gpd.GeoDataFrame(pd.concat([nat1, nat2, nat3], ignore_index=True))
+        protected_shp = gpd.GeoDataFrame(protected_shp.geometry)
+
         protected_Marine_shp = gpd.tools.overlay(protected_shp, EEZ_country, how="intersection")
+
         # this is to avoid atlite complaining about parallelisation
         logger.info("Creating tmp directory for protected marine shapefile")
         logger.info(f"parent exists: {os.path.isdir(os.path.dirname(os.path.dirname(TMP)))}")
@@ -357,12 +358,12 @@ if __name__ == "__main__":
     break_requests = snakemake.config["atlite"]["monthly_requests"]
     cutout.prepare(monthly_requests=break_requests, concurrent_requests=break_requests)
     logger.info(f"Cutout prepared from {snakemake.input.cutout}")
-    
+
     provinces_shp = read_province_shapes(snakemake.input.provinces_shp)
     provinces_shp = provinces_shp.reindex(PROV_NAMES).rename_axis("bus")
     buses = provinces_shp.index
 
-    logger.info(f"Loading raster data")
+    logger.info("Loading raster data")
     grass = snakemake.input.Grass_raster
     bare = snakemake.input.Bare_raster
     shrubland = snakemake.input.Shrubland_raster

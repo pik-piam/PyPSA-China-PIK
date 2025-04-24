@@ -16,13 +16,14 @@ def estimate_co2_intensity_xing() -> float:
         float: the biomass co2 intensity in t/MWhth
     """
 
-    biomass_potential_tot = 3.04 # Gt
-    embodied_co2_tot = 5.24 # Gt
-    heat_content = 19*1000/3600 # GJ/t -> MWh_th/t
-    unit_co2 = embodied_co2_tot / biomass_potential_tot # t CO2/t biomass
-    co2_intens = unit_co2 / heat_content # t CO2/MWh_th
+    biomass_potential_tot = 3.04  # Gt
+    embodied_co2_tot = 5.24  # Gt
+    heat_content = 19 * 1000 / 3600  # GJ/t -> MWh_th/t
+    unit_co2 = embodied_co2_tot / biomass_potential_tot  # t CO2/t biomass
+    co2_intens = unit_co2 / heat_content  # t CO2/MWh_th
 
     return co2_intens
+
 
 def read_xing_si_data(biomass_potentials_path: PathLike):
     """read and prepare the xing SI data
@@ -55,10 +56,10 @@ def build_biomass_potential_xing(biomass_potentials_path: PathLike):
 
     # convert t biomass yr-1 to MWh, heat content is from paper reference 92
     heat_content = 19  # GJ (t biomass−1)
-    heat_content *= 1000/3600  # GJ/t -> MWh
+    heat_content *= 1000 / 3600  # GJ/t -> MWh
     df = df * heat_content
 
-    return df   
+    return df
 
 
 if __name__ == "__main__":
@@ -73,8 +74,8 @@ if __name__ == "__main__":
         )
 
     configure_logging(snakemake)
-   
+
     df = build_biomass_potential_xing(biomass_potentials_path=snakemake.input.biomass_feedstocks)
     df.to_hdf(snakemake.output.biomass_potential, key="biomass")
-    
+
     logger.info("Biomass potentials successfully built")

@@ -4,7 +4,7 @@ import rioxarray
 import geopandas as gpd
 import os.path
 from xarray import DataArray
-from constants import CRS, PROV_NAMES
+from constants import CRS, PROV_NAMES, OFFSHORE_WIND_NODES
 
 
 def read_raster(
@@ -87,3 +87,27 @@ def read_province_shapes(shape_file: os.PathLike) -> gpd.GeoDataFrame:
         raise ValueError(f"Province names do not match expected names: missing {missing}")
 
     return prov_shapes
+
+
+def read_offshore_province_shapes(
+    shape_file: os.PathLike, index_name="province"
+) -> gpd.GeoDataFrame:
+    """read the offshore province shape files (based on the eez)
+
+    Args:
+        shape_file (os.PathLike): the path to the .shp file & co
+        index_name (str, optional): the name of the index column. Defaults to "province".
+
+    Returns:
+        gpd.GeoDataFrame: the offshore province shapes as a GeoDataFrame
+    """
+
+    offshore_regional = gpd.read_file(shape_file).set_index(index_name)
+    offshore_regional = offshore_regional.reindex(OFFSHORE_WIND_NODES).rename_axis("bus")
+    if offshore_regional.geometry.isnull().any():
+        empty_geoms = offshore_regional[offshore_regional.geometry.isnull()].index.to_list()
+        raise ValueError(
+            f"There are empty geometries in offshore_regional {empty_geoms}, offshore wind will fail"
+        )
+
+    return offshore_regional

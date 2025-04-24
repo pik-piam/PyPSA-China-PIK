@@ -61,6 +61,8 @@ def plot_map(
 
     if not ax:
         fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
 
     network.plot(
         bus_sizes=bus_sizes,
@@ -138,6 +140,8 @@ def plot_map(
             patch_kw=dict(facecolor="lightgrey"),
             legend_kw=legend_kw,
         )
+
+    fig.tight_layout()
 
     return ax
 

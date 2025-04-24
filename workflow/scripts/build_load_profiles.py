@@ -1,4 +1,4 @@
-""" Functions for the rules to build the hourly heat and load demand profiles
+"""Functions for the rules to build the hourly heat and load demand profiles
 - electricity load profiles are based on scaling an hourly base year profile to yearly future projections
 - daily heating demand is based on the degree day approx (from atlite) & upscaled hourly based
   on an intraday profile (for Denmark by default, see snakefile)
@@ -12,15 +12,11 @@ import numpy as np
 from collections.abc import Iterable
 from scipy.optimize import curve_fit
 import os
-from _helpers import (
-    configure_logging,
-    mock_snakemake,
-    get_cutout_params
-)
+from _helpers import configure_logging, mock_snakemake, get_cutout_params
 from _pypsa_helpers import (
     make_periodic_snapshots,
     calc_atlite_heating_timeshift,
-    shift_profile_to_planning_year
+    shift_profile_to_planning_year,
 )
 
 # TODO switch from hardocded REF_YEAR to a base year?
@@ -383,7 +379,7 @@ if __name__ == "__main__":
 
     date_range = make_periodic_snapshots(
         year=planning_horizons,
-        freq=config["snapshots"]["freq"],
+        freq="1h",
         start_day_hour=config["snapshots"]["start"],
         end_day_hour=config["snapshots"]["end"],
         bounds=config["snapshots"]["bounds"],

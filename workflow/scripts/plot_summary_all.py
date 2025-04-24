@@ -58,7 +58,7 @@ def rename_techs(label):
 
     for ptr in prefix_to_remove:
         if label[: len(ptr)] == ptr:
-            label = label[len(ptr):]
+            label = label[len(ptr) :]
 
     for old, new in rename_if_contains_dict.items():
         if old in label:
@@ -111,7 +111,7 @@ def plot_pathway_costs(
 
     preferred_order = pd.Index(config["preferred_order"])
     new_index = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
-
+    logger.info(f"Missing technologies in preferred order: {df.index.difference(preferred_order)}")
     fig, ax = plt.subplots()
     fig.set_size_inches((12, 8))
 
@@ -138,7 +138,7 @@ def plot_pathway_costs(
         va="top",
     )
 
-    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    ax.legend(handles, [l.title() for l in labels], ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
 
     fig.tight_layout()
 
@@ -377,11 +377,15 @@ def plot_electricty_heat_balance(
     fig, ax = plt.subplots()
     fig.set_size_inches((12, 8))
 
+    preferred_order = pd.Index(config["preferred_order"])
     for df in [el_gen, el_con]:
-        preferred_order = pd.Index(config["preferred_order"])
         new_index = preferred_order.intersection(df.index).append(
             df.index.difference(preferred_order)
         )
+        logger.info(
+            f"Missing technologies in preferred order: {df.index.difference(preferred_order)}"
+        )
+
         colors = pd.DataFrame(
             new_index.map(config["tech_colors"]), index=new_index, columns=["color"]
         )
@@ -401,7 +405,7 @@ def plot_electricty_heat_balance(
     ax.set_ylabel("Energy [TWh/a]")
     ax.set_xlabel("")
     ax.grid(axis="y")
-    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    ax.legend(handles, [l.title() for l in labels], ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
     fig.tight_layout()
 
     if fig_dir is not None:
@@ -443,17 +447,19 @@ def plot_electricty_heat_balance(
         fig.tight_layout()
 
         if fig_dir is not None:
-            fig.savefig(os.path.join(fig_dir, "heat_balance.png"),
-                        transparent=config["transparent"])
+            fig.savefig(
+                os.path.join(fig_dir, "heat_balance.png"), transparent=config["transparent"]
+            )
 
 
-def plot_prices(file_list: list, config: dict, fig_name=None, ax:object=None):
+def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax: object = None):
     """plot the prices
 
     Args:
         file_list (list): the input csvs from make_summary
         config (dict): the configuration for plotting (snakemake.config["plotting"])
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
+        absolute (bool, optional): plot absolute prices. Defaults to False.
         ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
     """
     prices_df = pd.DataFrame()
@@ -469,6 +475,9 @@ def plot_prices(file_list: list, config: dict, fig_name=None, ax:object=None):
     fig.set_size_inches((12, 8))
 
     colors = config["tech_colors"]
+
+    if absolute:
+        prices_df = prices_df.abs()
 
     prices_df.plot(
         ax=ax,
@@ -579,7 +588,7 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
 
 
 # TODO move to a separate rule
-def write_data(data_paths:dict, outp_dir: os.PathLike):
+def write_data(data_paths: dict, outp_dir: os.PathLike):
     """Write some selected data
 
     Args:
@@ -594,13 +603,15 @@ def write_data(data_paths:dict, outp_dir: os.PathLike):
         co2_prices.update(dict(df_metrics.loc["co2_shadow"]))
         co2_budget.update(dict(df_metrics.loc["co2_budget"]))
     years = list(co2_budget.keys())
-    co2_df = pd.DataFrame({
-        "Year": years,
-        "CO2 Budget": [co2_budget[year] for year in years],
-        "CO2 Shadow Price": [co2_prices[year]*-1 for year in years]
-    })
+    co2_df = pd.DataFrame(
+        {
+            "Year": years,
+            "CO2 Budget": [co2_budget[year] for year in years],
+            "CO2 Shadow Price": [co2_prices[year] * -1 for year in years],
+        }
+    )
     outp_p = os.path.join(outp_dir, "co2_prices.csv")
-    co2_df.to_csv(outp_p,  index=False)
+    co2_df.to_csv(outp_p, index=False)
 
     df = pd.DataFrame()
     for results_file in data_paths["costs"]:
@@ -610,13 +621,13 @@ def write_data(data_paths:dict, outp_dir: os.PathLike):
         df = pd.concat([df_, df], axis=1)
     df.to_csv(os.path.join(outp_dir, "pathway_costs_not_discounted.csv"))
 
-
     prices_df = pd.DataFrame()
     for results_file in data_paths["weighted_prices"]:
         df_year = pd.read_csv(results_file, index_col=list(range(1)), header=[1]).T
 
         prices_df = pd.concat([df_year, prices_df])
     prices_df.to_csv(os.path.join(outp_dir, "weighted_prices.csv"))
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -699,6 +710,7 @@ if __name__ == "__main__":
         data_paths["weighted_prices"],
         config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/weighted_prices.png",
+        absolute=True,
     )
     plot_co2_shadow_price(
         data_paths["co2_price"],

@@ -31,8 +31,8 @@ LOGIN_NODE = "01"
 
 
 class ConfigManager:
-    """Config manager class for the snakemake configs
-    """
+    """Config manager class for the snakemake configs"""
+
     def __init__(self, config: dict):
         self._raw_config = deepcopy(config)
         self.config = deepcopy(config)
@@ -45,7 +45,8 @@ class ConfigManager:
             dict: processed config
         """
         self.config["scenario"]["planning_horizons"] = [
-            int(v) for v in self._raw_config["scenario"]["planning_horizons"]]
+            int(v) for v in self._raw_config["scenario"]["planning_horizons"]
+        ]
         ghg_handler = GHGConfigHandler(self.config.copy())
         self.config = ghg_handler.handle_ghg_scenarios()
 
@@ -62,7 +63,7 @@ class ConfigManager:
             dict: the pathway
         """
         scenario = self.config["co2_scenarios"][pthw_name]
-        return {"co2_pr_limit": scenario["pathway"][year], "control": scenario["control"]}
+        return {"co2_pr_or_limit": scenario["pathway"][year], "control": scenario["control"]}
 
     def make_wildcards(self) -> list:
         """Expand wildcards in config"""
@@ -71,6 +72,7 @@ class ConfigManager:
 
 class GHGConfigHandler:
     """A class to handle & validate GHG scenarios in the config"""
+
     def __init__(self, config: dict):
         self.config = deepcopy(config)
         self._raw_config = deepcopy(config)
@@ -96,15 +98,14 @@ class GHGConfigHandler:
         return self.config
 
     def _filter_active_scenarios(self):
-        """select active ghg scenarios
-        """
+        """select active ghg scenarios"""
         scenarios = self.config["scenario"].get("co2_pathway", [])
         if not isinstance(scenarios, list):
             scenarios = [scenarios]
 
         self.config["co2_scenarios"] = {
             k: v for k, v in self.config["co2_scenarios"].items() if k in scenarios
-            }
+        }
 
     def _reduction_to_budget(self, base_yr_ems: float):
         """transform reduction to budget
@@ -113,7 +114,7 @@ class GHGConfigHandler:
         """
         for name, co2_scen in self.config["co2_scenarios"].items():
             if co2_scen["control"] == "reduction":
-                budget = {yr: base_yr_ems*(1 - redu) for yr, redu in co2_scen["pathway"].items()}
+                budget = {yr: base_yr_ems * (1 - redu) for yr, redu in co2_scen["pathway"].items()}
                 self.config["co2_scenarios"][name]["pathway"] = budget
                 self.config["co2_scenarios"][name]["control"] = "budget_from_reduction"
 
@@ -256,6 +257,22 @@ class PathManager:
             return "tests/testdata/landuse_availability"
         else:
             return "resources/data/landuse_availability"
+
+    def profile_base_p(self, technology: str) -> os.PathLike:
+        """Generate the profile data directory base path.
+
+        Args:
+            technology (str): The technology name.
+
+        Returns:
+            os.PathLike: The path to the profile data directory.
+        """
+        cutout_name = self.config["atlite"]["cutout_name"]
+        base_p = self.derived_data_dir(shared=True) + f"/cutout_{cutout_name}/"
+        resource_cfg = self.config["renewable"][technology]
+        rsrc = "_".join([f"{k}{v}" for k, v in resource_cfg.items()])
+
+        return base_p + rsrc
 
 
 # ============== HPC helpers ==================

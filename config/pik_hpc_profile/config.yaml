@@ -12,7 +12,7 @@ jobs: 500
 restart-times: 1
 max-jobs-per-second: 10
 max-status-checks-per-second: 1
-# local-cores: 1
+# local-threads: 1
 latency-wait: 60
 retries: 3
 keep-going: False
@@ -34,7 +34,7 @@ cluster-generic-submit-cmd:
   sbatch
     --partition={resources.partition}
     --qos={resources.qos}
-    --cpus-per-task={threads}
+    --cpus-per-task={resources.threads}
     --mem={resources.mem_mb}
     --job-name={rule}-{wildcards}-smk
     --output=logs_slurm/{rule}/%j-{rule}-{wildcards}.out
@@ -47,52 +47,57 @@ cluster-generic-cancel-cmd: scancel
 
 # now define the resources
 default-resources:
-  - partition=standard
-  - qos=short
-  - mem_mb=2000
-  - cores=8
-  - time=10
-  - extra=""
-
+  partition: priority
+  qos: priority
+  mem_mb: 2000
+  threads: 4
 set-resources:
   solve_network_myopic:
     mem_mb: 80000
     time: 80
   solve_networks:
     mem_mb: 80000
-    qos : short
-    partition: standard
+    # qos: priority
+    # partition: priority
     time : 80
+    threads: 6
   build_cutout:
     time: 9000
-    cores: 4
+    threads: 4
     partition: io
     qos: io
     mem_mb: 20000
+  build_availability_matrix:
+    threads: 8
+    mem_mb: 30000
   build_renewable_potential:
     time: 300
-    cores: 8
+    threads: 4
     mem_mb: 20000
+  build_renewable_profiles:
+    time: 300
+    threads: 4
+    mem_mb: 30000
   plot_network:
     mem_mb: 8000
-    cores: 2
+    threads: 2
   retrieve_build_up_raster:
     time: 300
-    cores: 1
+    threads: 1
     partition: io # login
     qos: io
   retrieve_Grass_raster:
     time: 300
-    cores: 1
+    threads: 1
     partition: io
     qos: io
   retrieve_Bare_raster:
     time: 300
-    cores: 1
+    threads: 1
     partition: io
     qos: io
   retrieve_Shrubland_raster:
     time: 300
-    cores: 1
+    threads: 1
     partition: io
     qos: io

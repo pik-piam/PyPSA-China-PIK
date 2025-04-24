@@ -8,9 +8,9 @@ import pypsa
 import geopandas as gpd
 import pandas as pd
 import numpy as np
+import os
 
 import xarray as xr
-
 from vresutils.costdata import annuity
 from shapely.geometry import Point
 from logging import getLogger
@@ -18,11 +18,9 @@ from logging import getLogger
 from constants import (
     PROV_NAMES,
     CRS,
-    # TIMEZONE,
+    TIMEZONE,
     LOAD_CONVERSION_FACTOR,
     YEAR_HRS,
-    CO2_EL_2020,
-    CO2_HEATING_2020,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
     NON_LIN_PATH_SCALING,
@@ -31,10 +29,7 @@ from constants import (
     ECON_LIFETIME_LINES,
 )
 from functions import HVAC_cost_curve
-from _helpers import (
-    configure_logging,
-    mock_snakemake,
-)
+from _helpers import configure_logging, mock_snakemake, ConfigManager
 from _pypsa_helpers import (
     make_periodic_snapshots,
     shift_profile_to_planning_year,
@@ -100,7 +95,125 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         network.add("Carrier", "coal cc", co2_emissions=0.034)
 
 
-def prepare_network(config: dict) -> pypsa.Network:
+def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
+    """Add co2 constraints or prices
+
+    Args:
+        network (pypsa.Network): the network to which prices or constraints are to be added
+        co2_control (dict): the config
+
+
+    Raises:
+        ValueError: unrecognised co2 control option
+    """
+
+    if co2_control["control"] is None:
+        pass
+    elif co2_control["control"].startswith("budget"):
+        co2_limit = co2_control["co2_pr_or_limit"]
+        logger.info("Adding CO2 constraint based on scenario {co2_limit}")
+        network.add(
+            "GlobalConstraint",
+            "co2_limit",
+            type="primary_energy",
+            carrier_attribute="co2_emissions",
+            sense="<=",
+            constant=co2_limit,
+        )
+    else:
+        logger.error(f"Unhandled CO2 control config {co2_control} due to unknown control.")
+        raise ValueError(f"Unhandled CO2 config {config['scenario']['co2_reduction']}")
+
+
+def add_wind_and_solar(
+    network: pypsa.Network,
+    techs: list,
+    paths: os.PathLike,
+    year: int,
+    costs: pd.DataFrame,
+):
+    """
+    Adds wind and solar generators for each grade of renewable energy technology
+
+    Args:
+        network (pypsa.Network): The PyPSA network to which the generators will be added
+        techs (list): A list of renewable energy technologies to add (e.g., ["solar", "onwind", "offwind"])
+        paths (os.PathLike): file paths containing renewable profiles (snakemake.input)
+        year (int): planning year
+        costs (pd.DataFrame): cost parameters for each technology
+    Raises:
+        ValueError: for unsupported technologies or missing paths.
+    """
+
+    unsupported = set(techs).difference({"solar", "onwind", "offwind"})
+    if unsupported:
+        raise ValueError(f"Carrier(s) {unsupported} not wind or solar pv")
+    prof_paths = {f"profile_{tech}": paths[f"profile_{tech}"] for tech in techs}
+    if len(prof_paths) != len(techs):
+        raise ValueError(f"Paths do not correspond to techs  ({prof_paths} vs {techs})")
+
+    for tech in techs:
+        # load the renewable profiles
+        logger.info(f"Attaching {tech} to network")
+        with xr.open_dataset(prof_paths[f"profile_{tech}"]) as ds:
+            if ds.indexes["bus"].empty:
+                continue
+            if "year" in ds.indexes:
+                ds = ds.sel(year=ds.year.min(), drop=True)
+
+            timestamps = pd.DatetimeIndex(ds.time)
+            # shift weather year to planning year
+            timestamps = timestamps.map(lambda t: t.replace(year=int(year)))
+            ds = ds.assign_coords(time=timestamps)
+
+            mask = ds.time.isin(network.snapshots)
+            ds = ds.sel(time=mask)
+
+            if not len(ds.time) == len(network.snapshots):
+                raise ValueError(
+                    f"Mismatch in profile and network timestamps {len(ds.time)} and {len(network.snapshots)}"
+                )
+            ds = ds.stack(bus_bin=["bus", "bin"])
+
+        # bins represent renewable generation grades
+        flatten = lambda t: " grade".join(map(str, t))
+        buses = ds.indexes["bus_bin"].get_level_values("bus")
+        bus_bins = ds.indexes["bus_bin"].map(flatten)
+
+        p_nom_max = ds["p_nom_max"].to_pandas()
+        p_nom_max.index = p_nom_max.index.map(flatten)
+
+        p_max_pu = ds["profile"].to_pandas()
+        p_max_pu.columns = p_max_pu.columns.map(flatten)
+
+        # add renewables
+        network.add(
+            "Generator",
+            bus_bins,
+            suffix=f" {tech}",
+            bus=buses,
+            carrier=tech,
+            p_nom_extendable=True,
+            p_nom_max=p_nom_max,
+            capital_cost=costs.at[tech, "capital_cost"],
+            marginal_cost=costs.at[tech, "marginal_cost"],
+            p_max_pu=p_max_pu,
+            lifetime=costs.at[tech, "lifetime"],
+        )
+
+
+def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Network:
+    """Prepares/makes the network object for myopic mode according to config &
+    at 1 node per region/province
+
+    Args:
+        config (dict): the snakemake config
+        costs (pd.DataFrame): the costs dataframe (anualised capex and marginal costs)
+        biomass_potential (Optional, pd.DataFrame): biomass potential dataframe. Defaults to None.
+
+    Returns:
+        pypsa.Network: the pypsa network object
+    """
 
     # derive the config
     config["add_gas"] = (
@@ -140,36 +253,8 @@ def prepare_network(config: dict) -> pypsa.Network:
     # TODO: what about leap years?
     n_years = represented_hours / YEAR_HRS
 
-    pathway = snakemake.wildcards["pathway"]
-
-    # load costs
-    tech_costs = snakemake.input.tech_costs
-    cost_year = snakemake.wildcards["planning_horizons"]
-    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
-
     prov_shapes = read_province_shapes(snakemake.input.province_shape)
     prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
-
-    # load data sets calculated in previous steps
-    ds_solar = xr.open_dataset(snakemake.input.profile_solar)
-    ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)
-    ds_offwind = xr.open_dataset(snakemake.input.profile_offwind)
-
-    # == shift datasets from reference to planning year, sort columns to match network bus order ==
-    solar_p_max_pu = ds_solar["profile"].transpose("time", "bus").to_pandas()
-    solar_p_max_pu = shift_profile_to_planning_year(solar_p_max_pu, planning_horizons)
-    solar_p_max_pu = solar_p_max_pu.loc[snapshots]
-    solar_p_max_pu.sort_index(axis=1, inplace=True)
-
-    onwind_p_max_pu = ds_onwind["profile"].transpose("time", "bus").to_pandas()
-    onwind_p_max_pu = shift_profile_to_planning_year(onwind_p_max_pu, planning_horizons)
-    onwind_p_max_pu = onwind_p_max_pu.loc[snapshots]
-    onwind_p_max_pu.sort_index(axis=1, inplace=True)
-
-    offwind_p_max_pu = ds_offwind["profile"].transpose("time", "bus").to_pandas()
-    offwind_p_max_pu = shift_profile_to_planning_year(offwind_p_max_pu, planning_horizons)
-    offwind_p_max_pu = offwind_p_max_pu.loc[snapshots]
-    offwind_p_max_pu.sort_index(axis=1, inplace=True)
 
     # TODO split by carrier, make transparent
     # add buses
@@ -178,24 +263,6 @@ def prepare_network(config: dict) -> pypsa.Network:
         add_buses(network, nodes, suffix, carrier, prov_centroids)
 
     add_carriers(network, config, costs)
-
-    # add global constraint
-    if not isinstance(config["scenario"]["co2_reduction"], tuple):
-
-        if config["scenario"]["co2_reduction"] is not None:
-            #
-            co2_limit = (CO2_HEATING_2020 + CO2_EL_2020) * (
-                1 - config["scenario"]["co2_reduction"][pathway][planning_horizons]
-            )  # Chinese 2020 CO2 emissions of electric and heating sector
-
-            network.add(
-                "GlobalConstraint",
-                "co2_limit",
-                type="primary_energy",
-                carrier_attribute="co2_emissions",
-                sense="<=",
-                constant=co2_limit,
-            )
 
     # ===== add load demand data =======
     demand_path = snakemake.input.elec_load.replace("{planning_horizons}", cost_year)
@@ -206,6 +273,9 @@ def prepare_network(config: dict) -> pypsa.Network:
     load.columns = PROV_NAMES
 
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
+
+    ws_carriers = [c for c in config["Techs"]["vre_techs"] if c.find("wind") >= 0 or c == "solar"]
+    add_wind_and_solar(network, ws_carriers, paths, planning_horizons, costs)
 
     if config["heat_coupling"]:
 
@@ -444,6 +514,7 @@ def prepare_network(config: dict) -> pypsa.Network:
         )
 
         biomass_potential = pd.read_hdf(snakemake.input.biomass_potential)
+        biomass_potential.index = biomass_potential.index + " biomass"
         network.add(
             "Store",
             nodes + " biomass",
@@ -551,15 +622,18 @@ def prepare_network(config: dict) -> pypsa.Network:
         hourly_rng = pd.date_range(
             config["hydro_dams"]["inflow_date_start"],
             config["hydro_dams"]["inflow_date_end"],
-            freq=config["snapshots"]["freq"],
+            freq="1h",
             inclusive="left",
         )
         inflow = pd.read_pickle(config["hydro_dams"]["inflow_path"]).reindex(
             hourly_rng, fill_value=0
         )
         inflow.columns = dams.index
+        # convert to naive local timezone
+        inflow.index = inflow.index.tz_localize("UTC").tz_convert(TIMEZONE).tz_localize(None)
         inflow = inflow.loc[str(INFLOW_DATA_YR)]
-        inflow = shift_profile_to_planning_year(inflow, INFLOW_DATA_YR)
+        inflow = shift_profile_to_planning_year(inflow, planning_horizons)
+        inflow = inflow.loc[network.snapshots]
 
         water_consumption_factor = (
             dams.loc[:, "Water_consumption_factor_avg"] * 1e3
@@ -659,7 +733,7 @@ def prepare_network(config: dict) -> pypsa.Network:
 
             p_nom = (inflow / water_consumption_factor).iloc[:, inflow_station].max()
             p_pu = (inflow / water_consumption_factor).iloc[:, inflow_station] / p_nom
-            p_pu.index = network.snapshots
+
             network.add(
                 "Generator",
                 dams.index[inflow_station] + " inflow",
@@ -792,50 +866,6 @@ def prepare_network(config: dict) -> pypsa.Network:
             lifetime=costs.at["methanation", "lifetime"],
         )
 
-    # add components
-    network.add(
-        "Generator",
-        nodes,
-        suffix=" onwind",
-        bus=nodes,
-        carrier="onwind",
-        p_nom_extendable=True,
-        p_nom_max=ds_onwind["p_nom_max"].to_pandas(),
-        capital_cost=costs.at["onwind", "capital_cost"],
-        marginal_cost=costs.at["onwind", "marginal_cost"],
-        p_max_pu=onwind_p_max_pu,
-        lifetime=costs.at["onwind", "lifetime"],
-    )
-
-    offwind_nodes = ds_offwind["bus"].to_pandas().index
-    network.add(
-        "Generator",
-        offwind_nodes,
-        suffix=" offwind",
-        bus=offwind_nodes,
-        carrier="offwind",
-        p_nom_extendable=True,
-        p_nom_max=ds_offwind["p_nom_max"].to_pandas()[offwind_nodes],
-        p_max_pu=offwind_p_max_pu[offwind_nodes],
-        capital_cost=costs.at["offwind", "capital_cost"],
-        marginal_cost=costs.at["offwind", "marginal_cost"],
-        lifetime=costs.at["offwind", "lifetime"],
-    )
-
-    network.add(
-        "Generator",
-        nodes,
-        suffix=" solar",
-        bus=nodes,
-        carrier="solar",
-        p_nom_extendable=True,
-        p_nom_max=ds_solar["p_nom_max"].to_pandas(),
-        capital_cost=costs.at["solar", "capital_cost"],
-        marginal_cost=costs.at["solar", "marginal_cost"],
-        p_max_pu=solar_p_max_pu,
-        lifetime=costs.at["solar", "lifetime"],
-    )
-
     if "nuclear" in config["Techs"]["vre_techs"]:
         nuclear_nodes = pd.Index(NUCLEAR_EXTENDABLE)
         network.add(
@@ -861,6 +891,8 @@ def prepare_network(config: dict) -> pypsa.Network:
             gshp_cop = store["gshp_cop_profiles"]
             gshp_cop.index = gshp_cop.index.tz_localize(None)
             gshp_cop = shift_profile_to_planning_year(gshp_cop, planning_horizons)
+            ashp_cop = ashp_cop.loc[snapshots]
+            gshp_cop = gshp_cop.loc[snapshots]
 
         for cat in [" decentral ", " central "]:
             network.add(
@@ -1179,18 +1211,52 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_base_networks",
             opts="ll",
-            topology="current+Neighbor",
+            topology="current+FCG",
             co2_pathway="exp175default",
             planning_horizons="2030",
             heating_demand="positive",
         )
     configure_logging(snakemake)
 
-    network = prepare_network(snakemake.config)
+    yr = int(snakemake.wildcards.planning_horizons)
+    logger.info(f"Preparing network for {yr}")
 
+    pathway = snakemake.wildcards.co2_pathway
+    config = snakemake.config
+    input_paths = {k: v for k, v in snakemake.input.items()}
+
+    co2_opts = ConfigManager(config).fetch_co2_restriction(pathway, yr)
+    if not co2_opts["control"].startswith("budget"):
+        raise ValueError("Only budget CO2 control is currently supported in myopic")
+
+    # TODO pass this to prep network
+    snapshot_cfg = config["snapshots"]
+    snapshots = make_periodic_snapshots(
+        year=yr,
+        freq=snapshot_cfg["freq"],
+        start_day_hour=snapshot_cfg["start"],
+        end_day_hour=snapshot_cfg["end"],
+        bounds=snapshot_cfg["bounds"],
+        # naive local timezone
+        tz=None,
+        end_year=(None if not snapshot_cfg["end_year_plus1"] else yr + 1),
+    )
+
+    # load costs
+    n_years = config["snapshots"]["frequency"] * len(snapshots) / 8760.0
+    tech_costs = snakemake.input.tech_costs
+    cost_year = snakemake.wildcards["planning_horizons"]
+    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
+
+    network = prepare_network(snakemake.config, costs, input_paths)
+    add_co2_constraints_prices(network, co2_opts)
     sanitize_carriers(network, snakemake.config)
 
+    outp = snakemake.output.network_name
     network.export_to_netcdf(snakemake.output.network_name)
 
     msg = f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {snakemake.output.network_name}"
     logger.info(msg)
+
+    costs_outp = os.path.dirname(outp) + f"/costs_{yr}.csv"
+    costs.to_csv(costs_outp)
