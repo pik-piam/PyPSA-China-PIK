@@ -70,7 +70,9 @@ def add_biomass(
     """
 
     suffix = " biomass"
-    biomass_potential.index += suffix
+    biomass_potential.index = biomass_potential.index.map(
+        lambda x: x + suffix if not x.endswith(suffix) else x
+    )
 
     network.add(
         "Bus",
@@ -80,7 +82,9 @@ def add_biomass(
         y=prov_centroids.y,
         carrier="biomass",
     )
-
+    logger.info(f"Adding biomass buses")
+    logger.info(f"{nodes + suffix}")
+    logger.info("potentials")
     # aggricultural residue biomass
     # NOTE THIS CURRENTLY DOESN'T INCLUDE TRANSPORT between nodes
     # NOTE additional emissions from treatment/remedials are missing
@@ -1238,6 +1242,7 @@ def add_hydro(
     hydro_p_max_pu.index = network.snapshots
 
     logger.info("\tAdding extra hydro capacity (regionally aggregated)")
+
     network.add(
         "Generator",
         nodes,
@@ -1278,6 +1283,7 @@ def prepare_network(
     snapshots: pd.date_range,
     biomass_potential: pd.DataFrame = None,
     paths: dict = None,
+
 ) -> pypsa.Network:
     """Prepares/makes the network object for overnight mode according to config &
     at 1 node per region/province
@@ -1525,7 +1531,6 @@ if __name__ == "__main__":
     n_years = config["snapshots"]["frequency"] * len(snapshots) / 8760.0
     tech_costs = snakemake.input["tech_costs"]
     input_paths = {k: v for k, v in snakemake.input.items()}
-
     cost_year = yr
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 

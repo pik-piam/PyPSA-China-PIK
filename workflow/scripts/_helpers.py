@@ -13,11 +13,13 @@ import sys
 import subprocess
 import logging
 import importlib
-import time
+
 from pathlib import Path
 from copy import deepcopy
 
 import pypsa
+import gurobipy
+import multiprocessing
 
 # get root logger
 logger = logging.getLogger()
@@ -293,27 +295,30 @@ def setup_gurobi_tunnel_and_env(
     logger.info("setting up tunnel")
     user = os.getenv("USER")  # User is pulled from the environment
     port = tunnel_config.get("tunnel_port", DEFAULT_TUNNEL_PORT)
+    login_node = tunnel_config.get("login_node", LOGIN_NODE)
+    timeout = tunnel_config.get("timeout_s", 60)
 
     # bash commands for tunnel: reduce pipe err severity (too high from snakemake)
     pipe_err = "set -o pipefail; "
-    ssh_command = f"ssh -vvv -fN -D {port} {user}@login{LOGIN_NODE}"
-    logger.info(f"Attempting ssh tunnel to login node {LOGIN_NODE}")
+    ssh_command = f"ssh -vvv -fN -D {port} -o ConnectTimeout={timeout} {user}@login{login_node}"
+    logger.info(f"Attempting ssh tunnel to login node {login_node}")
     # Run SSH in the background to establish the tunnel
     socks_proc = subprocess.Popen(
         pipe_err + ssh_command, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
     )
+
     try:
-        time.sleep(0.2)
-        # [-1] because ssh is last command
-        err = socks_proc.communicate(timeout=2)[-1].decode()
+        stdout, stderr = socks_proc.communicate(timeout=timeout+2)
+        err = stderr.decode()
         logger.info(f"ssh err returns {str(err)}")
+        logger.info(f"ssh stdout returns {str(stdout)}")
         if err.find("Permission") != -1 or err.find("Could not resolve hostname") != -1:
             socks_proc.kill()
         else:
             logger.info("Gurobi Environment variables & tunnel set up successfully at attempt {i}.")
     except subprocess.TimeoutExpired:
-        logger.info(
-            f"SSH tunnel established on port {port} with possible errors (err check timedout)."
+        logger.error(
+            f"SSH tunnel communication timed out."
         )
 
     os.environ["https_proxy"] = f"socks5://127.0.0.1:{port}"
@@ -331,9 +336,63 @@ def setup_gurobi_tunnel_and_env(
     return socks_proc
 
 
+def _check_gurobi_license_subprocess()->bool:
+    """
+    Subprocess function to check Gurobi license availability.
+    This function will start the Gurobi environment to verify if a license is available.
+
+    Returns:
+        bool: True if the license check succeeded, False otherwise.
+    """
+    try:
+        env = gurobipy.Env(empty=True)
+        env.start()  # Start the Gurobi environment (this will attempt to acquire the license)
+        logger.info("Gurobi license is available.")
+        env.dispose()  # Dispose of the environment after use
+        return True
+    except gurobipy.GurobiError as e:
+        logger.error(f"Error checking Gurobi license: {e}")
+        return False
+
+
+def check_gurobi_license(attempts=1, timeout=10) -> bool:
+    """
+    Checks the availability of the Gurobi license in a subprocess with timeout.
+
+    Args:
+        attempts (int): Number of attempts.
+        timeout (int): Time to wait before retrying (in seconds).
+
+    Returns:
+        bool: True if the license is available, False if the check times out.
+    """
+    logger.info("Checking Gurobi license availability...")
+
+    for _ in range(attempts):
+        # Create a multiprocessing Process to check license
+        process = multiprocessing.Process(target=_check_gurobi_license_subprocess)
+        process.start()
+
+        process.join(timeout=timeout)  # Wait for the process to finish or timeout
+
+        if process.is_alive():
+            # If the process is still alive after the timeout, terminate it
+            process.terminate()
+            process.join()  # Ensure it is properly joined to clean up
+            logger.warning(f"License check timeout. Retrying...")
+        else:
+            # If the process completed, check the result
+            if process.exitcode == 0:
+                # License was available
+                return True
+            else:
+                # License was not available
+                logger.warning("License not available during subprocess check. Retrying...")
+
+    return False
+
+
 # ====== SNAKEMAKE HELPERS =========
-
-
 def configure_logging(
     snakemake: object, logger: logging.Logger = None, skip_handlers=False, level="INFO"
 ):
