@@ -4,7 +4,7 @@
 
 run:
   # name: 'new_load_overnight_5hr_newcutout'
-  name: test_co2_pr_baseline_0411_NM_lowCB
+  name: test_co2_pr_baseline_0421_SD_withCB_dual
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
@@ -46,7 +46,7 @@ co2_scenarios:
       '2045': 0.79092165
       '2050': 0.87480618
       '2055': 0.94359322
-      '2060': 0.94359322
+      '2060': 1
 # TODO Need to test timezones and functionality of end_year_plus1
 snapshots:
   start: "01-01 00:00"
@@ -239,7 +239,7 @@ solving:
       PreDual: 0
       GURO_PAR_BARDENSETHRESH: 200
       DualReductions: 0
-      assign_all_duals: true
+      assign_all_duals: True
 #      BarConvTol: 1.e-6
 #      Seed: 123
 #      AggFill: 0

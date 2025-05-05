@@ -11,7 +11,7 @@ import numpy as np
 import pypsa
 from pandas import DatetimeIndex
 import os
-
+from _pypsa_helpers import process_dual_variables, export_duals_to_csv_by_year
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
 
 pypsa.pf.logger.setLevel(logging.WARNING)
@@ -205,7 +205,23 @@ def solve_network(
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
 
+    # 确保 assign_all_duals 在 solver_options 中
+    assert solver_options.get("assign_all_duals", False), "assign_all_duals should be set to True"
+
+    if hasattr(n, "model") and hasattr(n.model, "dual"):
+        import pandas as pd
+        import xarray as xr
+        
+        # 处理对偶变量并将其添加到网络对象
+        process_dual_variables(n)
+        
+        # 根据年份导出对偶变量
+        if "planning_horizons" in n.meta.get("wildcards", {}):
+            current_year = n.meta["wildcards"]["planning_horizons"]
+            export_duals_to_csv_by_year(n, current_year)
+    
     return n
+
 
 
 def check_tunnel(port):

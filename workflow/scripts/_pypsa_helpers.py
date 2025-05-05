@@ -381,3 +381,145 @@ def update_p_nom_max(n: pypsa.Network) -> None:
 
     n.generators.p_nom_max = n.generators[["p_nom_min", "p_nom_max"]].max(1)
 
+
+def process_dual_variables(n):
+    """
+    处理网络模型的对偶变量并将其添加到网络对象中
+    
+    Args:
+        n: 包含模型和对偶变量的网络对象
+    """
+    import pandas as pd
+    import xarray as xr
+    
+    # 获取所有对偶变量
+    all_duals = pd.Series(n.model.dual)
+    
+    # 创建一个字典临时存储处理后的对偶变量
+    processed_duals = {}
+    
+    for name, value in all_duals.items():
+        parts = name.split("-")
+        if len(parts) >= 2:
+            component = parts[0].lower()
+            constraint_type = "-".join(parts[1:])
+            component_name = f"{component}s"
+            attr_name = f"mu_{constraint_type.replace('[', '_').replace(']', '')}"
+            
+            # 跳过不存在的组件
+            if not hasattr(n, component_name):
+                logger.warning(f"Component {component_name} not found in network")
+                continue
+            
+            # 获取组件对象
+            component_obj = getattr(n, component_name)
+            
+            try:
+                if np.isscalar(value):
+                    # 标量值 - 创建包含该值的Series并添加
+                    component_obj[attr_name] = pd.Series(value, index=component_obj.index)
+                    logger.info(f"Added scalar value {value} for {component_name}.{attr_name}")
+                
+                elif len(np.shape(value)) == 1:
+                    # 一维数组 - 需要映射到正确的索引
+                    if isinstance(value, xr.DataArray) and hasattr(value, 'coords'):
+                        # 从xarray获取索引映射
+                        orig_indices = value.coords[value.dims[0]].values
+                        # 创建一个映射字典
+                        value_dict = {str(idx): val for idx, val in zip(orig_indices, value.values)}
+                        
+                        # 为网络组件的每个索引分配值
+                        series = pd.Series(index=component_obj.index)
+                        for idx in component_obj.index:
+                            # 尝试不同的匹配方式
+                            if idx in value_dict:
+                                series[idx] = value_dict[idx]
+                            elif str(idx) in value_dict:
+                                series[idx] = value_dict[str(idx)]
+                            # 如果找不到匹配项，保持为NaN
+                        
+                        component_obj[attr_name] = series
+                        logger.info(f"Added matched 1D array for {component_name}.{attr_name}")
+                    else:
+                        # 如果没有坐标信息，尝试直接匹配
+                        if len(value) == len(component_obj):
+                            component_obj[attr_name] = pd.Series(value, index=component_obj.index)
+                            logger.info(f"Added 1D array for {component_name}.{attr_name} based on length match")
+                        else:
+                            logger.warning(f"Cannot match indices for {component_name}.{attr_name}, storing separately")
+                            # 保存到单独的字典中
+                            processed_duals[f"{component_name}_{attr_name}"] = value
+                
+                else:
+                    # 多维数组 - 单独保存
+                    logger.warning(f"Multi-dimensional array for {component_name}.{attr_name}, storing separately")
+                    processed_duals[f"{component_name}_{attr_name}"] = value
+                
+            except Exception as e:
+                logger.warning(f"Error processing {component_name}.{attr_name}: {str(e)}")
+
+    # 将处理过的对偶变量添加到网络对象的属性中
+    n.duals = processed_duals
+    logger.info(f"Added {len(processed_duals)} processed dual variables to network.duals")
+    
+    return n
+
+def export_duals_to_csv_by_year(n, current_year):
+    """
+    将网络模型的对偶变量导出为按年份组织的 CSV 文件。
+
+    Args:
+        n: 包含 model 属性和 dual 解决方案的网络对象。
+        current_year: 当前模拟的年份。
+    """
+    if not (hasattr(n, "model") and hasattr(n.model, "dual")):
+        logger.info("Network object does not have 'model' or 'model.dual' attribute, skipping dual export.")
+        return # 不满足条件，直接返回
+
+    # 检查对偶变量是否为空
+    if n.model.dual is None or len(n.model.dual) == 0:
+        logger.info("n.model.dual is empty or None, no dual variables to export.")
+        return
+
+    # 获取所有对偶变量 (作为一个 pandas Series，方便迭代)
+    all_duals = pd.Series(n.model.dual)
+
+    # 构建年份相关的输出目录
+    output_dir = f"dual_values_raw_{current_year}"
+    logger.info(f"Attempting to export {len(all_duals)} raw dual variables to '{output_dir}'...")
+    os.makedirs(output_dir, exist_ok=True) # 确保年份目录存在
+
+    # 遍历所有对偶变量并保存为 CSV
+    for name, value in all_duals.items():
+        # 清理文件名，避免特殊字符问题
+        safe_name = name.replace('[', '_').replace(']', '_').replace('-', '_').replace('.', '_').replace(':', '_').replace('/', '_')
+        filepath = os.path.join(output_dir, f"{safe_name}.csv")
+
+        try:
+            # 尝试转换为 pandas 对象并保存
+            # 这里我们更积极地尝试各种转换方式，以便保存大多数情况的值
+            if np.isscalar(value):
+                pd.Series([value], index=[name]).to_csv(filepath, header=False)
+            elif hasattr(value, 'to_pandas'):
+                 # 优先使用对象自己的 to_pandas 方法 (适合 xarray DataArray/Dataset <= 1D)
+                 # 对于多维 xarray.Dataset，to_pandas() 会失败，我们会在 except 块处理
+                 value.to_pandas().to_csv(filepath)
+            else:
+                # 尝试将其他类型的数组/列表/字典等转换为 pandas Series 或 DataFrame
+                try:
+                    pd.Series(value).to_csv(filepath, header=False)
+                except:
+                    try:
+                        pd.DataFrame(value).to_csv(filepath)
+                    except Exception as e:
+                        # 如果上述转换都失败，记录警告并跳过保存
+                        logger.warning(f"Could not convert dual '{name}' to pandas Series or DataFrame for saving: {str(e)}. Skipping CSV save.")
+                        continue # 跳过当前循环，不保存这个变量
+
+            # logger.debug(f"Saved raw dual '{name}' to {filepath}") # 可以根据需要调整日志级别
+
+        except Exception as e:
+             # 捕获文件写入错误或 to_pandas() 对多维 Dataset 失败等情况
+             logger.warning(f"Error saving raw dual '{name}' to {filepath}: {str(e)}")
+
+    logger.info("Finished attempting to save raw dual variables to CSV.")
