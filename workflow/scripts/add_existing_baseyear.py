@@ -70,7 +70,7 @@ def add_existing_capacities() -> pd.DataFrame:
     }
     df_agg = pd.DataFrame()
     # TODO fix centralise (make a dict from start?)
-    for tech in CARRIERS:
+    for tech in carrier:
 
         # TODO make argument
         df = pd.read_csv(snakemake.input[f"existing_{tech}"], index_col=0).fillna(0.0)
