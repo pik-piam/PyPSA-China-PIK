@@ -24,7 +24,7 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
                 RESULTS_DIR,
                 "postnetworks/ntwk_{planning_horizons}.nc",
             ),
-            tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape="resources/data/province_shapes/CHN_adm1.shp",
         output:
             cost_map=RESULTS_DIR + "/plots/networks/ntwk_{planning_horizons}-cost.png",
@@ -41,7 +41,7 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
                 RESULTS_DIR,
                 "postnetworks/ntwk_{planning_horizons}.nc",
             ),
-            tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
         output:
             directory(RESULTS_DIR + "/summary/ntwk_{planning_horizons}"),
         log:
