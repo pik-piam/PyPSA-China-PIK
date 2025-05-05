@@ -3,14 +3,19 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  # name: 'new_load_overnight_5hr_newcutout'
-  name: test_co2_pr_baseline
+  name: unamed_run
 foresight: "overnight"
-results_dir: 'results/'
-summary_dir: 'summary/'
 
-scenario:
-  co2_pathway: ['exp175default'] # co2_scenarios that will be used
+paths:
+  results_dir: "results/"
+  summary_dir: "summary/" # TODO useless?
+  costs_dir: "resources/data/costs/"
+  yearly_regional_load: 
+    ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+    ac_to_mwh: 1
+
+scenario: 
+  co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
     - 2020
@@ -22,7 +27,7 @@ scenario:
     - 2050
     - 2055
     - 2060
-  heating_demand: ['positive']
+  heating_demand: ["positive"]
 
 co2_scenarios: 
   exp175default:
@@ -83,6 +88,9 @@ renewable:
     resource:
       method: wind
       turbine: Vestas_V112_3MW
+    resource_classes:
+      min_cf_delta: 0.05
+      n: 3  
     capacity_per_sqkm: 3 # ScholzPhd Tab 4.3.1: 10MW/km^2
     potential: simple # or conservative
     natura: false
@@ -93,6 +101,9 @@ renewable:
     resource:
       method: wind
       turbine: NREL_ReferenceTurbine_5MW_offshore
+    resource_classes:
+      min_cf_delta: 0.05
+      n: 3
     capacity_per_sqkm: 2 # ScholzPhd Tab 4.3.1: 20MW/km^2
     correction_factor: 0.8855
     potential: simple # or conservative
@@ -108,6 +119,9 @@ renewable:
       orientation:
         slope: 35.
         azimuth: 180.
+    resource_classes:
+      min_cf_delta: 0.02
+      n: 2
     capacity_per_sqkm: 5.1 # ScholzPhd Tab 4.3.1: 170 MW/km^2 3%
     potential: simple # or conservative
     correction_factor: 0.85

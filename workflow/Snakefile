@@ -202,13 +202,15 @@ rule build_renewable_profiles:
 
 # TODO check whether energy totals still needed
 rule build_load_profiles:
+    params:
+        elec_load_conversion = config["paths"]["yearly_regional_load"].get("ac_to_mwh", 1),
     input:
         population = DERIVED_COMMON + "/population/population.h5",
         population_map = DERIVED_COMMON + "/population/population_gridcell_map.h5",
         cutout = CUTOUT_PATH,
         intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
         space_heat_demand="resources/data/heating/SPH_2020.csv",
-        elec_load_projs = "resources/data/load/Province_Load_2020_2060.csv",
+        elec_load_projs = path_manager.elec_load(),
         province_codes = "resources/data/regions/province_codes.csv",
         hrly_regional_ac_load = "resources/data/load/Hourly_demand_of_31_province_China_modified_V2.1.csv",
     output:

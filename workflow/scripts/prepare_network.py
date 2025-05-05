@@ -48,6 +48,9 @@ from constants import (
 
 logger = logging.getLogger(__name__)
 
+# TODO add a heat bus that can absorb heat for free in non-coupled mode (e.g. Hydrogen electrolysis, sabatier)
+# TODO add heat disipator?
+
 
 def add_biomass(
     network: pypsa.Network,
@@ -442,6 +445,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         lifetime=costs.at["hydrogen storage underground", "lifetime"],
     )
 
+    # TODO harmonize with remind (add if in techs)
     network.add(
         "Store",
         H2_type1_nodes + " H2 Store",
@@ -496,6 +500,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
             ]
         )
 
+        # TODO harmonize with remind (add if in techs)
         cc = costs.at["H2 (g) pipeline", "capital_cost"] * lengths
 
         # === h2 pipeline with losses ====
@@ -547,6 +552,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         )
 
 
+# TODO harmonize with remind
 def add_voltage_links(network: pypsa.Network, config: dict):
     """add HVDC/AC links (no KVL)
 
@@ -1252,7 +1258,6 @@ def add_hydro(
         p_nom=hydro_p_nom,
         p_nom_min=hydro_p_nom,
         p_nom_extendable=False,
-        capital_cost=costs.at["hydro", "capital_cost"],
         p_max_pu=hydro_p_max_pu,
     )
 
@@ -1283,7 +1288,6 @@ def prepare_network(
     snapshots: pd.date_range,
     biomass_potential: pd.DataFrame = None,
     paths: dict = None,
-
 ) -> pypsa.Network:
     """Prepares/makes the network object for overnight mode according to config &
     at 1 node per region/province
@@ -1330,8 +1334,7 @@ def prepare_network(
     # load electricity demand data
     demand_path = paths["elec_load"].replace("{planning_horizons}", f"{cost_year}")
     with pd.HDFStore(demand_path, mode="r") as store:
-        load = LOAD_CONVERSION_FACTOR * store["load"]  # TODO add unit
-        load = load.loc[network.snapshots, PROV_NAMES]
+        load = store["load"].loc[network.snapshots, PROV_NAMES]  # MWHr
 
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
 
@@ -1495,7 +1498,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_networks",
             topology="current+FCG",
-            co2_pathway="exp175default",
+            # co2_pathway="exp175default",
+            co2_pathway="remind_ssp2NPI",
             planning_horizons=2040,
             heating_demand="positive",
         )

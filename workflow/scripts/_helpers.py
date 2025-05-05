@@ -214,14 +214,28 @@ class PathManager:
 
     def costs_dir(self) -> os.PathLike:
 
+        # backward compat
         default = "resources/data/costs"
         costs_dir = self.config["paths"].get("costs_dir", default)
-        # if not absolute path
+        # if not absolute path & rel not recognised by snakemake
         if not os.path.exists(costs_dir):
             # if relative path, make it absolute
             costs_dir = os.path.abspath(costs_dir)
 
         return costs_dir
+
+    def elec_load(self) -> os.PathLike:
+
+        #
+        default = "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+        loads = self.config["paths"].get("yearly_regional_load", {"ac": default})
+        elec_load = loads["ac"]
+        # if not absolute path and rel not recognised by snakemake
+        if not os.path.exists(elec_load):
+            # if relative path, make it absolute
+            elec_load = os.path.abspath(elec_load)
+
+        return elec_load
 
     def derived_data_dir(self, shared=False) -> os.PathLike:
         """Generate the derived data directory path.
