@@ -15,7 +15,6 @@ from scripts._helpers import PathManager, get_cutout_params, ConfigManager
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
-configfile: "config/remind.yaml"
 
 config_manager = ConfigManager(config)
 config = config_manager.handle_scenarios()
