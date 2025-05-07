@@ -331,6 +331,9 @@ elif config["foresight"] == "myopic":
     ruleorder: prepare_base_networks_2020 > prepare_base_networks
 
     rule add_existing_baseyear:
+        params:
+            baseyear = config["scenario"]["planning_horizons"][0],
+            add_baseyear_to_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
