@@ -1,12 +1,13 @@
 # coding: utf-8
 """
-Functions supporting myopic pathway network creation
+Functions to add brownfield capacities to the network for a reference year
 """
 # TODO improve docstring
 import logging
 import numpy as np
 import pandas as pd
 import pypsa
+import os
 
 from types import SimpleNamespace
 from constants import YEAR_HRS, CARRIERS
@@ -53,7 +54,7 @@ def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
             c.pnl[attr].rename(columns=rename, inplace=True)
 
 
-def add_existing_capacities() -> pd.DataFrame:
+def read_existing_capacities(paths_dict: dict) -> pd.DataFrame:
     # TODO fix/centralise ()
     carrier = {
         "coal": "coal power plant",
@@ -73,7 +74,7 @@ def add_existing_capacities() -> pd.DataFrame:
     for tech in carrier:
 
         # TODO make argument
-        df = pd.read_csv(snakemake.input[f"existing_{tech}"], index_col=0).fillna(0.0)
+        df = pd.read_csv(paths_dict[tech], index_col=0).fillna(0.0)
         df.columns = df.columns.astype(int)
         df = df.sort_index()
 
@@ -89,6 +90,26 @@ def add_existing_capacities() -> pd.DataFrame:
                     df_agg.at[name, "cluster_bus"] = node
 
     return df_agg
+
+
+def assign_year_bins(df: pd.DataFrame, year_bins: list) -> pd.DataFrame:
+    """
+    Assign a year bin to the existing capacities according to the config
+
+    Args:
+        df (pd.DataFrame): DataFrame with existing capacities and build years (DateIn)
+        year_bins (list): years to bin the existing capacities to
+    """
+
+    # Assign a year bin to the existing capacities
+    df_agg = existing_capacities
+
+    # bin by years (np.digitize)
+    df_agg["grouping_year"] = np.take(year_bins, np.digitize(df_agg.DateIn, year_bins, right=True))
+    df = df_agg.pivot_table(
+        index=["grouping_year", "Tech"], columns="cluster_bus", values="Capacity", aggfunc="sum"
+    )
+    return df.fillna(0)
 
 
 def distribute_vres_by_grade(p_max_nom: pd.DataFrame, df_agg: pd.DataFrame, config: dict):
@@ -107,32 +128,25 @@ def distribute_vres_by_grade(p_max_nom: pd.DataFrame, df_agg: pd.DataFrame, conf
 
 
 def add_power_capacities_installed_before_baseyear(
-    n: pypsa.Network, grouping_years, costs, baseyear, config
+    n: pypsa.Network,
+    grouping_years: list,
+    costs: pd.DataFrame,
+    config: dict,
+    installed_capacities: pd.DataFrame,
 ):
     """
-    Parameters
-    ----------
-    n : pypsa.Network
-    grouping_years :
-        intervals to group existing capacities
-    costs :
-        to read lifetime to estimate YearDecomissioning
-    baseyear : int
+    Add existing power capacities to the network
+    Args:
+        n (pypsa.Network): the network
+        grouping_years (list): Mistery # TODO
+        costs (pd.DataFrame): costs of the technologies
+        config (dict): configuration dictionary
+        installed_capacities (pd.DataFrame): installed capacities in MW
     """
+
     logger.info("adding power capacities installed before baseyear")
 
-    # include renewables in df_agg
-    df_agg = add_existing_capacities()
-
-    df_agg["grouping_year"] = np.take(
-        grouping_years, np.digitize(df_agg.DateIn, grouping_years, right=True)
-    )
-
-    df = df_agg.pivot_table(
-        index=["grouping_year", "Tech"], columns="cluster_bus", values="Capacity", aggfunc="sum"
-    )
-
-    df.fillna(0)
+    df = installed_capacities.copy()
 
     carrier = {
         "coal": "coal power plant",
@@ -158,7 +172,7 @@ def add_power_capacities_installed_before_baseyear(
 
         vre_carriers = ["solar", "onwind", "offwind"]
         if generator in vre_carriers:
-            continue
+
             mask = n.generators_t.p_max_pu.columns.map(n.generators.carrier) == generator
             p_max_pu = n.generators_t.p_max_pu.loc[:, mask]
             n.add(
@@ -411,22 +425,30 @@ if __name__ == "__main__":
     # sector_opts = '168H-T-H-B-I-solar+p3-dist1'
     # opts = sector_opts.split('-')
 
-    baseyear = snakemake.config["scenario"]["planning_horizons"][0]
-
     n = pypsa.Network(snakemake.input.network)
+    n_years = n.snapshot_weightings.generators.sum() / YEAR_HRS
+
     # define spatial resolution of carriers
     # spatial = define_spatial(n.buses[n.buses.carrier=="AC"].index, options)
-    # add_build_year_to_new_assets(n, baseyear)
 
-    n_years = n.snapshot_weightings.generators.sum() / YEAR_HRS
+    baseyear = snakemake.params["baseyear"]
+    # add_build_year_to_new_assets(n, baseyear)
+    if snakemake.params["add_baseyear_to_assets"]:
+        add_build_year_to_new_assets(n, baseyear)
 
     config = snakemake.config
     tech_costs = snakemake.input.tech_costs
     cost_year = snakemake.wildcards["planning_horizons"]
+    data_paths = {k: v for k, v in snakemake.input.items()}
+
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
-    grouping_years = config["existing_capacities"]["grouping_years"]
-    add_power_capacities_installed_before_baseyear(n, grouping_years, costs, baseyear, config)
+    existing_capacities = read_existing_capacities(data_paths)
+    year_bins = config["existing_capacities"]["grouping_years"]
+    df = assign_year_bins(existing_capacities, year_bins)
+    # add to the network
+
+    add_power_capacities_installed_before_baseyear(n, year_bins, costs, baseyear, config, df)
     n.export_to_netcdf(snakemake.output[0])
 
     logger.info("Existing capacities successfully added to network")
