@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pypsa
 import os
+import re
 
 from types import SimpleNamespace
 
@@ -138,6 +139,8 @@ def fix_existing_capacities(
         existing_df.drop(to_drop, inplace=True)
 
     existing_df["lifetime"] = existing_df.DateOut - existing_df["grouping_year"]
+
+    existing_df.rename(columns={"cluster_bus": "bus"}, inplace=True)
     return existing_df
 
 
@@ -196,31 +199,36 @@ def add_existing_vre_capacities(
     n: pypsa.Network,
     costs: pd.DataFrame,
     vre_caps: pd.DataFrame,
+    config: dict,
 ) -> pd.DataFrame:
     """
     Add existing VRE capacities to the network and distribute them by vre grade potential.
     Adapted from pypsa-eur but the VRE capacities are province resolved.
 
-    Note that this requires adding the land-use constraint in solve_network so that
-    the existing capacities are subtracted from the available potential
+    NOTE that using this function requires adding the land-use constraint in solve_network so
+      that the existing capacities are subtracted from the available potential
 
     Args:
         n (pypsa.Network): the network
         costs (pd.DataFrame): costs of the technologies
         vre_caps (pd.DataFrame): existing VRE capacities in MW
+        config (dict): snakemake configuration dictionary
+    Returns:
+        pd.DataFrame: DataFrame with existing VRE capacities distributed by CF grade
+
     """
 
     tech_map = {"solar": "PV", "onwind": "Onshore", "offwind-ac": "Offshore", "offwind": "Offshore"}
     tech_map = {k: tech_map[k] for k in tech_map if k in config["Techs"]["vre_techs"]}
 
-    grouped_vre = vre_caps.groupby(["Tech", "cluster_bus", "DateIn"]).Capacity.sum()
+    grouped_vre = vre_caps.groupby(["Tech", "bus", "DateIn"]).Capacity.sum()
     vre_df = grouped_vre.unstack().reset_index()
     df_agg = pd.DataFrame()
 
     for carrier in tech_map:
 
         df = vre_df[vre_df.Tech == carrier].drop(columns=["Tech"])
-        df.set_index("cluster_bus", inplace=True)
+        df.set_index("bus", inplace=True)
         df.columns = df.columns.astype(int)
 
         # fetch existing vre generators (n grade bins per node)
@@ -275,7 +283,6 @@ def add_power_capacities_installed_before_baseyear(
     logger.info("adding power capacities installed before baseyear")
 
     df = installed_capacities.copy()
-
     # TODO fix this based on config
     carrier = {
         "coal": "coal power plant",
@@ -291,21 +298,27 @@ def add_power_capacities_installed_before_baseyear(
         "nuclear": "nuclear",
     }
 
-    # drop assets which are already phased out / decommissioned
-    phased_out = df[df["DateOut"] < baseyear].index
-    df.drop(phased_out, inplace=True)
-
-    # generator seems to be a carrier here
-    for grouping_year, generator in df.index:
-
+    # in case user forgot to do it
+    df = fix_existing_capacities(
+        df, costs, config["existing_capacities"]["grouping_years"], baseyear
+    )
+    df.resource_class.fillna("none", inplace=True)
+    df = df.pivot_table(
+        index=["grouping_year", "Fueltype", "resource_class"],
+        columns="bus",
+        values="Capacity",
+        aggfunc="sum",
+    )
+    # TODO do we really need to loop over the years?
+    for grouping_year, generator, resouce_class in df.index:
+        print(generator, grouping_year)
         # capacity is the capacity in MW at each node for this
         capacity = df.loc[grouping_year, generator]
         capacity = capacity[~capacity.isna()]
-        capacity = capacity[capacity > config["existing_capacities"]["threshold_capacity"]]
+        capacity = capacity[capacity > config["existing_capacities"]["threshold_capacity"]].T
 
         vre_carriers = ["solar", "onwind", "offwind"]
         if generator in vre_carriers:
-            continue
             mask = n.generators_t.p_max_pu.columns.map(n.generators.carrier) == generator
             p_max_pu = n.generators_t.p_max_pu.loc[:, mask]
             n.add(
@@ -348,15 +361,15 @@ def add_power_capacities_installed_before_baseyear(
                 suffix=" " + generator + "-" + str(grouping_year),
                 bus=capacity.index,
                 carrier=carrier[generator],
-                p_nom=capacity,
-                p_nom_min=capacity,
-                p_nom_extendable=False,
-                p_min_pu=0.7,
-                marginal_cost=costs.at[generator, "marginal_cost"],
-                capital_cost=costs.at[generator, "capital_cost"],
-                efficiency=costs.at[generator, "efficiency"],
-                build_year=grouping_year,
-                lifetime=costs.at[generator, "lifetime"],
+                # p_nom=capacity,
+                # p_nom_min=capacity,
+                # p_nom_extendable=False,
+                # p_min_pu=0.7,
+                # marginal_cost=costs.at[generator, "marginal_cost"],
+                # capital_cost=costs.at[generator, "capital_cost"],
+                # efficiency=costs.at[generator, "efficiency"],
+                # build_year=grouping_year,
+                # lifetime=costs.at[generator, "lifetime"],
             )
 
         if generator == "solar thermal" and config["heat_coupling"]:
@@ -564,7 +577,7 @@ if __name__ == "__main__":
 
     # define spatial resolution of carriers
     # spatial = define_spatial(n.buses[n.buses.carrier=="AC"].index, options)
-
+    vre_techs = ["solar", "onwind", "offwind"]
     baseyear = snakemake.params["baseyear"]
     # add_build_year_to_new_assets(n, baseyear)
     if snakemake.params["add_baseyear_to_assets"]:
@@ -580,8 +593,13 @@ if __name__ == "__main__":
     existing_capacities = read_existing_capacities(data_paths)
     year_bins = config["existing_capacities"]["grouping_years"]
     # TODO add renewables
-    df = assign_year_bins(existing_capacities, year_bins)
-    df = fix_existing_capacities(df, costs, year_bins)
+    existing_capacities = assign_year_bins(existing_capacities, year_bins)
+    df = fix_existing_capacities(existing_capacities, costs, year_bins, baseyear)
+
+    vre_caps = df.query("Tech in @vre_techs | Fueltype in @vre_techs")
+    # vre_caps.loc[:, "Country"] = coco.CountryConverter().convert(["China"], to="iso2")
+    vres = add_existing_vre_capacities(n, costs, vre_caps, config)
+    df = pd.concat([df.query("Tech not in @vre_techs & Fueltype not in @vre_techs"), vres], axis=0)
 
     # add to the network
     add_power_capacities_installed_before_baseyear(n, costs, config, df)
