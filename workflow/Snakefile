@@ -267,18 +267,17 @@ if config["foresight"] in ["overnight"]:
             **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
                for tech in config['existing_capacities']['techs']},
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
-        wildcard_constraints:
-            planning_horizons=config['scenario']['planning_horizons'][0] #only applies to baseyear
         threads: 1
         resources: mem_mb=2000
         script: "scripts/add_existing_baseyear.py"
 
+    add_brownfield = "-brownfield" if config["existing_capacities"].get("add", False) else ""
     rule solve_networks:
         params:
             solving = config["solving"],
             add_baseyear_assets = False,
         input:
-            network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
+            network_name=RESULTS_DIR+ f'/prenetworks{add_brownfield}/' +'ntwk_{planning_horizons}.nc',
         output:
             network_name=RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc'
         log:
