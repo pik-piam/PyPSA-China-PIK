@@ -1259,6 +1259,9 @@ def add_hydro(
         p_nom_min=hydro_p_nom,
         p_nom_extendable=False,
         p_max_pu=hydro_p_max_pu,
+        capital_cost=(
+            costs.at["hydro", "capital_cost"] if config["hydro"]["hydro_capital_cost"] else 0
+        ),
     )
 
 
