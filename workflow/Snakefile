@@ -245,7 +245,7 @@ if config["foresight"] in ["overnight"]:
             cop_name=DERIVED_CUTOUT+"/heating/hp_cop.h5",
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
-            tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs = COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
             biomass_potential=DERIVED_COMMON+f"{'/p_nom/biomass_potential.h5' if config["add_biomass"] else ''}",
             **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" for tech in config['renewable']},
@@ -299,7 +299,7 @@ elif config["foresight"] == "myopic":
             cop_name=DERIVED_CUTOUT+"/heating/hp_cop.h5",
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             # TODO: metadata for file, why does it need to be h5?
-            tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs= COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON +"/province_shapes/CHN_adm1.shp",
             **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
                 for tech in config['renewable']},
@@ -321,7 +321,7 @@ elif config["foresight"] == "myopic":
             heat_demand_profile= DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             solar_thermal_name=DERIVED_CUTOUT + f"/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
-            tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs= COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
             **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
                 for tech in config['renewable']},
