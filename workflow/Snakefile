@@ -201,6 +201,8 @@ rule build_renewable_profiles:
 
 # TODO check whether energy totals still needed
 rule build_load_profiles:
+    params:
+        elec_load_conversion = config["paths"]["yearly_regional_load"]["ac_to_mwh"]
     input:
         population = DERIVED_COMMON + "/population/population.h5",
         population_map = DERIVED_COMMON + "/population/population_gridcell_map.h5",

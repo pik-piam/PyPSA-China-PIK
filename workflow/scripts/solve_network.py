@@ -163,7 +163,7 @@ def add_land_use_constraint(n: pypsa.Network, planning_horizons: str | int) -> N
         ext_i = (n.generators.carrier == carrier) & ~n.generators.p_nom_extendable
         grouper = n.generators.loc[ext_i].index.str.replace(f" {carrier}.*$", "", regex=True)
         existing = n.generators.loc[ext_i, "p_nom"].groupby(grouper).sum()
-        existing.index += f" {carrier}-{planning_horizons}"
+        existing.index += f" {carrier}"
         n.generators.loc[existing.index, "p_nom_max"] -= existing
 
     # check if existing capacities are larger than technical potential
@@ -274,8 +274,8 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            planning_horizons=2020,
-            co2_pathway="exp175default",
+            planning_horizons=2030,
+            co2_pathway="remind_ssp2NPI",
             topology="current+FCG",
             heating_demand="positive",
         )
