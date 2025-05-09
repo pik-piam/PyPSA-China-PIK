@@ -1373,6 +1373,7 @@ def prepare_network(
     # TODO add coal CC? no retrofit option
 
     if "PHS" in config["Techs"]["store_techs"]:
+        # TODO soft-code path
         # pure pumped hydro storage, fixed, 6h energy by default, no inflow
         hydrocapa_df = pd.read_csv("resources/data/hydro/PHS_p_nom.csv", index_col=0)
         phss = hydrocapa_df.index[hydrocapa_df["MW"] > 0].intersection(nodes)
