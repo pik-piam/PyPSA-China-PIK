@@ -936,7 +936,7 @@ def add_heat_coupling(
         )
 
     if "CHP gas" in config["Techs"]["conv_techs"]:
-        # TODO apply same as for coal
+        # TODO apply same as for coal (include Cb)
         # OCGT CHP
         network.add(
             "Link",

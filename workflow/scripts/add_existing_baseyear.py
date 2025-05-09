@@ -359,7 +359,6 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom_min=capacity,
                 p_nom_extendable=False,
                 marginal_cost=costs.at[costs_key, "marginal_cost"],
-                capital_cost=costs.at[costs_key, "capital_cost"],
                 efficiency=costs.at[costs_key, "efficiency"],
                 p_max_pu=p_max_pu[capacity.index],
                 build_year=grouping_year,
@@ -378,7 +377,6 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom_min=capacity,
                 p_nom_extendable=False,
                 marginal_cost=costs.at[costs_key, "marginal_cost"],
-                capital_cost=costs.at[costs_key, "capital_cost"],
                 efficiency=costs.at[costs_key, "efficiency"],
                 build_year=grouping_year,
                 lifetime=costs.at[costs_key, "lifetime"],
@@ -397,7 +395,6 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom_extendable=False,
                 p_min_pu=0.7,
                 marginal_cost=costs.at[costs_key, "marginal_cost"],
-                capital_cost=costs.at[costs_key, "capital_cost"],
                 efficiency=costs.at[costs_key, "efficiency"],
                 build_year=grouping_year,
                 lifetime=costs.at[costs_key, "lifetime"],
@@ -415,8 +412,6 @@ def add_power_capacities_installed_before_baseyear(
                 carrier=carrier_map[generator],
                 marginal_cost=costs.at[costs_key, "efficiency"]
                 * costs.at[costs_key, "VOM"],  # NB: VOM is per MWel
-                capital_cost=costs.at[costs_key, "efficiency"]
-                * costs.at[costs_key, "capital_cost"],
                 # NB: fixed cost is per MWel
                 p_nom=capacity / costs.at[costs_key, "efficiency"],
                 p_nom_min=capacity / costs.at[costs_key, "efficiency"],
@@ -445,7 +440,6 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom_min=capacity,
                 p_nom_extendable=False,
                 marginal_cost=costs.at["central " + generator, "marginal_cost"],
-                capital_cost=costs.at["central " + generator, "capital_cost"],
                 p_max_pu=p_max_pu,
                 build_year=grouping_year,
                 lifetime=costs.at["central " + generator, "lifetime"],
@@ -454,6 +448,8 @@ def add_power_capacities_installed_before_baseyear(
 
         elif generator == "CHP coal":
             bus0 = buses + " coal"
+            # TODO soft-code efficiency !!
+            hist_efficiency = 0.37
             n.add(
                 "Link",
                 capacity.index,
@@ -461,13 +457,12 @@ def add_power_capacities_installed_before_baseyear(
                 bus0=bus0,
                 bus1=capacity.index,
                 carrier=carrier_map[generator],
-                marginal_cost=0.37 * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
-                capital_cost=0.37
-                * costs.at["central coal CHP", "capital_cost"],  # NB: fixed cost is per MWel,
-                p_nom=capacity / 0.37,
-                p_nom_min=capacity / 0.37,
+                marginal_cost=hist_efficiency
+                * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
+                p_nom=capacity / hist_efficiency,
+                p_nom_min=capacity / hist_efficiency,
                 p_nom_extendable=False,
-                efficiency=0.37,
+                efficiency=hist_efficiency,
                 p_nom_ratio=1.0,
                 c_b=0.75,
                 build_year=grouping_year,
@@ -482,17 +477,19 @@ def add_power_capacities_installed_before_baseyear(
                 bus0=bus0,
                 bus1=capacity.index + " central heat",
                 carrier=carrier_map[generator],
-                marginal_cost=0.37 * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
-                p_nom=capacity / 0.37 * 0.15,
-                p_nom_min=capacity / 0.37 * 0.15,
+                marginal_cost=hist_efficiency
+                * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
+                p_nom=capacity / hist_efficiency * costs.at["central coal CHP", "c_v"],
+                p_nom_min=capacity / hist_efficiency * costs.at["central coal CHP", "c_v"],
                 p_nom_extendable=False,
-                efficiency=0.37 / 0.15,
+                efficiency=hist_efficiency / costs.at["central coal CHP", "c_v"],
                 build_year=grouping_year,
                 lifetime=costs.at["central coal CHP", "lifetime"],
                 location=buses,
             )
 
         elif generator == "CHP gas":
+            hist_efficiency = 0.37
             bus0 = buses + " gas"
             n.add(
                 "Link",
@@ -501,14 +498,14 @@ def add_power_capacities_installed_before_baseyear(
                 bus0=bus0,
                 bus1=capacity.index,
                 carrier=carrier_map[generator],
-                marginal_cost=costs.at["central gas CHP", "efficiency"]
+                marginal_cost=hist_efficiency
                 * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
-                capital_cost=costs.at["central gas CHP", "efficiency"]
+                capital_cost=hist_efficiency
                 * costs.at["central gas CHP", "capital_cost"],  # NB: fixed cost is per MWel,
-                p_nom=capacity / costs.at["central gas CHP", "efficiency"],
-                p_nom_min=capacity / costs.at["central gas CHP", "efficiency"],
+                p_nom=capacity / hist_efficiency,
+                p_nom_min=capacity / hist_efficiency,
                 p_nom_extendable=False,
-                efficiency=costs.at["central gas CHP", "efficiency"],
+                efficiency=hist_efficiency,
                 p_nom_ratio=1.0,
                 c_b=costs.at["central gas CHP", "c_b"],
                 build_year=grouping_year,
@@ -522,17 +519,12 @@ def add_power_capacities_installed_before_baseyear(
                 bus0=bus0,
                 bus1=capacity.index + " central heat",
                 carrier=carrier_map[generator],
-                marginal_cost=costs.at["central gas CHP", "efficiency"]
+                marginal_cost=hist_efficiency
                 * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
-                p_nom=capacity
-                / costs.at["central gas CHP", "efficiency"]
-                * costs.at["central gas CHP", "c_v"],
-                p_nom_min=capacity
-                / costs.at["central gas CHP", "efficiency"]
-                * costs.at["central gas CHP", "c_v"],
+                p_nom=capacity / hist_efficiency * costs.at["central gas CHP", "c_v"],
+                p_nom_min=capacity / hist_efficiency * costs.at["central gas CHP", "c_v"],
                 p_nom_extendable=False,
-                efficiency=costs.at["central gas CHP", "efficiency"]
-                / costs.at["central gas CHP", "c_v"],
+                efficiency=hist_efficiency / costs.at["central gas CHP", "c_v"],
                 build_year=grouping_year,
                 lifetime=costs.at["central gas CHP", "lifetime"],
                 location=buses,
