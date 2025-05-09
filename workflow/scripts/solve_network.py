@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 # coding: utf-8
-""" Functions to add constraints and prepare the network for the solver.
- Associated with the `solve_networks` rule in the Snakefile.
+"""Functions to add constraints and prepare the network for the solver.
+Associated with the `solve_networks` rule in the Snakefile.
 """
 import logging
 import numpy as np
@@ -19,13 +19,16 @@ pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-def prepare_network(n: pypsa.Network, solve_opts: dict, config: dict) -> pypsa.Network:
+def prepare_network(
+    n: pypsa.Network, solve_opts: dict, config: dict, plan_year: int
+) -> pypsa.Network:
     """prepare the network for solving
 
     Args:
         n (pypsa.Network): the network object to optimize
         solve_opts (dict): solver options
         config (dict): snakemake config
+        plan_year (int): planning horizon year for which network is solved
 
     Returns:
         pypsa.Network: network object with additional constraints
@@ -70,7 +73,7 @@ def prepare_network(n: pypsa.Network, solve_opts: dict, config: dict) -> pypsa.N
         n.snapshot_weightings[:] = YEAR_HRS / nhours
 
     if config["existing_capacities"].get("add", False):
-        add_land_use_constraint(n)
+        add_land_use_constraint(n, plan_year)
 
     return n
 
@@ -296,7 +299,7 @@ if __name__ == "__main__":
 
     n = pypsa.Network(snakemake.input.network_name)
 
-    n = prepare_network(n, solve_opts, snakemake.config)
+    n = prepare_network(n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons)
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
 
