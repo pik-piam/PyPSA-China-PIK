@@ -64,7 +64,7 @@ def load_costs(
 
     # set all asset costs and other parameters
     costs = pd.read_csv(tech_costs, index_col=list(range(3))).sort_index()
-
+    costs.fillna(" ", inplace=True)
     # correct units to MW and EUR
     costs.loc[costs.unit.str.contains("/kW"), "value"] *= 1e3
     costs.loc[costs.unit.str.contains("USD"), "value"] *= cost_config["USD2013_to_EUR2013"]
@@ -79,6 +79,8 @@ def load_costs(
     )
 
     # TODO set default lifetime as option
+    if "discount rate" not in costs.columns:
+        costs.loc[:, "discount rate"] = cost_config["discountrate"]
     costs = costs.fillna(
         {
             "CO2 intensity": 0,

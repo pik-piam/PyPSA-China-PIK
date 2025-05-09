@@ -36,7 +36,7 @@ idx = pd.IndexSlice
 nodes = pd.Index(PROV_NAMES)
 
 
-# TODO this is really stupid since there are 5 hours shits on the heating demand due to sun time
+# TODO this is really stupid since there are 5 hours shifts on the heating demand due to sun time
 def downscale_time_data(
     dt_index: pd.DatetimeIndex,
     weekly_profile: Iterable,
@@ -305,43 +305,49 @@ def prepare_hourly_load_data(
 
 def read_yearly_projections(
     yearly_projections_p: os.PathLike = "resources/data/load/Province_Load_2020_2060.csv",
+    conversion=1,
 ) -> pd.DataFrame:
     """prepare projections for model use
 
     Args:
         yearly_projections_p (os.PathLike, optional): the data path.
                 Defaults to "resources/data/load/Province_Load_2020_2060.csv".
+        conversion (int, optional): the conversion factor to MWh. Defaults to 1.
 
     Returns:
-        pd.DataFrame: the formatted data
+        pd.DataFrame: the formatted data, in MWh
     """
-    TO_TWh = 1 / 10
-    yearly_proj_TWh = pd.read_csv(yearly_projections_p)
-    yearly_proj_TWh.rename(columns={"Unnamed: 0": "province"}, inplace=True)
-    yearly_proj_TWh.set_index("province", inplace=True)
-    yearly_proj_TWh.rename(columns={c: int(c) for c in yearly_proj_TWh.columns}, inplace=True)
+    yearly_proj = pd.read_csv(yearly_projections_p)
+    yearly_proj.rename(columns={"Unnamed: 0": "province", "region": "province"}, inplace=True)
+    if "province" not in yearly_proj.columns:
+        raise ValueError(
+            "The province (or region or unamed) column is missing in the yearly projections data"
+            ". Index cannot be built"
+        )
+    yearly_proj.set_index("province", inplace=True)
+    yearly_proj.rename(columns={c: int(c) for c in yearly_proj.columns}, inplace=True)
 
-    return yearly_proj_TWh * TO_TWh
+    return yearly_proj * conversion
 
 
 def project_elec_demand(
-    hourly_demand_base_yr_MWh: pd.DataFrame, yearly_projections_TWh: pd.DataFrame, year=2020
+    hourly_demand_base_yr_MWh: pd.DataFrame, yearly_projections_MWh: pd.DataFrame, year=2020
 ):
     """project the hourly demand to the future years
 
     Args:
         hourly_demand_base_yr_MWh (pd.DataFrame): the hourly demand in the base year
-        yearly_projections_TWh (pd.DataFrame): the yearly projections
+        yearly_projections_MWh (pd.DataFrame): the yearly projections
 
     Returns:
         pd.DataFrame: the projected hourly demand
     """
-    hourly_load_TWH_hr = hourly_demand_base_yr_MWh.loc[:, PROV_NAMES]
+    hourly_load_profile = hourly_demand_base_yr_MWh.loc[:, PROV_NAMES]
     # normalise the hourly load
-    hourly_load_TWH_hr /= hourly_load_TWH_hr.sum(axis=0)
+    hourly_load_profile /= hourly_load_profile.sum(axis=0)
 
-    yearly_projections_TWh = yearly_projections_TWh.T.loc[int(year), PROV_NAMES]
-    hourly_load_projected = yearly_projections_TWh.multiply(hourly_load_TWH_hr)
+    yearly_projections_MWh = yearly_projections_MWh.T.loc[int(year), PROV_NAMES]
+    hourly_load_projected = yearly_projections_MWh.multiply(hourly_load_profile)
 
     if len(hourly_load_projected) == 8784:
         # rm feb 29th
@@ -368,7 +374,8 @@ if __name__ == "__main__":
             "build_load_profiles",
             heating_demand="positive",
             planning_horizons="2040",
-            co2_pathway="exp175default",
+            co2_pathway="remind_ssp2NPI",
+            # co2_pathway="exp175default",
             topology="Current+Neigbor",
         )
 
@@ -388,11 +395,13 @@ if __name__ == "__main__":
     )
 
     # project the electric load based on the demand
-    hrly_TWh_load = prepare_hourly_load_data(
+    conversion = snakemake.params.elec_load_conversion  # to MWHr
+    hrly_MWh_load = prepare_hourly_load_data(
         snakemake.input.hrly_regional_ac_load, snakemake.input.province_codes
     )
-    yearly_projs = read_yearly_projections(snakemake.input.elec_load_projs)
-    projected_demand = project_elec_demand(hrly_TWh_load, yearly_projs, planning_horizons)
+
+    yearly_projs = read_yearly_projections(snakemake.input.elec_load_projs, conversion)
+    projected_demand = project_elec_demand(hrly_MWh_load, yearly_projs, planning_horizons)
 
     with pd.HDFStore(snakemake.output.elec_load_hrly, mode="w", complevel=4) as store:
         store["load"] = projected_demand

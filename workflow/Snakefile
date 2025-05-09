@@ -29,6 +29,8 @@ RESULTS_DIR = path_manager.results_dir()
 DERIVED_DATA = path_manager.derived_data_dir(shared=False)
 DERIVED_COMMON = path_manager.derived_data_dir(shared=True)
 DERIVED_CUTOUT = DERIVED_COMMON + f"/cutout_{CUTOUT_NAME}"
+COSTS_DATA = path_manager.costs_dir()
+
 LOG_DIR = path_manager.logs_dir()
 LOGS_COMMON = "logs"
 LU_RASTER = path_manager.landuse_raster_data()
@@ -199,13 +201,15 @@ rule build_renewable_profiles:
 
 # TODO check whether energy totals still needed
 rule build_load_profiles:
+    params:
+        elec_load_conversion = config["paths"]["yearly_regional_load"].get("ac_to_mwh", 1),
     input:
         population = DERIVED_COMMON + "/population/population.h5",
         population_map = DERIVED_COMMON + "/population/population_gridcell_map.h5",
         cutout = CUTOUT_PATH,
         intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
         space_heat_demand="resources/data/heating/SPH_2020.csv",
-        elec_load_projs = "resources/data/load/Province_Load_2020_2060.csv",
+        elec_load_projs = path_manager.elec_load(),
         province_codes = "resources/data/regions/province_codes.csv",
         hrly_regional_ac_load = "resources/data/load/Hourly_demand_of_31_province_China_modified_V2.1.csv",
     output:
@@ -243,7 +247,7 @@ if config["foresight"] in ["overnight"]:
             cop_name=DERIVED_CUTOUT+"/heating/hp_cop.h5",
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
-            tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs = COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
             biomass_potential=DERIVED_COMMON+f"{'/p_nom/biomass_potential.h5' if config["add_biomass"] else ''}",
             **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" for tech in config['renewable']},
@@ -277,7 +281,7 @@ elif config["foresight"] == "myopic":
             cop_name=DERIVED_CUTOUT+"/heating/hp_cop.h5",
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             # TODO: metadata for file, why does it need to be h5?
-            tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs= COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON +"/province_shapes/CHN_adm1.shp",
             **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
                 for tech in config['renewable']},
@@ -299,7 +303,7 @@ elif config["foresight"] == "myopic":
             heat_demand_profile= DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             solar_thermal_name=DERIVED_CUTOUT + f"/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
-            tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs= COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
             **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
                 for tech in config['renewable']},
@@ -315,7 +319,7 @@ elif config["foresight"] == "myopic":
     rule add_existing_baseyear:
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
-            tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
             **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
                for tech in config['existing_infrastructure']},
@@ -336,7 +340,7 @@ elif config["foresight"] == "myopic":
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             network_p=solved_previous_horizon,#solved network at previous time step
-            costs="resources/data/costs/costs_{planning_horizons}.csv",
+            costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}.nc"
                 for tech in config['renewable']}
         output:

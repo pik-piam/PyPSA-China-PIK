@@ -40,7 +40,6 @@ cluster-generic-submit-cmd:
     --output=logs_slurm/{rule}/%j-{rule}-{wildcards}.out
     --parsable
     --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
-    {resources.extra}
 cluster-generic-status-cmd: "python config/pik_hpc_profile/status-check.py"
 cluster-generic-cancel-cmd: scancel
 # --error=logs_slurm/{rule}/%j-{rule}-{wildcards}.out
