@@ -149,8 +149,6 @@ Technique:
 #   existing_nuclear: False
 #   existing_PHS: False
 
-existing_infrastructure: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
-
 bus_suffix: [""," central heat"," decentral heat"," gas"," coal"]
 bus_carrier: {
     "": "AC",
@@ -287,7 +285,8 @@ line_cost_factor: 1
 
 existing_capacities:
   grouping_years: [1980,1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  threshold_capacity: 1
+  threshold_capacity: 1 # TODO UNIT
+  techs: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
 
 fetch_regions:

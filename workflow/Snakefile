@@ -15,6 +15,7 @@ from scripts._helpers import PathManager, get_cutout_params, ConfigManager
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
+configfile: "config/remind.yaml"
 
 config_manager = ConfigManager(config)
 config = config_manager.handle_scenarios()
@@ -254,9 +255,28 @@ if config["foresight"] in ["overnight"]:
         resources: mem_mb=10000
         script: "scripts/prepare_network.py"
 
+    
+    rule add_existing_baseyear:
+        params:
+            baseyear = config["scenario"]["planning_horizons"][0],
+            add_baseyear_to_assets = False,
+        input:
+            network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
+            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
+            cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
+            **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
+               for tech in config['existing_capacities']['techs']},
+        output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
+        wildcard_constraints:
+            planning_horizons=config['scenario']['planning_horizons'][0] #only applies to baseyear
+        threads: 1
+        resources: mem_mb=2000
+        script: "scripts/add_existing_baseyear.py"
+
     rule solve_networks:
         params:
             solving = config["solving"],
+            add_baseyear_assets = False,
         input:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         output:
@@ -267,22 +287,6 @@ if config["foresight"] in ["overnight"]:
         resources: mem_mb=35000
         script: "scripts/solve_network.py"
 
-    rule add_existing_baseyear:
-        params:
-            baseyear = config["scenario"]["planning_horizons"][0],
-            add_baseyear_to_assets = False,
-        input:
-            network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
-            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
-            cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
-            **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
-               for tech in config['existing_infrastructure']},
-        output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
-        wildcard_constraints:
-            planning_horizons=config['scenario']['planning_horizons'][0] #only applies to baseyear
-        threads: 1
-        resources: mem_mb=2000
-        script: "scripts/add_existing_baseyear.py"
 
 elif config["foresight"] == "myopic":
     rule prepare_base_networks_2020:
@@ -339,7 +343,7 @@ elif config["foresight"] == "myopic":
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
             **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
-               for tech in config['existing_infrastructure']},
+               for tech in config['existing_capacities']['techs']},
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         wildcard_constraints:
             planning_horizons=config['scenario']['planning_horizons'][0] #only applies to baseyear
