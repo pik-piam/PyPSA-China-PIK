@@ -207,7 +207,7 @@ rule build_load_profiles:
         cutout = CUTOUT_PATH,
         intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
         space_heat_demand="resources/data/heating/SPH_2020.csv",
-        elec_load_projs = "resources/data/load/Province_Load_2020_2060.csv",
+        elec_load_projs = path_manager.elec_load(),
         province_codes = "resources/data/regions/province_codes.csv",
         hrly_regional_ac_load = "resources/data/load/Hourly_demand_of_31_province_China_modified_V2.1.csv",
     output:
