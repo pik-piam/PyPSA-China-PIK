@@ -24,6 +24,7 @@ pypsa.pf.logger.setLevel(logging.WARNING)
 
 def prepare_network(
     n,
+    config: dict,
     solve_opts=None,
 ):
 
@@ -74,7 +75,51 @@ def prepare_network(
         n.set_snapshots(n.snapshots[:nhours])
         n.snapshot_weightings[:] = 8760.0 / nhours
 
+    if config["existing_capacities"].get("add", True):
+        add_land_use_constraint(n)
+
     return n
+
+
+def add_land_use_constraint(n: pypsa.Network, planning_horizons: str | int) -> None:
+    """
+    Add land use constraints for renewable energy potential. This ensures that the brownfield + greenfield
+     vre installations for each generator technology do not exceed the technical potential.
+
+    Args:
+        n (pypsa.Network): the network object to add the constraints to
+        planning_horizons (str | int): the planning horizon year as string
+    """
+    # warning: this will miss existing offwind which is not classed AC-DC and has carrier 'offwind'
+
+    for carrier in [
+        "solar",
+        "solar rooftop",
+        "solar-hsat",
+        "onwind",
+        "offwind",
+        "offwind-ac",
+        "offwind-dc",
+        "offwind-float",
+    ]:
+        ext_i = (n.generators.carrier == carrier) & ~n.generators.p_nom_extendable
+        grouper = n.generators.loc[ext_i].index.str.replace(f" {carrier}.*$", "", regex=True)
+        existing = n.generators.loc[ext_i, "p_nom"].groupby(grouper).sum()
+        existing.index += f" {carrier}-{planning_horizons}"
+        n.generators.loc[existing.index, "p_nom_max"] -= existing
+
+    # check if existing capacities are larger than technical potential
+    existing_large = n.generators[n.generators["p_nom_min"] > n.generators["p_nom_max"]].index
+    if len(existing_large):
+        logger.warning(
+            f"Existing capacities larger than technical potential for {existing_large},\
+                        adjust technical potential to existing capacities"
+        )
+        n.generators.loc[existing_large, "p_nom_max"] = n.generators.loc[
+            existing_large, "p_nom_min"
+        ]
+
+    n.generators["p_nom_max"] = n.generators["p_nom_max"].clip(lower=0)
 
 
 def add_battery_constraints(n):
@@ -302,7 +347,7 @@ if __name__ == "__main__":
 
     n = pypsa.Network(snakemake.input.network)
 
-    n = prepare_network(n, solve_opts)
+    n = prepare_network(n, solve_opts, snakemake.config)
 
     n = solve_network(
         n,
