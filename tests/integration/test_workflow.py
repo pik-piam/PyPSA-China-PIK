@@ -111,7 +111,7 @@ def test_workflow(make_test_config_file):
     cfg = make_test_config_file
     # snakemake command to test up to prepare network
     cmd = f"snakemake --configfile {cfg}"
-    cmd += " --rerun-incomplete"
+    cmd += " --rerun-incomplete --cores 2"
     res = launch_subprocess(cmd, env)
     if res.returncode != 0:
         hash_id = copy_failed_config(cfg)
