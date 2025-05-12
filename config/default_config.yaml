@@ -12,6 +12,7 @@ paths:
   costs_dir: "resources/data/costs/"
   yearly_regional_load: 
     ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+    # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
 
 scenario: 
@@ -88,6 +89,7 @@ renewable:
     resource:
       method: wind
       turbine: Vestas_V112_3MW
+    # bin by capacity factor
     resource_classes:
       min_cf_delta: 0.05
       n: 3  
