@@ -48,6 +48,9 @@ from constants import (
 
 logger = logging.getLogger(__name__)
 
+# TODO add a heat bus that can absorb heat for free in non-coupled mode (e.g. Hydrogen electrolysis, sabatier)
+# TODO add heat disipator?
+
 
 def add_biomass(
     network: pypsa.Network,
@@ -442,6 +445,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         lifetime=costs.at["hydrogen storage underground", "lifetime"],
     )
 
+    # TODO harmonize with remind (add if in techs)
     network.add(
         "Store",
         H2_type1_nodes + " H2 Store",
@@ -496,6 +500,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
             ]
         )
 
+        # TODO harmonize with remind (add if in techs)
         cc = costs.at["H2 (g) pipeline", "capital_cost"] * lengths
 
         # === h2 pipeline with losses ====
@@ -547,6 +552,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         )
 
 
+# TODO harmonize with remind
 def add_voltage_links(network: pypsa.Network, config: dict):
     """add HVDC/AC links (no KVL)
 
@@ -1091,6 +1097,12 @@ def add_hydro(
     df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
     points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
     dams = gpd.GeoDataFrame(df, geometry=points, crs=CRS)
+    # store all info, then filter by selected nodes
+    dam_provinces = dams.Province
+    all_dams = dams.index.values
+    dams = dams[dams.Province.isin(nodes)]
+
+    logger.debug(f"Hydro dams in {nodes} provinces: {dams.index}")
 
     hourly_rng = pd.date_range(
         config["hydro_dams"]["inflow_date_start"],
@@ -1104,7 +1116,9 @@ def add_hydro(
     hourly_rng = hourly_rng[hourly_rng.year == INFLOW_DATA_YR]
     inflow = inflow.loc[inflow.index.year == INFLOW_DATA_YR]
     inflow = inflow.reindex(hourly_rng, fill_value=0)
-    inflow.columns = dams.index
+    inflow.columns = all_dams  # TODO dangerous
+    # select only the dams in the network
+    inflow = inflow.loc[:, inflow.columns.map(dam_provinces).isin(nodes)]
     inflow = shift_profile_to_planning_year(inflow, planning_horizons)
     inflow = inflow.loc[network.snapshots]
     # m^3/KWh -> m^3/MWh
@@ -1127,10 +1141,16 @@ def add_hydro(
     # ===== add hydro reservoirs as stores ======
     initial_capacity = pd.read_pickle(config["hydro_dams"]["reservoir_initial_capacity_path"])
     effective_capacity = pd.read_pickle(config["hydro_dams"]["reservoir_effective_capacity_path"])
-    initial_capacity.index = dams.index
-    effective_capacity.index = dams.index
+    initial_capacity.index = all_dams
+    effective_capacity.index = all_dams
     initial_capacity = initial_capacity / water_consumption_factor
     effective_capacity = effective_capacity / water_consumption_factor
+
+    # select relevant dams in nodes
+    effective_capacity = effective_capacity.loc[
+        effective_capacity.index.map(dam_provinces).isin(nodes)
+    ]
+    initial_capacity = initial_capacity.loc[initial_capacity.index.map(dam_provinces).isin(nodes)]
 
     network.add(
         "Store",
@@ -1163,6 +1183,10 @@ def add_hydro(
 
     # ===  add rivers to link station to station
     dam_edges = pd.read_csv(config["hydro_dams"]["damn_flows_path"], delimiter=",")
+    in_nodes = dam_edges.bus0.map(dam_provinces).isin(nodes) & dam_edges.end_bus.map(
+        dam_provinces
+    ).isin(nodes)
+    dam_edges = dam_edges[in_nodes]
 
     # === normal flow ====
     for row in dam_edges.iterrows():
@@ -1229,10 +1253,12 @@ def add_hydro(
         # p_nom*p_pu = XXX m^3 then use turbines efficiency to convert to power
 
     # ======= add other existing hydro power (not lattitude resolved) ===
-    hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
-    hydro_p_max_pu = pd.read_hdf(
-        config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
-    ).tz_localize(None)
+    hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"]).loc[nodes]
+    hydro_p_max_pu = (
+        pd.read_hdf(
+            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+        ).tz_localize(None)
+    )[nodes]
 
     hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
     # sort buses (columns) otherwise stuff will break
@@ -1252,8 +1278,10 @@ def add_hydro(
         p_nom=hydro_p_nom,
         p_nom_min=hydro_p_nom,
         p_nom_extendable=False,
-        capital_cost=costs.at["hydro", "capital_cost"],
         p_max_pu=hydro_p_max_pu,
+        capital_cost=(
+            costs.at["hydro", "capital_cost"] if config["hydro"]["hydro_capital_cost"] else 0
+        ),
     )
 
 
@@ -1283,7 +1311,6 @@ def prepare_network(
     snapshots: pd.date_range,
     biomass_potential: pd.DataFrame = None,
     paths: dict = None,
-
 ) -> pypsa.Network:
     """Prepares/makes the network object for overnight mode according to config &
     at 1 node per region/province
@@ -1330,8 +1357,7 @@ def prepare_network(
     # load electricity demand data
     demand_path = paths["elec_load"].replace("{planning_horizons}", f"{cost_year}")
     with pd.HDFStore(demand_path, mode="r") as store:
-        load = LOAD_CONVERSION_FACTOR * store["load"]  # TODO add unit
-        load = load.loc[network.snapshots, PROV_NAMES]
+        load = store["load"].loc[network.snapshots, PROV_NAMES]  # MWHr
 
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
 
@@ -1416,7 +1442,7 @@ def prepare_network(
                 network,
                 costs,
                 nodes,
-                biomass_potential,
+                biomass_potential[nodes],
                 prov_centroids,
             )
 
@@ -1496,6 +1522,7 @@ if __name__ == "__main__":
             "prepare_networks",
             topology="current+FCG",
             co2_pathway="exp175default",
+            # co2_pathway="remind_ssp2NPI",
             planning_horizons=2040,
             heating_demand="positive",
         )

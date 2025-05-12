@@ -267,8 +267,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
     # ===== add load demand data =======
     demand_path = snakemake.input.elec_load.replace("{planning_horizons}", cost_year)
     with pd.HDFStore(demand_path, mode="r") as store:
-        load = LOAD_CONVERSION_FACTOR * store["load"]  # TODO add unit
-        load = load.loc[network.snapshots]
+        load = store["load"].loc[network.snapshots] # MWh !!
 
     load.columns = PROV_NAMES
 

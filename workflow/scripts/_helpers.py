@@ -124,12 +124,20 @@ class GHGConfigHandler:
         """Validate CO2 scenarios"""
 
         for name, scen in self._raw_config["co2_scenarios"].items():
+
+            # do not validate if not selected
+            if not name in self.config["scenario"]["co2_pathway"]:
+                continue
+
+            # check type
             if not isinstance(scen, dict):
                 raise ValueError(f"Expected a dictionary for co2 scenario but got {scen}")
 
+            # control type none = free emissions. DOn't validate
             if "control" in set(scen) and scen["control"] is None:
                 continue
 
+            # otherwise check expected keys in scenario
             if {"control", "pathway"} - set(scen):
                 raise ValueError(f"Scenario {scen} must contain 'control' and 'pathway'")
 
@@ -202,7 +210,32 @@ class PathManager:
         sub_dir = foresight + "_" + self._join_scenario_vars()
         if extra_opts:
             sub_dir += "_" + "".join(extra_opts.values())
-        return os.path.join(self.config["results_dir"], base_dir, sub_dir)
+        return os.path.join(self.config["paths"]["results_dir"], base_dir, sub_dir)
+
+    def costs_dir(self) -> os.PathLike:
+
+        # backward compat
+        default = "resources/data/costs"
+        costs_dir = self.config["paths"].get("costs_dir", default)
+        # if not absolute path & rel not recognised by snakemake
+        if not os.path.exists(costs_dir):
+            # if relative path, make it absolute
+            costs_dir = os.path.abspath(costs_dir)
+
+        return costs_dir
+
+    def elec_load(self) -> os.PathLike:
+
+        #
+        default = "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+        loads = self.config["paths"].get("yearly_regional_load", {"ac": default})
+        elec_load = loads["ac"]
+        # if not absolute path and rel not recognised by snakemake
+        if not os.path.exists(elec_load):
+            # if relative path, make it absolute
+            elec_load = os.path.abspath(elec_load)
+
+        return elec_load
 
     def derived_data_dir(self, shared=False) -> os.PathLike:
         """Generate the derived data directory path.
@@ -308,7 +341,7 @@ def setup_gurobi_tunnel_and_env(
     )
 
     try:
-        stdout, stderr = socks_proc.communicate(timeout=timeout+2)
+        stdout, stderr = socks_proc.communicate(timeout=timeout + 2)
         err = stderr.decode()
         logger.info(f"ssh err returns {str(err)}")
         logger.info(f"ssh stdout returns {str(stdout)}")
@@ -317,9 +350,7 @@ def setup_gurobi_tunnel_and_env(
         else:
             logger.info("Gurobi Environment variables & tunnel set up successfully at attempt {i}.")
     except subprocess.TimeoutExpired:
-        logger.error(
-            f"SSH tunnel communication timed out."
-        )
+        logger.error(f"SSH tunnel communication timed out.")
 
     os.environ["https_proxy"] = f"socks5://127.0.0.1:{port}"
     os.environ["SSL_CERT_FILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
@@ -336,7 +367,7 @@ def setup_gurobi_tunnel_and_env(
     return socks_proc
 
 
-def _check_gurobi_license_subprocess()->bool:
+def _check_gurobi_license_subprocess() -> bool:
     """
     Subprocess function to check Gurobi license availability.
     This function will start the Gurobi environment to verify if a license is available.
