@@ -4,6 +4,7 @@ import logging
 import matplotlib.pyplot as plt
 import os.path
 import seaborn as sns
+import numpy as np
 
 from os import makedirs
 
@@ -345,16 +346,20 @@ def plot_price_duration_by_node(
     return ax
 
 
-def plot_price_map(network: pypsa.Network, carrier="AC", ax: plt.Axes = None) -> plt.Axes:
+def plot_price_map(
+    network: pypsa.Network, carrier="AC", log_values=False, color_map="viridis", ax: plt.Axes = None
+) -> plt.Axes:
     """plot the price heat map (region vs time) for the given carrier
 
     Args:
         network (pypsa.Network): the pypsa network object
         carrier (str, optional): the carrier for which to get the price. Defaults to "AC".
-        ax (plt.Axes, optional): _description_. Defaults to None.
+        log_values (bool, optional): whether to use log scale for the prices. Defaults to False.
+        color_map (str, optional): the color map to use. Defaults to "viridis".
+        ax (plt.Axes, optional): the plotting axis. Defaults to None (new fig).
 
     Returns:
-        plt.Axes: _description_
+        plt.Axes: the axes for plotting
     """
 
     if not ax:
@@ -365,13 +370,18 @@ def plot_price_map(network: pypsa.Network, carrier="AC", ax: plt.Axes = None) ->
     carrier_buses = network.buses.carrier[network.buses.carrier == carrier].index.values
     nodal_prices = network.buses_t.marginal_price[carrier_buses]
     # Normalize nodal_prices with log transformation
-    normalized_prices = np.log10(nodal_prices.clip(lower=0.1))
-
+    if log_values:
+        # Avoid log(0) by clipping values to a minimum of 0.1
+        normalized_prices = np.log(nodal_prices.clip(lower=0.1))
+        label = "Log-Transformed Price [€/MWh]"
+    else:
+        normalized_prices = nodal_prices
+        label = "Price [€/MWh]"
     # Create a heatmap of normalized nodal_prices
     sns.heatmap(
         normalized_prices.reset_index(drop=True).T,
-        cmap="viridis",
-        cbar_kws={"label": "Log-Transformed Price [€/MWh]"},
+        cmap=color_map,
+        cbar_kws={"label": label},
         ax=ax,
     )
 
