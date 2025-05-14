@@ -37,7 +37,6 @@ from readers import read_province_shapes
 from constants import (
     PROV_NAMES,
     CRS,
-    LOAD_CONVERSION_FACTOR,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
     NON_LIN_PATH_SCALING,
@@ -48,7 +47,8 @@ from constants import (
 
 logger = logging.getLogger(__name__)
 
-# TODO add a heat bus that can absorb heat for free in non-coupled mode (e.g. Hydrogen electrolysis, sabatier)
+# TODO add a heat bus that can absorb heat for free in non-coupled mode
+#  (e.g. Hydrogen electrolysis, sabatier)
 # TODO add heat disipator?
 
 
@@ -85,7 +85,7 @@ def add_biomass(
         y=prov_centroids.y,
         carrier="biomass",
     )
-    logger.info(f"Adding biomass buses")
+    logger.info("Adding biomass buses")
     logger.info(f"{nodes + suffix}")
     logger.info("potentials")
     # aggricultural residue biomass
@@ -384,6 +384,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         nodes (pd.Index): the buses
         costs (pd.DataFrame): the cost database
     """
+    # TODO, does it make sense?
     if config["heat_coupling"]:
         network.add(
             "Link",
@@ -660,7 +661,8 @@ def add_wind_and_solar(
 
     Args:
         network (pypsa.Network): The PyPSA network to which the generators will be added
-        techs (list): A list of renewable energy technologies to add (e.g., ["solar", "onwind", "offwind"])
+        techs (list): A list of renewable energy technologies to add
+            (e.g., ["solar", "onwind", "offwind"])
         paths (os.PathLike): file paths containing renewable profiles (snakemake.input)
         year (int): planning year
         costs (pd.DataFrame): cost parameters for each technology
@@ -694,7 +696,8 @@ def add_wind_and_solar(
 
             if not len(ds.time) == len(network.snapshots):
                 raise ValueError(
-                    f"Mismatch in profile and network timestamps {len(ds.time)} and {len(network.snapshots)}"
+                    f"Mismatch in profile and network timestamps {len(ds.time)}"
+                    f" and {len(network.snapshots)}"
                 )
             ds = ds.stack(bus_bin=["bus", "bin"])
 
@@ -933,7 +936,7 @@ def add_heat_coupling(
         )
 
     if "CHP gas" in config["Techs"]["conv_techs"]:
-        # TODO apply same as for coal
+        # TODO apply same as for coal (include Cb)
         # OCGT CHP
         network.add(
             "Link",
@@ -1342,6 +1345,8 @@ def prepare_network(
     network.snapshot_weightings[:] = config["snapshots"]["frequency"]
     # load graph
     nodes = pd.Index(PROV_NAMES)
+    # toso soft code
+    countries = ["CN"] * len(nodes)
 
     # TODO check crs projection correct
     # load provinces
@@ -1349,7 +1354,9 @@ def prepare_network(
     prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
 
     # add AC buses
-    network.add("Bus", nodes, x=prov_centroids.x, y=prov_centroids.y, location=nodes)
+    network.add(
+        "Bus", nodes, x=prov_centroids.x, y=prov_centroids.y, location=nodes, country=countries
+    )
 
     # add carriers
     add_carriers(network, config, costs)
@@ -1389,6 +1396,7 @@ def prepare_network(
     # TODO add coal CC? no retrofit option
 
     if "PHS" in config["Techs"]["store_techs"]:
+        # TODO soft-code path
         # pure pumped hydro storage, fixed, 6h energy by default, no inflow
         hydrocapa_df = pd.read_csv("resources/data/hydro/PHS_p_nom.csv", index_col=0)
         phss = hydrocapa_df.index[hydrocapa_df["MW"] > 0].intersection(nodes)

@@ -15,6 +15,7 @@ from scripts._helpers import PathManager, get_cutout_params, ConfigManager
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
+configfile: "config/remind.yaml"
 
 config_manager = ConfigManager(config)
 config = config_manager.handle_scenarios()
@@ -30,7 +31,6 @@ DERIVED_DATA = path_manager.derived_data_dir(shared=False)
 DERIVED_COMMON = path_manager.derived_data_dir(shared=True)
 DERIVED_CUTOUT = DERIVED_COMMON + f"/cutout_{CUTOUT_NAME}"
 COSTS_DATA = path_manager.costs_dir()
-
 LOG_DIR = path_manager.logs_dir()
 LOGS_COMMON = "logs"
 LU_RASTER = path_manager.landuse_raster_data()
@@ -202,7 +202,7 @@ rule build_renewable_profiles:
 # TODO check whether energy totals still needed
 rule build_load_profiles:
     params:
-        elec_load_conversion = config["paths"]["yearly_regional_load"].get("ac_to_mwh", 1),
+        elec_load_conversion = config["paths"]["yearly_regional_load"]["ac_to_mwh"]
     input:
         population = DERIVED_COMMON + "/population/population.h5",
         population_map = DERIVED_COMMON + "/population/population_gridcell_map.h5",
@@ -257,11 +257,29 @@ if config["foresight"] in ["overnight"]:
         resources: mem_mb=10000
         script: "scripts/prepare_network.py"
 
+    
+    rule add_existing_baseyear:
+        params:
+            baseyear = config["scenario"]["planning_horizons"][0],
+            add_baseyear_to_assets = False,
+        input:
+            network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
+            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
+            cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
+            **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
+               for tech in config['existing_capacities']['techs']},
+        output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
+        threads: 1
+        resources: mem_mb=2000
+        script: "scripts/add_existing_baseyear.py"
+
+    add_brownfield = "-brownfield" if config["existing_capacities"].get("add", False) else ""
     rule solve_networks:
         params:
             solving = config["solving"],
+            add_baseyear_assets = False,
         input:
-            network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
+            network_name=RESULTS_DIR+ f'/prenetworks{add_brownfield}/' +'ntwk_{planning_horizons}.nc',
         output:
             network_name=RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc'
         log:
@@ -269,6 +287,7 @@ if config["foresight"] in ["overnight"]:
         threads: 4
         resources: mem_mb=35000
         script: "scripts/solve_network.py"
+
 
 elif config["foresight"] == "myopic":
     rule prepare_base_networks_2020:
@@ -317,12 +336,15 @@ elif config["foresight"] == "myopic":
     ruleorder: prepare_base_networks_2020 > prepare_base_networks
 
     rule add_existing_baseyear:
+        params:
+            baseyear = config["scenario"]["planning_horizons"][0],
+            add_baseyear_to_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
-            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
+            tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
             **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
-               for tech in config['existing_infrastructure']},
+               for tech in config['existing_capacities']['techs']},
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         wildcard_constraints:
             planning_horizons=config['scenario']['planning_horizons'][0] #only applies to baseyear
@@ -340,7 +362,7 @@ elif config["foresight"] == "myopic":
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             network_p=solved_previous_horizon,#solved network at previous time step
-            costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
+            costs="resources/data/costs/costs_{planning_horizons}.csv",
             **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}.nc"
                 for tech in config['renewable']}
         output:
