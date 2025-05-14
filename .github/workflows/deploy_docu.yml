@@ -4,11 +4,12 @@ on:
   push:
     branches:
       - main  # for the default branch -> later need to think about release branches
-      # - irr-patch-GHactions1 # testing
-    # paths:
-    #   - 'docs/**'  # Only trigger when files in the 'docs' folder are changed
-    #   - 'mkdocs.yml'  # or if the mkdocs.yml configuration file is changed
-    #   - 'workflow/scripts/**'  # or if the snmk scripts changed
+      - nicer-docu # testing
+    paths:
+      - 'docs/**'  # Only trigger when files in the 'docs' folder are changed
+      - 'mkdocs.yml'  # or if the mkdocs.yml configuration file is changed
+      - 'workflow/scripts/**'  # or if the snmk scripts changed
+      - '.github/workflows/deploy.yml'
 
 jobs:
   deploy:
@@ -28,6 +29,9 @@ jobs:
           pip install mkdocs
           pip install mkdocs_gen_files
           pip install "mkdocstrings[python]"
+          pip install mkdocs-literate-nav
+          pip install mkdocs-material
+          pip install mkdocs-include-dir-to-nav
 
       - name: Deploy to GitHub Pages
         run: |
