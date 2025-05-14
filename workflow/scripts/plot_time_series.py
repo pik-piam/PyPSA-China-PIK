@@ -1,11 +1,13 @@
 import pypsa
-import pandas as pd
 import logging
 import matplotlib.pyplot as plt
 import os.path
+<<<<<<< HEAD
 import seaborn as sns
 import numpy as np
 
+=======
+>>>>>>> parent of 3c6753b (add heatmaps)
 from os import makedirs
 
 from _plot_utilities import (
@@ -270,37 +272,10 @@ def plot_price_duration_curve(network: pypsa.Network, ax: plt.Axes = None) -> pl
     raise NotImplementedError("Price duration curve not implemented yet")
 
 
-def plot_price_duration_curve(
-    network: pypsa.Network, carrier="AC", ax: plt.Axes = None, figsize=(16, 8)
-) -> plt.Axes:
-    """plot the price duration curve for the given carrier
-
-    Args:
-        network (pypsa.Network): the pypasa network object
-        carrier (str, optional): the load carrier, defaults to AC
-        ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
-        figsize (tuple, optional): figure size, defaults to (16, 8)
-
-    Returns:
-        plt.Axes: the plotting axes
-    """
-    if not ax:
-        fig, ax = plt.subplots(figsize=figsize)
-
-    ntwk_el_price = (
-        -1
-        * n.statistics.revenue(bus_carrier="AC", aggregate_time=False, comps="Load")
-        / n.statistics.withdrawal(bus_carrier="AC", aggregate_time=False, comps="Load")
-    )
-    ntwk_el_price.T.Load.sort_values(ascending=False).reset_index(drop=True).plot(ax=ax)
-
-    return ax
-
-
-def plot_price_duration_by_node(
+def plot_load_duration_by_node(
     network: pypsa.Network, carrier: str = "AC", logy=True, y_lower=1e-3, fig_shape=(8, 4)
 ) -> plt.Axes:
-    """Plot the price duration curve for the given carrier by node
+    """Plot the load duration curve for the given carrier by node
     Args:
         network (pypsa.Network): the pypsa network object
         carrier (str, optional): the load carrier, defaults to AC (bus suffix)
@@ -312,8 +287,12 @@ def plot_price_duration_by_node(
     Raises:
         ValueError: if the figure shape is too small for the number of regions"""
 
-    carrier_buses = network.buses.carrier[network.buses.carrier == carrier].index.values
-    nodal_prices = network.buses_t.marginal_price[carrier_buses]
+    if carrier == "AC":
+        suffix = ""
+    else:
+        suffix = f" {carrier}"
+
+    nodal_prices = n.buses_t.marginal_price[pd.Index(PROV_NAMES) + suffix]
 
     if fig_shape[0] * fig_shape[1] < len(nodal_prices.columns):
         raise ValueError(
