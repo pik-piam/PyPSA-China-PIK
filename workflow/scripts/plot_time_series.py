@@ -16,7 +16,7 @@ from _helpers import (
     mock_snakemake,
     set_plot_test_backend,
 )
-from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL
+from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL, PROV_NAMES
 
 logger = logging.getLogger(__name__)
 
@@ -246,6 +246,75 @@ def plot_residual_load_duration_curve(
     residual.reset_index(drop=True).plot(ax=ax, lw=3)
     ax.set_ylabel(f"Residual Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")
+
+    return ax
+
+
+def plot_price_duration_curve(network: pypsa.Network, ax: plt.Axes = None) -> plt.Axes:
+    """plot the price duration curve for the given carrier
+
+    Args:
+        network (pypsa.Network): the pypasa network object
+        ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
+
+    Returns:
+        plt.Axes: the plotting axes
+    """
+    if not ax:
+        fig, ax = plt.subplots(figsize=(16, 8))
+
+    raise NotImplementedError("Price duration curve not implemented yet")
+
+
+def plot_load_duration_by_node(
+    network: pypsa.Network, carrier: str = "AC", logy=True, y_lower=1e-3, fig_shape=(8, 4)
+) -> plt.Axes:
+    """Plot the load duration curve for the given carrier by node
+    Args:
+        network (pypsa.Network): the pypsa network object
+        carrier (str, optional): the load carrier, defaults to AC (bus suffix)
+        logy (bool, optional): use log scale for y axis, defaults to True
+        y_lower (float, optional): lower limit for y axis, defaults to 1e-3
+        fig_shape (tuple, optional): shape of the figure, defaults to (8, 4)
+    Returns:
+        plt.Axes: the plotting axes
+    Raises:
+        ValueError: if the figure shape is too small for the number of regions"""
+
+    if carrier == "AC":
+        suffix = ""
+    else:
+        suffix = f" {carrier}"
+
+    nodal_prices = n.buses_t.marginal_price[pd.Index(PROV_NAMES) + suffix]
+
+    if fig_shape[0] * fig_shape[1] < len(nodal_prices.columns):
+        raise ValueError(
+            f"Figure shape {fig_shape} is too small for {len(nodal_prices.columns)} regions. "
+            + "Please increase the number of subplots."
+        )
+    fig, axes = plt.subplots(fig_shape[0], fig_shape[1], sharex=True, sharey=True, figsize=(12, 12))
+
+    # region by region sorting of prices
+    for i, region in enumerate(nodal_prices.columns):
+        reg_pr = nodal_prices[region]
+        reg_pr.sort_values(ascending=False).reset_index(drop=True).plot(
+            ax=axes[i // 4, i % fig_shape[1]], label=region
+        )
+        axes[i // 4, i % fig_shape[1]].set_title(region, fontsize=10)
+        if logy:
+            axes[i // 4, i % fig_shape[1]].semilogy()
+        if y_lower:
+            axes[i // 4, i % fig_shape[1]].set_ylim(y_lower, reg_pr.max() * 1.2)
+        elif reg_pr.min() > 1e-5 and not logy:
+            axes[i // 4, i % fig_shape[1]].set_ylim(0, reg_pr.max() * 1.2)
+    fig.tight_layout(h_pad=0.2, w_pad=0.2)
+    for ax in axes.flat:
+        # Remove all x-tick labels except the largest value
+        xticks = ax.get_xticks()
+        if len(xticks) > 0:
+            ax.set_xticks([xticks[0], xticks[-1]])
+            ax.set_xticklabels([f"{xticks[0]:.0f}", f"{xticks[-1]:.0f}"])
 
     return ax
 
