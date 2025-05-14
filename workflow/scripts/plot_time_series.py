@@ -1,7 +1,10 @@
 import pypsa
+import pandas as pd
 import logging
 import matplotlib.pyplot as plt
 import os.path
+import seaborn as sns
+
 from os import makedirs
 
 from _plot_utilities import (
@@ -266,10 +269,37 @@ def plot_price_duration_curve(network: pypsa.Network, ax: plt.Axes = None) -> pl
     raise NotImplementedError("Price duration curve not implemented yet")
 
 
-def plot_load_duration_by_node(
+def plot_price_duration_curve(
+    network: pypsa.Network, carrier="AC", ax: plt.Axes = None, figsize=(16, 8)
+) -> plt.Axes:
+    """plot the price duration curve for the given carrier
+
+    Args:
+        network (pypsa.Network): the pypasa network object
+        carrier (str, optional): the load carrier, defaults to AC
+        ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
+        figsize (tuple, optional): figure size, defaults to (16, 8)
+
+    Returns:
+        plt.Axes: the plotting axes
+    """
+    if not ax:
+        fig, ax = plt.subplots(figsize=figsize)
+
+    ntwk_el_price = (
+        -1
+        * n.statistics.revenue(bus_carrier="AC", aggregate_time=False, comps="Load")
+        / n.statistics.withdrawal(bus_carrier="AC", aggregate_time=False, comps="Load")
+    )
+    ntwk_el_price.T.Load.sort_values(ascending=False).reset_index(drop=True).plot(ax=ax)
+
+    return ax
+
+
+def plot_price_duration_by_node(
     network: pypsa.Network, carrier: str = "AC", logy=True, y_lower=1e-3, fig_shape=(8, 4)
 ) -> plt.Axes:
-    """Plot the load duration curve for the given carrier by node
+    """Plot the price duration curve for the given carrier by node
     Args:
         network (pypsa.Network): the pypsa network object
         carrier (str, optional): the load carrier, defaults to AC (bus suffix)
@@ -281,12 +311,8 @@ def plot_load_duration_by_node(
     Raises:
         ValueError: if the figure shape is too small for the number of regions"""
 
-    if carrier == "AC":
-        suffix = ""
-    else:
-        suffix = f" {carrier}"
-
-    nodal_prices = n.buses_t.marginal_price[pd.Index(PROV_NAMES) + suffix]
+    carrier_buses = network.buses.carrier[network.buses.carrier == carrier].index.values
+    nodal_prices = network.buses_t.marginal_price[carrier_buses]
 
     if fig_shape[0] * fig_shape[1] < len(nodal_prices.columns):
         raise ValueError(
@@ -317,6 +343,45 @@ def plot_load_duration_by_node(
             ax.set_xticklabels([f"{xticks[0]:.0f}", f"{xticks[-1]:.0f}"])
 
     return ax
+
+
+def plot_price_map(network: pypsa.Network, carrier="AC", ax: plt.Axes = None) -> plt.Axes:
+    """plot the price heat map (region vs time) for the given carrier
+
+    Args:
+        network (pypsa.Network): the pypsa network object
+        carrier (str, optional): the carrier for which to get the price. Defaults to "AC".
+        ax (plt.Axes, optional): _description_. Defaults to None.
+
+    Returns:
+        plt.Axes: _description_
+    """
+
+    if not ax:
+        fig, ax = plt.subplots(figsize=(20, 8))
+    else:
+        fig = ax.get_figure()
+
+    carrier_buses = network.buses.carrier[network.buses.carrier == carrier].index.values
+    nodal_prices = network.buses_t.marginal_price[carrier_buses]
+    # Normalize nodal_prices with log transformation
+    normalized_prices = np.log10(nodal_prices.clip(lower=0.1))
+
+    # Create a heatmap of normalized nodal_prices
+    sns.heatmap(
+        normalized_prices.reset_index(drop=True).T,
+        cmap="viridis",
+        cbar_kws={"label": "Log-Transformed Price [€/MWh]"},
+        ax=ax,
+    )
+
+    # Customize the plot
+    ax.set_title("Heatmap of Log-Transformed Nodal Prices")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Nodes")
+    fig.tight_layout()
+
+    return
 
 
 if __name__ == "__main__":
