@@ -10,6 +10,10 @@ import logging
 import numpy as np
 import pypsa
 from pandas import DatetimeIndex
+import xarray as xr
+
+from functools import partial
+from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
@@ -142,8 +146,8 @@ def add_chp_constraints(n: pypsa.Network):
 
 def add_land_use_constraint(n: pypsa.Network, planning_horizons: str | int) -> None:
     """
-    Add land use constraints for renewable energy potential. This ensures that the brownfield + greenfield
-     vre installations for each generator technology do not exceed the technical potential.
+    Add land use constraints for renewable energy potential. This ensures that the brownfield +
+     greenfield vre installations for each generator tech do not exceed the technical potential.
 
     Args:
         n (pypsa.Network): the network object to add the constraints to
@@ -204,7 +208,85 @@ def add_transimission_constraints(n: pypsa.Network):
     n.model.add_constraints(lhs == rhs, name="Link-transimission")
 
 
-def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
+# TODO understand if this is per region or network wide
+# TODO can we remove the - capacity and add + 1 to the reserves?
+def add_operational_reserve_margin(n: pypsa.network, config):
+    """
+    Build operational reserve margin constraints based on the formulation given in
+    https://genxproject.github.io/GenX.jl/stable/Model_Reference/core/#GenX.operational_reserves_core!-Tuple{JuMP.Model,%20Dict,%20Dict}
+
+    Args:
+        n (pypsa.Network): the network object to optimize
+        config (dict): the configuration dictionary
+
+    Example:
+        config.yaml requires to specify operational_reserve:
+        operational_reserve:
+            activate: true
+            epsilon_load: 0.02 # percentage of load at each snapshot
+            epsilon_vres: 0.02 # percentage of VRES at each snapshot
+            contingency: 400000 # MW
+    """
+    reserve_config = config["electricity"]["operational_reserve"]
+    EPSILON_LOAD = reserve_config["epsilon_load"]
+    EPSILON_VRES = reserve_config["epsilon_vres"]
+    CONTINGENCY = reserve_config["contingency"]
+
+    snaps = n.snapshots
+
+    # Reserve Variables
+    n.model.add_variables(0, np.inf, coords=[snaps, n.generators.index], name="Generator-r")
+    reserve = n.model["Generator-r"]
+    summed_reserve = reserve.sum("Generator")
+
+    # Share of extendable renewable capacities
+    ext_i = n.generators.query("p_nom_extendable").index
+    vres_i = n.generators_t.p_max_pu.columns
+    if not ext_i.empty and not vres_i.empty:
+        capacity_factor = n.generators_t.p_max_pu[vres_i.intersection(ext_i)]
+        p_nom_vres = (
+            n.model["Generator-p_nom"]
+            .loc[vres_i.intersection(ext_i)]
+            .rename({"Generator-ext": "Generator"})
+        )
+        lhs = summed_reserve + (p_nom_vres * (-EPSILON_VRES * xr.DataArray(capacity_factor))).sum(
+            "Generator"
+        )
+
+        # Total demand per t
+        demand = get_as_dense(n, "Load", "p_set").sum(axis=1)
+
+        # VRES potential of non extendable generators
+        capacity_factor = n.generators_t.p_max_pu[vres_i.difference(ext_i)]
+        renewable_capacity = n.generators.p_nom[vres_i.difference(ext_i)]
+        potential = (capacity_factor * renewable_capacity).sum(axis=1)
+
+        # Right-hand-side
+        rhs = EPSILON_LOAD * demand + EPSILON_VRES * potential + CONTINGENCY
+
+        n.model.add_constraints(lhs >= rhs, name="reserve_margin")
+
+    # additional constraint that capacity is not exceeded
+    gen_i = n.generators.index
+    ext_i = n.generators.query("p_nom_extendable").index
+    fix_i = n.generators.query("not p_nom_extendable").index
+
+    dispatch = n.model["Generator-p"]
+    reserve = n.model["Generator-r"]
+
+    capacity_variable = n.model["Generator-p_nom"].rename({"Generator-ext": "Generator"})
+    capacity_fixed = n.generators.p_nom[fix_i]
+
+    p_max_pu = get_as_dense(n, "Generator", "p_max_pu")
+
+    lhs = dispatch + reserve - capacity_variable * xr.DataArray(p_max_pu[ext_i])
+
+    rhs = (p_max_pu[fix_i] * capacity_fixed).reindex(columns=gen_i, fill_value=0)
+
+    n.model.add_constraints(lhs <= rhs, name="Generator-p-reserve-upper")
+
+
+def extra_functionality(n: pypsa.Network, config: dict) -> None:
     """
     Add supplementary constraints to the network model. ``pypsa.linopf.network_lopf``.
     If you want to enforce additional custom constraints, this is a good location to add them.
@@ -212,13 +294,16 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
 
     Args:
         n (pypsa.Network): the network object to optimize
-        snapshots (DatetimeIndex): the time index of the network
         config (dict): the configuration dictionary
     """
 
     add_battery_constraints(n)
     add_transimission_constraints(n)
     add_chp_constraints(n)
+
+    reserve = config["electricity"].get("operational_reserve", {})
+    if reserve.get("activate"):
+        add_operational_reserve_margin(n, config)
 
 
 def solve_network(
@@ -246,7 +331,7 @@ def solve_network(
         status, condition = n.optimize(
             solver_name=solver_name,
             transmission_losses=transmission_losses,
-            extra_functionality=extra_functionality,
+            extra_functionality=partial(extra_functionality, config=config),
             **solver_options,
             **kwargs,
         )
@@ -257,7 +342,7 @@ def solve_network(
             min_iterations=min_iterations,
             max_iterations=max_iterations,
             transmission_losses=transmission_losses,
-            extra_functionality=extra_functionality,
+            extra_functionality=partial(extra_functionality, config=config),
             **solver_options,
             **kwargs,
         )
