@@ -1,4 +1,4 @@
-""" 
+"""
 Helper/utility functions for plotting, including legacy functions yet to be removed
 """
 
@@ -31,10 +31,10 @@ def find_weeks_of_interest(
     summer_max = max_prices.loc[summer].idxmax()
 
     winter_range = max_prices.loc[
-        winter_max - pd.Timedelta(days=3.5): winter_max + pd.Timedelta(days=3.5)
+        winter_max - pd.Timedelta(days=3.5) : winter_max + pd.Timedelta(days=3.5)
     ].index
     summer_range = max_prices.loc[
-        summer_max - pd.Timedelta(days=3.5): summer_max + pd.Timedelta(days=3.5)
+        summer_max - pd.Timedelta(days=3.5) : summer_max + pd.Timedelta(days=3.5)
     ].index
 
     return winter_range, summer_range
@@ -105,13 +105,13 @@ def find_numerical_zeros(n, config, tolerance_name="BarConvTol") -> list:
     """
     Identify numerical zeros in the network's optimization results.
 
-    This function checks for numerical zeros in the network's optimization results, 
+    This function checks for numerical zeros in the network's optimization results,
     such as link capacities or weighted prices, based on a specified solver tolerance.
 
     Args:
         n (pypsa.Network): The PyPSA network object containing optimization results.
         config (dict): Configuration dictionary containing solver options.
-        tolerance_name (str): The name of the solver tolerance option to use. 
+        tolerance_name (str): The name of the solver tolerance option to use.
                 Defaults to "BarConvTol".
 
     Returns:
@@ -119,7 +119,7 @@ def find_numerical_zeros(n, config, tolerance_name="BarConvTol") -> list:
     """
 
     tol = get_solver_tolerance(config, tolerance_name)
-    threshold = n.objective*float(tol)
+    threshold = n.objective * float(tol)
     costs = pd.concat([n.statistics.expanded_capex(), n.statistics.opex()], axis=1)
     return costs.fillna(0).sum(axis=1).loc[costs.sum(axis=1) < threshold].index
 
@@ -160,7 +160,7 @@ def rename_techs(label: list) -> list:
 
     for ptr in prefix_to_remove:
         if label[: len(ptr)] == ptr:
-            label = label[len(ptr):]
+            label = label[len(ptr) :]
 
     for old, new in rename_if_contains_dict.items():
         if old in label:
@@ -299,7 +299,7 @@ def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Lin
     for c in comps:
         comp = n.static(c)
         ports = [c for c in comp.columns if c.startswith("bus")]
-        comp_df = comp[ports+["carrier"]]
+        comp_df = comp[ports + ["carrier"]]
         is_attached = comp_df[ports].apply(lambda x: x.map(n.buses.carrier) == bus_carrier).T.any()
         carriers += comp_df.loc[is_attached].carrier.unique().tolist()
 

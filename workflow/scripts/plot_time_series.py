@@ -2,12 +2,10 @@ import pypsa
 import logging
 import matplotlib.pyplot as plt
 import os.path
-<<<<<<< HEAD
 import seaborn as sns
 import numpy as np
+import pandas as pd
 
-=======
->>>>>>> parent of 3c6753b (add heatmaps)
 from os import makedirs
 
 from _plot_utilities import (
