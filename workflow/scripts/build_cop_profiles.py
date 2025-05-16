@@ -4,9 +4,11 @@ with atlite
 """
 
 import atlite
+import atlite.cutout
 import pandas as pd
 import scipy as sp
 import logging
+import os
 
 from _helpers import configure_logging, mock_snakemake
 from constants import TIMEZONE
@@ -16,17 +18,15 @@ logger = logging.getLogger(__name__)
 
 
 # TODO cleanup
-def build_cop_profiles():
-    """Build COP time profiles with atlite
+def build_cop_profiles(pop_map: pd.DateOffset, cutout: atlite.cutout, output_path: os.PathLike):
+    """Build COP time profiles with atlite and write outputs to output_path as hf5
 
-    Write outputs to snakemake.output.cop as hf5
+    Args:
+        pop_map (pd.DataFrame): the population map (node resolution) 
+        cutout (atlite.cutout): the atlite cutout (weather data)
+        output_path (os.PathLike): the path to write the output to as hdf5
     """
 
-    with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
-        pop_map = store["population_gridcell_map"]
-
-    # this one includes soil temperature
-    cutout = atlite.Cutout(snakemake.input.cutout)
 
     pop_matrix = sp.sparse.csr_matrix(pop_map.T)
     index = pop_map.columns
@@ -53,6 +53,7 @@ def build_cop_profiles():
 
     delta_T = sink_T - source_T
 
+    # TODO make this user set and document
     # For ASHP
     def ashp_cop(d):
         return 6.81 - 0.121 * d + 0.000630 * d**2
@@ -61,13 +62,14 @@ def build_cop_profiles():
 
     delta_soil_T = sink_T - source_soil_T
 
+    # TODO make this user set and document
     # For GSHP
     def gshp_cop(d):
         return 8.77 - 0.150 * d + 0.000734 * d**2
 
     cop_soil = gshp_cop(delta_soil_T)
 
-    with pd.HDFStore(snakemake.output.cop, mode="w", complevel=4) as store:
+    with pd.HDFStore(output_path, mode="w", complevel=4) as store:
         store["ashp_cop_profiles"] = cop
         store["gshp_cop_profiles"] = cop_soil
 
@@ -79,6 +81,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake("build_cop_profiles")
     configure_logging(snakemake, logger=logger)
 
-    build_cop_profiles()
+    with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
+        pop_map = store["population_gridcell_map"]
+
+    cutout = atlite.Cutout(snakemake.input.cutout, snakemake.output.cop)
+
+    build_cop_profiles(pop_map, cutout)
 
     logger.info("COP profiles successfully built")
