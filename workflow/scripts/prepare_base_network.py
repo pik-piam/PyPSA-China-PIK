@@ -209,7 +209,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
     Args:
         config (dict): the snakemake config
         costs (pd.DataFrame): the costs dataframe (anualised capex and marginal costs)
-        biomass_potential (Optional, pd.DataFrame): biomass potential dataframe. Defaults to None.
+        paths (dict): dictionary of paths to input data
 
     Returns:
         pypsa.Network: the pypsa network object
@@ -267,7 +267,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
     # ===== add load demand data =======
     demand_path = snakemake.input.elec_load.replace("{planning_horizons}", cost_year)
     with pd.HDFStore(demand_path, mode="r") as store:
-        load = store["load"].loc[network.snapshots] # MWh !!
+        load = store["load"].loc[network.snapshots]  # MWh !!
 
     load.columns = PROV_NAMES
 

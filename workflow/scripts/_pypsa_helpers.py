@@ -192,6 +192,13 @@ def aggregate_costs(
     opts: dict = None,
     existing_only=False,
 ) -> pd.Series | pd.DataFrame:
+    """LEGACY FUNCTION used in pypsa heating plots - unclear what it does
+    
+    Args:
+        n (pypsa.Network): the network object
+        flatten (bool, optional):merge capex and marginal ? Defaults to False.
+        opts (dict, optional): options for the function. Defaults to None.
+        existing_only (bool, optional): use _nom instead of nom_opt. Defaults to False."""
 
     components = dict(
         Link=("p_nom", "p0"),
@@ -267,7 +274,7 @@ def load_network_for_plots(
     cost_year: int,
     combine_hydro_ps=True,
 ) -> pypsa.Network:
-    """load network object
+    """load network object (LEGACY FUNCTION for heat plot)
 
     Args:
         network_file (os.PathLike): the path to the network file

@@ -19,7 +19,11 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_network(n: pypsa.Network, solve_opts: dict):
-
+    """ prepare the network for the solver
+    Args:
+        n (pypsa.Network): the pypsa network object
+        solve_opts (dict): the solving options
+    """
     if "clip_p_max_pu" in solve_opts:
         for df in (n.generators_t.p_max_pu, n.storage_units_t.inflow):
             df.where(df > solve_opts["clip_p_max_pu"], other=0.0, inplace=True)
@@ -82,6 +86,12 @@ def add_battery_constraints(n: pypsa.Network):
 
 
 def add_chp_constraints(n: pypsa.Network):
+    """ Add constraints to couple the heat and electricity output of CHP plants
+         (using the cb and cv parameter). See the DEA technology cataloge
+    
+    Args:
+        n (pypsa.Network): the pypsa network object to which's model the constraints are added
+    """
     electric = n.links.index.str.contains("CHP") & n.links.index.str.contains("generator")
     heat = n.links.index.str.contains("CHP") & n.links.index.str.contains("boiler")
 
@@ -162,6 +172,13 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex):
 def solve_network(
     n: pypsa.Network, config: dict, solving: dict, opts: str = "", **kwargs
 ) -> pypsa.Network:
+    """ perform the optimisation
+    Args:
+        n (pypsa.Network): the pypsa network object
+        config (dict): the configuration dictionary
+        solving (dict): the solving configuration dictionary
+        opts (str): optional wildcards such as ll (not used in pypsa-china)
+    """
     set_of_options = solving["solver"]["options"]
     solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
     solver_name = solving["solver"]["name"]
