@@ -1,5 +1,6 @@
-
 plot: True
+  plot_reference: true
+
 plotting:
   network_style_config_file: "config/plotting_styles/network_map.mplstyle"
   transparent: false

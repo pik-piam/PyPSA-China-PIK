@@ -568,7 +568,7 @@ oil,2050,investment,336,EUR/kW,"Danish Energy Agency, technology_data_for_el_and
 oil,2050,lifetime,25,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",50 Diesel engine farm:  Technical lifetime
 onwind,2050,FOM,1.18,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Fixed O&M
 onwind,2050,VOM,1.22,EUR/MWh,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Variable O&M
-onwind,2020,investment,435.89,EUR/kW,"zhu et.al.2025",20 Onshore turbines:  Nominal investment
+onwind,2050,investment,435.89,EUR/kW,"zhu et.al.2025",20 Onshore turbines:  Nominal investment
 onwind,2050,lifetime,30,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Technical lifetime
 ror,2050,FOM,2,%/year,DIW DataDoc http://hdl.handle.net/10419/80348, from old pypsa cost assumptions
 ror,2050,efficiency,0.9,per unit,DIW DataDoc http://hdl.handle.net/10419/80348, from old pypsa cost assumptions

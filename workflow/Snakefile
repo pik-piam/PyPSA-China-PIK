@@ -35,7 +35,7 @@ CUTOUTS_DIR = path_manager.cutouts_dir()
 # ====== include rules ======= (after paths are set!)
 include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
-include: "rules/parameter_check.smk"
+include: "rules/visualize_inputs.smk"
 
 if config["run"].get("is_test", False):
     localrules: plot_all, build_population, dag, fetch_region_shapes, plot_parameters

@@ -6,24 +6,49 @@ import logging
 import sys
 import yaml
 import re
-from difflib import get_close_matches
 import ultraplot as uplt
+from typing import Optional, Dict
+import pypsa
 # --------------------------------------------------
 # 1) Helper Functions
 # --------------------------------------------------
-def detect_file_encoding(file_path):
-    """
-    Detect the file encoding and return the detected format.
+
+
+def detect_file_encoding(file_path: str) -> str:
+    """Detect the encoding of a file.
+
+    Args:
+        file_path: Path to the file whose encoding needs to be detected.
+
+    Returns:
+        str: The detected encoding of the file.
+
+    Example:
+        >>> encoding = detect_file_encoding("data.csv")
+        >>> print(encoding)
+        'utf-8'
     """
     with open(file_path, 'rb') as f:
         result = chardet.detect(f.read())
     encoding = result['encoding']
     return encoding
 
-def load_and_clean_data(file_path):
-    """
-    Load a CSV file based on its detected encoding,
-    replace '-' with NaN, and drop the 'link' column if it exists.
+
+def load_and_clean_data(file_path: str) -> pd.DataFrame:
+    """Load and clean data from a CSV file.
+
+    load a CSV file, detects its encoding, replaces '-' with NaN,
+    and drops the 'link' column if it exists.
+
+    Args:
+        file_path: Path to the CSV file to be loaded.
+
+    Returns:
+        pd.DataFrame: Cleaned DataFrame with standardized data.
+
+    Example:
+        >>> df = load_and_clean_data("data.csv")
+        >>> print(df.head())
     """
     encoding = detect_file_encoding(file_path)
     try:
@@ -36,6 +61,7 @@ def load_and_clean_data(file_path):
         logging.error(f"Error loading file {file_path}: {e}")
         return pd.DataFrame()
 
+
 def standardize_unit(unit_str):
     """
     Standardize a unit string by trimming whitespace,
@@ -45,10 +71,11 @@ def standardize_unit(unit_str):
         return ""
     return str(unit_str).strip().lower().replace(" ", "")
 
+
 def load_config(yaml_path):
     """
     Read the 'Techs' section from a YAML file (e.g., default_config.yaml).
-    Returns a dictionary with keys like 'vre_techs', 'conv_techs', 'store_techs'.
+    Returns a dictionary with keys like 'vre_techs', 'conv_techs'.
     """
     try:
         with open(yaml_path, "r", encoding="utf-8") as f:
@@ -62,10 +89,11 @@ def load_config(yaml_path):
         logging.error(f"Error loading config file {yaml_path}: {e}")
         return {"vre_techs": [], "conv_techs": [], "store_techs": []}
 
+
 def load_plot_config(plot_yaml_path):
     """
     Read the 'tech_colors' section under 'plotting' from the given YAML file.
-    Ensures color values are valid HEX codes, defaulting to '#999999' if invalid.
+    Ensures color values are valid HEX codes, defaulting to '#999999'.
     """
     try:
         with open(plot_yaml_path, "r", encoding="utf-8") as f:
@@ -79,7 +107,6 @@ def load_plot_config(plot_yaml_path):
 
     tech_colors = config.get("plotting", {}).get("tech_colors", {})
 
-
     # Validate HEX colors
     hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
     for tech, color in tech_colors.items():
@@ -90,18 +117,21 @@ def load_plot_config(plot_yaml_path):
 # --------------------------------------------------
 # 2) Filtering Logic
 # --------------------------------------------------
+
+
 def filter_investment_parameter(df):
     """
     Keep only rows where parameter == 'investment' (case-insensitive).
     If 'parameter' column does not exist, we return df unchanged.
     """
     if "parameter" not in df.columns:
-        logging.warning("Warning: 'parameter' column not found. No filter applied.")
+        logging.warning("Warning: 'parameter' column not found.")
         return df
     # Filter for rows that have parameter == "investment"
     mask = df["parameter"].str.lower() == "investment"
     df_investment = df[mask].copy()
     return df_investment
+
 
 def filter_technologies_by_config(df, default_config_path):
     """
@@ -204,13 +234,15 @@ def filter_technologies_by_config(df, default_config_path):
 # --------------------------------------------------
 # 3) Unit Conversion
 # --------------------------------------------------
+
+
 def convert_row_units(row, target_unit_installation, target_unit_storage):
     """
     Convert row's numeric columns so that:
       - If the original unit is recognized as storage (kWh or MWh in the capacity part),
         we unify to target_unit_storage (e.g. "eur/kWh").
       - Otherwise, we unify to target_unit_installation (e.g. "eur/kW").
-      - If the capacity part is not in [kW, MW, kWh, MWh], we keep it as-is (only do currency conversion).
+      - If the capacity part is not in [kW, MW, kWh, MWh], we keep it as-is.
       
     Assumes exchange rates:
       1 EUR = 7.8 CNY
@@ -271,7 +303,7 @@ def convert_row_units(row, target_unit_installation, target_unit_storage):
     if orig_currency is None:
         orig_currency = "unknown"
 
-    # 汇率表
+    # Table of exchange rates
     exchange_map = {
         ("eur", "eur"): 1.0,
         ("eur", "cny"): 7.8,
@@ -308,7 +340,6 @@ def convert_row_units(row, target_unit_installation, target_unit_storage):
             return 1.0
         return 1.0 
 
-
     def normalize_capacity_unit(cap):
         cap = cap.lower()
         cap = cap.replace(" ", "")
@@ -316,7 +347,7 @@ def convert_row_units(row, target_unit_installation, target_unit_storage):
         return cap
 
     norm_capacity = normalize_capacity_unit(capacity_part)
-    norm_target   = normalize_capacity_unit(tgt_capacity if tgt_capacity else "")
+    norm_target = normalize_capacity_unit(tgt_capacity if tgt_capacity else "")
 
     if norm_capacity in ["kw", "mw", "kwh", "mwh"] and norm_target in ["kw", "mw", "kwh", "mwh"]:
         cap_factor = capacity_factor_func(norm_capacity, norm_target)
@@ -359,7 +390,6 @@ def convert_row_units(row, target_unit_installation, target_unit_storage):
     return row
 
 
-
 def apply_conversion(df, target_unit_installation, target_unit_storage):
     """
     Apply the unit conversion to each row. Preserves the original unit
@@ -382,76 +412,111 @@ def apply_conversion(df, target_unit_installation, target_unit_storage):
     )
     return df
 
-def plot_technologies_by_category(df, tech_colors=None, font_size=14):
+
+def load_reference_data(file_path: str) -> pd.DataFrame:
+    """Load and process reference data for technology cost comparison.
+
+    Args:
+        file_path: Path to the reference data CSV file.
+
+    Returns:
+        pd.DataFrame: Processed reference data with standardized units.
     """
-    Plots technology cost trends with dual y-axes (EUR/unit and CNY/unit), comparing with literature data.
-
-    Using ax.twinx() + manual set_ylim for the right axis.
-    """
-
-    if df.empty:
-        logging.error("Error: The DataFrame is empty; cannot plot.")
-        return
-
-    ref_file_path = "resources/data_check/tech_costs_subset_litreview.csv"
-    encoding = detect_file_encoding(ref_file_path)
-    
     try:
-        ref_df = load_and_clean_data(ref_file_path)
-        ref_df = ref_df[ref_df["reference"] != "PyPSA-China"]  # Exclude PyPSA-China data
+        ref_df = load_and_clean_data(file_path)
+        ref_df = ref_df[ref_df["reference"] != "PyPSA-China"]
         
-        # Apply unit conversion to reference data
         if "parameter" in ref_df.columns:
             ref_df = filter_investment_parameter(ref_df)
         ref_df = apply_conversion(ref_df, "eur/kW", "eur/kWh")
-        
+        return ref_df
     except Exception as e:
-        logging.warning(f"Warning: Unable to process reference data file: {e}")
-        ref_df = pd.DataFrame()
+        logging.error(f"Error loading reference data: {e}")
+        return pd.DataFrame()
 
-    # 2) 找出年份列
-    year_cols = [col for col in df.columns if col.isdigit()]
+
+def plot_technologies_by_category(
+    costs_df: pd.DataFrame,
+    ref_df: pd.DataFrame,
+    tech_colors: Optional[Dict[str, str]] = None,
+    font_size: int = 14,
+    plot_reference: bool = True
+) -> plt.Figure:
+    """Plot technology cost trends with literature comparison.
+
+    Args:
+        costs_df: DataFrame containing the main cost data.
+        ref_df: DataFrame containing reference data for comparison.
+        tech_colors: Dictionary mapping technology names to colors.
+        font_size: Font size for plot elements.
+        plot_reference: Boolean indicating whether to plot reference data.
+
+    Returns:
+        plt.Figure: The generated plot figure.
+
+    Example:
+        >>> costs_df = load_and_clean_data("costs.csv")
+        >>> ref_df = load_reference_data("reference.csv")
+        >>> fig = plot_technologies_by_category(costs_df, ref_df)
+    """
+    if costs_df.empty:
+        logging.error("Error: The costs DataFrame is empty; cannot plot.")
+        return None
+
+    if tech_colors is None:
+        tech_colors = {}
+
+    # Get year columns
+    year_cols = [col for col in costs_df.columns if col.isdigit()]
     if not year_cols:
-        year_cols = [col.split("_")[-1] for col in df.columns if "cost_" in col and col.split("_")[-1].isdigit()]
+        year_cols = [col.split("_")[-1] for col in costs_df.columns 
+                    if "cost_" in col and col.split("_")[-1].isdigit()]
     if not year_cols:
-        possible_years = ["2020", "2025", "2030", "2035", "2040", "2045", "2050", "2055", "2060"]
-        year_cols = [year for year in possible_years if year in df.columns]
+        possible_years = ["2020", "2025", "2030", "2035", "2040", 
+                         "2045", "2050", "2055", "2060"]
+        year_cols = [year for year in possible_years if year in costs_df.columns]
     if not year_cols:
-        logging.error("Error: Unable to identify year columns in primary data.")
-        return
+        logging.error("Error: Unable to identify year columns in costs data.")
+        return None
     year_cols = sorted(year_cols)
 
     ref_year_cols = [col for col in ref_df.columns if col.isdigit()]
     if not ref_year_cols:
         logging.error("Error: Unable to identify year columns in reference data.")
-        return
+        return None
     ref_year_cols = sorted(ref_year_cols)
 
-    if tech_colors is None:
-        tech_colors = {}
-
-    technologies = df["technology"].unique()
+    # Create subplots
+    technologies = costs_df["technology"].unique()
     num_techs = len(technologies)
     num_cols = 6
     num_rows = (num_techs + num_cols - 1) // num_cols
 
-    fig, axs = uplt.subplots(nrows=num_rows, ncols=num_cols, figwidth=6 * num_cols, sharex=True, sharey=False)
+    fig, axs = uplt.subplots(
+        nrows=num_rows,
+        ncols=num_cols,
+        figwidth=6 * num_cols,
+        sharex=True,
+        sharey=False
+    )
     if not isinstance(axs, np.ndarray):
         axs = np.array([axs])
     axs = axs.flatten()
 
     dash_styles = ['--', '-.', ':', (0, (3, 1, 1, 1))]
 
+    # Plot each technology
     for i, tech in enumerate(technologies):
         if i >= len(axs):
             logging.warning(f"Warning: Exceeded subplot limit, skipping {tech}")
             continue
 
         ax = axs[i]
-        tech_df = df[df["technology"] == tech]
+        tech_df = costs_df[costs_df["technology"] == tech]
         ref_tech_df = ref_df[ref_df["technology"] == tech]
         color = tech_colors.get(tech, "#999999")
 
+        # Plot main data
         tech_years, tech_values = [], []
         for year in year_cols:
             values = pd.to_numeric(tech_df[year], errors='coerce').dropna().values
@@ -462,25 +527,41 @@ def plot_technologies_by_category(df, tech_colors=None, font_size=14):
         legend_handles = []
         legend_labels = []
         if tech_years:
-            line, = ax.plot(tech_years, tech_values, linewidth=2.5, color=color, linestyle='-', label=tech)
+            line, = ax.plot(
+                tech_years,
+                tech_values,
+                linewidth=2.5,
+                color=color,
+                linestyle='-',
+                label=tech
+            )
             legend_handles.append(line)
             legend_labels.append(tech)
 
-        for j, (ref_name, ref_group) in enumerate(ref_tech_df.groupby("reference")):
-            ref_years, ref_values = [], []
-            for year in ref_year_cols:
-                vals = pd.to_numeric(ref_group[year], errors='coerce').dropna().values
-                if vals.size > 0:
-                    ref_years.append(int(year))
-                    ref_values.append(np.median(vals))
+        # Plot reference data
+        if plot_reference and ref_tech_df.shape[0] > 0:
+            for j, (ref_name, ref_group) in enumerate(ref_tech_df.groupby("reference")):
+                ref_years, ref_values = [], []
+                for year in ref_year_cols:
+                    vals = pd.to_numeric(ref_group[year], errors='coerce').dropna().values
+                    if vals.size > 0:
+                        ref_years.append(int(year))
+                        ref_values.append(np.median(vals))
 
-            if ref_years:
-                dash_style = dash_styles[j % len(dash_styles)]
-                ref_line, = ax.plot(ref_years, ref_values, linewidth=2, color=color,
-                                    linestyle=dash_style, label=ref_name)
-                legend_handles.append(ref_line)
-                legend_labels.append(ref_name)
+                if ref_years:
+                    dash_style = dash_styles[j % len(dash_styles)]
+                    ref_line, = ax.plot(
+                        ref_years,
+                        ref_values,
+                        linewidth=2,
+                        color=color,
+                        linestyle=dash_style,
+                        label=ref_name
+                    )
+                    legend_handles.append(ref_line)
+                    legend_labels.append(ref_name)
 
+        # Set labels and formatting
         if "unit" in tech_df.columns and not tech_df["unit"].isna().all():
             unit = tech_df["unit"].iloc[0]
             unit_parts = unit.split('/')
@@ -507,7 +588,6 @@ def plot_technologies_by_category(df, tech_colors=None, font_size=14):
         else:
             ax2.set_ylabel("Cost (CNY)", fontsize=font_size)
 
-
         y_min, y_max = ax.get_ylim()
         ax2.set_ylim(y_min * 7.8, y_max * 7.8)
 
@@ -515,8 +595,15 @@ def plot_technologies_by_category(df, tech_colors=None, font_size=14):
         ax.grid(True, linestyle='--', alpha=0.7)
         ax.tick_params(axis='y', labelsize=font_size)
         ax2.tick_params(axis='y', labelsize=font_size)
-        ax.legend(legend_handles, legend_labels, loc='upper right', fontsize=font_size-2, ncol=1)
+        ax.legend(
+            legend_handles,
+            legend_labels,
+            loc='upper right',
+            fontsize=font_size-2,
+            ncol=1
+        )
 
+    # Hide unused subplots
     total_plots = num_rows * num_cols
     for i in range(num_techs, total_plots):
         if i < len(axs):
@@ -533,9 +620,77 @@ def plot_technologies_by_category(df, tech_colors=None, font_size=14):
     return fig
 
 
+def extract_costs_from_network(n: pypsa.Network) -> pd.DataFrame:
+    """Extract cost data from a PyPSA network object.
+
+    Extract investment cost data for all components from the PyPSA network object,
+    including generators, storage units, transmission lines, and transformers.
+
+    Args:
+        n: PyPSA network object
+
+    Returns:
+        pd.DataFrame: DataFrame containing the following columns:
+            - technology: Name of the technology
+            - parameter: Parameter type (fixed as 'investment')
+            - unit: Unit of cost (EUR/kW or EUR/kWh)
+            - value: Cost value
+    """
+    costs_data = []
+    
+    if not n.generators.empty:
+        for carrier in n.generators.carrier.unique():
+            gen_mask = n.generators.carrier == carrier
+            if 'capital_cost' in n.generators.columns:
+                cost = n.generators.loc[gen_mask, 'capital_cost'].mean()
+                if not pd.isna(cost):
+                    costs_data.append({
+                        'technology': carrier,
+                        'parameter': 'investment',
+                        'unit': 'EUR/kW',
+                        'value': cost
+                    })
+    
+    if not n.storage_units.empty:
+        for carrier in n.storage_units.carrier.unique():
+            store_mask = n.storage_units.carrier == carrier
+            if 'capital_cost' in n.storage_units.columns:
+                cost = n.storage_units.loc[store_mask, 'capital_cost'].mean()
+                if not pd.isna(cost):
+                    costs_data.append({
+                        'technology': carrier,
+                        'parameter': 'investment',
+                        'unit': 'EUR/kWh',
+                        'value': cost
+                    })
+    
+    if not n.lines.empty and 'capital_cost' in n.lines.columns:
+        cost = n.lines.capital_cost.mean()
+        if not pd.isna(cost):
+            costs_data.append({
+                'technology': 'AC line',
+                'parameter': 'investment',
+                'unit': 'EUR/kW',
+                'value': cost
+            })
+    
+    if not n.transformers.empty and 'capital_cost' in n.transformers.columns:
+        cost = n.transformers.capital_cost.mean()
+        if not pd.isna(cost):
+            costs_data.append({
+                'technology': 'transformer',
+                'parameter': 'investment',
+                'unit': 'EUR/kW',
+                'value': cost
+            })
+    
+    return pd.DataFrame(costs_data)
+
 # --------------------------------------------------
 # 5) Main Execution (Snakemake or Standalone)
 # --------------------------------------------------
+
+
 if __name__ == "__main__":
     if 'snakemake' in globals():
         target_unit_installation = "eur/kW"
@@ -543,56 +698,49 @@ if __name__ == "__main__":
         default_config_path = "config/default_config.yaml"
         plot_config_path = "config/plot_config.yaml"
 
-        try:
-            tech_colors = load_plot_config(plot_config_path)
+        tech_colors = load_plot_config(plot_config_path)
+        all_data = pd.DataFrame()
+        
+        for year, file_path in snakemake.input.costs.items():
+            n = pypsa.Network(file_path)
+            df = extract_costs_from_network(n)
+            if not df.empty:
+                df[year] = df['value']
+                all_data = pd.concat([all_data, df], ignore_index=True)
 
-            all_data = pd.DataFrame()
-            for file_path in snakemake.input.costs:
-                df = load_and_clean_data(file_path)
-                if not df.empty:
-                    # Extract year from filename
-                    year = file_path.split('_')[-1].split('.')[0]
-
-                    if year not in df.columns:
-                        if 'value' in df.columns:
-                            df[year] = df['value']
-                        else:
-                            logging.warning(f"Warning: No 'value' column in {file_path}")
-
-                    if 'reference' not in df.columns:
-                        ref_name = file_path.split('/')[-1].split('_')[0]
-                        df['reference'] = ref_name if ref_name else "Unknown"
-
-                    all_data = pd.concat([all_data, df], ignore_index=True)
-
-            if all_data.empty:
-                logging.error("Error: No data loaded!")
-                sys.exit(1)
-
-            # 1) Filter to keep only investment parameter
-            all_data = filter_investment_parameter(all_data)
-
-            # 2) Filter & unify to standard units
-            all_data = apply_conversion(all_data, target_unit_installation, target_unit_storage)
-
-            # 3) Filter technologies based on config
-            filtered_data = filter_technologies_by_config(all_data, default_config_path)
-            if filtered_data.empty:
-                logging.warning("Warning: No data left after technology filtering!")
-                sys.exit(0)
-
-            # 4) Plot
-            fig = plot_technologies_by_category(filtered_data, tech_colors)
-
-            output_path = str(snakemake.output.cost_map)
-            plt.savefig(output_path, bbox_inches='tight', dpi=300)
-            plt.close()
-
-        except Exception as e:
-            logging.error(f"An error occurred: {e}")
-            import traceback
-            traceback.print_exc()
+        if all_data.empty:
+            logging.error("Error: No data loaded!")
             sys.exit(1)
+
+        # 1) Filter to keep only investment parameter
+        all_data = filter_investment_parameter(all_data)
+
+        # 2) Filter & unify to standard units
+        all_data = apply_conversion(all_data, target_unit_installation, target_unit_storage)
+
+        # 3) Filter technologies based on config
+        filtered_data = filter_technologies_by_config(all_data, default_config_path)
+        if filtered_data.empty:
+            logging.warning("Warning: No data left after technology filtering!")
+            sys.exit(0)
+
+        # 4) Plot
+        ref_df = None
+        if hasattr(snakemake.input, 'reference_costs'):
+            ref_df = load_reference_data(snakemake.input.reference_costs)
+        
+        fig = plot_technologies_by_category(
+            filtered_data, 
+            ref_df, 
+            tech_colors,
+            plot_reference=snakemake.params.get('plot_reference', True)
+        )
+
+        output_path = str(snakemake.output.cost_map)
+        plt.savefig(output_path, bbox_inches='tight', dpi=300)
+        plt.close()
+
+        logging.info("Plot successfully generated")
 
     else:
         # Standalone mode for testing
@@ -602,29 +750,26 @@ if __name__ == "__main__":
         plot_config_path = "config/plot_config.yaml"
         file_path = "tech_costs_subset.csv"
 
-        try:
-            tech_colors = load_plot_config(plot_config_path)
+        tech_colors = load_plot_config(plot_config_path)
+        df = load_and_clean_data(file_path)
+        
+        if not df.empty:
+            # 1) Filter to keep only investment parameter
+            df = filter_investment_parameter(df)
 
-            df = load_and_clean_data(file_path)
-            if not df.empty:
-                # 1) Filter to keep only investment parameter
-                df = filter_investment_parameter(df)
+            # 2) Convert units
+            df = apply_conversion(df, target_unit_installation, target_unit_storage)
 
-                # 2) Convert units
-                df = apply_conversion(df, target_unit_installation, target_unit_storage)
+            # 3) Filter technologies
+            filtered_df = filter_technologies_by_config(df, default_config_path)
+            if filtered_df.empty:
+                logging.warning("Warning: No data left after technology filtering!")
+                sys.exit(0)
 
-                # 3) Filter technologies
-                filtered_df = filter_technologies_by_config(df, default_config_path)
-                if filtered_df.empty:
-                    logging.warning("Warning: No data left after technology filtering!")
-                    sys.exit(0)
-
-                # 4) Plot
-                fig = plot_technologies_by_category(filtered_df, tech_colors, plot_by_category=True)
-                plt.savefig("test_output.png", bbox_inches='tight', dpi=300)
-            else:
-                logging.error("Error: Unable to load test data.")
-        except Exception as e:
-            logging.error(f"Error during testing: {e}")
-            import traceback
-            traceback.print_exc()
+            # 4) Plot
+            ref_df = load_reference_data("resources/data/costs/reference_values/tech_costs_subset_litreview.csv")
+            fig = plot_technologies_by_category(filtered_df, ref_df, tech_colors)
+            plt.savefig("test_output.png", bbox_inches='tight', dpi=300)
+            logging.info("Test plot successfully generated")
+        else:
+            logging.error("Error: Unable to load test data.")
