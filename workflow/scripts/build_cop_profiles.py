@@ -84,8 +84,8 @@ if __name__ == "__main__":
     with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
         pop_map = store["population_gridcell_map"]
 
-    cutout = atlite.Cutout(snakemake.input.cutout, snakemake.output.cop)
+    cutout = atlite.Cutout(snakemake.input.cutout)
 
-    build_cop_profiles(pop_map, cutout)
+    build_cop_profiles(pop_map, cutout,  snakemake.output.cop)
 
     logger.info("COP profiles successfully built")
