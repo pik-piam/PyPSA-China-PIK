@@ -266,8 +266,19 @@ def plot_price_duration_curve(network: pypsa.Network, ax: plt.Axes = None) -> pl
     """
     if not ax:
         fig, ax = plt.subplots(figsize=(16, 8))
+    else:
+        fig = ax.get_figure()
 
-    raise NotImplementedError("Price duration curve not implemented yet")
+    ntwk_el_price = (
+        -1
+        * network.statistics.revenue(bus_carrier="AC", aggregate_time=False, comps="Load")
+        / network.statistics.withdrawal(bus_carrier="AC", aggregate_time=False, comps="Load")
+    )
+    ntwk_el_price.T.Load.sort_values(ascending=False).reset_index(drop=True).plot()
+    network.buses_t.marginal_price.plot(title="Price Duration Curve", ax=ax, lw=2)
+    fig.tight_layout()
+
+    return ax
 
 
 def plot_load_duration_by_node(
