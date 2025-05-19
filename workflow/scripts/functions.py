@@ -4,6 +4,7 @@
 """ 
 Maths calculations used in the PyPSA-China workflow."""
 import numpy as np
+import pandas as pd
 from scipy import interpolate
 import pyproj
 
@@ -13,6 +14,28 @@ from functools import partial
 # TODO make function
 # polynomial centroid for plotting
 get_poly_center = lambda poly: (poly.centroid.xy[0][0], poly.centroid.xy[1][0])
+
+
+def cartesian(s1: pd.Series, s2: pd.Series) -> pd.DataFrame:
+    """
+    Compute the Cartesian product of two pandas Series.
+
+    Args:
+        s1 (pd.Series): first series
+        s2 (pd.Series): second series
+    Returns:
+        pd.DataFrame: A DataFrame representing the Cartesian product of s1 and s2.
+
+    Examples:
+        >>> s1 = pd.Series([1, 2, 3], index=["a", "b", "c"])
+        >>> s2 = pd.Series([4, 5, 6], index=["d", "e", "f"])
+        >>> cartesian(s1, s2)
+        d  e   f
+        a  4  5   6
+        b  8 10  12
+        c 12 15  18
+    """
+    return pd.DataFrame(np.outer(s1, s2), index=s1.index, columns=s2.index)
 
 
 def haversine(p1, p2) -> float:
