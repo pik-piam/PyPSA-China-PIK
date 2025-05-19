@@ -9,15 +9,18 @@ rule build_run_config:
     """
     params:
         remind_region="CHA",
+        expname_max_len=20,
     input:
-        remind_output="",
-        config_template="",
+        remind_output=config["paths"]["remind_outpt_dir"],
+        config_template="config/templates/remind_cpled.yml",
     output:
-        coupled_config="",
+        coupled_config=DERIVED_COMMON + "/tmp/remind_coupled.yaml",
+    log:
+        LOGS_COMMON + "/remind_coupling/build_run_cfg.log",
     conda:
         "../envs/remind.yaml"
     script:
-        "scripts/remind_coupling/make_pypsa_config.py"
+        "../scripts/remind_coupling/make_pypsa_config.py"
 
 
 rule transform_load:

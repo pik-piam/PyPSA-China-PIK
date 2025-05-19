@@ -1,0 +1,33 @@
+# template config for remind coupling - will be filled 
+
+run:
+  remind: 
+    is_remind_coupled: True
+    version: null
+    coupling: 1way
+    run_name: null
+
+scenario:
+  planning_horizons:
+    - 2025
+
+# TODO
+paths:
+  costs_dir: '/p/tmp/ivanra/formatted_remind_outputs/test_remind_3-4-0-dev782'
+  remind_outpt_dir: "/home/ivanra/downloads/output_REMIND/SSP2-Budg1000-PyPSAxprt_2025-05-09/pypsa_export"
+
+heat_coupling: False
+add_biomass: True
+add_hydro: True
+add_H2: True
+add_methanation: False
+line_losses: True
+no_lines: False
+
+Techs:
+  ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
+  vre_techs: [ "onwind","offwind","solar","hydroelectricity", "nuclear","biomass","H2 CHP"]
+  conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
+  store_techs: ["H2","battery","water tanks","PHS"]
+  coal_cc: true # currently myopic pathway only.  CC = co2 cap 
+  hydrogen_lines: true # currently myopic pathway only
