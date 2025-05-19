@@ -6,6 +6,9 @@ Prepare remind outputs for pypsa-coupled runs using the Remind-PyPSA-coupling pa
 rule build_run_config:
     """
     Build the run config for the pypsa-coupled run
+    # TODO: output per remind run & snakemake run?
+    Example:
+        snakemake resources/derived_data/tmp/remind_coupled.yaml --cores 1
     """
     params:
         remind_region="CHA",
