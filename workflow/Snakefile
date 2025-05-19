@@ -16,6 +16,7 @@ configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
 
+
 config_manager = ConfigManager(config)
 config = config_manager.handle_scenarios()
 
@@ -40,6 +41,7 @@ CUTOUT_PATH = os.path.join(path_manager.cutouts_dir(),CUTOUT_NAME + ".nc")
 include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
 include: "rules/visualize_inputs.smk"
+include: "rules/prepare_remind_coupled.smk"
 
 if config["run"].get("is_test", False):
     localrules: plot_all, build_population, dag, fetch_region_shapes
