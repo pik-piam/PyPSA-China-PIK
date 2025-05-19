@@ -17,7 +17,6 @@ import importlib
 from pathlib import Path
 from copy import deepcopy
 
-import pypsa
 import gurobipy
 import multiprocessing
 
@@ -222,7 +221,7 @@ class PathManager:
             # if relative path, make it absolute
             costs_dir = os.path.abspath(costs_dir)
 
-        return costs_dir
+        return os.path.dirname(costs_dir)
 
     def elec_load(self) -> os.PathLike:
 
@@ -617,19 +616,6 @@ def mock_snakemake(
         os.chdir(curr_path)
 
     return snakemake
-
-
-def mock_solve(n: pypsa.Network) -> pypsa.Network:
-    """Mock the solving step for tests
-
-    Args:
-        n (pypsa.Network): the network object
-    """
-    for c in n.iterate_components(components=["Generator", "Link", "Store", "LineType"]):
-        opt_cols = [col for col in c.df.columns if col.endswith("opt")]
-        base_cols = [col.split("_opt")[0] for col in opt_cols]
-        c.df[opt_cols] = c.df[base_cols]
-    return n
 
 
 def set_plot_test_backend(config: dict):

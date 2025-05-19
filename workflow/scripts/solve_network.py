@@ -12,7 +12,8 @@ import pypsa
 from pandas import DatetimeIndex
 
 
-from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
+from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env
+from _pypsa_helpers import mock_solve
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
