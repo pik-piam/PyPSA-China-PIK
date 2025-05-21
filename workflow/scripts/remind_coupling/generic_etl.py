@@ -10,16 +10,42 @@ from os import PathLike
 
 from rpycpl.utils import read_remind_csv
 import rpycpl.utils as coupl_utils
-from rpycpl.etl import ETL_REGISTRY, Transformation
+from rpycpl.etl import ETL_REGISTRY, Transformation, register_etl
 
 logger = logging.getLogger(__name__)
 
 
+@register_etl("disagg_w_hu2013_ref")
+def disagg_ac_from_hu2013_ref(data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    """Disaggregate from Hu2013 reference data"""
+    print(data)
+
+
 class RemindLoader:
-    def __init__(self, remind_dir: PathLike):
+    """ Load Remind symbol tables from csvs or gdx """
+    def __init__(self, remind_dir: PathLike, backend="csv"):
         self.remind_dir = remind_dir
 
-    def load_frames_csv(self, frames: dict[str, str])-> dict[str, pd.DataFrame]:
+        supported_backends = ["csv", "gdx"]
+        if backend not in supported_backends:
+            raise ValueError(f"Backend {backend} not supported. Available: {supported_backends}")
+        self.backend = backend
+
+    def _group_split_frames(self, keys, pattern: str = r"_part\d+$") -> dict[str, list[str]]:
+        """Chat gpt regex magic to group split frames
+        Args:
+            keys (list): list of keys
+            pattern (str, optional): regex pattern to group split frames by. Defaults to r"_part\d+$"."
+        Returns:
+            dict[str, list[str]]: dictionary with base name as key and list of keys as value
+        """
+        grouped = {}
+        for k in keys:
+            base = re.sub(pattern, "", k)
+            grouped.setdefault(base, []).append(k)
+        return grouped
+
+    def load_frames_csv(self, frames: dict[str, str]) -> dict[str, pd.DataFrame]:
         """ Remind Frames to read
         Args:
             frames (dict): (param: remind_symbol_name) to read
@@ -48,18 +74,10 @@ class RemindLoader:
         Example:
             frames = {eta: 'pm_dataeta', eta_part2: 'pm_eta_conv'}
             merge_split_frames(frames)
-            >> {eta: pd.concat([pm_dataeta, pm_eta_conv], axis=0).drop_duplicates()
+            >> {eta: pd.concat([pm_dataeta, pm_eta_conv], axis=0).drop_duplicates()}
         """
 
-        def group_parts(keys):
-            """Chat gpt regex magic"""
-            grouped = {}
-            for k in keys:
-                base = re.sub(r"_part\d+$", "", k)
-                grouped.setdefault(base, []).append(k)
-            return grouped
-
-        grouped = group_parts(frames)
+        grouped = self._group_split_frames(frames)
         unmerged = {k: v for k, v in grouped.items() if len(v) > 1}
         merged = {
             k: pd.concat([frames[v] for v in multi], axis=0)
@@ -72,32 +90,52 @@ class RemindLoader:
         frames.update(merged)
         return frames
 
+    def auto_load(
+        self, 
+        frames: dict[str, str], 
+        filters: dict[str, str] = None
+    ) -> dict[str, pd.DataFrame]:
+        """Automatically load, merge, and filter frames in one step.
+        
+        Args:
+            frames: Dictionary mapping parameter names to REMIND symbol names.
+            filters: Optional dictionary of filter expressions to apply to frames.
+            
+        Returns:
+            Dictionary of processed DataFrames ready for transformation.
+        """
+        # Load raw frames
+        if self.backend == "gdx":
+            raw_frames = self.load_frames_gdx(frames, os.path.join(self.remind_dir, "gdx"))
+        elif self.backend == "csv":
+            raw_frames = self.load_frames_csv(frames)
+        
+        # Merge split frames
+        processed_frames = self.merge_split_frames(raw_frames)
+        
+        # Apply filters if any
+        if filters:
+            for k, filter_expr in filters.items():
+                if k in processed_frames:
+                    processed_frames[k] = processed_frames[k].query(filter_expr)
+                else:
+                    logger.warning(f"Filter specified for non-existent frame: {k}")
+        
+        return processed_frames
+
 
 class ETLRunner:
     """Container class to execute ETL steps."""
 
     @staticmethod
-    def load_frames_csv(remind_dir: PathLike, frames: dict[str, str], filters: dict[str, str] | None = None) -> dict[str, pd.DataFrame]:
-        """Load and optionally filter frames from CSV files."""
-        loader = RemindLoader(remind_dir)
-        loaded_frames = loader.load_frames_csv(frames)
-        loaded_frames = loader.merge_split_frames(loaded_frames)
-        if filters:
-            loaded_frames.update({k: loaded_frames[k].query(v) for k, v in filters.items()})
-        return loaded_frames
-
-    @staticmethod
-    def load_frames_gdx(remind_dir: PathLike, frames: dict[str, str], gdx_file: PathLike) -> dict[str, pd.DataFrame]:
-        """Load frames from GDX files."""
-        loader = RemindLoader(remind_dir)
-        return loader.load_frames_gdx(frames, gdx_file)
-
-    @staticmethod
-    def run(step: Transformation, loaded_frames: dict[str, pd.DataFrame], **kwargs) -> pd.DataFrame:
+    def run(step: Transformation, frames: dict[str, pd.DataFrame], 
+            previous_outputs: dict[str, Any] = None, **kwargs) -> pd.DataFrame:
         """Run the ETL step using the provided frames and extra arguments.
         Args:
             step (Transformation): The ETL step to run.
-            loaded_frames (dict): Dictionary of loaded frames.
+            frames (dict): Dictionary of loaded frames.
+            previous_outputs (dict, optional): Dictionary of outputs from previous 
+                steps that can be used as inputs.
             **kwargs: Additional arguments for the ETL method.
         Returns:
             pd.DataFrame: The result of the ETL step.
@@ -106,10 +144,22 @@ class ETLRunner:
         func = ETL_REGISTRY.get(method)
         if not func:
             raise ValueError(f"ETL method '{method}' not found in registry.")
+        
+        # Handle dependencies on previous outputs if specified in the step
+        if hasattr(step, 'dependencies') and step.dependencies and previous_outputs:
+            for output_key in step.dependencies:
+                if output_key in previous_outputs:
+                    # Add the dependency to frames with the specified key
+                    frames[output_key] = previous_outputs[output_key]
+                else:
+                    msg = f"Dependency '{output_key}' not found in previous outputs"
+                    msg += f" for step '{step.name}'"
+                    raise ValueError(msg)
+        
         if kwargs:
-            return func(loaded_frames, **kwargs)
+            return func(frames, **kwargs)
         else:
-            return func(loaded_frames)
+            return func(frames)
 
 
 def _mock_snakemake() -> object:
@@ -160,19 +210,24 @@ if __name__ == "__main__":
     # transform remind data
     steps = config.get("etl_steps", [])
     outputs = {}
+    loader = RemindLoader(remind_dir)
     for step_dict in steps:
         step = Transformation(**step_dict)
-        frames = ETLRunner.load_frames_csv(remind_dir, step.frames, step.filters)
+        frames = loader.auto_load(step.frames, step.filters)
         if step.method == "convert_load":
-            result = ETLRunner.run(step, frames, region=region)
+            result = ETLRunner.run(step, frames, region=region, previous_outputs=outputs)
         elif step.name == "technoeconomic_data":
-            result = ETLRunner.run(step, frames,
+            result = ETLRunner.run(
+                step, 
+                frames,
                 mappings=aux_data["tech_mapping"],
                 pypsa_costs=aux_data["pypsa_costs"],
             )
             result = {k: v for k, v in result.groupby("year")}
+        elif step.method == "disagg_ac_from_hu2013_ref":
+            result = ETLRunner.run(step, frames, region=region, previous_outputs=outputs)
         else:
-            result = ETLRunner.run(step, frames)
+            result = ETLRunner.run(step, frames, previous_outputs=outputs)
         outputs[step.name] = result
 
     # save outputs
