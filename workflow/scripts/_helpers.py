@@ -125,7 +125,7 @@ class GHGConfigHandler:
         for name, scen in self._raw_config["co2_scenarios"].items():
 
             # do not validate if not selected
-            if not name in self.config["scenario"]["co2_pathway"]:
+            if name not in self.config["scenario"]["co2_pathway"]:
                 continue
 
             # check type
@@ -349,7 +349,7 @@ def setup_gurobi_tunnel_and_env(
         else:
             logger.info("Gurobi Environment variables & tunnel set up successfully at attempt {i}.")
     except subprocess.TimeoutExpired:
-        logger.error(f"SSH tunnel communication timed out.")
+        logger.error("SSH tunnel communication timed out.")
 
     os.environ["https_proxy"] = f"socks5://127.0.0.1:{port}"
     os.environ["SSL_CERT_FILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
@@ -409,7 +409,7 @@ def check_gurobi_license(attempts=1, timeout=10) -> bool:
             # If the process is still alive after the timeout, terminate it
             process.terminate()
             process.join()  # Ensure it is properly joined to clean up
-            logger.warning(f"License check timeout. Retrying...")
+            logger.warning("License check timeout. Retrying...")
         else:
             # If the process completed, check the result
             if process.exitcode == 0:
@@ -545,6 +545,7 @@ def mock_snakemake(
 
     # horrible hack
     curr_path = os.getcwd()
+
     if snakefile_path:
         os.chdir(os.path.dirname(snakefile_path))
     try:
@@ -628,5 +629,4 @@ def set_plot_test_backend(config: dict):
     is_test = config["run"].get("is_test", False)
     if is_test:
         import matplotlib
-
         matplotlib.use("Agg")

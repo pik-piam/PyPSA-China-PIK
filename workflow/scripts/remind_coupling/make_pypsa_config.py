@@ -1,3 +1,13 @@
+"""Script to create a PyPSA config file based on the REMIND output/config.
+NB: Needs to be run before the coupled PyPSA run.
+
+Example:
+    # !! config file name needs to match the output of the snakemake rule
+    `snakemake config_file_name -f --cores=1 # makes config_file_name`
+    `snakemake --configfile=config_file_name` # the run
+"""
+
+# -*- coding: utf-8 -*-
 import os
 import yaml
 import sys
@@ -33,6 +43,7 @@ def read_remind_data(remind_outp_dir: os.PathLike, region: str) -> dict:
 
     return {"co2_prices": co2_p, "version": remind_v, "expname": remind_exp_name}
 
+
 # TODO read  remind regions and write to config
 # TODO centralise joint settings = overwrite hours
 # TODO add disagg config
@@ -44,18 +55,17 @@ if __name__ == "__main__":
     scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.append(scripts_dir)
     from _helpers import mock_snakemake
+
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
-            "build_run_config",
-            snakefile="workflow/rules/prepare_remind_coupled.smk"
+            "build_run_config", snakefile="workflow/rules/prepare_remind_coupled.smk"
         )
 
     name_len = snakemake.params.expname_max_len
     region = snakemake.params.remind_region
 
-    remind_data = read_remind_data(
-        snakemake.input.remind_output, region)
+    remind_data = read_remind_data(snakemake.input.remind_output, region)
 
     # read template config
     with open(snakemake.input.config_template) as f:
@@ -66,7 +76,9 @@ if __name__ == "__main__":
     sc_name = remind_data["expname"][:name_len]
     if "co2_scenarios" not in cfg.keys():
         cfg["co2_scenarios"] = {sc_name: {}}
-    cfg["co2_scenarios"][sc_name]["pathway"] = remind_data["co2_prices"]["value"].to_dict()
+    cfg["co2_scenarios"][sc_name]["pathway"] = remind_data["co2_prices"][
+        "value"
+    ].to_dict()
     cfg["scenario"]["co2_pathway"] = [sc_name]
 
     remind_cfg = {
