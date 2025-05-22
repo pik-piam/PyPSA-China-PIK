@@ -6,6 +6,7 @@ run:
     version: null
     coupling: 1way
     run_name: null
+    region: "CHA"
 
 scenario:
   planning_horizons:
@@ -34,7 +35,6 @@ Techs:
 
 # ETL from remind, shared
 remind_etl:
-  region: "CHA"
   use_gdx: false
   data:
     tech_mapping: config/templates/techmapping_remind.csv
@@ -67,8 +67,11 @@ remind_etl:
         fuel_costs: "region == @region"
         co2_intensity: "region == @region"
         weights_gen: "region == @region"
+    # - name: disagg_load
+    #   method: "disagg_acload_ref"
+      # dependencies:
+      #   - loads
+  disagg:
     - name: disagg_load
       method: "disagg_acload_ref"
-      dependencies:
-        - loads
 
