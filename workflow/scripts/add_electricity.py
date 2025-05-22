@@ -153,7 +153,14 @@ def load_costs(
 
 # TODO understand why this is in make_summary but not in the main optimisation
 # TODO understand why this is in make_summary but not in the main optimisation
-def update_transmission_costs(n, costs, length_factor=1.0):
+def update_transmission_costs(n: pypsa.Network, costs: pd.DataFrame, length_factor=1.0):
+    """LEGACY FUNCTION used in heat plotting (load network for plots)
+    
+    Args:
+        n (pypsa.Network): the pypsa network object (will be updated in place)
+        costs (pd.DataFrame): the costs dataframe
+        length_factor (float): the factor to scale the length of the lines bt
+    """
     # TODO: line length factor of lines is applied to lines and links.
     # Separate the function to distinguish.
 

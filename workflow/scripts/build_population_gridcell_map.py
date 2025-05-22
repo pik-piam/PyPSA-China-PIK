@@ -49,7 +49,7 @@ def load_cfrs_data(target: PathLike) -> gpd.GeoDataFrame:
 
     return pop_ww
 
-
+# TODO see whether still needed
 def build_gridded_population(
     prov_pop_path: PathLike,
     pop_density_raster_path: PathLike,
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     #     snakemake.input.population_density_nasa,
     #     snakemake.input.cutout,
     #     snakemake.input.province_shape,
-    #     "/home/ivanra/documents/Documents/PyPSA-China-main/resources/derived_data/population/population_gridcell_map_2.h5",
+    #     "some_path",
     # )
 
     logger.info("Population map successfully built")

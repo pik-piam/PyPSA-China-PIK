@@ -248,7 +248,7 @@ def aggregate_small_values(df: pd.DataFrame, threshold: float, column_name=None)
     return df_
 
 
-def determine_plottable(n: pypsa.Network) -> pd.Series:
+def determine_plottable(n: pypsa.Network):
     """Determine whether links should be plotted
 
     Args:
@@ -258,9 +258,7 @@ def determine_plottable(n: pypsa.Network) -> pd.Series:
         c.df["plottable"] = c.df.bus0.map(n.buses.location != "") & c.df.bus1.map(
             n.buses.location != ""
         )
-    # n.links["plottable"] = n.links.bus0.map(n.buses.location != "") & n.links.bus1.map(
-    #     n.buses.location != ""
-    # )
+
     for c in n.iterate_components(n.one_port_components):
         c.df["plottable"] = n.buses.location != ""
 
