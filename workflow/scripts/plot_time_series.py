@@ -6,6 +6,10 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 
+import seaborn as sns
+import numpy as np
+import pandas as pd
+
 from os import makedirs
 
 from _plot_utilities import (

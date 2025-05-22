@@ -384,6 +384,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         nodes (pd.Index): the buses
         costs (pd.DataFrame): the cost database
     """
+    # TODO, does it make sense?
     if config["heat_coupling"]:
         network.add(
             "Link",
@@ -933,7 +934,7 @@ def add_heat_coupling(
         )
 
     if "CHP gas" in config["Techs"]["conv_techs"]:
-        # TODO apply same as for coal
+        # TODO apply same as for coal (include Cb)
         # OCGT CHP
         network.add(
             "Link",
@@ -1343,6 +1344,8 @@ def prepare_network(
     network.snapshot_weightings[:] = config["snapshots"]["frequency"]
     # load graph
     nodes = pd.Index(PROV_NAMES)
+    # toso soft code
+    countries = ["CN"] * len(nodes)
 
     # TODO check crs projection correct
     # load provinces
@@ -1350,7 +1353,9 @@ def prepare_network(
     prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
 
     # add AC buses
-    network.add("Bus", nodes, x=prov_centroids.x, y=prov_centroids.y, location=nodes)
+    network.add(
+        "Bus", nodes, x=prov_centroids.x, y=prov_centroids.y, location=nodes, country=countries
+    )
 
     # add carriers
     add_carriers(network, config, costs)
@@ -1390,6 +1395,7 @@ def prepare_network(
     # TODO add coal CC? no retrofit option
 
     if "PHS" in config["Techs"]["store_techs"]:
+        # TODO soft-code path
         # pure pumped hydro storage, fixed, 6h energy by default, no inflow
         hydrocapa_df = pd.read_csv("resources/data/hydro/PHS_p_nom.csv", index_col=0)
         phss = hydrocapa_df.index[hydrocapa_df["MW"] > 0].intersection(nodes)

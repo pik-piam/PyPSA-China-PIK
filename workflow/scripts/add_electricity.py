@@ -116,11 +116,11 @@ def load_costs(
 
     if not 0 <= cost_config["pv_utility_fraction"] <= 1:
         raise ValueError("pv_utility_fraction must be between 0 and 1 in cost config")
-    f_util = cost_config["pv_utility_fraction"]
-    costs.at["solar", "capital_cost"] = (
-        f_util * costs.at["solar-utility", "capital_cost"]
-        + (1 - f_util) * costs.at["solar-rooftop", "capital_cost"]
-    )
+    # f_util = cost_config["pv_utility_fraction"]
+    # costs.at["solar", "capital_cost"] = (
+    #     f_util * costs.at["solar-utility", "capital_cost"]
+    #     + (1 - f_util) * costs.at["solar-rooftop", "capital_cost"]
+    # )
 
     def costs_for_storage(store, link1, link2=None, max_hours=1.0):
         capital_cost = link1["capital_cost"] + max_hours * store["capital_cost"]
