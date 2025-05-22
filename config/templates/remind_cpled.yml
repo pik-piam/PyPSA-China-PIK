@@ -49,6 +49,14 @@ remind_etl:
         ac_load: p32_load
         h2_el_load: null
         heat_el_load: null
+    - name: caps
+      method: "convert_capacities"
+      frames:
+        capacities: p32_cap
+      kwargs:
+        cutoff: 500
+      filters:
+        capacities: "region == @region"
     - name: technoeconomic_data
       frames:
         tech_data: pm_data

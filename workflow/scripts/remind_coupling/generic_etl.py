@@ -19,6 +19,7 @@ from readers import read_yearly_load_projections
 
 logger = logging.getLogger(__name__)
 
+
 class RemindLoader:
     """Load Remind symbol tables from csvs or gdx"""
 
@@ -152,7 +153,9 @@ class ETLRunner:
                     msg += f" for step '{step.name}'"
                     raise ValueError(msg)
 
+        kwargs.update(step.kwargs)
         if kwargs:
+            print(step.name, step.kwargs)
             return func(frames, **kwargs)
         else:
             return func(frames)
@@ -218,7 +221,7 @@ if __name__ == "__main__":
 
     # save outputs
     outputs["loads"].to_csv(snakemake.output.loads)
-    
+    outputs["caps"].to_csv(snakemake.output.remind_caps)
     for year, df in outputs["technoeconomic_data"].items():
         df.to_csv(
             os.path.join(snakemake.output.technoeconomic_data, f"costs_{year}.csv"),
