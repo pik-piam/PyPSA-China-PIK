@@ -45,7 +45,9 @@ def area_from_lon_lat_poly(geometry):
     returns area in km^2."""
 
     project = partial(
-        pyproj.transform, pyproj.Proj(init="epsg:4326"), pyproj.Proj(proj="aea")  # Source: Lon-Lat
+        pyproj.transform,
+        pyproj.Proj(init="epsg:4326"),
+        pyproj.Proj(proj="aea"),  # Source: Lon-Lat
     )  # Target: Albers Equal Area Conical https://en.wikipedia.org/wiki/Albers_projection
     # TODO fix
     new_geometry = transform(project, geometry)

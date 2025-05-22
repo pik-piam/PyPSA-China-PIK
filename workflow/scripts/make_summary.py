@@ -209,7 +209,10 @@ def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame)
 
 
 def calculate_co2_balance(
-    n: pypsa.Network, label: str, co2_balance: pd.DataFrame, withdrawal_stores=["CO2 capture"]
+    n: pypsa.Network,
+    label: str,
+    co2_balance: pd.DataFrame,
+    withdrawal_stores=["CO2 capture"],
 ) -> pd.DataFrame:
     """calc the co2 balance [DOES NOT INCLUDE EMISSION GENERATING LINKSs]
     Args:

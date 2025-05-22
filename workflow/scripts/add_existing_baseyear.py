@@ -129,7 +129,10 @@ def add_power_capacities_installed_before_baseyear(
     )
 
     df = df_agg.pivot_table(
-        index=["grouping_year", "Tech"], columns="cluster_bus", values="Capacity", aggfunc="sum"
+        index=["grouping_year", "Tech"],
+        columns="cluster_bus",
+        values="Capacity",
+        aggfunc="sum",
     )
 
     df.fillna(0)

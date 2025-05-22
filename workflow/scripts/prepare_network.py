@@ -47,7 +47,7 @@ from constants import (
 
 logger = logging.getLogger(__name__)
 
-# TODO add a heat bus that can absorb heat for free in non-coupled mode 
+# TODO add a heat bus that can absorb heat for free in non-coupled mode
 #   (e.g. Hydrogen electrolysis, sabatier)
 # TODO add heat disipator?
 
@@ -1256,7 +1256,8 @@ def add_hydro(
     hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"]).loc[nodes]
     hydro_p_max_pu = (
         pd.read_hdf(
-            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+            config["hydro_dams"]["p_max_pu_path"],
+            key=config["hydro_dams"]["p_max_pu_key"],
         ).tz_localize(None)
     )[nodes]
 

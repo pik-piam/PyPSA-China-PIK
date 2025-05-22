@@ -76,9 +76,7 @@ if __name__ == "__main__":
     sc_name = remind_data["expname"][:name_len]
     if "co2_scenarios" not in cfg.keys():
         cfg["co2_scenarios"] = {sc_name: {}}
-    cfg["co2_scenarios"][sc_name]["pathway"] = remind_data["co2_prices"][
-        "value"
-    ].to_dict()
+    cfg["co2_scenarios"][sc_name]["pathway"] = remind_data["co2_prices"]["value"].to_dict()
     cfg["scenario"]["co2_pathway"] = [sc_name]
 
     remind_cfg = {

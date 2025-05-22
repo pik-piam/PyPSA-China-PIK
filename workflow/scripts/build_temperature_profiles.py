@@ -49,14 +49,12 @@ if __name__ == "__main__":
         snakemake = mock_snakemake("build_temp_profiles")
 
     configure_logging(snakemake, logger=logger)
-    
-    with pd.HDFStore( snakemake.input.population_map, mode="r") as store:
+
+    with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
         pop_map = store["population_gridcell_map"]
 
     # this one includes soil temperature
     cutout = atlite.Cutout(snakemake.input.cutout)
-    build_temp_profiles(
-        pop_map, cutout, snakemake.output.temp
-    )
+    build_temp_profiles(pop_map, cutout, snakemake.output.temp)
 
     logger.info("Temperature profiles successfully built")

@@ -16,7 +16,12 @@ from pandas import DataFrame
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import rename_index, fix_network_names_colors, filter_carriers
 from _pypsa_helpers import calc_lcoe
-from constants import PLOT_CAP_LABEL, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, PLOT_SUPPLY_LABEL
+from constants import (
+    PLOT_CAP_LABEL,
+    PLOT_CAP_UNITS,
+    PLOT_SUPPLY_UNITS,
+    PLOT_SUPPLY_LABEL,
+)
 
 sns.set_theme("paper", style="whitegrid")
 logger = logging.getLogger(__name__)
@@ -181,7 +186,7 @@ if __name__ == "__main__":
         ds = rev_costs["LCOE"]
         ds.attrs = {"name": "LCOE", "unit": "€/MWh"}
         fig, ax = plt.subplots()
-        plot_static_per_carrier(ds, ax,  colors=colors)
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "LCOE.png"))
 

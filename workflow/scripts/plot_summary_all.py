@@ -38,7 +38,11 @@ def rename_techs(label):
         "decentral ",
     ]
 
-    rename_if_contains_dict = {"water tanks": "hot water storage", "H2": "H2", "coal cc": "CC"}
+    rename_if_contains_dict = {
+        "water tanks": "hot water storage",
+        "H2": "H2",
+        "coal cc": "CC",
+    }
     rename_if_contains = ["gas", "coal"]
     rename = {
         "solar": "solar PV",
@@ -75,7 +79,10 @@ def rename_techs(label):
 
 
 def plot_pathway_costs(
-    file_list: list, config: dict, social_discount_rate=0.0, fig_name: os.PathLike = None
+    file_list: list,
+    config: dict,
+    social_discount_rate=0.0,
+    fig_name: os.PathLike = None,
 ):
     """plot the costs
 
@@ -105,7 +112,10 @@ def plot_pathway_costs(
     # apply social discount rate
     if social_discount_rate > 0:
         base_year = min([int(y) for y in df.columns])
-        df = df.apply(lambda x: x / (1 + social_discount_rate) ** (int(x.name) - base_year), axis=0)
+        df = df.apply(
+            lambda x: x / (1 + social_discount_rate) ** (int(x.name) - base_year),
+            axis=0,
+        )
     elif social_discount_rate < 0:
         raise ValueError("Social discount rate must be positive")
 
@@ -138,7 +148,13 @@ def plot_pathway_costs(
         va="top",
     )
 
-    ax.legend(handles, [l.title() for l in labels], ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    ax.legend(
+        handles,
+        [l.title() for l in labels],
+        ncol=1,
+        bbox_to_anchor=[1, 1],
+        loc="upper left",
+    )
 
     fig.tight_layout()
 
@@ -405,7 +421,13 @@ def plot_electricty_heat_balance(
     ax.set_ylabel("Energy [TWh/a]")
     ax.set_xlabel("")
     ax.grid(axis="y")
-    ax.legend(handles, [l.title() for l in labels], ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    ax.legend(
+        handles,
+        [l.title() for l in labels],
+        ncol=1,
+        bbox_to_anchor=[1, 1],
+        loc="upper left",
+    )
     fig.tight_layout()
 
     if fig_dir is not None:
@@ -448,7 +470,8 @@ def plot_electricty_heat_balance(
 
         if fig_dir is not None:
             fig.savefig(
-                os.path.join(fig_dir, "heat_balance.png"), transparent=config["transparent"]
+                os.path.join(fig_dir, "heat_balance.png"),
+                transparent=config["transparent"],
             )
 
 
@@ -566,7 +589,13 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
     fig, ax = plt.subplots()
     fig.set_size_inches((12, 8))
 
-    ax.plot(co2_prices.keys(), np.abs(list(co2_prices.values())), marker="o", color="black", lw=2)
+    ax.plot(
+        co2_prices.keys(),
+        np.abs(list(co2_prices.values())),
+        marker="o",
+        color="black",
+        lw=2,
+    )
     ax.set_ylabel("CO2 Shadow price")
     ax.set_xlabel("Year")
 

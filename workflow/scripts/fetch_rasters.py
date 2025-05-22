@@ -38,7 +38,10 @@ def authenticate() -> dict:
     base_url = claim_set["aud"]
     token_request = requests.post(
         base_url,
-        headers={"Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded"},
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
         data=f"grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion={grant}",
     )
     if token_request.status_code != 200:
@@ -142,7 +145,10 @@ if __name__ == "__main__":
     # once ready run this
     status = requests.get(
         "https://land.copernicus.eu/api/@datarequest_search?status=Finished_ok",
-        headers={"Accept": "application/json", "Authorization": f'Bearer {token["access_token"]}'},
+        headers={
+            "Accept": "application/json",
+            "Authorization": f'Bearer {token["access_token"]}',
+        },
     )
     download = status.json()[str(task_id)]["DownloadURL"]
     dl = requests.get(download)

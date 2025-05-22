@@ -224,7 +224,8 @@ def aggregate_costs(
 
         costs = costs.reset_index(level=0, drop=True)
         costs = costs["capital"].add(
-            costs["marginal"].rename({t: t + " marginal" for t in conv_techs}), fill_value=0.0
+            costs["marginal"].rename({t: t + " marginal" for t in conv_techs}),
+            fill_value=0.0,
         )
 
     return costs

@@ -62,7 +62,10 @@ class ConfigManager:
             dict: the pathway
         """
         scenario = self.config["co2_scenarios"][pthw_name]
-        return {"co2_pr_or_limit": scenario["pathway"][year], "control": scenario["control"]}
+        return {
+            "co2_pr_or_limit": scenario["pathway"][year],
+            "control": scenario["control"],
+        }
 
     def make_wildcards(self) -> list:
         """Expand wildcards in config"""
@@ -336,7 +339,10 @@ def setup_gurobi_tunnel_and_env(
     logger.info(f"Attempting ssh tunnel to login node {login_node}")
     # Run SSH in the background to establish the tunnel
     socks_proc = subprocess.Popen(
-        pipe_err + ssh_command, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        pipe_err + ssh_command,
+        shell=True,
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
     )
 
     try:
@@ -629,4 +635,5 @@ def set_plot_test_backend(config: dict):
     is_test = config["run"].get("is_test", False)
     if is_test:
         import matplotlib
+
         matplotlib.use("Agg")

@@ -117,7 +117,9 @@ if __name__ == "__main__":
     if "max_shore_distance" in params:
         buffer = params["max_shore_distance"]
         excluder.add_geometry(
-            excluder.add_geometry(regions.union_all("unary")), buffer=buffer, invert=True
+            excluder.add_geometry(regions.union_all("unary")),
+            buffer=buffer,
+            invert=True,
         )
 
     logger.info(f"Calculate landuse availability for {technology}...")

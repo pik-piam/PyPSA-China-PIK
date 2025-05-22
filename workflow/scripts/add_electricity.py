@@ -47,7 +47,11 @@ def calculate_annuity(lifetime: int, discount_rate: float) -> float:
 
 # TODO fix docstring and change file + IO
 def load_costs(
-    tech_costs: PathLike, cost_config: dict, elec_config: dict, cost_year: int, n_years: int
+    tech_costs: PathLike,
+    cost_config: dict,
+    elec_config: dict,
+    cost_year: int,
+    n_years: int,
 ) -> pd.DataFrame:
     """Calculate the anualised capex costs and OM costs for the technologies based on the input data
 
@@ -126,7 +130,9 @@ def load_costs(
 
     max_hours = elec_config["max_hours"]
     costs.loc["battery"] = costs_for_storage(
-        costs.loc["battery storage"], costs.loc["battery inverter"], max_hours=max_hours["battery"]
+        costs.loc["battery storage"],
+        costs.loc["battery inverter"],
+        max_hours=max_hours["battery"],
     )
     costs.loc["H2"] = costs_for_storage(
         costs.loc["hydrogen storage tank type 1"],

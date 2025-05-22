@@ -106,7 +106,11 @@ def prepare_resource_config(params: dict, nprocesses: int, noprogress=True) -> t
 
 
 def build_resource_classes(
-    cutout: Cutout, nbins: int, regions: gpd.GeoSeries, capacity_factor: xr.DataArray, params: dict
+    cutout: Cutout,
+    nbins: int,
+    regions: gpd.GeoSeries,
+    capacity_factor: xr.DataArray,
+    params: dict,
 ) -> tuple[xr.DataArray, gpd.GeoSeries]:
     """Bin resources based on their capacity factor
     The number of bins can be dynamically reduced based on a min delta cf

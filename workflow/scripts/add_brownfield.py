@@ -66,7 +66,8 @@ def add_brownfield(n: pypsa.Network, n_p: pypsa.Network, year: int):
                 threshold * c.df.loc[chp_heat].efficiency2 / c.df.loc[chp_heat].efficiency
             )
             n_p.mremove(
-                c.name, chp_heat[c.df.loc[chp_heat, attr + "_nom_opt"] < threshold_chp_heat]
+                c.name,
+                chp_heat[c.df.loc[chp_heat, attr + "_nom_opt"] < threshold_chp_heat],
             )
 
         n_p.mremove(

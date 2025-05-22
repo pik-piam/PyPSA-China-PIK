@@ -45,7 +45,9 @@ def make_handler_map_to_scale_circles_as_in(ax, dont_resize_actively=False):
     def legend_circle_handler(legend, orig_handle, xdescent, ydescent, width, height, fontsize):
         w, h = 2.0 * orig_handle.get_radius() * axes2pt()
         e = Ellipse(
-            xy=(0.5 * width - 0.5 * xdescent, 0.5 * height - 0.5 * ydescent), width=w, height=w
+            xy=(0.5 * width - 0.5 * xdescent, 0.5 * height - 0.5 * ydescent),
+            width=w,
+            height=w,
         )
         ellipses.append((e, orig_handle.get_radius()))
         return e
@@ -63,7 +65,10 @@ def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
         fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={"projection": ccrs.PlateCarree()})
 
     # colors
-    line_colors = {"cur": "purple", "exp": mpl.colors.rgb2hex(to_rgba("red", 0.7), True)}
+    line_colors = {
+        "cur": "purple",
+        "exp": mpl.colors.rgb2hex(to_rgba("red", 0.7), True),
+    }
     tech_colors = plot_config["tech_colors"]
 
     if attribute == "p_nom":
@@ -345,7 +350,11 @@ if __name__ == "__main__":
 
     energy_ax = fig.add_axes([-0.115, 0.625, 0.2, 0.2])
     plot_total_energy_pie(n, config["plotting"], ax=energy_ax)
-    fig.savefig(snakemake.output.ext, transparent=config["plotting"]["transparent"], bbox_inches="tight")
+    fig.savefig(
+        snakemake.output.ext,
+        transparent=config["plotting"]["transparent"],
+        bbox_inches="tight",
+    )
 
     costs_ax = fig.add_axes([-0.075, 0.1, 0.1, 0.45])
     plot_total_cost_bar(n, config["plotting"], ax=costs_ax)

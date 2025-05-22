@@ -90,13 +90,15 @@ def build_gridded_population(
         grid_points, prov_poly, how="left", predicate="intersects"
     )  # .dropna()
     cutout_pts_in_prov.rename(
-        columns={"index_right": "province_index", "province": "province_name"}, inplace=True
+        columns={"index_right": "province_index", "province": "province_name"},
+        inplace=True,
     )
 
     # match cutout grid to province
     cutout_pts_in_prov = gpd.tools.sjoin(grid_points, prov_poly, how="left", predicate="intersects")
     cutout_pts_in_prov.rename(
-        columns={"index_right": "province_index", "province": "province_name"}, inplace=True
+        columns={"index_right": "province_index", "province": "province_name"},
+        inplace=True,
     )
     # cutout_pts_in_prov.dropna(inplace=True)
 
@@ -170,7 +172,8 @@ def build_population_map(
     # match cutout grid to province
     cutout_pts_in_prov = gpd.tools.sjoin(grid_points, prov_poly, how="left", predicate="intersects")
     cutout_pts_in_prov.rename(
-        columns={"index_right": "province_index", "province": "province_name"}, inplace=True
+        columns={"index_right": "province_index", "province": "province_name"},
+        inplace=True,
     )
 
     # Province masks merged with population density
