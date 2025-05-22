@@ -2,6 +2,8 @@
 Prepare remind outputs for pypsa-coupled runs using the Remind-PyPSA-coupling package
 """
 
+REMIND_REGION = "CHA"
+
 
 rule build_run_config:
     """
@@ -11,7 +13,7 @@ rule build_run_config:
         snakemake resources/derived_data/tmp/remind_coupled.yaml --cores 1
     """
     params:
-        remind_region="CHA",
+        remind_region=REMIND_REGION,
         expname_max_len=20,
     input:
         remind_output=config["paths"]["remind_outpt_dir"],
@@ -26,44 +28,44 @@ rule build_run_config:
         "../scripts/remind_coupling/make_pypsa_config.py"
 
 
-rule transform_load:
+# TODO how to pass config?
+rule transform_remind_data:
     """
-    Transform the load data from the remind output to the pypsa-china format
+    Import the remind data from the remind output & transform it to the pypsa-china format using 
     """
+    params:
+        etl_cfg=config.get("remind_etl"),
+        region=REMIND_REGION,  # overlaps with cofnig
+        use_gdx=False,
+        reference_load_year=2025,
     input:
-        remind_output_dir="",
+        remind_output_dir=os.path.expanduser(
+            "~/downloads/output_REMIND/SSP2-Budg1000-PyPSAxprt_2025-05-09/pypsa_export"
+        ),
+        pypsa_costs="resources/data/costs",
+        # todo move to disagg
+        reference_load="resources/data/load/Provincial_Load_2020_2060_MWh.csv",
     output:
-        ac_load="",
+        loads=DERIVED_COMMON + "/remind/yrly_loads.csv",
+        disagg_load=DERIVED_COMMON + "/remind/ac_load_disagg.csv",
+        technoeconomic_data=DERIVED_COMMON + "/remind/costs/",
+        # existing_baseyear_caps="",
+        # paid_off_caps="",
     conda:
         "../envs/remind.yaml"
     script:
-        "scripts/remind_coupling/transform_loads.py"
+        "scripts/remind_coupling/etl_remind.py"
 
 
-rule transform_technoeconomic:
+rule disaggregate_data:
     """
-    Transform the technoeconomic data from the remind output to make the costs data
-    """
-    input:
-        remind_output_dir="",
-    output:
-        ac_load="",
-    conda:
-        "../envs/remind.yaml"
-    script:
-        "scripts/remind_coupling/transform_loads.py"
-
-
-rule transform_capacities:
-    """
-    Transform the pre-investment capacities data for pypsa
+    Disaggregate the data from the remind output to the network time and spatial resolutions
     """
     input:
         pypsa_powerplants="",
-        remind_capacities="",
+        remind_outputs="",
     output:
-        existing_baseyear_caps="",
-        paid_off_caps="",
+        ac_load="",
     conda:
         "../envs/remind.yaml"
     script:
