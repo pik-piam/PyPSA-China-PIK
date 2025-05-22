@@ -5,7 +5,7 @@ import geopandas as gpd
 import xarray as xr
 
 from _plot_utilities import set_plot_style
-from readers import read_province_shapes
+from readers_geospatial import read_province_shapes
 from _helpers import (
     configure_logging,
     mock_snakemake,

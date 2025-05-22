@@ -1,5 +1,6 @@
 """Functions for the rules to build the hourly heat and load demand profiles
-- electricity load profiles are based on scaling an hourly base year profile to yearly future projections
+- electricity load profiles are based on scaling an hourly base year profile to yearly future 
+    projections
 - daily heating demand is based on the degree day approx (from atlite) & upscaled hourly based
   on an intraday profile (for Denmark by default, see snakefile)
 """
@@ -18,7 +19,7 @@ from _pypsa_helpers import (
     calc_atlite_heating_timeshift,
     shift_profile_to_planning_year,
 )
-from readers import read_yearly_load_projections
+from workflow.scripts.readers_geospatial import read_yearly_load_projections
 
 # TODO switch from hardocded REF_YEAR to a base year?
 from constants import (

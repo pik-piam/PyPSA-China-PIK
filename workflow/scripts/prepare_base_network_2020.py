@@ -32,7 +32,7 @@ from _pypsa_helpers import (
     make_periodic_snapshots,
 )
 from functions import HVAC_cost_curve
-from readers import read_province_shapes
+from readers_geospatial import read_province_shapes
 from add_electricity import load_costs, sanitize_carriers
 from functions import haversine
 from prepare_base_network import (

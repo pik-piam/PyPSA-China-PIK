@@ -8,7 +8,7 @@ from constants import PROV_NAMES, CRS
 from os import PathLike
 
 from _helpers import configure_logging, mock_snakemake
-from readers import read_pop_density, read_province_shapes
+from readers_geospatial import read_pop_density, read_province_shapes
 
 logger = logging.getLogger(__name__)
 

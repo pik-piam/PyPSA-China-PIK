@@ -32,7 +32,7 @@ from _pypsa_helpers import (
 from build_biomass_potential import estimate_co2_intensity_xing
 from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
-from readers import read_province_shapes
+from readers_geospatial import read_province_shapes
 
 from constants import (
     PROV_NAMES,

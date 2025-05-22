@@ -71,7 +71,7 @@ from atlite import Cutout
 from dask.distributed import Client
 
 from _helpers import configure_logging, mock_snakemake
-from readers import read_province_shapes, read_offshore_province_shapes
+from readers_geospatial import read_province_shapes, read_offshore_province_shapes
 from constants import PROV_NAMES, OFFSHORE_WIND_NODES, TIMEZONE
 
 logger = logging.getLogger(__name__)
