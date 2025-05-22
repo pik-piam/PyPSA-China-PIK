@@ -8,7 +8,7 @@ import os.path
 import sys
 from os import PathLike
 
-import setup # setsup paths
+import setup  # setsup paths
 import rpycpl.utils as coupl_utils
 from rpycpl.utils import read_remind_csv
 from rpycpl.disagg import SpatialDisaggregator
@@ -18,26 +18,6 @@ from rpycpl.etl import ETL_REGISTRY, Transformation, register_etl
 from readers import read_yearly_load_projections
 
 logger = logging.getLogger(__name__)
-
-
-# TODO move to disag
-@register_etl("disagg_acload_ref")
-def disagg_ac_using_ref(
-    data: pd.DataFrame, reference_data: pd.DataFrame, reference_year: int | str
-) -> pd.DataFrame:
-    """Disaggregate the load using yearly
-    from Hu2013 reference data"""
-
-    regional_reference = reference_data[int(reference_year)]
-    regional_reference /= regional_reference.sum()
-    electricity_demand = data["loads"].query("load == 'ac'").value
-    logger.info("Disaggregating load according to Hu et al. demand projections")
-    disagg_load = SpatialDisaggregator().use_static_reference(
-        electricity_demand, regional_reference
-    )
-
-    return disagg_load
-
 
 class RemindLoader:
     """Load Remind symbol tables from csvs or gdx"""
@@ -178,11 +158,12 @@ class ETLRunner:
             return func(frames)
 
 
-
 if __name__ == "__main__":
 
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake("transform_remind_data")
+
+    logger.info("Transforming REMIND data")
 
     params = snakemake.params
     remind_dir = os.path.expanduser(snakemake.input.remind_output_dir)
@@ -198,7 +179,6 @@ if __name__ == "__main__":
         if f.endswith(".csv")
     ]
     aux_data = {"pypsa_costs": coupl_utils.read_pypsa_costs(pypsa_cost_files)}
-    aux_data["reference_load"] = read_yearly_load_projections(snakemake.input.reference_load)
     # Can generalise with a "reader" field and data class if needed later
     for k, path in config["data"].items():
         aux_data[k] = pd.read_csv(path)
@@ -223,22 +203,29 @@ if __name__ == "__main__":
             )
             result = {k: v for k, v in result.groupby("year")}
         elif step.method == "disagg_acload_ref":
-            result = ETLRunner.run(step, frames, previous_outputs=outputs, reference_data=aux_data["reference_load"], reference_year = params["reference_load_year"])
+            result = ETLRunner.run(
+                step,
+                frames,
+                previous_outputs=outputs,
+                reference_data=aux_data["reference_load"],
+                reference_year=params["reference_load_year"],
+            )
         else:
             result = ETLRunner.run(step, frames, previous_outputs=outputs)
         outputs[step.name] = result
 
-    # save outputs
-    outputs["loads"].to_csv(
-        snakemake.output.loads,
-        index=False,
-    )
+    # TODO make generic
 
-    outputs["disagg_load"].to_csv(
-        snakemake.output.disagg_load,
-    )
+    # save outputs
+    outputs["loads"].to_csv(snakemake.output.loads)
+    
     for year, df in outputs["technoeconomic_data"].items():
         df.to_csv(
             os.path.join(snakemake.output.technoeconomic_data, f"costs_{year}.csv"),
             index=False,
+        )
+
+    if "disagg_load" in outputs:
+        outputs["disagg_load"].to_csv(
+            snakemake.output.disagg_load,
         )

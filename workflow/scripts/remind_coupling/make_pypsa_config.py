@@ -13,7 +13,7 @@ import yaml
 import sys
 import logging
 
-import setup # sets up paths for standalone
+import setup  # sets up paths for standalone
 
 import rpycpl.utils as coupl_utils
 
@@ -55,8 +55,7 @@ if __name__ == "__main__":
 
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
-        snakemake = setup._mock_snakemake(
-            "build_run_config")
+        snakemake = setup._mock_snakemake("build_run_config")
 
     name_len = snakemake.params.expname_max_len
     region = snakemake.params.remind_region

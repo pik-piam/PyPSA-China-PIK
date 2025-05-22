@@ -22,6 +22,7 @@ setup_paths()
 # needs to be imported after setup_paths
 from _helpers import mock_snakemake
 
+
 def _mock_snakemake(rule_name, **kwargs) -> object:
     """wrapper around mock snakemake for the remind/ subfoldder
 
