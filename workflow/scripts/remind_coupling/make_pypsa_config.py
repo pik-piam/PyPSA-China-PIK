@@ -13,6 +13,8 @@ import yaml
 import sys
 import logging
 
+import setup # sets up paths for standalone
+
 import rpycpl.utils as coupl_utils
 
 logger = logging.getLogger(__name__)
@@ -51,16 +53,10 @@ def read_remind_data(remind_outp_dir: os.PathLike, region: str) -> dict:
 
 if __name__ == "__main__":
 
-    # ugly hack to import mock_snakemake from ../_helpers
-    scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.append(scripts_dir)
-    from _helpers import mock_snakemake
-
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
-        snakemake = mock_snakemake(
-            "build_run_config", snakefile="workflow/rules/prepare_remind_coupled.smk"
-        )
+        snakemake = setup._mock_snakemake(
+            "build_run_config")
 
     name_len = snakemake.params.expname_max_len
     region = snakemake.params.remind_region

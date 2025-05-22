@@ -8,17 +8,13 @@ import os.path
 import sys
 from os import PathLike
 
-# Set up paths for imports - so standalone works
-scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if scripts_dir not in sys.path:
-    sys.path.insert(0, scripts_dir)
-
-from rpycpl.utils import read_remind_csv
+import setup # setsup paths
 import rpycpl.utils as coupl_utils
+from rpycpl.utils import read_remind_csv
 from rpycpl.disagg import SpatialDisaggregator
 from rpycpl.etl import ETL_REGISTRY, Transformation, register_etl
 
-# Now we can import from the scripts directory
+
 from readers import read_yearly_load_projections
 
 logger = logging.getLogger(__name__)
@@ -34,7 +30,7 @@ def disagg_ac_using_ref(
 
     regional_reference = reference_data[int(reference_year)]
     regional_reference /= regional_reference.sum()
-    electricity_demand =data["loads"].query("load == 'ac'").value
+    electricity_demand = data["loads"].query("load == 'ac'").value
     logger.info("Disaggregating load according to Hu et al. demand projections")
     disagg_load = SpatialDisaggregator().use_static_reference(
         electricity_demand, regional_reference
@@ -182,30 +178,11 @@ class ETLRunner:
             return func(frames)
 
 
-def _mock_snakemake() -> object:
-    """wrapper around mock snakemake"""
-    import sys
-
-    # ugly hack to make rel imports work as expected
-    scripts_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    workflow_dir = os.path.dirname(scripts_dir)
-
-    sys.path.append(scripts_dir)
-    from _helpers import mock_snakemake
-
-    # Detect running out    side of snakemake and mock snakemake for testing
-
-    snakemake = mock_snakemake(
-        "transform_remind_data",
-        snakefile_path=workflow_dir,
-    )
-    return snakemake
-
 
 if __name__ == "__main__":
 
     if "snakemake" not in globals():
-        snakemake = _mock_snakemake()
+        snakemake = setup._mock_snakemake("transform_remind_data")
 
     params = snakemake.params
     remind_dir = os.path.expanduser(snakemake.input.remind_output_dir)
