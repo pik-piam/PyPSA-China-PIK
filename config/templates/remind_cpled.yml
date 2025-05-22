@@ -57,6 +57,10 @@ remind_etl:
         cutoff: 500
       filters:
         capacities: "region == @region"
+    - name: scale_existing_caps_to_remind
+      method: scale_caps_to_remind
+      dependencies:
+        - caps
     - name: technoeconomic_data
       frames:
         tech_data: pm_data

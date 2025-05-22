@@ -13,7 +13,7 @@ import rpycpl.utils as coupl_utils
 from rpycpl.utils import read_remind_csv
 from rpycpl.disagg import SpatialDisaggregator
 from rpycpl.etl import ETL_REGISTRY, Transformation, register_etl
-
+from rpycpl import capacities_etl #
 
 from readers import read_yearly_load_projections
 
@@ -205,13 +205,12 @@ if __name__ == "__main__":
                 pypsa_costs=aux_data["pypsa_costs"],
             )
             result = {k: v for k, v in result.groupby("year")}
-        elif step.method == "disagg_acload_ref":
+        elif step.method == "scale_caps_to_remind":
             result = ETLRunner.run(
                 step,
                 frames,
                 previous_outputs=outputs,
                 reference_data=aux_data["reference_load"],
-                reference_year=params["reference_load_year"],
             )
         else:
             result = ETLRunner.run(step, frames, previous_outputs=outputs)

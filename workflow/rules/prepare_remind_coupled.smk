@@ -38,16 +38,14 @@ rule transform_remind_data:
         region=REMIND_REGION,  # overlaps with cofnig
         use_gdx=False,
     input:
+        pypsa_costs="resources/data/costs",
         remind_output_dir=os.path.expanduser(
             "~/downloads/output_REMIND/SSP2-Budg1000-PyPSAxprt_2025-05-09/pypsa_export"
         ),
-        pypsa_costs="resources/data/costs",
-        # todo move to disagg
     output:
         loads=DERIVED_COMMON + "/remind/yrly_loads.csv",
         technoeconomic_data=DERIVED_COMMON + "/remind/costs/",
-        # existing_baseyear_caps="",
-        # paid_off_caps="",
+        remind_caps=DERIVED_COMMON + "/remind/remind_capacities.csv",
     conda:
         "../envs/remind.yaml"
     script:
