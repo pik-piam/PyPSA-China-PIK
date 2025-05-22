@@ -56,108 +56,6 @@ def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
             c.pnl[attr].rename(columns=rename, inplace=True)
 
 
-def read_existing_capacities(paths_dict: dict[str, os.PathLike]) -> pd.DataFrame:
-    """Read existing capacities from csv files and format them
-    Args:
-        paths_dict (dict[str, os.PathLike]): dictionary with paths to the csv files
-    Returns:
-        pd.DataFrame: DataFrame with existing capacities
-    """
-    # TODO fix centralise (make a dict from start?)
-    carrier = {
-        "coal": "coal power plant",
-        "CHP coal": "CHP coal",
-        "CHP gas": "CHP gas",
-        "OCGT": "OCGT gas",
-        "solar": "solar",
-        "solar thermal": "solar thermal",
-        "onwind": "onwind",
-        "offwind": "offwind",
-        "coal boiler": "coal boiler",
-        "ground heat pump": "heat pump",
-        "nuclear": "nuclear",
-    }
-    df_agg = pd.DataFrame()
-    for tech in carrier:
-        df = pd.read_csv(paths_dict[tech], index_col=0).fillna(0.0)
-        df.columns = df.columns.astype(int)
-        df = df.sort_index()
-
-        for year in df.columns:
-            for node in df.index:
-                name = f"{node}-{tech}-{year}"
-                capacity = df.loc[node, year]
-                if capacity > 0.0:
-                    df_agg.at[name, "Fueltype"] = carrier[tech]
-                    df_agg.at[name, "Tech"] = tech
-                    df_agg.at[name, "Capacity"] = capacity
-                    df_agg.at[name, "DateIn"] = year
-                    df_agg.at[name, "cluster_bus"] = node
-
-    return df_agg
-
-
-def fix_existing_capacities(
-    existing_df: pd.DataFrame, costs: pd.DataFrame, year_bins: list, baseyear: int
-) -> pd.DataFrame:
-    """add/fill missing dateIn, drop expired assets, drop too new assets
-
-    Args:
-        existing_df (pd.DataFrame): the existing capacities
-        costs (pd.DataFrame): the technoeconomic data
-        year_bins (list): the year groups
-        baseyear (int): the base year (run year)
-
-    Returns:
-        pd.DataFrame: _description_
-    """
-    existing_df.DateIn = existing_df.DateIn.astype(int)
-    # add/fill missing dateIn
-    if "DateOut" not in existing_df.columns:
-        existing_df["DateOut"] = np.nan
-    # names matching costs split across FuelType and Tech, apply to both. Fillna means no overwrite
-    lifetimes = existing_df.Fueltype.map(costs.lifetime).fillna(
-        existing_df.Tech.map(costs.lifetime)
-    )
-    existing_df.loc[:, "DateOut"] = existing_df.DateOut.fillna(lifetimes) + existing_df.DateIn
-
-    # TODO go through the pypsa-EUR fuel drops for the new ppmatching style
-    # drop assets which are already phased out / decommissioned
-    phased_out = existing_df[existing_df["DateOut"] < baseyear].index
-    existing_df.drop(phased_out, inplace=True)
-
-    newer_assets = (existing_df.DateIn > max(year_bins)).sum()
-    if newer_assets:
-        logger.warning(
-            f"There are {newer_assets} assets with build year "
-            f"after last power grouping year {max(year_bins)}. "
-            "These assets are dropped and not considered."
-            "Consider to redefine the grouping years to keep them."
-        )
-        to_drop = existing_df[existing_df.DateIn > max(year_bins)].index
-        existing_df.drop(to_drop, inplace=True)
-
-    existing_df["lifetime"] = existing_df.DateOut - existing_df["grouping_year"]
-
-    existing_df.rename(columns={"cluster_bus": "bus"}, inplace=True)
-    return existing_df
-
-
-def assign_year_bins(df: pd.DataFrame, year_bins: list) -> pd.DataFrame:
-    """
-    Assign a year bin to the existing capacities according to the config
-
-    Args:
-        df (pd.DataFrame): DataFrame with existing capacities and build years (DateIn)
-        year_bins (list): years to bin the existing capacities to
-    """
-
-    df_ = df.copy()
-    # bin by years (np.digitize)
-    df_["grouping_year"] = np.take(year_bins, np.digitize(df.DateIn, year_bins, right=True))
-    return df_.fillna(0)
-
-
 def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series) -> pd.DataFrame:
     """distribute vre capacities by grade potential, use up better grades first
 
@@ -309,12 +207,8 @@ def add_power_capacities_installed_before_baseyear(
         "coal boiler": "central coal boier",
         "heat pump": "central ground-sourced heat pump",
         "nuclear": "nuclear",
-    }
-
-    # in case user forgot to do it
-    df = fix_existing_capacities(
-        df, costs, config["existing_capacities"]["grouping_years"], baseyear
-    )
+        }
+    
     df.resource_class.fillna("", inplace=True)
     df_ = df.pivot_table(
         index=["grouping_year", "Fueltype", "resource_class"],
@@ -599,47 +493,43 @@ if __name__ == "__main__":
             "add_existing_baseyear",
             topology="current+FCG",
             co2_pathway="remind_ssp2NPI",
-            planning_horizons="2025",
+            planning_horizons="2030",
             heating_demand="positive",
         )
 
     configure_logging(snakemake, logger=logger)
-    # options = snakemake.config["sector"]
-    # sector_opts = '168H-T-H-B-I-solar+p3-dist1'
-    # opts = sector_opts.split('-')
 
-    n = pypsa.Network(snakemake.input.network)
-    n_years = n.snapshot_weightings.generators.sum() / YEAR_HRS
-
-    # define spatial resolution of carriers
-    # spatial = define_spatial(n.buses[n.buses.carrier=="AC"].index, options)
     vre_techs = ["solar", "onwind", "offwind"]
-    baseyear = snakemake.params["baseyear"]
-    # add_build_year_to_new_assets(n, baseyear)
-    if snakemake.params["add_baseyear_to_assets"]:
-        add_build_year_to_new_assets(n, baseyear)
 
     config = snakemake.config
     tech_costs = snakemake.input.tech_costs
     cost_year = snakemake.wildcards["planning_horizons"]
     data_paths = {k: v for k, v in snakemake.input.items()}
 
+    if config.get("remind", {}).get("is_remind_coupled", False):
+        baseyear = int(snakemake.wildcards["planning_horizons"])
+    else:
+        baseyear = snakemake.params["baseyear"]
+
+    n = pypsa.Network(snakemake.input.network)
+    n_years = n.snapshot_weightings.generators.sum() / YEAR_HRS
+    if snakemake.params["add_baseyear_to_assets"]:
+        # call before adding new assets
+        add_build_year_to_new_assets(n, baseyear)
+
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
-    existing_capacities = read_existing_capacities(data_paths)
-    year_bins = config["existing_capacities"]["grouping_years"]
-    # TODO add renewables
-    existing_capacities = assign_year_bins(existing_capacities, year_bins)
-    df = fix_existing_capacities(existing_capacities, costs, year_bins, baseyear)
-
-    vre_caps = df.query("Tech in @vre_techs | Fueltype in @vre_techs")
+    existing_capacities = pd.read_csv(snakemake.input.installed_capacities, index_col=0)
+    vre_caps = existing_capacities.query("Tech in @vre_techs | Fueltype in @vre_techs")
     # vre_caps.loc[:, "Country"] = coco.CountryConverter().convert(["China"], to="iso2")
     vres = add_existing_vre_capacities(n, costs, vre_caps, config)
-    vres = assign_year_bins(vres, year_bins)
-    df = pd.concat([df.query("Tech not in @vre_techs & Fueltype not in @vre_techs"), vres], axis=0)
+    installed = pd.concat(
+        [existing_capacities.query("Tech not in @vre_techs & Fueltype not in @vre_techs"), vres],
+        axis=0,
+    )
 
     # add to the network
-    add_power_capacities_installed_before_baseyear(n, costs, config, df)
+    add_power_capacities_installed_before_baseyear(n, costs, config, installed)
     n.export_to_netcdf(snakemake.output[0])
 
     logger.info("Existing capacities successfully added to network")
