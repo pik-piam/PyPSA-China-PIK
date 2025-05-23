@@ -237,11 +237,12 @@ rule build_biomass_potential:
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
 
-
 rule prepare_baseyear_capacities:
     """prepare inputs for add_existing_baseyear (optional in overnight mode)"""
+    params:
+        last_pypsa_cost_year = 2060
     input:
-        tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
+        tech_costs=path_manager.costs_dir(ignore_remind=True) + "/costs_{planning_horizons}.csv",
         **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
             for tech in config['existing_capacities']['techs']},
     # TODO make dep on remind
