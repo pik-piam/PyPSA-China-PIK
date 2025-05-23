@@ -9,9 +9,7 @@ SHORT TERM FIX until PowerPlantMatching is implemented
 import logging
 import numpy as np
 import pandas as pd
-import pypsa
 import os
-import re
 
 from types import SimpleNamespace
 
@@ -199,7 +197,7 @@ if __name__ == "__main__":
             "prepare_baseyear_capacities",
             topology="current+FCG",
             co2_pathway="remind_ssp2NPI",
-            planning_horizons="2030",
+            planning_horizons="2070",
             heating_demand="positive",
         )
 
