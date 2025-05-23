@@ -14,7 +14,7 @@ scenario:
 
 # TODO
 paths:
-  costs_dir: '/p/tmp/ivanra/formatted_remind_outputs/test_remind_3-4-0-dev782'
+  costs_dir: 'resources/derived_data/remind/costs/'
   remind_outpt_dir: "/home/ivanra/downloads/output_REMIND/SSP2-Budg1000-PyPSAxprt_2025-05-09/pypsa_export"
 
 heat_coupling: False
@@ -42,6 +42,7 @@ remind_etl:
   # == step-wise ETL (remind-pypsa-coupling tools) ==
   # Steps must correspond to the Transformation Data class
   # name: str, method: Optional, frames: Dict, params: Dict, filters: Dict, kwargs: Dict
+  # order matters!
   etl_steps:
     - name: loads
       method: "convert_load"
@@ -49,6 +50,11 @@ remind_etl:
         ac_load: p32_load
         h2_el_load: null
         heat_el_load: null
+    # using mapping table to assign tech groups to remind techs
+    - name: tech_groups
+      method: build_tech_map
+      kwargs:
+        map_param: investment
     - name: caps
       method: "convert_capacities"
       frames:
@@ -57,10 +63,8 @@ remind_etl:
         cutoff: 500
       filters:
         capacities: "region == @region"
-    - name: scale_existing_caps_to_remind
-      method: scale_caps_to_remind
       dependencies:
-        - caps
+        - tech_groups
     - name: technoeconomic_data
       frames:
         tech_data: pm_data
@@ -79,11 +83,10 @@ remind_etl:
         fuel_costs: "region == @region"
         co2_intensity: "region == @region"
         weights_gen: "region == @region"
-    # - name: disagg_load
-    #   method: "disagg_acload_ref"
-      # dependencies:
-      #   - loads
   disagg:
     - name: disagg_load
       method: "disagg_acload_ref"
+    - name: scale_existing_caps_to_remind
+      method: scale_caps_to_remind
+  
 

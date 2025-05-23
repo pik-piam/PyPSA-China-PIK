@@ -11,11 +11,8 @@ from os import PathLike
 import setup  # setsup paths
 import rpycpl.utils as coupl_utils
 from rpycpl.utils import read_remind_csv
-from rpycpl.disagg import SpatialDisaggregator
-from rpycpl.etl import ETL_REGISTRY, Transformation, register_etl
-from rpycpl import capacities_etl #
+from rpycpl.etl import ETL_REGISTRY, Transformation
 
-from readers import read_yearly_load_projections
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +152,6 @@ class ETLRunner:
 
         kwargs.update(step.kwargs)
         if kwargs:
-            print(step.name, step.kwargs)
             return func(frames, **kwargs)
         else:
             return func(frames)
@@ -164,7 +160,12 @@ class ETLRunner:
 if __name__ == "__main__":
 
     if "snakemake" not in globals():
-        snakemake = setup._mock_snakemake("transform_remind_data")
+        snakemake = setup._mock_snakemake(
+            "transform_remind_data",
+            co2_pathway="remind_ssp2NPI",
+            topology="current+FCG",
+            heating_demand="positive",
+        )
 
     logger.info("Transforming REMIND data")
 
@@ -181,10 +182,13 @@ if __name__ == "__main__":
         for f in os.listdir(snakemake.input.pypsa_costs)
         if f.endswith(".csv")
     ]
+
     aux_data = {"pypsa_costs": coupl_utils.read_pypsa_costs(pypsa_cost_files)}
+
     # Can generalise with a "reader" field and data class if needed later
     for k, path in config["data"].items():
         aux_data[k] = pd.read_csv(path)
+    # tech_map = coupl_utils.build_tech_map(aux_data["tech_mapping"], map_param="investment")
 
     logger.info(f"Loaded auxiliary data files {aux_data.keys()}")
 
@@ -205,19 +209,13 @@ if __name__ == "__main__":
                 pypsa_costs=aux_data["pypsa_costs"],
             )
             result = {k: v for k, v in result.groupby("year")}
-        elif step.method == "scale_caps_to_remind":
-            result = ETLRunner.run(
-                step,
-                frames,
-                previous_outputs=outputs,
-                reference_data=aux_data["reference_load"],
-            )
+        elif step.name == "tech_groups":
+            result = ETLRunner.run(step, frames=aux_data)
         else:
             result = ETLRunner.run(step, frames, previous_outputs=outputs)
         outputs[step.name] = result
 
-    # TODO make generic
-
+    # TODO make more generic
     # save outputs
     outputs["loads"].to_csv(snakemake.output.loads)
     outputs["caps"].to_csv(snakemake.output.remind_caps)
@@ -225,9 +223,4 @@ if __name__ == "__main__":
         df.to_csv(
             os.path.join(snakemake.output.technoeconomic_data, f"costs_{year}.csv"),
             index=False,
-        )
-
-    if "disagg_load" in outputs:
-        outputs["disagg_load"].to_csv(
-            snakemake.output.disagg_load,
         )
