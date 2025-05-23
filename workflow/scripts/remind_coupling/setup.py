@@ -40,6 +40,6 @@ def _mock_snakemake(rule_name, **kwargs) -> object:
     snakemake = mock_snakemake(
         rule_name,
         snakefile_path=workflow_dir,
-        kwargs=kwargs,
+        **kwargs,
     )
     return snakemake
