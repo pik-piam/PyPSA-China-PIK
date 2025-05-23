@@ -428,7 +428,7 @@ if __name__ == "__main__":
 
     config = snakemake.config
     carriers = ["AC"]
-    if config["heat_coupling"]:
+    if config.get("heat_coupling", False):
         carriers.append("heat")
 
     if not os.path.isdir(snakemake.output.outp_dir):

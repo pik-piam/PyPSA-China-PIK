@@ -166,7 +166,7 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
     """
 
     network.add("Carrier", "AC")
-    if config["heat_coupling"]:
+    if config("heat_coupling", False):
         network.add("Carrier", "heat")
     for carrier in config["Techs"]["vre_techs"]:
         network.add("Carrier", carrier)
@@ -385,7 +385,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         costs (pd.DataFrame): the cost database
     """
     # TODO, does it make sense?
-    if config["heat_coupling"]:
+    if config("heat_coupling", False):
         network.add(
             "Link",
             name=nodes + " H2 Electrolysis",
@@ -907,7 +907,7 @@ def add_heat_coupling(
                 lifetime=costs.at[cat.lstrip() + "resistive heater", "lifetime"],
             )
 
-    if "H2 CHP" in config["Techs"]["vre_techs"] and config["add_H2"] and config["heat_coupling"]:
+    if "H2 CHP" in config["Techs"]["vre_techs"] and config["add_H2"] and config("heat_coupling", False):):
         network.add(
             "Bus",
             nodes,
@@ -1438,7 +1438,7 @@ def prepare_network(
             location=nodes,
         )
 
-    if config["heat_coupling"]:
+    if config("heat_coupling", False):
         logger.info("Adding heat and CHP to the network")
         add_heat_coupling(network, config, nodes, prov_centroids, costs, planning_horizons, paths)
 

@@ -661,7 +661,7 @@ if __name__ == "__main__":
         components=["Generator", "Link"],
     )
 
-    if config["heat_coupling"]:
+    if config.get("heat_coupling"):
         p = snakemake.output.cost_map.replace("el_supply.png", "heat_supply.png")
         plot_energy_map(
             n,

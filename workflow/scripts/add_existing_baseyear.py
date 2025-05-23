@@ -316,7 +316,7 @@ def add_power_capacities_installed_before_baseyear(
             )
         elif (
             generator in ["solar thermal", "CHP coal", "CHP gas", "heat pump", "coal boiler"]
-            and not config["heat_coupling"]
+            and not config.get("heat_coupling", False)
         ):
             logger.info(f"Skipped {generator} because heat coupling is not activated")
 
@@ -506,7 +506,7 @@ if __name__ == "__main__":
     cost_year = snakemake.wildcards["planning_horizons"]
     data_paths = {k: v for k, v in snakemake.input.items()}
 
-    if config.get("remind", {}).get("is_remind_coupled", False):
+    if config["run"].get("is_remind_coupled", False):
         baseyear = int(snakemake.wildcards["planning_horizons"])
     else:
         baseyear = snakemake.params["baseyear"]

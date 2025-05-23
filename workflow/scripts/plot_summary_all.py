@@ -700,7 +700,7 @@ if __name__ == "__main__":
     output_paths = snakemake.output
     paths = snakemake.input
 
-    plot_heat = config["heat_coupling"]
+    plot_heat = config.get("heat_coupling", False)
     plot_h2 = config["add_H2"]
     NAN_COLOR = config["plotting"]["nan_color"]
     data_paths = {
