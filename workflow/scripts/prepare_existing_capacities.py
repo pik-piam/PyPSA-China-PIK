@@ -225,4 +225,6 @@ if __name__ == "__main__":
     if installed[installed.lifetime.isna()]:
         logger.warning(
             f"The following assets have no lifetime assigned and are for ever lived: \n{installed[installed.lifetime.isna()]}"
+        )
+
     installed.to_csv(snakemake.output.installed_capacities)

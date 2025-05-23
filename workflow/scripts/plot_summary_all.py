@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 # consolidate and rename
 def rename_techs(label: pd.Index) -> pd.Index:
     """rename techs into grouped categories
-    
+
     Args:
         label (pd.Index | iterable): the index techs to rename
     Returns:

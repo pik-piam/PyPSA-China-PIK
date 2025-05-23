@@ -207,8 +207,8 @@ def add_power_capacities_installed_before_baseyear(
         "coal boiler": "central coal boier",
         "heat pump": "central ground-sourced heat pump",
         "nuclear": "nuclear",
-        }
-    
+    }
+
     df.resource_class.fillna("", inplace=True)
     df_ = df.pivot_table(
         index=["grouping_year", "Fueltype", "resource_class"],
@@ -314,10 +314,13 @@ def add_power_capacities_installed_before_baseyear(
                 lifetime=costs.at[costs_key, "lifetime"],
                 location=buses,
             )
-        elif (
-            generator in ["solar thermal", "CHP coal", "CHP gas", "heat pump", "coal boiler"]
-            and not config.get("heat_coupling", False)
-        ):
+        elif generator in [
+            "solar thermal",
+            "CHP coal",
+            "CHP gas",
+            "heat pump",
+            "coal boiler",
+        ] and not config.get("heat_coupling", False):
             logger.info(f"Skipped {generator} because heat coupling is not activated")
 
         elif generator == "solar thermal":

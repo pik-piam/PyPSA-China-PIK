@@ -1,6 +1,5 @@
 """File reading support functions"""
 
-
 import rioxarray
 from xarray import DataArray
 import geopandas as gpd

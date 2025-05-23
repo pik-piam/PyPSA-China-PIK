@@ -15,10 +15,12 @@ from _helpers import (
 logger = logging.getLogger(__name__)
 
 
-def plot_average_distances(distances: xr.DataArray, ax: plt.Axes = None)-> tuple[plt.Figure, plt.Axes]:
+def plot_average_distances(
+    distances: xr.DataArray, ax: plt.Axes = None
+) -> tuple[plt.Figure, plt.Axes]:
     """Plot the average distances to the node (region com/repr point) for each vre class
     Args:
-        distances (xr.DataArray): the average distances for each class to the node 
+        distances (xr.DataArray): the average distances for each class to the node
         ax (plt.Axes, optional): the axes to plot on. Defaults to None.
     Returns:
         tuple[plt.Figure, plt.Axes]: the figure and axes

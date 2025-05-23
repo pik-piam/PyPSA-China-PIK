@@ -49,6 +49,7 @@ def load_cfrs_data(target: PathLike) -> gpd.GeoDataFrame:
 
     return pop_ww
 
+
 # TODO see whether still needed
 def build_gridded_population(
     prov_pop_path: PathLike,

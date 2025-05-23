@@ -219,6 +219,7 @@ if __name__ == "__main__":
     # save outputs
     outputs["loads"].to_csv(snakemake.output.loads)
     outputs["caps"].to_csv(snakemake.output.remind_caps)
+    outputs["tech_groups"].to_csv(snakemake.output.remind_tech_groups)
     for year, df in outputs["technoeconomic_data"].items():
         df.to_csv(
             os.path.join(snakemake.output.technoeconomic_data, f"costs_{year}.csv"),

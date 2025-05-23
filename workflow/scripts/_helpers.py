@@ -71,7 +71,9 @@ class ConfigManager:
         """Expand wildcards in config"""
         raise NotImplementedError
 
+
 # TODO add dataclass for Config
+
 
 class GHGConfigHandler:
     """A class to handle & validate GHG scenarios in the config"""
@@ -80,7 +82,7 @@ class GHGConfigHandler:
         self.config = deepcopy(config)
         self._raw_config = deepcopy(config)
         self._validate_scenarios()
-    
+
     def handle_ghg_scenarios(self) -> dict:
         """handle ghg scenarios (parse, valdiate & unpack to config[scenario])
 
@@ -149,7 +151,7 @@ class GHGConfigHandler:
                 raise ValueError(f"Scenario {scen} must contain 'control' and 'pathway'")
 
             ALLOWED = ["price", "reduction", "budget", None]
-    
+
             if not scen["control"] in ALLOWED:
                 err = f"Control must be {",".join([str(x) for x in ALLOWED])} but was {name}:{scen["control"]}"
                 raise ValueError(err)
@@ -221,10 +223,20 @@ class PathManager:
             sub_dir += "_" + "".join(extra_opts.values())
         return os.path.join(self.config["paths"]["results_dir"], base_dir, sub_dir)
 
-    def costs_dir(self) -> os.PathLike:
+    def costs_dir(self, ignore_remind=False) -> os.PathLike:
+        """Get the costs directory path.
+        In case a path was specified in the config, it will be used.
+        Otherwise, a default path will be used.
+
+        Args:
+            ignore_remind (bool, optional): do not return the remind default,
+                even if remind coupling is enabled. Defaults to False.
+        Returns:
+            os.PathLike: the dirname
+        """
 
         default = "resources/data/costs"
-        if self.config["run"].get("is_remind_coupled", False):
+        if self.config["run"].get("is_remind_coupled", False) and not ignore_remind:
             default = self.derived_data_dir() + "/remind/costs"
 
         costs_dir = self.config["paths"].get("costs_dir", default)

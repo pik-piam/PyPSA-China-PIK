@@ -907,7 +907,11 @@ def add_heat_coupling(
                 lifetime=costs.at[cat.lstrip() + "resistive heater", "lifetime"],
             )
 
-    if "H2 CHP" in config["Techs"]["vre_techs"] and config["add_H2"] and config("heat_coupling", False):):
+    if (
+        "H2 CHP" in config["Techs"]["vre_techs"]
+        and config["add_H2"]
+        and config("heat_coupling", False)
+    ):
         network.add(
             "Bus",
             nodes,

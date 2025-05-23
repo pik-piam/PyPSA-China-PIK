@@ -28,7 +28,7 @@ opt_name = {"Store": "e", "Line": "s", "Transformer": "s"}
 
 
 def assign_carriers(n: pypsa.Network):
-    """ Assign AC where missing
+    """Assign AC where missing
     Args:
         n (pypsa.Network): the network object to fix"""
     if "carrier" not in n.lines:
@@ -37,7 +37,7 @@ def assign_carriers(n: pypsa.Network):
 
 # TODO swith to stats backend
 def calculate_nodal_cfs(n: pypsa.Network, label: str, nodal_cfs: pd.DataFrame):
-    """ Calculate the capacity factors by for each node and genertor
+    """Calculate the capacity factors by for each node and genertor
     Args:
         n (pypsa.Network): the network object
         label (str): the label used by make summaries
@@ -75,8 +75,8 @@ def calculate_nodal_cfs(n: pypsa.Network, label: str, nodal_cfs: pd.DataFrame):
     return nodal_cfs
 
 
-def calculate_cfs(n: pypsa.Network, label: str, cfs: pd.DataFrame)-> pd.DataFrame:
-    """ Calculate the capacity factors by carrier
+def calculate_cfs(n: pypsa.Network, label: str, cfs: pd.DataFrame) -> pd.DataFrame:
+    """Calculate the capacity factors by carrier
 
     Args:
         n (pypsa.Network): the network object
@@ -155,7 +155,7 @@ def calculate_nodal_costs(n: pypsa.Network, label: str, nodal_costs: pd.DataFram
     return nodal_costs
 
 
-def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame)->pd.DataFrame:
+def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame) -> pd.DataFrame:
     """Calculate the costs by carrier
     Args:
         n (pypsa.Network): the network object
@@ -214,9 +214,11 @@ def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame)->pd.DataF
     return costs
 
 
-def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: pd.DataFrame)->pd.DataFrame:
-    """ Calculate the capacities by carrier and node
-    
+def calculate_nodal_capacities(
+    n: pypsa.Network, label: str, nodal_capacities: pd.DataFrame
+) -> pd.DataFrame:
+    """Calculate the capacities by carrier and node
+
     Args:
         n (pypsa.Network): the network object
         label (str): the label used by make summaries
@@ -300,13 +302,13 @@ def calculate_co2_balance(
 
 def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFrame) -> pd.DataFrame:
     """Calculate curtailed energy by carrier
-    
+
     Args:
         n (pypsa.Network): the network object
         label (str): the label used by make summaries
         curtailment (pd.DataFrame): the dataframe to fill/update
     Returns:
-        pd.DataFrame: updated curtailment 
+        pd.DataFrame: updated curtailment
     """
     p_avail_by_carr = (
         n.generators_t.p_max_pu.multiply(n.generators.p_nom_opt)
@@ -323,7 +325,7 @@ def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFram
     return curtailment
 
 
-def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame)->pd.DataFrame:
+def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame) -> pd.DataFrame:
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         if c.name in n.one_port_components:
             c_energies = (
@@ -440,7 +442,7 @@ def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
 
 
 def calculate_t_avgd_prices(n: pypsa.Network, label: str, prices: pd.DataFrame):
-    """ Time averaged prices for nodes averaged over carrier (bit silly?)
+    """Time averaged prices for nodes averaged over carrier (bit silly?)
 
     Args:
         n (pypsa.Network): the network object
@@ -489,8 +491,10 @@ def calculate_weighted_prices(
     return weighted_prices
 
 
-def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.DataFrame)-> pd.DataFrame:
-    """ Calculate the market value of the generators and links
+def calculate_market_values(
+    n: pypsa.Network, label: str, market_values: pd.DataFrame
+) -> pd.DataFrame:
+    """Calculate the market value of the generators and links
     Args:
         n (pypsa.Network): the network object
         label (str): the label representing the pathway
@@ -553,9 +557,10 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
 
     return market_values
 
+
 # TODO improve netwroks_dict arg
-def make_summaries(networks_dict: dict[tuple, os.PathLike])->dict[str, pd.DataFrame]:
-    """ Make summary tables for the given network
+def make_summaries(networks_dict: dict[tuple, os.PathLike]) -> dict[str, pd.DataFrame]:
+    """Make summary tables for the given network
     Args:
         networks_dict (dict): a dictionary of (pathway, time):network_path used in the run
     Returns:
@@ -604,7 +609,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike])->dict[str, pd.DataFr
 
 
 # TODO move to helper?
-def expand_from_wildcard(key, config)-> list:
+def expand_from_wildcard(key, config) -> list:
     """return a list of values for the given key in the config file
     Args:
         key (str): the key to look for in the config file

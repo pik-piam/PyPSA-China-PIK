@@ -193,7 +193,7 @@ def aggregate_costs(
     existing_only=False,
 ) -> pd.Series | pd.DataFrame:
     """LEGACY FUNCTION used in pypsa heating plots - unclear what it does
-    
+
     Args:
         n (pypsa.Network): the network object
         flatten (bool, optional):merge capex and marginal ? Defaults to False.

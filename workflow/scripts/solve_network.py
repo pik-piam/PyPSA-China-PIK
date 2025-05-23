@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_network(n: pypsa.Network, solve_opts: dict):
-    """ prepare the network for the solver
+    """prepare the network for the solver
     Args:
         n (pypsa.Network): the pypsa network object
         solve_opts (dict): the solving options
@@ -90,9 +90,9 @@ def add_battery_constraints(n: pypsa.Network):
 
 
 def add_chp_constraints(n: pypsa.Network):
-    """ Add constraints to couple the heat and electricity output of CHP plants
+    """Add constraints to couple the heat and electricity output of CHP plants
          (using the cb and cv parameter). See the DEA technology cataloge
-    
+
     Args:
         n (pypsa.Network): the pypsa network object to which's model the constraints are added
     """
@@ -221,7 +221,7 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
 def solve_network(
     n: pypsa.Network, config: dict, solving: dict, opts: str = "", **kwargs
 ) -> pypsa.Network:
-    """ perform the optimisation
+    """perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
         config (dict): the configuration dictionary

@@ -81,7 +81,7 @@ def area_from_lon_lat_poly(geometry):
 
 # TODO fix this/ DELETE
 def HVAC_cost_curve(distance):
-    """ Calculate the cost of HVAC lines based on distance.
+    """Calculate the cost of HVAC lines based on distance.
     Args:
         distance (float): distance in km
     Returns:
