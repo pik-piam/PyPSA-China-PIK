@@ -237,10 +237,24 @@ rule build_biomass_potential:
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
 
+
+rule prepare_baseyear_capacities:
+    """prepare inputs for add_existing_baseyear (optional in overnight mode)"""
+    input:
+        tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
+        **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
+            for tech in config['existing_capacities']['techs']},
+    # TODO make dep on remind
+    output: 
+        installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv'
+    threads: 1
+    resources: mem_mb=2000
+    script: "scripts/prepare_existing_capacities.py"
+
+
 # make sure the params will appear in the profile names
 resource_class_cfg = {tech: config["renewable"][tech]["resource_classes"] for tech in config["renewable"]}
 rsc_params = {key : "_".join([f"{k}{v}" for k, v in resource_class_cfg[key].items()]) for key in resource_class_cfg}
-
 if config["foresight"] in ["overnight"]:
     rule prepare_networks:
         input:
@@ -259,18 +273,6 @@ if config["foresight"] in ["overnight"]:
         threads: 1
         resources: mem_mb=10000
         script: "scripts/prepare_network.py"
-
-    rule prepare_baseyear_capacities:
-        input:
-            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
-            **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
-               for tech in config['existing_capacities']['techs']},
-        # TODO make dep on remind
-        output: 
-            installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv'
-        threads: 1
-        resources: mem_mb=2000
-        script: "scripts/prepare_existing_capacities.py"
 
     rule add_existing_baseyear:
         params:
@@ -354,15 +356,15 @@ elif config["foresight"] == "myopic":
             add_baseyear_to_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
-            tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
-            **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
-               for tech in config['existing_capacities']['techs']},
+            installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv',
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
+        threads: 1
+        resources: mem_mb=2000
         wildcard_constraints:
             planning_horizons=config['scenario']['planning_horizons'][0] #only applies to baseyear
         threads: 1
-        resources: mem_mb=2000
         script: "scripts/add_existing_baseyear.py"
 
     def solved_previous_horizon(wildcards):
