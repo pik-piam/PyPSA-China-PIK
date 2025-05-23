@@ -82,6 +82,7 @@ if __name__ == "__main__":
         }
     }
     cfg["run"].update({"is_remind_coupled": True})
+    # let pathmanager decide on the costs dynamically (derived_data/remind)
     cfg["paths"]["costs_dir"] = None
     cfg.update(remind_cfg)
 
