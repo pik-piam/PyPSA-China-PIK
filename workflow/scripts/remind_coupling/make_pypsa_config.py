@@ -82,6 +82,7 @@ if __name__ == "__main__":
         }
     }
     cfg["run"].update({"is_remind_coupled": True})
+    cfg["paths"]["costs_dir"] = None
     cfg.update(remind_cfg)
 
     with open(snakemake.output.coupled_config, "w") as output_file:

@@ -43,13 +43,14 @@ rule transform_remind_data:
             "~/downloads/output_REMIND/SSP2-Budg1000-PyPSAxprt_2025-05-09/pypsa_export"
         ),
     output:
-        loads=DERIVED_COMMON + "/remind/yrly_loads.csv",
-        technoeconomic_data=DERIVED_COMMON + "/remind/costs/",
-        remind_caps=DERIVED_COMMON + "/remind/remind_capacities.csv",
+        loads=DERIVED_DATA + "/remind/yrly_loads.csv",
+        technoeconomic_data=DERIVED_DATA + "/remind/costs/",
+        remind_caps=DERIVED_DATA + "/remind/preinv_capacities.csv",
+        remind_tech_groups=DERIVED_DATA + "/remind/tech_groups.csv",
     conda:
         "../envs/remind.yaml"
     script:
-        "scripts/remind_coupling/etl_remind.py"
+        "scripts/remind_coupling/generic_etl.py"
 
 
 rule disaggregate_data:
@@ -60,13 +61,16 @@ rule disaggregate_data:
         etl_cfg=config.get("remind_etl"),
         region=REMIND_REGION,  # overlaps with cofnig
         reference_load_year=2025,
+        expand_dirs=config["scenario"]["planning_horizons"],
     input:
-        pypsa_powerplants="",
-        remind_outputs="",
-        loads=DERIVED_COMMON + "/remind/yrly_loads.csv",
+        pypsa_powerplants=DERIVED_DATA + "/existing_infrastructure",
+        remind_caps=DERIVED_DATA + "/remind/preinv_capacities.csv",
+        remind_tech_groups=DERIVED_DATA + "/remind/tech_groups.csv",
+        loads=DERIVED_DATA + "/remind/yrly_loads.csv",
         reference_load="resources/data/load/Provincial_Load_2020_2060_MWh.csv",
     output:
-        disagg_load=DERIVED_COMMON + "/remind/ac_load_disagg.csv",
+        caps=DERIVED_DATA + "/remind/harmonized_capacities/",
+        disagg_load=DERIVED_DATA + "/remind/ac_load_disagg.csv",
     conda:
         "../envs/remind.yaml"
     script:

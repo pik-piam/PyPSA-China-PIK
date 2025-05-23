@@ -71,6 +71,7 @@ class ConfigManager:
         """Expand wildcards in config"""
         raise NotImplementedError
 
+# TODO add dataclass for Config
 
 class GHGConfigHandler:
     """A class to handle & validate GHG scenarios in the config"""
@@ -79,19 +80,23 @@ class GHGConfigHandler:
         self.config = deepcopy(config)
         self._raw_config = deepcopy(config)
         self._validate_scenarios()
-
+    
     def handle_ghg_scenarios(self) -> dict:
         """handle ghg scenarios (parse, valdiate & unpack to config[scenario])
 
         Returns:
             dict: validated and parsed
         """
-        # TODO add to _raw_config, move into CO2Scenario.__init__
-        if self.config["heat_coupling"]:
+        # HACK for snakemake access
+        scripts_dir = os.path.abspath(os.path.dirname(__file__))
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+
+        if self.config.get("heat_coupling", False):
             # HACK import here for snakemake access
-            from scripts.constants import CO2_BASEYEAR_EM as base_year_ems
+            from constants import CO2_BASEYEAR_EM as base_year_ems
         else:
-            from scripts.constants import CO2_EL_2020 as base_year_ems
+            from constants import CO2_EL_2020 as base_year_ems
 
         for name, co2_scen in self.config["co2_scenarios"].items():
             co2_scen["pathway"] = {int(k): v for k, v in co2_scen.get("pathway", {}).items()}
@@ -144,8 +149,9 @@ class GHGConfigHandler:
                 raise ValueError(f"Scenario {scen} must contain 'control' and 'pathway'")
 
             ALLOWED = ["price", "reduction", "budget", None]
+    
             if not scen["control"] in ALLOWED:
-                err = f"Control must be {",".join(ALLOWED)} but was {name}:{scen["control"]}"
+                err = f"Control must be {",".join([str(x) for x in ALLOWED])} but was {name}:{scen["control"]}"
                 raise ValueError(err)
 
             years_int = set(map(int, self.config["scenario"]["planning_horizons"]))
@@ -155,6 +161,7 @@ class GHGConfigHandler:
 
 
 # TODO return pathlib objects? so can just use / to combine paths?
+# TODO unit tests for path manager
 class PathManager:
     """A class to manage paths for the snakemake workflow and return paths based on the wildcard
 
@@ -216,15 +223,21 @@ class PathManager:
 
     def costs_dir(self) -> os.PathLike:
 
-        # backward compat
         default = "resources/data/costs"
+        if self.config["run"].get("is_remind_coupled", False):
+            default = self.derived_data_dir() + "/remind/costs"
+
         costs_dir = self.config["paths"].get("costs_dir", default)
         # if not absolute path & rel not recognised by snakemake
-        if not os.path.exists(costs_dir):
+        if not costs_dir:
+            costs_dir = default
+        elif not os.path.exists(costs_dir):
             # if relative path, make it absolute
             costs_dir = os.path.abspath(costs_dir)
 
-        return os.path.dirname(costs_dir)
+        if costs_dir.endswith("/"):
+            costs_dir = costs_dir[:-1]
+        return costs_dir
 
     def elec_load(self) -> os.PathLike:
 

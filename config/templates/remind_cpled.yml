@@ -1,8 +1,8 @@
 # template config for remind coupling - will be filled 
 
 run:
+  is_remind_coupled: True
   remind: 
-    is_remind_coupled: True
     version: null
     coupling: 1way
     run_name: null
@@ -14,9 +14,8 @@ scenario:
 
 # TODO
 paths:
-  costs_dir: 'resources/derived_data/remind/costs/'
   remind_outpt_dir: "/home/ivanra/downloads/output_REMIND/SSP2-Budg1000-PyPSAxprt_2025-05-09/pypsa_export"
-
+  costs_dir: null
 heat_coupling: False
 add_biomass: True
 add_hydro: True
