@@ -61,15 +61,15 @@ def read_existing_capacities(paths_dict: dict[str, os.PathLike]) -> pd.DataFrame
     # TODO fix centralise (make a dict from start?)
     carrier = {
         "coal": "coal power plant",
-        "CHP coal": "CHP coal",
-        "CHP gas": "CHP gas",
+        "CHP coal": "central coal CHP",
+        "CHP gas": "central gas CHP",
         "OCGT": "OCGT gas",
         "solar": "solar",
-        "solar thermal": "solar thermal",
+        "solar thermal": "central solar thermal",
         "onwind": "onwind",
         "offwind": "offwind",
-        "coal boiler": "coal boiler",
-        "ground heat pump": "heat pump",
+        "coal boiler": "central coal boiler",
+        "ground heat pump": "central ground-sourced heat pump",
         "nuclear": "nuclear",
     }
     df_agg = pd.DataFrame()
@@ -204,15 +204,16 @@ if __name__ == "__main__":
     configure_logging(snakemake, logger=logger)
 
     config = snakemake.config
-    tech_costs = snakemake.input.tech_costs
-    cost_year = snakemake.wildcards["planning_horizons"]
+    # remind extends beyond pypsa: limit the reference pypsa cost year to the last pypsa year
+    plan_year = int(snakemake.wildcards["planning_horizons"])
+    cost_year = min(snakemake.params.last_pypsa_cost_year, plan_year)
+    tech_costs = snakemake.input.tech_costs.replace(str(plan_year), str(cost_year))
     data_paths = {k: v for k, v in snakemake.input.items()}
 
     n_years = determine_simulation_timespan(
         snakemake.config, snakemake.wildcards["planning_horizons"]
     )
     baseyear = int(snakemake.wildcards["planning_horizons"])
-
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
     existing_capacities = read_existing_capacities(data_paths)
@@ -221,4 +222,7 @@ if __name__ == "__main__":
     existing_capacities = assign_year_bins(existing_capacities, year_bins)
     installed = fix_existing_capacities(existing_capacities, costs, year_bins, baseyear)
 
+    if installed[installed.lifetime.isna()]:
+        logger.warning(
+            f"The following assets have no lifetime assigned and are for ever lived: \n{installed[installed.lifetime.isna()]}"
     installed.to_csv(snakemake.output.installed_capacities)
