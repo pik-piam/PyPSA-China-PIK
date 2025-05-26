@@ -137,6 +137,6 @@ if __name__ == "__main__":
             )
 
     if "available_cap" in outputs:
-        outputs["available_paid_off_capacity"].to_csv(
-            snakemake.output.caps + "/paidoff_capacities.csv",
+        outputs["available_cap"].to_csv(
+            snakemake.output.caps + "/paidoff_capacities.csv", index = False
         )
