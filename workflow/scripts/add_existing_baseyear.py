@@ -54,6 +54,12 @@ def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
 
 
 def add_existing_capacities() -> pd.DataFrame:
+    """Read in existing capacities from csv files and a powerplants matching-like dataframe
+    
+    Returns:
+        pd.DataFrame: DataFrame with existing capacities
+    """
+
     # TODO fix/centralise ()
     carrier = {
         "coal": "coal power plant",
@@ -88,29 +94,14 @@ def add_existing_capacities() -> pd.DataFrame:
                     df_agg.at[name, "DateIn"] = year
                     df_agg.at[name, "cluster_bus"] = node
 
-    return df_agg
-
-
-def distribute_vres_by_grade(p_max_nom: pd.DataFrame, df_agg: pd.DataFrame, config: dict):
-    """Assign the built up capacity to the best vre grades
-
-    Args:
-
-        df_agg (_type_): _description_
-        config (_type_): _description_
-
-    Raises:
-        NotImplementedError: _description_
-    """
-
-    raise NotImplementedError("This function is not implemented yet.")
+    return df_aggs
 
 
 def add_power_capacities_installed_before_baseyear(
     n: pypsa.Network, grouping_years, costs, baseyear, config
 ):
     """
-    Parameters
+    add the power capacities installed before baseyear to the network as paid-off assets
     ----------
     n : pypsa.Network
     grouping_years :
