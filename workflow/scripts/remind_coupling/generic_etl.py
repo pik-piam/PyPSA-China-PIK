@@ -5,7 +5,6 @@ import logging
 import pandas as pd
 import re
 import os.path
-import sys
 from os import PathLike
 
 import setup  # setsup paths

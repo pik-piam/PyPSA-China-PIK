@@ -8,10 +8,14 @@ to be rebalanced with the remind_coupling package"""
 
 import pandas as pd
 import logging
+import os.path
 
 from rpycpl.disagg import SpatialDisaggregator
 from rpycpl.etl import ETL_REGISTRY, Transformation, register_etl
 from generic_etl import ETLRunner
+
+# import needed for the capacity method to be registered
+from rpycpl import capacities_etl
 
 import setup  # sets up paths
 from readers import read_yearly_load_projections
@@ -51,9 +55,15 @@ if __name__ == "__main__":
 
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
-        snakemake = setup._mock_snakemake("disaggregate_data")
+        snakemake = setup._mock_snakemake(
+            "disaggregate_data",
+            co2_pathway="remind_ssp2NPI",
+            topology="current+FCG",
+            heating_demand="positive",
+        )
 
-    logger.info(f"Available ETL functions: {ETL_REGISTRY.keys()}")
+    logger.info("Running disaggregation script")
+    logger.debug(f"Available ETL methods: {ETL_REGISTRY.keys()}")
 
     params = snakemake.params
     region = params.region
@@ -61,16 +71,35 @@ if __name__ == "__main__":
     if not config:
         raise ValueError("Aborting: No REMIND data ETL config provided")
 
-    # Load data
-    data = {"reference_load": read_yearly_load_projections(snakemake.input.reference_load)}
-    data["loads"] = pd.read_csv(snakemake.input.loads, index_col=0)
-    # Can generalise with a "reader" field and data class if needed later
-    for k, path in config["data"].items():
-        data[k] = pd.read_csv(path)
+    # ================ Load data ===============
+    input_files = {k: v for k, v in snakemake.input.items() if not os.path.isdir(v)}
+    readers = {"reference_load": read_yearly_load_projections, "default": pd.read_csv}
+
+    # read files (and not directories)
+    data = {
+        k: readers[k](v) if k in readers else readers["default"](v) for k, v in input_files.items()
+    }
+
+    # handle directories manually (would be possible)
+    existing_caps = {
+        yr: os.path.join(snakemake.input.pypsa_powerplants, f"capacities_{yr}.csv")
+        for yr in params.expand_dirs
+    }
+    data["pypsa_capacities"] = {k: pd.read_csv(p) for k, p in existing_caps.items()}
+    # group techs together for harmonization
+    pypsa_tech_groups = (
+        data["remind_tech_groups"].set_index("PyPSA_tech")["group"].drop_duplicates()
+    )
+    for cap_df in data["pypsa_capacities"].values():
+        cap_df["tech_group"] = cap_df.Tech.map(pypsa_tech_groups)
+        cap_df.tech_group.fillna("", inplace=True)
 
     logger.info(f"Loaded data files {data.keys()}")
+    missing = set(input_files.keys()) - set(data.keys())
+    if missing:
+        logger.warning(f"Warning: Missing data files {missing}")
 
-    # transform remind data
+    # ==== transform remind data =======
     steps = config.get("disagg", [])
     outputs = {}
     for step_dict in steps:
@@ -82,11 +111,32 @@ if __name__ == "__main__":
                 reference_data=data["reference_load"],
                 reference_year=params["reference_load_year"],
             )
+        elif step.method == "harmonize_capacities":
+            # TODO loop over years
+            result = ETLRunner.run(
+                step, data["pypsa_capacities"], remind_capacities=data["remind_caps"]
+            )
+        elif step.method == "calc_paid_off_capacity":
+            result = ETLRunner.run(
+                step, data["remind_caps"], harmonized_pypsa_caps=outputs["harmonize_model_caps"]
+            )
         else:
             result = ETLRunner.run(step, data)
+
         outputs[step.name] = result
 
+        # TODO export, fix index
     if "disagg_load" in outputs:
         outputs["disagg_load"].to_csv(
             snakemake.output.disagg_load,
+        )
+    if "harmonize_model_caps" in outputs:
+        for year, df in outputs["harmonize_model_caps"].items():
+            df.to_csv(
+                os.path.join(snakemake.output.caps, f"capacities_{year}.csv"),
+            )
+
+    if "available_cap" in outputs:
+        outputs["available_paid_off_capacity"].to_csv(
+            snakemake.output.caps + "/paidoff_capacities.csv",
         )

@@ -85,7 +85,11 @@ remind_etl:
   disagg:
     - name: disagg_load
       method: "disagg_acload_ref"
-    - name: scale_existing_caps_to_remind
-      method: scale_caps_to_remind
+    - name: harmonize_model_caps
+      method: harmonize_capacities
+    - name: available_cap
+      method: "calc_paid_off_capacity"
+      dependencies:
+        - harmonize_model_caps
   
 
