@@ -50,6 +50,31 @@ def disagg_ac_using_ref(
 
     return disagg_load
 
+def add_possible_techs_to_paidoff(paidoff: pd.DataFrame, tech_groups: pd.Series) -> pd.DataFrame:
+    """Add possible PyPSA technologies to the paid off capacities DataFrame.
+    The paidoff capacities are grouped in case the Remind-PyPSA tecg mapping is not 1:1
+    but the network needs to add PyPSA techs.  
+    A constraint is added so the paid off caps per group are not exceeded.
+
+    Args:
+        paidoff (pd.DataFrame): DataFrame with paid off capacities
+    Returns:
+        pd.DataFrame: paid off techs with list of PyPSA technologies
+    Example:
+        >> tech_groups 
+            PyPSA_tech, group
+            coal CHP, coal
+            coal, coal
+        >> add_possible_techs_to_paidoff(paidoff, tech_groups)
+        >> paidoff
+            tech_group, paid_off_capacity, techs
+            coal, 1000, ['coal CHP', 'coal']
+    """
+    df = tech_groups.reset_index()
+    possibilities = df.groupby("group").PyPSA_tech.apply(lambda x: list(x.unique()))
+    paidoff["techs"] = paidoff.tech_group.map(possibilities)
+    return paidoff
+
 
 if __name__ == "__main__":
 
@@ -137,6 +162,8 @@ if __name__ == "__main__":
             )
 
     if "available_cap" in outputs:
-        outputs["available_cap"].to_csv(
-            snakemake.output.caps + "/paidoff_capacities.csv", index = False
+        paid_off = outputs["available_cap"].copy()
+        paid_off = add_possible_techs_to_paidoff(paid_off, pypsa_tech_groups)
+        paid_off.to_csv(
+            snakemake.output.caps + "/paidoff_capacities.csv", index=False
         )
