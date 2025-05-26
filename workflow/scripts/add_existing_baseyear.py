@@ -533,6 +533,14 @@ if __name__ == "__main__":
 
     # add to the network
     add_power_capacities_installed_before_baseyear(n, costs, config, installed)
+
+
+    # add paid-off REMIND capacities if requested
+    if data_paths.get("paid_off_capacities_remind", None):
+        paid_off_caps = pd.read_csv(snakemake.input.paid_off_capacities_remind, index_col=0)
+        paid_off_caps = paid_off_caps.query("year == @cost_year")
+        # TODO add to network (follow-up PR)
+
     n.export_to_netcdf(snakemake.output[0])
 
     logger.info("Existing capacities successfully added to network")
