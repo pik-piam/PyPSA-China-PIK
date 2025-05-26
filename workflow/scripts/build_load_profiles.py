@@ -1,5 +1,5 @@
 """Functions for the rules to build the hourly heat and load demand profiles
-- electricity load profiles are based on scaling an hourly base year profile to yearly future 
+- electricity load profiles are based on scaling an hourly base year profile to yearly future
     projections
 - daily heating demand is based on the degree day approx (from atlite) & upscaled hourly based
   on an intraday profile (for Denmark by default, see snakefile)
