@@ -2,7 +2,7 @@
 Prepare remind outputs for pypsa-coupled runs using the Remind-PyPSA-coupling package
 """
 
-REMIND_REGION = config["run"]["remind"]["region"]
+REMIND_REGION = config["run"].get("remind", {}).get("region")
 
 
 rule build_run_config:
@@ -16,7 +16,7 @@ rule build_run_config:
         remind_region=REMIND_REGION,
         expname_max_len=20,
     input:
-        remind_output=config["paths"]["remind_outpt_dir"],
+        remind_output=config["paths"].get("remind_outpt_dir", ""),
         config_template="config/templates/remind_cpled.yml",
     output:
         coupled_config=DERIVED_COMMON + "/tmp/remind_coupled.yaml",

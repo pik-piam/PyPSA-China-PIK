@@ -19,7 +19,7 @@ from _pypsa_helpers import (
     calc_atlite_heating_timeshift,
     shift_profile_to_planning_year,
 )
-from readers_geospatial import read_yearly_load_projections
+from readers import read_yearly_load_projections
 
 # TODO switch from hardocded REF_YEAR to a base year?
 from constants import (
