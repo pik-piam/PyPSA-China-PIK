@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import pandas as pd
 import pypsa
-import os
+
 import re
 
 from types import SimpleNamespace
@@ -137,23 +137,25 @@ def add_existing_vre_capacities(
             if bus not in df.index:
                 continue
             res_capacities.append(distribute_vre_by_grade(group.p_nom_max, df.loc[bus]))
-        res_capacities = pd.concat(res_capacities, axis=0)
 
-        for year in df.columns:
-            for gen in res_capacities.index:
-                bus_bin = re.sub(f" {carrier}.*", "", gen)
-                bus, bin_id = bus_bin.rsplit(" ", maxsplit=1)
-                name = f"{bus_bin} {carrier}-{year}"
-                capacity = res_capacities.loc[gen, year]
-                if capacity > 0.0:
-                    cost_key = carrier.split("-", maxsplit=1)[0]
-                    df_agg.at[name, "Fueltype"] = carrier
-                    df_agg.at[name, "Capacity"] = capacity
-                    df_agg.at[name, "DateIn"] = year
-                    df_agg.at[name, "lifetime"] = costs.at[cost_key, "lifetime"]
-                    df_agg.at[name, "DateOut"] = year + costs.at[cost_key, "lifetime"] - 1
-                    df_agg.at[name, "bus"] = bus
-                    df_agg.at[name, "resource_class"] = bin_id
+        if res_capacities:
+            res_capacities = pd.concat(res_capacities, axis=0)
+
+            for year in df.columns:
+                for gen in res_capacities.index:
+                    bus_bin = re.sub(f" {carrier}.*", "", gen)
+                    bus, bin_id = bus_bin.rsplit(" ", maxsplit=1)
+                    name = f"{bus_bin} {carrier}-{year}"
+                    capacity = res_capacities.loc[gen, year]
+                    if capacity > 0.0:
+                        cost_key = carrier.split("-", maxsplit=1)[0]
+                        df_agg.at[name, "Fueltype"] = carrier
+                        df_agg.at[name, "Capacity"] = capacity
+                        df_agg.at[name, "DateIn"] = year
+                        df_agg.at[name, "lifetime"] = costs.at[cost_key, "lifetime"]
+                        df_agg.at[name, "DateOut"] = year + costs.at[cost_key, "lifetime"] - 1
+                        df_agg.at[name, "bus"] = bus
+                        df_agg.at[name, "resource_class"] = bin_id
 
     df_agg.loc[:, "Tech"] = df_agg.Fueltype
     return df_agg
@@ -181,24 +183,33 @@ def add_power_capacities_installed_before_baseyear(
     logger.info("adding power capacities installed before baseyear")
 
     df = installed_capacities.copy()
+    # fix fuel type CHP order to match network
+    df["tech_clean"] = df["Fueltype"].str.replace(r"^CHP (.+)$", r"\1 CHP", regex=True)
+    df["tech_clean"] = df["tech_clean"].str.replace("central ", "")
+    df["tech_clean"] = df["tech_clean"].str.replace("decentral ", "")
+
     # TODO fix this based on config
     carrier_map = {
         "coal power plant": "coal",
         "CHP coal": "CHP coal",
+        "coal CHP": "CHP coal",
         "CHP gas": "CHP gas",
+        "gas CHP": "CHP gas",
         "OCGT gas": "gas OCGT",
         "solar": "solar",
         "solar thermal": "solar thermal",
         "onwind": "onwind",
         "offwind": "offwind",
         "coal boiler": "coal boiler",
-        "heat pump": "ground heat pump",
+        "ground-sourced heat pump": "heat pump",
+        "ground heat pump": "heat pump",
+        "air heat pump": "heat pump",
         "nuclear": "nuclear",
     }
     costs_map = {
         "coal power plant": "coal",
-        "CHP coal": "central coal CHP",
-        "CHP gas": "central gas CHP",
+        "coal CHP": "central coal CHP",
+        "gas CHP": "central gas CHP",
         "OCGT gas": "OCGT",
         "solar": "solar",
         "solar thermal": "central solar thermal",
@@ -206,21 +217,36 @@ def add_power_capacities_installed_before_baseyear(
         "offwind": "offwind",
         "coal boiler": "central coal boier",
         "heat pump": "central ground-sourced heat pump",
+        "ground-sourced heat pump": "central ground-sourced heat pump",
         "nuclear": "nuclear",
     }
 
+    # add techs that may have a direct match to the technoecon data
+    missing_techs = {k: k for k in df.Fueltype.unique() if not k in costs_map}
+    costs_map.update(missing_techs)
+
     df.resource_class.fillna("", inplace=True)
     df_ = df.pivot_table(
-        index=["grouping_year", "Fueltype", "resource_class"],
+        index=["grouping_year", "tech_clean", "resource_class"],
         columns="bus",
         values="Capacity",
         aggfunc="sum",
     )
     df_.fillna(0, inplace=True)
+
+    defined_carriers = n.carriers.index.unique().to_list()
+
     # TODO do we really need to loop over the years?
     for grouping_year, generator, resource_grade in df_.index:
-        logger.info(generator + " " + str(grouping_year))
-        # capacity is the capacity in MW at each node for this
+
+        logger.info(f"Adding existing generator {generator} with year grp {grouping_year}")
+        if not carrier_map.get(generator, "missing") in defined_carriers:
+            logger.warning(
+                f"Carrier {carrier_map.get(generator, None)} for {generator} not defined in network - added anyway"
+            )
+        elif costs_map.get(generator) is None:
+            raise ValueError(f"{generator} not defined in technoecon map - check costs_map")
+
         # capacity is the capacity in MW at each node for this
         capacity = df_.loc[grouping_year, generator]
         capacity = capacity[~capacity.isna()]
@@ -495,7 +521,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "add_existing_baseyear",
             topology="current+FCG",
-            co2_pathway="remind_ssp2NPI",
+            co2_pathway="exp175default",
             planning_horizons="2030",
             heating_demand="positive",
         )
@@ -533,7 +559,6 @@ if __name__ == "__main__":
 
     # add to the network
     add_power_capacities_installed_before_baseyear(n, costs, config, installed)
-
 
     # add paid-off REMIND capacities if requested
     if data_paths.get("paid_off_capacities_remind", None):
