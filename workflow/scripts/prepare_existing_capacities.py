@@ -222,7 +222,7 @@ if __name__ == "__main__":
     existing_capacities = assign_year_bins(existing_capacities, year_bins)
     installed = fix_existing_capacities(existing_capacities, costs, year_bins, baseyear)
 
-    if installed[installed.lifetime.isna()]:
+    if installed.empty or installed.lifetime.isna().any():
         logger.warning(
             f"The following assets have no lifetime assigned and are for ever lived: \n{installed[installed.lifetime.isna()]}"
         )

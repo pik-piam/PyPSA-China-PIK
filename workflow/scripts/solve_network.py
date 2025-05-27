@@ -20,11 +20,15 @@ pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-def prepare_network(n: pypsa.Network, solve_opts: dict):
+def prepare_network(
+    n: pypsa.Network, solve_opts: dict, config: dict, plan_year: int
+) -> pypsa.Network:
     """prepare the network for the solver
     Args:
         n (pypsa.Network): the pypsa network object
         solve_opts (dict): the solving options
+        config (dict): the (snakemake) configuration dictionary
+        plan_year (int): the planning horizon year
     """
     if "clip_p_max_pu" in solve_opts:
         for df in (n.generators_t.p_max_pu, n.storage_units_t.inflow):
