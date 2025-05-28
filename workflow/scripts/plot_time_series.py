@@ -85,7 +85,7 @@ def plot_energy_balance(
     p.rename(columns={k: k.title() for k in p.columns}, inplace=True)
     color_series.index = color_series.index.str.strip()
     # split into supply and wothdrawal
-    supply = p.where(p >= 0).dropna(axis=1, how="all")
+    supply = p.where(p > 0).dropna(axis=1, how="all")
     charge = p.where(p < 0).dropna(how="all", axis=1)
 
     # fix names and order
@@ -97,6 +97,7 @@ def plot_energy_balance(
         {"Battery Discharger": "Battery", "Battery Storage": "Battery"},
         inplace=True,
     )
+    color_series = color_series.drop_duplicates()
 
     preferred_order = plot_config["preferred_order"]
     plot_order = (
@@ -408,7 +409,7 @@ if __name__ == "__main__":
             "plot_snapshots",
             topology="current+FCG",
             co2_pathway="exp175default",
-            planning_horizons="2060",
+            planning_horizons="2025",
             heating_demand="positive",
             winter_day1="12-10 21:00",  # mm-dd HH:MM
             winter_day2="12-17 12:00",  # mm-dd HH:MM
