@@ -19,6 +19,7 @@ from copy import deepcopy
 
 import gurobipy
 import multiprocessing
+import functools
 
 # get root logger
 logger = logging.getLogger()
@@ -184,6 +185,7 @@ class PathManager:
         spec.loader.exec_module(workflow)
         return workflow.__version__
 
+    @functools.lru_cache
     def _join_scenario_vars(self) -> str:
         """Join scenario variables into a human readable string
 
@@ -198,6 +200,12 @@ class PathManager:
             "co2_pathway": "co2pw",
             "heating_demand": "proj",
         }
+
+        # remove heating wildcards if not needed
+        if not self.config.get("heat_coupling", False):
+            if "heating_demand" in self.config["scenario"]:
+                _ = self.config["scenario"].pop("heating_demand")
+
         # remember need place holders for snakemake
         return "_".join(
             [
