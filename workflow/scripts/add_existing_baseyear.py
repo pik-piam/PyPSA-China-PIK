@@ -268,9 +268,11 @@ def add_power_capacities_installed_before_baseyear(
         costs_key = costs_map[generator]
 
         vre_carriers = ["solar", "onwind", "offwind"]
+
         if generator in vre_carriers:
             mask = n.generators_t.p_max_pu.columns.map(n.generators.carrier) == generator
             p_max_pu = n.generators_t.p_max_pu.loc[:, mask]
+
             n.add(
                 "Generator",
                 capacity.index,
@@ -288,24 +290,7 @@ def add_power_capacities_installed_before_baseyear(
                 location=buses,
             )
 
-        elif generator == "coal power plant":
-            n.add(
-                "Generator",
-                capacity.index,
-                suffix=f"-{grouping_year}",
-                bus=buses,
-                carrier=carrier_map[generator],
-                p_nom=capacity,
-                p_nom_min=capacity,
-                p_nom_extendable=False,
-                marginal_cost=costs.at[costs_key, "marginal_cost"],
-                efficiency=costs.at[costs_key, "efficiency"],
-                build_year=grouping_year,
-                lifetime=costs.at[costs_key, "lifetime"],
-                location=buses,
-            )
-
-        elif generator == "nuclear":
+        elif generator in ["nuclear", "coal power plant"]:
             n.add(
                 "Generator",
                 capacity.index,
@@ -315,7 +300,7 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom=capacity,
                 p_nom_min=capacity,
                 p_nom_extendable=False,
-                p_min_pu=0.7,
+                p_min_pu=0.7 if generator == "nuclear" else 0.0,
                 marginal_cost=costs.at[costs_key, "marginal_cost"],
                 efficiency=costs.at[costs_key, "efficiency"],
                 build_year=grouping_year,

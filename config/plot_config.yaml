@@ -437,7 +437,8 @@ plotting:
   - coal boiler decentral
   - coal boiler central
   - CHP coal
-  - OCGT
+  - gas CCGT
+  - Combined-Cycle Gas
   - gas boiler
   - gas boiler decentral
   - gas boiler central
@@ -472,6 +473,7 @@ plotting:
   - solar
   - battery storage
   - gas
+  - OCGT
   - gas OCGT
   - battery discharger
   - battery
