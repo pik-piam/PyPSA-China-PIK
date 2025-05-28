@@ -145,13 +145,14 @@ def add_existing_vre_capacities(
                 for gen in res_capacities.index:
                     bus_bin = re.sub(f" {carrier}.*", "", gen)
                     bus, bin_id = bus_bin.rsplit(" ", maxsplit=1)
-                    name = f"{bus_bin} {carrier}-{year}"
+                    name = f"{bus_bin} {carrier}-{int(year)}"
                     capacity = res_capacities.loc[gen, year]
                     if capacity > 0.0:
                         cost_key = carrier.split("-", maxsplit=1)[0]
                         df_agg.at[name, "Fueltype"] = carrier
                         df_agg.at[name, "Capacity"] = capacity
-                        df_agg.at[name, "DateIn"] = year
+                        df_agg.at[name, "DateIn"] = int(year)
+                        df_agg.at[name, "grouping_year"] = int(year)
                         df_agg.at[name, "lifetime"] = costs.at[cost_key, "lifetime"]
                         df_agg.at[name, "DateOut"] = year + costs.at[cost_key, "lifetime"] - 1
                         df_agg.at[name, "bus"] = bus
@@ -226,19 +227,21 @@ def add_power_capacities_installed_before_baseyear(
     costs_map.update(missing_techs)
 
     df.resource_class.fillna("", inplace=True)
+    df.grouping_year = df.grouping_year.astype(int)
     df_ = df.pivot_table(
         index=["grouping_year", "tech_clean", "resource_class"],
         columns="bus",
         values="Capacity",
         aggfunc="sum",
     )
+
     df_.fillna(0, inplace=True)
 
     defined_carriers = n.carriers.index.unique().to_list()
 
     # TODO do we really need to loop over the years?
     for grouping_year, generator, resource_grade in df_.index:
-
+        grouping_year = int(grouping_year)
         logger.info(f"Adding existing generator {generator} with year grp {grouping_year}")
         if not carrier_map.get(generator, "missing") in defined_carriers:
             logger.warning(
@@ -271,7 +274,7 @@ def add_power_capacities_installed_before_baseyear(
             n.add(
                 "Generator",
                 capacity.index,
-                suffix="-" + str(grouping_year),
+                suffix=f"-{grouping_year}",
                 bus=buses,
                 carrier=carrier_map[generator],
                 p_nom=capacity,
@@ -327,7 +330,7 @@ def add_power_capacities_installed_before_baseyear(
                 capacity.index,
                 suffix="-" + str(grouping_year),
                 bus0=bus0,
-                bus1=capacity.index,
+                bus1=buses,
                 carrier=carrier_map[generator],
                 marginal_cost=costs.at[costs_key, "efficiency"]
                 * costs.at[costs_key, "VOM"],  # NB: VOM is per MWel
@@ -359,8 +362,8 @@ def add_power_capacities_installed_before_baseyear(
                 capacity.index,
                 suffix="-" + str(grouping_year),
                 bus0=bus0,
-                bus1=capacity.index,
-                carrier=carrier_,
+                bus1=buses,
+                carrier=carrier_map[generator],
                 marginal_cost=costs.at[costs_key, "efficiency"]
                 * costs.at[costs_key, "VOM"],  # NB: VOM is per MWel
                 # NB: fixed cost is per MWel
@@ -554,7 +557,7 @@ if __name__ == "__main__":
             "add_existing_baseyear",
             topology="current+FCG",
             co2_pathway="exp175default",
-            planning_horizons="2030",
+            planning_horizons="2025",
             heating_demand="positive",
         )
 
