@@ -237,15 +237,16 @@ rule build_biomass_potential:
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
 
+# TODO not currently called dep on heat coupling
 rule prepare_baseyear_capacities:
     """prepare inputs for add_existing_baseyear (optional in overnight mode)"""
     params:
-        last_pypsa_cost_year = 2060
+        last_pypsa_cost_year = 2060,
+        CHP_to_elec = not config.get("heat_coupling", False),
     input:
         tech_costs=path_manager.costs_dir(ignore_remind=True) + "/costs_{planning_horizons}.csv",
         **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
             for tech in config['existing_capacities']['techs']},
-    # TODO make dep on remind
     output: 
         installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv'
     threads: 1
@@ -403,7 +404,7 @@ elif config["foresight"] == "myopic":
         script: "scripts/solve_network_myopic.py"
 
 
-# runme with `snakemake -t results/dag/rules_graph.png `
+# run with `snakemake results/dag/rules_graph.png `
 rule dag:
     message:
         "Creating DAG of workflow."

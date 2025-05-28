@@ -42,7 +42,7 @@ def determine_simulation_timespan(config: dict, year: int) -> int:
         bounds=snapshot_cfg["bounds"],
         # naive local timezone
         tz=None,
-        end_year=(None if not snapshot_cfg["end_year_plus1"] else year + 1),
+        end_year=None if not snapshot_cfg["end_year_plus1"] else year + 1,
     )
 
     # load costs
@@ -191,22 +191,41 @@ def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series)
     return pd.DataFrame(data=allocation, columns=grade_capacities.index, index=availability.index)
 
 
+def convert_CHP_to_poweronly(capacities: pd.DataFrame) -> pd.DataFrame:
+    """Convert CHP capacities to power-only capacities by removing the heat part
+
+    Args:
+        capacities (pd.DataFrame): DataFrame with existing capacities
+    Returns:
+        pd.DataFrame: DataFrame with converted capacities
+    """
+    # Convert CHP to power-only by removing the heat part
+    chp_mask = capacities.Tech.str.contains("CHP")
+    capacities.loc[chp_mask, "Fueltype"] = (
+        capacities.loc[chp_mask, "Fueltype"]
+        .str.replace("central coal CHP", "coal power plant")
+        .replace("central gas CHP", "CCGT gas")
+    )
+    return capacities
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "prepare_baseyear_capacities",
             topology="current+FCG",
             co2_pathway="remind_ssp2NPI",
-            planning_horizons="2070",
+            planning_horizons="2030",
             heating_demand="positive",
         )
 
     configure_logging(snakemake, logger=logger)
 
     config = snakemake.config
+    params = snakemake.params
     # remind extends beyond pypsa: limit the reference pypsa cost year to the last pypsa year
     plan_year = int(snakemake.wildcards["planning_horizons"])
-    cost_year = min(snakemake.params.last_pypsa_cost_year, plan_year)
+    cost_year = min(params.last_pypsa_cost_year, plan_year)
     tech_costs = snakemake.input.tech_costs.replace(str(plan_year), str(cost_year))
     data_paths = {k: v for k, v in snakemake.input.items()}
 
@@ -221,6 +240,9 @@ if __name__ == "__main__":
     # TODO add renewables
     existing_capacities = assign_year_bins(existing_capacities, year_bins)
     installed = fix_existing_capacities(existing_capacities, costs, year_bins, baseyear)
+
+    if params.CHP_to_elec:
+        installed = convert_CHP_to_poweronly(installed)
 
     if installed.empty or installed.lifetime.isna().any():
         logger.warning(

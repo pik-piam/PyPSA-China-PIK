@@ -353,8 +353,8 @@ if __name__ == "__main__":
             "build_load_profiles",
             heating_demand="positive",
             planning_horizons="2040",
-            co2_pathway="remind_ssp2NPI",
-            # co2_pathway="exp175default",
+            # co2_pathway="remind_ssp2NPI",
+            co2_pathway="exp175default",
             topology="Current+Neigbor",
         )
 
@@ -379,36 +379,41 @@ if __name__ == "__main__":
         snakemake.input.hrly_regional_ac_load, snakemake.input.province_codes
     )
 
-    # TODO this might break in coupling mode
     yearly_projs = read_yearly_load_projections(snakemake.input.elec_load_projs, conversion)
     projected_demand = project_elec_demand(hrly_MWh_load, yearly_projs, planning_horizons)
 
     with pd.HDFStore(snakemake.output.elec_load_hrly, mode="w", complevel=4) as store:
         store["load"] = projected_demand
 
-    atlite_hour_shift = calc_atlite_heating_timeshift(date_range, use_last_ts=False)
-    reg_daily_hd = build_daily_heat_demand_profiles(
-        config["heat_demand"],
-        atlite_heating_hr_shift=atlite_hour_shift,
-        switch_month_day=True,
-    )
-
-    hot_water_per_day = build_hot_water_per_day(planning_horizons)
-
-    heat_demand, space_heat_demand, space_heating_per_hdd, water_heat_demand = (
-        build_heat_demand_profile(
-            reg_daily_hd,
-            hot_water_per_day,
-            date_range,
-            planning_horizons,
+    if config.get("heat_coupling", False):
+        atlite_hour_shift = calc_atlite_heating_timeshift(date_range, use_last_ts=False)
+        reg_daily_hd = build_daily_heat_demand_profiles(
+            config["heat_demand"],
+            atlite_heating_hr_shift=atlite_hour_shift,
+            switch_month_day=True,
         )
-    )
 
-    with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w", complevel=4) as store:
-        store["heat_demand_profiles"] = heat_demand
+        hot_water_per_day = build_hot_water_per_day(planning_horizons)
 
-    with pd.HDFStore(snakemake.output.energy_totals_name, mode="w") as store:
-        store["space_heating_per_hdd"] = space_heating_per_hdd
-        store["hot_water_per_day"] = hot_water_per_day
+        heat_demand, space_heat_demand, space_heating_per_hdd, water_heat_demand = (
+            build_heat_demand_profile(
+                reg_daily_hd,
+                hot_water_per_day,
+                date_range,
+                planning_horizons,
+            )
+        )
 
-    logger.info("Heat demand profiles successfully built")
+        with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w", complevel=4) as store:
+            store["heat_demand_profiles"] = heat_demand
+
+        with pd.HDFStore(snakemake.output.energy_totals_name, mode="w") as store:
+            store["space_heating_per_hdd"] = space_heating_per_hdd
+            store["hot_water_per_day"] = hot_water_per_day
+
+        logger.info("Heat demand profiles successfully built")
+    else:
+        with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w") as store:
+            store["skipped_not_heat_coupled"] = pd.Series(["Skipped, heat coupling is disabled"])
+        with pd.HDFStore(snakemake.output.energy_totals_name, mode="w") as store:
+            store["skipped_not_heat_coupled"] = pd.Series(["Skipped, heat coupling is disabled"])
