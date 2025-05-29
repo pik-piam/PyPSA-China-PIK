@@ -1,7 +1,7 @@
 plot: True
-  plot_reference: true
-
 plotting:
+  visualize_inputs:
+    reference_costs: true
   network_style_config_file: "config/plotting_styles/network_map.mplstyle"
   transparent: false
   statistics:
