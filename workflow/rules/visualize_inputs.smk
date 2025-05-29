@@ -1,22 +1,22 @@
-# snakemake rules for datainput check
+# snakemake rules for plot_cost_data
 
 from os.path import join
 
 scenario_ph = {"planning_horizons": config["scenario"]["planning_horizons"]}
 scenario_wildcards = {k: v for k, v in config["scenario"].items() if k != "planning_horizons"}
 
+COSTS_DATA = path_manager.costs_dir()
 
 if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
     rule plot_parameters:
         input:
-            # 使用pre_networks中的成本数据
-            costs = expand(RESULTS_DIR + "/prenetworks/ntwk_{planning_horizons}.nc", **scenario_ph),
+            costs = lambda wildcards: join(COSTS_DATA, f"costs_{wildcards.planning_horizons}.csv"),
             config = "config/plot_config.yaml",
-            reference_costs = lambda wildcards: "resources/data/costs/reference_values/tech_costs_subset_litreview.csv" if config["plotting"].get("plot_reference", True) else None
+            reference_costs = lambda wildcards: "resources/data/costs/reference_values/tech_costs_subset_litreview.csv" if config["plotting"]["visualize_inputs"]["reference_costs"] else None
         output:
             cost_map = expand(RESULTS_DIR + "/plots/costs/parameters_comparison.pdf", **scenario_wildcards)
         params:
-            plot_reference = lambda wildcards: config["plotting"].get("plot_reference", True)
+            plot_reference = lambda wildcards: config["plotting"]["visualize_inputs"]["reference_costs"]
         log:
             expand(LOG_DIR + "/plot_costs/parameters_comparison.log", **scenario_wildcards)
         resources:

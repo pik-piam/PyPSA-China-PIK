@@ -10,6 +10,33 @@ import ultraplot as uplt
 from typing import Optional, Dict
 import pypsa
 # --------------------------------------------------
+# Constants
+# --------------------------------------------------
+
+# Currency exchange rates (as of 2024)
+EXCHANGE_RATES = {
+    ("eur", "eur"): 1.0,
+    ("eur", "cny"): 7.8,
+    ("cny", "eur"): 1/7.8,
+    ("usd", "cny"): 7.2,
+    ("cny", "usd"): 1/7.2,
+    ("usd", "eur"): 7.2/7.8,
+    ("eur", "usd"): 7.8/7.2,
+    ("cny", "cny"): 1.0,
+    ("usd", "usd"): 1.0,
+}
+
+# Currency aliases for standardization
+CURRENCY_ALIASES = {
+    "eur": "eur",
+    "€": "eur",
+    "usd": "usd",
+    "$": "usd",
+    "cny": "cny",
+    "rmb": "cny"
+}
+
+# --------------------------------------------------
 # 1) Helper Functions
 # --------------------------------------------------
 
@@ -62,20 +89,32 @@ def load_and_clean_data(file_path: str) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def standardize_unit(unit_str):
-    """
-    Standardize a unit string by trimming whitespace,
-    converting to lowercase, and removing internal spaces.
+def standardize_unit(unit_str: str) -> str:
+    """Standardize a unit string by trimming whitespace, converting to lowercase, and removing internal spaces.
+
+    Args:
+        unit_str (str): The input unit string to be standardized.
+
+    Returns:
+        str: The standardized unit string. Returns empty string if input is NaN.
     """
     if pd.isna(unit_str):
         return ""
     return str(unit_str).strip().lower().replace(" ", "")
 
 
-def load_config(yaml_path):
-    """
-    Read the 'Techs' section from a YAML file (e.g., default_config.yaml).
-    Returns a dictionary with keys like 'vre_techs', 'conv_techs'.
+def load_config(yaml_path: str) -> Dict[str, list]:
+    """Read the 'Techs' section from a YAML file.
+
+    Args:
+        yaml_path (str): Path to the YAML configuration file (e.g., default_config.yaml).
+
+    Returns:
+        Dict[str, list]: A dictionary containing technology lists with keys:
+            - 'vre_techs': List of variable renewable energy technologies
+            - 'conv_techs': List of conventional technologies
+            - 'store_techs': List of storage technologies
+            Returns empty lists if file cannot be loaded or parsed.
     """
     try:
         with open(yaml_path, "r", encoding="utf-8") as f:
@@ -90,39 +129,22 @@ def load_config(yaml_path):
         return {"vre_techs": [], "conv_techs": [], "store_techs": []}
 
 
-def load_plot_config(plot_yaml_path):
-    """
-    Read the 'tech_colors' section under 'plotting' from the given YAML file.
-    Ensures color values are valid HEX codes, defaulting to '#999999'.
-    """
-    try:
-        with open(plot_yaml_path, "r", encoding="utf-8") as f:
-            config = yaml.safe_load(f)
-    except FileNotFoundError:
-        logging.error(f"Error: The file {plot_yaml_path} was not found.")
-        return {}
-    except yaml.YAMLError as e:
-        logging.error(f"Error parsing YAML file: {e}")
-        return {}
 
-    tech_colors = config.get("plotting", {}).get("tech_colors", {})
-
-    # Validate HEX colors
-    hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
-    for tech, color in tech_colors.items():
-        if not isinstance(color, str) or not hex_color_pattern.match(color):
-            tech_colors[tech] = "#999999"
-    return tech_colors
 
 # --------------------------------------------------
 # 2) Filtering Logic
 # --------------------------------------------------
 
 
-def filter_investment_parameter(df):
-    """
-    Keep only rows where parameter == 'investment' (case-insensitive).
-    If 'parameter' column does not exist, we return df unchanged.
+def filter_investment_parameter(df: pd.DataFrame) -> pd.DataFrame:
+    """Filter DataFrame to keep only rows where parameter is 'investment'.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing cost data with a 'parameter' column.
+
+    Returns:
+        pd.DataFrame: Filtered DataFrame containing only investment parameter rows.
+            If 'parameter' column does not exist, returns the original DataFrame unchanged.
     """
     if "parameter" not in df.columns:
         logging.warning("Warning: 'parameter' column not found.")
@@ -133,15 +155,28 @@ def filter_investment_parameter(df):
     return df_investment
 
 
-def filter_technologies_by_config(df, default_config_path):
-    """
-    Filter and categorize technologies based on the Techs section
-    of the default_config.yaml file. An alias map is used for direct
-    and fuzzy matching of technology names in the DataFrame.
-    Rows whose technology is not found in the config or alias map are dropped.
+def filter_technologies_by_config(df: pd.DataFrame, techs_dict: Dict[str, list]) -> pd.DataFrame:
+    """Filter and categorize technologies based on the provided technology dictionary.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing technology data.
+        techs_dict (Dict[str, list]): Dictionary containing technology lists with keys:
+            - 'vre_techs': List of variable renewable energy technologies
+            - 'conv_techs': List of conventional technologies
+            - 'store_techs': List of storage technologies
+
+    Returns:
+        pd.DataFrame: Filtered DataFrame with mapped technologies and categories.
     """
     try:
-        techs_dict = load_config(default_config_path)
+        # Validate input DataFrame
+        if df.empty:
+            logging.warning("Warning: Input DataFrame is empty")
+            return pd.DataFrame()
+            
+        if "technology" not in df.columns:
+            logging.error("Error: 'technology' column not found in DataFrame")
+            return pd.DataFrame()
 
         # Example aliases
         alias_map = {
@@ -168,213 +203,215 @@ def filter_technologies_by_config(df, default_config_path):
             for alias in aliases:
                 tech_aliases[alias.lower()] = main_tech
 
-        # Separate out "solar thermal" from VRE
-        vre_techs = [t for t in techs_dict.get("vre_techs", []) if t != "solar thermal"]
-        conv_techs = techs_dict.get("conv_techs", [])
-        store_techs = techs_dict.get("store_techs", [])
-        solar_thermal = ["solar thermal"]
+        # Create technology categories and collect all technologies
+        tech_categories = {
+            "Storage Technologies": techs_dict.get("store_techs", []),
+            "VRE Technologies": [t for t in techs_dict.get("vre_techs", []) 
+                               if t != "solar thermal"],
+            "Conventional Technologies": techs_dict.get("conv_techs", []),
+            "Solar Thermal": ["solar thermal"]
+        }
+        
+        # Flatten all technologies into a single list
+        all_techs = [tech for techs in tech_categories.values() for tech in techs]
 
-        # Combine all known techs
-        all_techs = vre_techs + conv_techs + store_techs + solar_thermal
-
-        # Map from tech -> category
-        tech_categories = {}
-        for t in vre_techs:
-            tech_categories[t] = "VRE Technologies"
-        for t in conv_techs:
-            tech_categories[t] = "Conventional Technologies"
-        for t in store_techs:
-            tech_categories[t] = "Storage Technologies"
-        for t in solar_thermal:
-            tech_categories[t] = "Solar Thermal"
-
-        # Build a mapping from DF tech -> config tech
-        df_techs = df["technology"].unique()
-        tech_mapping = {}
-
-        for df_tech in df_techs:
-            df_tech_lower = df_tech.lower()
-
-            # 1) Direct match
-            if df_tech_lower in [t.lower() for t in all_techs]:
-                for t in all_techs:
-                    if t.lower() == df_tech_lower:
-                        tech_mapping[df_tech] = t
-                        break
-                continue
-
-            # 2) Alias match
-            if df_tech_lower in tech_aliases:
-                tech_mapping[df_tech] = tech_aliases[df_tech_lower]
-                continue
-
-        # Filter rows: only keep those that mapped to a known tech
-        filtered_rows = []
-        for idx, row in df.iterrows():
-            tech = row["technology"]
-            if tech in tech_mapping:
-                mapped_tech = tech_mapping[tech]
-                category = tech_categories.get(mapped_tech)
-                if category:
-                    new_row = row.copy()
-                    new_row["mapped_technology"] = mapped_tech
-                    new_row["category"] = category
-                    filtered_rows.append(new_row)
-
-        if not filtered_rows:
+        # Create a copy of the DataFrame
+        df_filtered = df.copy()
+        
+        # Direct mapping
+        df_filtered["mapped_technology"] = df_filtered["technology"].where(
+            df_filtered["technology"].isin(all_techs)
+        )
+        
+        # Alias mapping
+        df_filtered["mapped_technology"].fillna(
+            df_filtered["technology"].str.lower().map(tech_aliases),
+            inplace=True
+        )
+        
+        # Log unmapped technologies
+        unmapped_techs = df_filtered[df_filtered["mapped_technology"].isna()]["technology"].unique()
+        if len(unmapped_techs) > 0:
+            logging.warning(
+                f"Warning: The following technologies could not be mapped: {unmapped_techs}"
+            )
+        
+        # Drop rows where no match was found
+        df_filtered = df_filtered.dropna(subset=["mapped_technology"])
+        
+        if df_filtered.empty:
             logging.warning("Warning: No matching technologies found!")
             return pd.DataFrame()
 
-        filtered_df = pd.DataFrame(filtered_rows)
-        return filtered_df
+        # Create reverse mapping for category assignment
+        tech_to_category = {}
+        for category, techs in tech_categories.items():
+            for tech in techs:
+                tech_to_category[tech] = category
+            
+        # Add category based on mapped technology
+        df_filtered["category"] = df_filtered["mapped_technology"].map(tech_to_category)
+        
+        return df_filtered
+        
+    except KeyError as e:
+        logging.error(f"Error: Missing key in technology dictionary - {str(e)}")
+        return pd.DataFrame()
+    except AttributeError as e:
+        logging.error(f"Error: Invalid DataFrame structure - {str(e)}")
+        return pd.DataFrame()
     except Exception as e:
-        logging.error(f"Error filtering technologies: {e}")
-        return df
+        logging.error(f"Unexpected error in technology filtering: {str(e)}")
+        return pd.DataFrame()
 
 # --------------------------------------------------
 # 3) Unit Conversion
 # --------------------------------------------------
 
 
-def convert_row_units(row, target_unit_installation, target_unit_storage):
+def parse_unit_string(unit_str: str) -> tuple:
+    """Parse a unit string into currency and capacity parts.
+
+    Args:
+        unit_str (str): Unit string in format "currency/capacity"
+
+    Returns:
+        tuple: (currency_part, capacity_part) or (None, None) if invalid format
     """
-    Convert row's numeric columns so that:
-      - If the original unit is recognized as storage (kWh or MWh in the capacity part),
-        we unify to target_unit_storage (e.g. "eur/kWh").
-      - Otherwise, we unify to target_unit_installation (e.g. "eur/kW").
-      - If the capacity part is not in [kW, MW, kWh, MWh], we keep it as-is.
-      
-    Assumes exchange rates:
-      1 EUR = 7.8 CNY
-      1 USD = 7.2 CNY
+    if pd.isna(unit_str) or "/" not in unit_str:
+        return None, None
+    currency_part, capacity_part = unit_str.split("/", 1)
+    return currency_part.strip().lower(), capacity_part.strip().lower()
+
+
+def is_storage_unit(capacity_part: str) -> bool:
+    """Check if the capacity part indicates a storage unit.
+
+    Args:
+        capacity_part (str): Capacity part of the unit string
+
+    Returns:
+        bool: True if the unit is for storage (kWh or MWh)
     """
-    if "unit" not in row or pd.isna(row["unit"]):
-        return row  # no unit, do nothing
+    return "kwh" in capacity_part.lower() or "mwh" in capacity_part.lower()
 
-    original_unit = str(row["unit"]).strip()
-    if "/" not in original_unit:
-        return row
 
-    # -----------------------------
-    # -----------------------------
-    currency_part, capacity_part = original_unit.split("/", 1)
-    currency_part = currency_part.strip().lower()
-    capacity_part = capacity_part.strip().lower()
+def get_capacity_factor(orig_cap: str, target_cap: str) -> float:
+    """Calculate the capacity conversion factor.
 
-    is_storage = False
-    if "kwh" in capacity_part or "mwh" in capacity_part:
-        is_storage = True
+    Args:
+        orig_cap (str): Original capacity unit
+        target_cap (str): Target capacity unit
 
-    # -----------------------------
-    #    e.g. target_unit_installation = "eur/kW"
-    #         target_unit_storage      = "eur/kWh"
-    # -----------------------------
-    def parse_target_unit(unit_str):
-        """
-        E.g. "eur/kW" -> (target_currency="eur", target_capacity="kw")
-        """
-        parts = unit_str.lower().split("/")
-        if len(parts) == 2:
-            return parts[0], parts[1]  # currency, capacity
-        else:
-            return parts[0], None
-
-    if is_storage:
-        tgt_currency, tgt_capacity = parse_target_unit(target_unit_storage)
-    else:
-        tgt_currency, tgt_capacity = parse_target_unit(target_unit_installation)
-
-    # -----------------------------
-    # -----------------------------
-    currency_aliases = {
-        "eur": "eur",
-        "€":   "eur",
-        "usd": "usd",
-        "$":   "usd",
-        "cny": "cny",
-        "rmb": "cny"
+    Returns:
+        float: Conversion factor
+    """
+    capacity_factors = {
+        ("kw", "kw"): 1.0,
+        ("mw", "kw"): 1/1000.0,
+        ("kwh", "kwh"): 1.0,
+        ("mwh", "kwh"): 1/1000.0,
+        ("kw", "mw"): 1000.0,
+        ("mw", "mw"): 1.0,
+        ("kwh", "mwh"): 1000.0,
+        ("mwh", "mwh"): 1.0
     }
+    
+    return capacity_factors.get((orig_cap.lower(), target_cap.lower()), 1.0)
 
-    orig_currency = None
-    for k, v in currency_aliases.items():
-        if k in currency_part:
-            orig_currency = v
-            break
-    if orig_currency is None:
-        orig_currency = "unknown"
 
-    # Table of exchange rates
-    exchange_map = {
-        ("eur", "eur"): 1.0,
-        ("eur", "cny"): 7.8,
-        ("cny", "eur"): 1/7.8,
-        ("usd", "cny"): 7.2,
-        ("cny", "usd"): 1/7.2,
-        ("usd", "eur"): 7.2/7.8,
-        ("eur", "usd"): 7.8/7.2,
-        ("cny", "cny"): 1.0,
-        ("usd", "usd"): 1.0,
-    }
+def normalize_capacity_unit(cap: str) -> str:
+    """Normalize capacity unit string.
 
-    currency_factor = exchange_map.get((orig_currency, tgt_currency), 1.0)
+    Args:
+        cap (str): Capacity unit string
 
-    # -----------------------------
-    # -----------------------------
-    def capacity_factor_func(orig_cap, new_cap):
+    Returns:
+        str: Normalized capacity unit
+    """
+    if not cap:
+        return ""
+    cap = cap.lower()
+    cap = cap.replace(" ", "")
+    cap = cap.replace("²", "2")
+    return cap
 
-        if orig_cap == "kw" and new_cap == "kw":
-            return 1.0
-        if orig_cap == "mw" and new_cap == "kw":
-            return 1/1000.0
-        if orig_cap == "kwh" and new_cap == "kwh":
-            return 1.0
-        if orig_cap == "mwh" and new_cap == "kwh":
-            return 1/1000.0
-        if orig_cap == "kw" and new_cap == "mw":
-            return 1000.0
-        if orig_cap == "mw" and new_cap == "mw":
-            return 1.0
-        if orig_cap == "kwh" and new_cap == "mwh":
-            return 1000.0
-        if orig_cap == "mwh" and new_cap == "mwh":
-            return 1.0
-        return 1.0 
 
-    def normalize_capacity_unit(cap):
-        cap = cap.lower()
-        cap = cap.replace(" ", "")
-        cap = cap.replace("²", "2")  
-        return cap
+def get_numeric_columns(row: pd.Series) -> list:
+    """Get list of numeric columns in the row.
 
-    norm_capacity = normalize_capacity_unit(capacity_part)
-    norm_target = normalize_capacity_unit(tgt_capacity if tgt_capacity else "")
+    Args:
+        row (pd.Series): Input row
 
-    if norm_capacity in ["kw", "mw", "kwh", "mwh"] and norm_target in ["kw", "mw", "kwh", "mwh"]:
-        cap_factor = capacity_factor_func(norm_capacity, norm_target)
-        new_capacity_part = norm_target  
-    else:
-
-        cap_factor = 1.0
-        new_capacity_part = capacity_part
-
-    factor = currency_factor * cap_factor
-
-    # -----------------------------
+    Returns:
+        list: List of column names containing numeric values
+    """
     numeric_cols = []
+    
+    # Check for year columns
     for col in row.index:
-        if col != "year" and isinstance(col, str) and col.isdigit():
+        if isinstance(col, str) and col.isdigit():
             numeric_cols.append(col)
-
+            
+    # Check for cost columns
     if not numeric_cols:
         for col in row.index:
             if isinstance(col, str) and "cost_" in col and col.split("_")[-1].isdigit():
                 numeric_cols.append(col)
-
+                
+    # Check for specific years
     possible_years = ["2020", "2025", "2030", "2035", "2040", "2045", "2050", "2055", "2060"]
-    for y in possible_years:
-        if y in row.index and y not in numeric_cols:
-            numeric_cols.append(y)
+    for year in possible_years:
+        if year in row.index and year not in numeric_cols:
+            numeric_cols.append(year)
+            
+    return numeric_cols
 
+
+def convert_row_units(row: pd.Series, target_unit_installation: str, target_unit_storage: str) -> pd.Series:
+    """Convert row's numeric columns to target units.
+
+    Args:
+        row (pd.Series): Input row containing cost data
+        target_unit_installation (str): Target unit for installation costs (e.g. "eur/kW")
+        target_unit_storage (str): Target unit for storage costs (e.g. "eur/kWh")
+
+    Returns:
+        pd.Series: Row with converted values
+    """
+    if "unit" not in row or pd.isna(row["unit"]):
+        return row
+
+    # Parse unit string
+    currency_part, capacity_part = parse_unit_string(row["unit"])
+    if not currency_part or not capacity_part:
+        return row
+
+    # Determine if storage unit and get target unit
+    is_storage = is_storage_unit(capacity_part)
+    target_unit = target_unit_storage if is_storage else target_unit_installation
+    tgt_currency, tgt_capacity = parse_unit_string(target_unit)
+
+    # Get currency conversion factor
+    orig_currency = CURRENCY_ALIASES.get(currency_part.lower(), "unknown")
+    currency_factor = EXCHANGE_RATES.get((orig_currency, tgt_currency), 1.0)
+
+    # Get capacity conversion factor
+    norm_capacity = normalize_capacity_unit(capacity_part)
+    norm_target = normalize_capacity_unit(tgt_capacity)
+    
+    if norm_capacity in ["kw", "mw", "kwh", "mwh"] and norm_target in ["kw", "mw", "kwh", "mwh"]:
+        cap_factor = get_capacity_factor(norm_capacity, norm_target)
+        new_capacity_part = norm_target
+    else:
+        cap_factor = 1.0
+        new_capacity_part = capacity_part
+
+    # Calculate total conversion factor
+    factor = currency_factor * cap_factor
+
+    # Convert numeric columns
+    numeric_cols = get_numeric_columns(row)
     for col in numeric_cols:
         val = row[col]
         if pd.notna(val):
@@ -383,8 +420,7 @@ def convert_row_units(row, target_unit_installation, target_unit_storage):
             except ValueError:
                 pass
 
-    # -----------------------------
-    # e.g. "EUR/kW", "EUR/ton", "EUR/m^2" ...
+    # Update unit string
     row["unit"] = f"{tgt_currency.upper()}/{new_capacity_part}"
 
     return row
@@ -690,86 +726,95 @@ def extract_costs_from_network(n: pypsa.Network) -> pd.DataFrame:
 # 5) Main Execution (Snakemake or Standalone)
 # --------------------------------------------------
 
+def mock_snakemake():
+    """Create a mock snakemake object for standalone testing.
+    
+    Returns:
+        SimpleNamespace: A mock snakemake object with necessary attributes.
+    """
+    from types import SimpleNamespace
+    
+    return SimpleNamespace(
+        input=SimpleNamespace(
+            costs={
+                "2020": "tech_costs_subset.csv",
+                "2025": "tech_costs_subset.csv",
+                "2030": "tech_costs_subset.csv"
+            },
+            reference_costs="resources/data/costs/reference_values/tech_costs_subset_litreview.csv"
+        ),
+        output=SimpleNamespace(
+            cost_map="test_output.png"
+        ),
+        config={
+            "plotting": {
+                "tech_colors": {
+                    "default": "#999999"
+                }
+            },
+            "Techs": {
+                "vre_techs": ["solar", "wind"],
+                "conv_techs": ["coal", "gas"],
+                "store_techs": ["battery"]
+            }
+        },
+        params=SimpleNamespace(
+            get=lambda x, y: True
+        )
+    )
+
 
 if __name__ == "__main__":
-    if 'snakemake' in globals():
-        target_unit_installation = "eur/kW"
-        target_unit_storage = "eur/kWh"
-        default_config_path = "config/default_config.yaml"
-        plot_config_path = "config/plot_config.yaml"
-
-        tech_colors = load_plot_config(plot_config_path)
-        all_data = pd.DataFrame()
-        
-        for year, file_path in snakemake.input.costs.items():
-            n = pypsa.Network(file_path)
-            df = extract_costs_from_network(n)
-            if not df.empty:
-                df[year] = df['value']
-                all_data = pd.concat([all_data, df], ignore_index=True)
-
-        if all_data.empty:
-            logging.error("Error: No data loaded!")
-            sys.exit(1)
-
-        # 1) Filter to keep only investment parameter
-        all_data = filter_investment_parameter(all_data)
-
-        # 2) Filter & unify to standard units
-        all_data = apply_conversion(all_data, target_unit_installation, target_unit_storage)
-
-        # 3) Filter technologies based on config
-        filtered_data = filter_technologies_by_config(all_data, default_config_path)
-        if filtered_data.empty:
-            logging.warning("Warning: No data left after technology filtering!")
-            sys.exit(0)
-
-        # 4) Plot
-        ref_df = None
-        if hasattr(snakemake.input, 'reference_costs'):
-            ref_df = load_reference_data(snakemake.input.reference_costs)
-        
-        fig = plot_technologies_by_category(
-            filtered_data, 
-            ref_df, 
-            tech_colors,
-            plot_reference=snakemake.params.get('plot_reference', True)
-        )
-
-        output_path = str(snakemake.output.cost_map)
-        plt.savefig(output_path, bbox_inches='tight', dpi=300)
-        plt.close()
-
-        logging.info("Plot successfully generated")
-
-    else:
-        # Standalone mode for testing
-        target_unit_installation = "eur/kW"
-        target_unit_storage = "eur/kWh"
-        default_config_path = "config/default_config.yaml"
-        plot_config_path = "config/plot_config.yaml"
-        file_path = "tech_costs_subset.csv"
-
-        tech_colors = load_plot_config(plot_config_path)
-        df = load_and_clean_data(file_path)
-        
+    if 'snakemake' not in globals():
+        snakemake = mock_snakemake()
+    
+    target_unit_installation = "eur/kW"
+    target_unit_storage = "eur/kWh"
+    
+    # 从snakemake.config获取tech_colors并验证
+    from _plot_utilities import validate_hex_colors
+    tech_colors = validate_hex_colors(snakemake.config["plotting"]["tech_colors"])
+    
+    all_data = pd.DataFrame()
+    
+    # 直接加载成本数据
+    for year, file_path in snakemake.input.costs.items():
+        df = pd.read_csv(file_path)
         if not df.empty:
-            # 1) Filter to keep only investment parameter
-            df = filter_investment_parameter(df)
+            df[year] = df['value']
+            all_data = pd.concat([all_data, df], ignore_index=True)
 
-            # 2) Convert units
-            df = apply_conversion(df, target_unit_installation, target_unit_storage)
+    if all_data.empty:
+        logging.error("Error: No data loaded!")
+        sys.exit(1)
 
-            # 3) Filter technologies
-            filtered_df = filter_technologies_by_config(df, default_config_path)
-            if filtered_df.empty:
-                logging.warning("Warning: No data left after technology filtering!")
-                sys.exit(0)
+    # 1) Filter to keep only investment parameter
+    all_data = filter_investment_parameter(all_data)
 
-            # 4) Plot
-            ref_df = load_reference_data("resources/data/costs/reference_values/tech_costs_subset_litreview.csv")
-            fig = plot_technologies_by_category(filtered_df, ref_df, tech_colors)
-            plt.savefig("test_output.png", bbox_inches='tight', dpi=300)
-            logging.info("Test plot successfully generated")
-        else:
-            logging.error("Error: Unable to load test data.")
+    # 2) Filter & unify to standard units
+    all_data = apply_conversion(all_data, target_unit_installation, target_unit_storage)
+
+    # 3) Filter technologies based on config
+    techs_dict = snakemake.config["Techs"]
+    filtered_data = filter_technologies_by_config(all_data, techs_dict)
+    if filtered_data.empty:
+        logging.warning("Warning: No data left after technology filtering!")
+        sys.exit(0)
+
+    # 4) Plot
+    ref_df = None
+    if hasattr(snakemake.input, 'reference_costs'):
+        ref_df = load_reference_data(snakemake.input.reference_costs)
+    
+    fig = plot_technologies_by_category(
+        filtered_data, 
+        ref_df, 
+        tech_colors,
+        plot_reference=snakemake.params.get('plot_reference', True)
+    )
+
+    output_path = str(snakemake.output.cost_map)
+    plt.savefig(output_path, bbox_inches='tight', dpi=300)
+    plt.close()
+
+    logging.info("Plot successfully generated")
