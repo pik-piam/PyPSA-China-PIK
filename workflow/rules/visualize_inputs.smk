@@ -1,4 +1,4 @@
-# snakemake rules for plot_cost_data
+# snakemake rules for plot_input_costs
 
 from os.path import join
 
@@ -8,21 +8,21 @@ scenario_wildcards = {k: v for k, v in config["scenario"].items() if k != "plann
 COSTS_DATA = path_manager.costs_dir()
 
 if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
-    rule plot_parameters:
+    rule plot_input_costs:
         input:
-            costs = lambda wildcards: join(COSTS_DATA, f"costs_{wildcards.planning_horizons}.csv"),
+            costs = expand(join(COSTS_DATA, "costs_{year}.csv"), year=config["scenario"]["planning_horizons"]),
             config = "config/plot_config.yaml",
-            reference_costs = lambda wildcards: "resources/data/costs/reference_values/tech_costs_subset_litreview.csv" if config["plotting"]["visualize_inputs"]["reference_costs"] else None
+            reference_costs = "resources/data/costs/reference_costs/tech_costs_subset_litreview.csv" if config["plotting"]["visualize_inputs"]["reference_costs"] else None
         output:
-            cost_map = expand(RESULTS_DIR + "/plots/costs/parameters_comparison.pdf", **scenario_wildcards)
+            cost_map = expand(RESULTS_DIR + "/plots/costs/costs_comparison.pdf", **scenario_wildcards)
         params:
             plot_reference = lambda wildcards: config["plotting"]["visualize_inputs"]["reference_costs"]
         log:
-            expand(LOG_DIR + "/plot_costs/parameters_comparison.log", **scenario_wildcards)
+            expand(LOG_DIR + "/plot_costs/costs_comparison.log", **scenario_wildcards)
         resources:
             mem_mb = 2000
         script:
-            "../scripts/plot_parameters.py"
+            "../scripts/plot_input_costs.py"
 else:
     raise NotImplementedError(
         f"Plotting fororesight {config['foresight']} not implemented"
