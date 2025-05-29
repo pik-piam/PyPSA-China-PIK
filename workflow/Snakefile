@@ -18,19 +18,26 @@ configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
 
 
-
 # ====== make paths =======
 config_manager = ConfigManager(config)
 config = config_manager.handle_scenarios()
 
+# ====== set global parameters =======
+ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
+CUTOUT_NAME= config["atlite"]["cutout_name"]
+
+# ====== make paths =======
 path_manager = PathManager(config)
 RESULTS_DIR = path_manager.results_dir()
 DERIVED_DATA = path_manager.derived_data_dir(shared=False)
 DERIVED_COMMON = path_manager.derived_data_dir(shared=True)
+DERIVED_CUTOUT = DERIVED_COMMON + f"/cutout_{CUTOUT_NAME}"
+COSTS_DATA = path_manager.costs_dir()
+
 LOG_DIR = path_manager.logs_dir()
 LOGS_COMMON = "logs"
 LU_RASTER = path_manager.landuse_raster_data()
-CUTOUTS_DIR = path_manager.cutouts_dir()
+CUTOUT_PATH = os.path.join(path_manager.cutouts_dir(),CUTOUT_NAME + ".nc")
 
 # ====== include rules ======= (after paths are set!)
 include: "rules/postprocess.smk"
@@ -41,10 +48,6 @@ if config["run"].get("is_test", False):
     localrules: plot_all, build_population, dag, fetch_region_shapes, plot_parameters
 
 
-# ====== set global parameters =======
-ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
-CUTOUT_NAME= config["atlite"]["cutout_name"]
-CUTOUT_PATH = os.path.join(CUTOUTS_DIR,CUTOUT_NAME + ".nc")
 # ====== set up snakemake providers =======
 storage:
     provider="http",
@@ -125,7 +128,7 @@ rule build_solar_thermal_profiles:
         cutout=CUTOUT_PATH,
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5"
     output:
-        profile_solar_thermal = DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5"
+        profile_solar_thermal = DERIVED_CUTOUT+f"/heating/solar_thermal-{config['solar_thermal_angle']}.h5"
     log: LOGS_COMMON + "/build_solar_thermal_profiles.log"
     threads: 8
     resources: mem_mb=30000
@@ -136,7 +139,7 @@ rule build_temperature_profiles:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout=CUTOUT_PATH
     output:
-        temp=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/temperature.h5"
+        temp= DERIVED_CUTOUT + "/heating/temperature.h5"
     log: LOGS_COMMON + "/build_temperature_profiles.log"
     threads: 8
     resources: mem_mb=30000
@@ -146,45 +149,72 @@ rule build_cop_profiles:
     input:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout=CUTOUT_PATH,
-        temp=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/temperature.h5"
+        temp=DERIVED_CUTOUT + "/heating/temperature.h5"
     output:
-        cop=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5"
+        cop= DERIVED_CUTOUT + "/heating/hp_cop.h5"
     threads: 8
     resources: mem_mb=30000
     script: "scripts/build_cop_profiles.py"
 
-rule build_renewable_potential:
+rasters = ["Build_up", "Grass", "Bare", "Shrubland"]
+rule build_availability_matrix:
     input:
-        Build_up_raster=f"{LU_RASTER}/Build_up.tif",
-        Grass_raster=f"{LU_RASTER}/Grass.tif",
-        Bare_raster=f"{LU_RASTER}/Bare.tif",
-        Shrubland_raster=f"{LU_RASTER}/Shrubland.tif",
         # GEBCO bathymetry (water depth)
         gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2024_CN.tif",
-        # natural reserves data
-        natura1='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_0/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
-        natura2='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_1/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
-        natura3='resources/data/landuse_availability/WDPA_WDOECM_Oct2024_Public_CN_shp_2/WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp',
-        provinces_shp=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
+        cutout=CUTOUT_PATH,
+        # TODO directly link to output of fetch region shapes
+        # admin 1 level = first administrative level within country
+        province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
         offshore_province_shapes=DERIVED_COMMON + "/regions/provinces_offshore.geojson",
-        cutout= CUTOUT_PATH,
+        # natural reserves from WPGDA, available land
+        **{
+            f"natura{i+1}": "resources/data/landuse_availability/"
+                        + f"WDPA_WDOECM_Oct2024_Public_CN_shp_{i}/"
+                        + "WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp"
+            for i in range(3)
+        },
+        # available land:
+        **{
+            f"{raster}_raster": f"{LU_RASTER}/{raster}.tif"
+            for raster in rasters
+        },
     output:
-        **{f"{tech}_profile": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
-            for tech in config['Technique']}
-    log: LOGS_COMMON + f"/build_renewable_potential_{CUTOUT_NAME}.log"
-    threads: ATLITE_NPROCESSES
-    resources: mem_mb=ATLITE_NPROCESSES * 5000
-    script: "scripts/build_renewable_potential.py"
+        availability_matrix= DERIVED_CUTOUT + "/availability_matrix_{technology}.nc",
+    log: LOGS_COMMON + "/build_availability_matrix_{technology}.log"
+    script: "scripts/determine_availability_matrix.py"
+
+
+rule build_renewable_profiles:
+    params:
+        resource_classes = lambda wildcards: config["renewable"][wildcards.technology]["resource_classes"]
+    input:
+        availability_matrix= DERIVED_CUTOUT + "/availability_matrix_{technology}.nc",
+        province_shape=DERIVED_COMMON + "/province_shapes/CHN_adm1.shp",
+        offshore_province_shapes=DERIVED_COMMON + "/regions/provinces_offshore.geojson",
+        cutout=CUTOUT_PATH,
+    output:
+        profile=DERIVED_CUTOUT+"/"+"profile_{technology}-{rc_params}.nc",
+        class_regions=DERIVED_CUTOUT+"/"+"{technology}_regions_by_class_{rc_params}.geojson",
+        average_distance=DERIVED_CUTOUT+"/"+"average_distance_{technology}-{rc_params}.h5",
+    log:
+        LOGS_COMMON +f"/cutout_{CUTOUT_NAME}/" +"build_renewable_profile_{technology}-{rc_params}.log",
+    threads: config["atlite"].get("nprocesses", 4)
+    wildcard_constraints:
+        technology="(?!hydro).*",  # Any technology other than hydro
+    script:
+        "scripts/build_renewable_profiles.py"
 
 # TODO check whether energy totals still needed
 rule build_load_profiles:
+    params:
+        elec_load_conversion = config["paths"]["yearly_regional_load"].get("ac_to_mwh", 1),
     input:
-        population = DERIVED_COMMON+"/"+"population/population.h5",
-        population_map = DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
+        population = DERIVED_COMMON + "/population/population.h5",
+        population_map = DERIVED_COMMON + "/population/population_gridcell_map.h5",
         cutout = CUTOUT_PATH,
         intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
         space_heat_demand="resources/data/heating/SPH_2020.csv",
-        elec_load_projs = "resources/data/load/Province_Load_2020_2060.csv",
+        elec_load_projs = path_manager.elec_load(),
         province_codes = "resources/data/regions/province_codes.csv",
         hrly_regional_ac_load = "resources/data/load/Hourly_demand_of_31_province_China_modified_V2.1.csv",
     output:
@@ -202,26 +232,30 @@ rule build_biomass_potential:
         # from doi.org/10.1038/s41467-021-23282-x
         biomass_feedstocks = "resources/data/p_nom/41467_2021_23282_MOESM4_ESM.xlsx"
     log:
-        LOG_DIR + "/build_biomass_potential.log"
+        LOGS_COMMON + "/build_biomass_potential.log"
     output:
-        biomass_potential = DERIVED_DATA+"/"+"p_nom/biomass_potential.h5"
+        biomass_potential=DERIVED_COMMON+"/"+"p_nom/biomass_potential.h5"
     threads: ATLITE_NPROCESSES
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
 
+# make sure the params will appear in the profile names
+resource_class_cfg = {tech: config["renewable"][tech]["resource_classes"] for tech in config["renewable"]}
+rsc_params = {key : "_".join([f"{k}{v}" for k, v in resource_class_cfg[key].items()]) for key in resource_class_cfg}
 
 if config["foresight"] in ["overnight"]:
     rule prepare_networks:
         input:
             heat_demand_profile=DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
-            solar_thermal_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
-            cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
+            solar_thermal_name=DERIVED_CUTOUT+f"/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
+            cop_name=DERIVED_CUTOUT+"/heating/hp_cop.h5",
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
-            tech_costs = "resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs = COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc" for tech in config['renewable']}
+            biomass_potential=DERIVED_COMMON+f"{'/p_nom/biomass_potential.h5' if config["add_biomass"] else ''}",
+            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" for tech in config['renewable']},
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         threads: 1
@@ -248,14 +282,15 @@ elif config["foresight"] == "myopic":
             edges_existing = "resources/data/grids/edges_current.csv",
             heat_demand_profile=DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
-            solar_thermal_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
-            cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
+            solar_thermal_name=DERIVED_CUTOUT+f"/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
+            cop_name=DERIVED_CUTOUT+"/heating/hp_cop.h5",
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             # TODO: metadata for file, why does it need to be h5?
-            tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs= COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON +"/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
-               for tech in config['renewable']}
+            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
+                for tech in config['renewable']},
+
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         wildcard_constraints:
@@ -267,16 +302,17 @@ elif config["foresight"] == "myopic":
     rule prepare_base_networks:
         input:
             edges = "resources/data/grids/edges.txt",
-            biomass_potental = DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",
-            cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
+            biomass_potential=DERIVED_COMMON+"/"+"p_nom/biomass_potential.h5",
+            cop_name= DERIVED_CUTOUT+"/heating/hp_cop.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
             heat_demand_profile= DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
-            solar_thermal_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
+            solar_thermal_name=DERIVED_CUTOUT + f"/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
-            tech_costs= "resources/data/costs/costs_{planning_horizons}.csv",
+            tech_costs= COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
-               for tech in config['renewable']}
+            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
+                for tech in config['renewable']},
+
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         threads: 1
@@ -288,8 +324,8 @@ elif config["foresight"] == "myopic":
     rule add_existing_baseyear:
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
-            tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
-            cop_name=DERIVED_COMMON+f"/cutout_{CUTOUT_NAME}/heating/hp_cop.h5",
+            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
+            cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
             **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
                for tech in config['existing_infrastructure']},
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
@@ -309,8 +345,8 @@ elif config["foresight"] == "myopic":
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             network_p=solved_previous_horizon,#solved network at previous time step
-            costs="resources/data/costs/costs_{planning_horizons}.csv",
-            **{f"profile_{tech}": DERIVED_COMMON +f"/cutout_{CUTOUT_NAME}/profile_{tech}.nc"
+            costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
+            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}.nc"
                 for tech in config['renewable']}
         output:
             network_name = RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
@@ -324,9 +360,7 @@ elif config["foresight"] == "myopic":
         params:
             solving = config["solving"],
         input:
-            network=RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc',
-            costs="resources/data/costs/costs_{planning_horizons}.csv",
-            biomass_potental= DERIVED_DATA+"/"+"p_nom/biomass_potential.h5",
+            network=RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         output:
             network_name = RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc'
         log:

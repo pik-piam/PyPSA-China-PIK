@@ -35,5 +35,5 @@ if config["enable"].get("retrieve_vector", False) and config['enable'].get('buil
 elif config['enable'].get('retrieve_cutout', False):
     rule retrieve_cutout:
         input: storage.http("https://zenodo.org/record/8343761/files/China-2020.nc")
-        output: "resources/cutouts/China2020.nc"
+        output: "resources/cutouts/China2020-Xiaowei.nc"
         run: shutil.move(input[0], output[0])

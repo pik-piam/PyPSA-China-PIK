@@ -42,6 +42,8 @@ def plot_energy_balance(
     """
     if not ax:
         fig, ax = plt.subplots(figsize=(16, 8))
+    else:
+        fig = ax.get_figure()
 
     p = (
         n.statistics.energy_balance(aggregate_time=False, bus_carrier=bus_carrier)
@@ -112,11 +114,14 @@ def plot_energy_balance(
         charge["load_pos"] = charge["Load"] * -1
         charge["load_pos"].plot(linewidth=2, color="black", label="Load", ax=ax, linestyle="--")
         charge.drop(columns="load_pos", inplace=True)
+
     ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
     ax.set_ylabel(PLOT_CAP_LABEL)
     ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
     ax.grid(axis="y")
     ax.set_xlim(supply.index.min(), supply.index.max())
+
+    fig.tight_layout()
 
     return ax
 
@@ -137,6 +142,9 @@ def plot_load_duration_curve(
 
     if not ax:
         fig, ax = plt.subplots(figsize=(16, 8))
+    else:
+        fig = ax.get_figure()
+
     load = network.statistics.withdrawal(
         groupby=get_location_and_carrier,
         aggregate_time=False,
@@ -148,6 +156,7 @@ def plot_load_duration_curve(
     ax.set_ylabel(f"Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")
 
+    fig.tight_layout()
     return ax
 
 
@@ -166,6 +175,8 @@ def plot_regional_load_durations(
     """
     if not ax:
         fig, ax = plt.subplots(figsize=(10, 8))
+    else:
+        fig = ax.get_figure()
 
     loads_all = network.statistics.withdrawal(
         groupby=get_location_and_carrier, aggregate_time=False, bus_carrier=carrier, comps="Load"
@@ -190,6 +201,9 @@ def plot_regional_load_durations(
         fancybox=True,
         shadow=True,
     )
+
+    fig.tight_layout()
+
     return ax
 
 
@@ -273,8 +287,8 @@ if __name__ == "__main__":
     n = pypsa.Network(snakemake.input.network)
     fix_network_names_colors(n, snakemake.config)
 
-    fig, ax = plt.subplots(figsize=(16, 8))
     for carrier in carriers:
+        fig, ax = plt.subplots(figsize=(16, 8))
         plot_energy_balance(
             n,
             config["plotting"],
