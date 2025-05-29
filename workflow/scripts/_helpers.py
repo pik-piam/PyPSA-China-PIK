@@ -222,7 +222,7 @@ class PathManager:
             # if relative path, make it absolute
             costs_dir = os.path.abspath(costs_dir)
 
-        return costs_dir
+        return os.path.dirname(costs_dir)
 
     def elec_load(self) -> os.PathLike:
 
