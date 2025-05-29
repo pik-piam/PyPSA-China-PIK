@@ -66,7 +66,7 @@ rule transform_remind_data:
     conda:
         "remind-coupling"
     script:
-        "scripts/remind_coupling/generic_etl.py"
+        "../scripts/remind_coupling/generic_etl.py"
 
 
 rule disaggregate_data:
@@ -101,4 +101,4 @@ rule disaggregate_data:
     conda:
         "remind-coupling"
     script:
-        "scripts/remind_coupling/disagg.py"
+        "../scripts/remind_coupling/disagg.py"
