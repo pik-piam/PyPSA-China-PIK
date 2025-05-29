@@ -176,6 +176,8 @@ class PathManager:
         # HACK for pytests CI, should really be a patch but not possible
         self._is_test_run = self.config["run"].get("is_test", False)
 
+        self.root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
     def _get_version(self) -> str:
         """HACK to get version from workflow pseudo-package"""
         spec = importlib.util.spec_from_file_location(
@@ -242,7 +244,8 @@ class PathManager:
             os.PathLike: The path to the derived data directory.
         """
 
-        base_path = "tests" if self._is_test_run else "/resources"
+        base_path = "tests" if self._is_test_run else "resources"
+        base_path = os.path.abspath(os.path.join(self.root_dir, base_path))
 
         foresight = self.config["foresight"]
         if not shared:
