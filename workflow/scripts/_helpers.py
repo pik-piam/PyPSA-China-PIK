@@ -231,47 +231,6 @@ class PathManager:
             sub_dir += "_" + "".join(extra_opts.values())
         return os.path.join(self.config["paths"]["results_dir"], base_dir, sub_dir)
 
-    def costs_dir(self, ignore_remind=False) -> os.PathLike:
-        """Get the costs directory path.
-        In case a path was specified in the config, it will be used.
-        Otherwise, a default path will be used.
-
-        Args:
-            ignore_remind (bool, optional): do not return the remind default,
-                even if remind coupling is enabled. Defaults to False.
-        Returns:
-            os.PathLike: the dirname
-        """
-
-        default = "resources/data/costs"
-        if self.config["run"].get("is_remind_coupled", False) and not ignore_remind:
-            default = self.derived_data_dir() + "/remind/costs"
-
-        costs_dir = self.config["paths"].get("costs_dir", default)
-        # if not absolute path & rel not recognised by snakemake
-        if not costs_dir:
-            costs_dir = default
-        elif not os.path.exists(costs_dir):
-            # if relative path, make it absolute
-            costs_dir = os.path.abspath(costs_dir)
-
-        if costs_dir.endswith("/"):
-            costs_dir = costs_dir[:-1]
-        return costs_dir
-
-    def elec_load(self) -> os.PathLike:
-
-        #
-        default = "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
-        loads = self.config["paths"].get("yearly_regional_load", {"ac": default})
-        elec_load = loads["ac"]
-        # if not absolute path and rel not recognised by snakemake
-        if not os.path.exists(elec_load):
-            # if relative path, make it absolute
-            elec_load = os.path.abspath(elec_load)
-
-        return elec_load
-
     def derived_data_dir(self, shared=False) -> os.PathLike:
         """Generate the derived data directory path.
 
@@ -283,7 +242,7 @@ class PathManager:
             os.PathLike: The path to the derived data directory.
         """
 
-        base_path = "tests" if self._is_test_run else "resources"
+        base_path = "tests" if self._is_test_run else "/resources"
 
         foresight = self.config["foresight"]
         if not shared:
@@ -341,6 +300,68 @@ class PathManager:
         rsrc = "_".join([f"{k}{v}" for k, v in resource_cfg.items()])
 
         return base_p + rsrc
+
+    def costs_dir(self, ignore_remind=False) -> os.PathLike:
+        """Get the costs directory path.
+        In case a path was specified in the config, it will be used.
+        Otherwise, a default path will be used.
+
+        Args:
+            ignore_remind (bool, optional): do not return the remind default,
+                even if remind coupling is enabled. Defaults to False.
+        Returns:
+            os.PathLike: the dirname
+        """
+
+        default = "resources/data/costs"
+        if self.config["run"].get("is_remind_coupled", False) and not ignore_remind:
+            default = self.derived_data_dir() + "/remind/costs"
+
+        costs_dir = self.config["paths"].get("costs_dir", default)
+        # if not absolute path & rel not recognised by snakemake
+        if not costs_dir:
+            costs_dir = default
+        elif not os.path.exists(costs_dir):
+            # if relative path, make it absolute
+            costs_dir = os.path.abspath(costs_dir)
+
+        if costs_dir.endswith("/"):
+            costs_dir = costs_dir[:-1]
+        return costs_dir
+
+    def elec_load(self, ignore_remind=False) -> os.PathLike:
+
+        default = "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+        # if remind coupling is enabled, use the remind data
+        if self.config["run"].get("is_remind_coupled", False) and not ignore_remind:
+            default = self.derived_data_dir() + "/remind/ac_load_disagg.csv"
+
+        loads = self.config["paths"].get("yearly_regional_load", {"ac": default})
+        if not loads["ac"]:
+            loads = {"ac": default}
+        elec_load = loads["ac"]
+        # if not absolute path and rel not recognised by snakemake
+        if not os.path.exists(elec_load):
+            # if relative path, make it absolute
+            elec_load = os.path.abspath(elec_load)
+
+        return elec_load
+
+    def infrastructure(self, ignore_remind=False) -> os.PathLike:
+
+        default = self.derived_data_dir() + "/existing_infrastructure"
+        if self.config["run"].get("is_remind_coupled", False) and not ignore_remind:
+            default = self.derived_data_dir() + "/remind/harmonized_capacities"
+
+        infra_dir = self.config["paths"].get("existing_infra", default)
+        # if not absolute path & rel not recognised by snakemake
+        if not infra_dir:
+            infra_dir = default
+        elif not os.path.exists(infra_dir):
+            # if relative path, make it absolute
+            infra_dir = os.path.abspath(infra_dir)
+
+        return infra_dir
 
 
 # ============== HPC helpers ==================

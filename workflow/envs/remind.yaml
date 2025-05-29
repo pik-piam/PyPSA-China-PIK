@@ -13,7 +13,8 @@ dependencies:
   - python>=3.12
   - snakemake-minimal=8
   - snakemake-storage-plugin-http
-
+  - pip
+  
   - pip:
     - gurobipy==11.0.3
   - pip:

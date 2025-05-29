@@ -50,10 +50,11 @@ def disagg_ac_using_ref(
 
     return disagg_load
 
+
 def add_possible_techs_to_paidoff(paidoff: pd.DataFrame, tech_groups: pd.Series) -> pd.DataFrame:
     """Add possible PyPSA technologies to the paid off capacities DataFrame.
     The paidoff capacities are grouped in case the Remind-PyPSA tecg mapping is not 1:1
-    but the network needs to add PyPSA techs.  
+    but the network needs to add PyPSA techs.
     A constraint is added so the paid off caps per group are not exceeded.
 
     Args:
@@ -61,7 +62,7 @@ def add_possible_techs_to_paidoff(paidoff: pd.DataFrame, tech_groups: pd.Series)
     Returns:
         pd.DataFrame: paid off techs with list of PyPSA technologies
     Example:
-        >> tech_groups 
+        >> tech_groups
             PyPSA_tech, group
             coal CHP, coal
             coal, coal
@@ -84,7 +85,6 @@ if __name__ == "__main__":
             "disaggregate_data",
             co2_pathway="remind_ssp2NPI",
             topology="current+FCG",
-            heating_demand="positive",
         )
 
     logger.info("Running disaggregation script")
@@ -105,12 +105,8 @@ if __name__ == "__main__":
         k: readers[k](v) if k in readers else readers["default"](v) for k, v in input_files.items()
     }
 
-    # handle directories manually (would be possible)
-    existing_caps = {
-        yr: os.path.join(snakemake.input.pypsa_powerplants, f"capacities_{yr}.csv")
-        for yr in params.expand_dirs
-    }
-    data["pypsa_capacities"] = {k: pd.read_csv(p) for k, p in existing_caps.items()}
+    powerplant_data = [k for k in data if k.startswith("pypsa_powerplants_")]
+    data["pypsa_capacities"] = {k.split("pypsa_powerplants_")[-1]: data[k] for k in powerplant_data}
     # group techs together for harmonization
     pypsa_tech_groups = (
         data["remind_tech_groups"].set_index("PyPSA_tech")["group"].drop_duplicates()
@@ -150,20 +146,17 @@ if __name__ == "__main__":
 
         outputs[step.name] = result
 
-        # TODO export, fix index
+    # TODO export, fix index
+    outp_files = dict(snakemake.output.items())
     if "disagg_load" in outputs:
         outputs["disagg_load"].to_csv(
-            snakemake.output.disagg_load,
+            outp_files["disagg_load"],
         )
     if "harmonize_model_caps" in outputs:
         for year, df in outputs["harmonize_model_caps"].items():
-            df.to_csv(
-                os.path.join(snakemake.output.caps, f"capacities_{year}.csv"),
-            )
+            df.to_csv(outp_files[f"caps_{year}"], index=False)
 
     if "available_cap" in outputs:
         paid_off = outputs["available_cap"].copy()
         paid_off = add_possible_techs_to_paidoff(paid_off, pypsa_tech_groups)
-        paid_off.to_csv(
-            snakemake.output.caps + "/paidoff_capacities.csv", index=False
-        )
+        paid_off.to_csv(outp_files["paid_off"] + "/paidoff_capacities.csv", index=False)

@@ -17,8 +17,7 @@ configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
 
 # for dev of remind with mocksnakemake, activate this
-# configfile: "config/templates/remind_cpled.yml"
-# configfile: "config/remind.yaml"
+# configfile: "resources/tmp/remind_coupled.yaml"
 
 config_manager = ConfigManager(config)
 config = config_manager.handle_scenarios()
@@ -40,10 +39,10 @@ LU_RASTER = path_manager.landuse_raster_data()
 CUTOUT_PATH = os.path.join(path_manager.cutouts_dir(),CUTOUT_NAME + ".nc")
 
 # ====== include rules ======= (after paths are set!)
+include: "rules/prepare_remind_coupled.smk"
 include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
 include: "rules/visualize_inputs.smk"
-include: "rules/prepare_remind_coupled.smk"
 
 if config["run"].get("is_test", False):
     localrules: plot_all, build_population, dag, fetch_region_shapes
@@ -237,18 +236,18 @@ rule build_biomass_potential:
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
 
-# TODO not currently called dep on heat coupling
+# TODO switch to hdf5? merge all years?
 rule prepare_baseyear_capacities:
     """prepare inputs for add_existing_baseyear (optional in overnight mode)"""
     params:
         last_pypsa_cost_year = 2060,
         CHP_to_elec = not config.get("heat_coupling", False),
     input:
-        tech_costs=path_manager.costs_dir(ignore_remind=True) + "/costs_{planning_horizons}.csv",
+        tech_costs=path_manager.costs_dir() + "/costs_{planning_horizons}.csv",
         **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
             for tech in config['existing_capacities']['techs']},
     output: 
-        installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv'
+        installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv',
     threads: 1
     resources: mem_mb=2000
     script: "scripts/prepare_existing_capacities.py"
@@ -284,7 +283,8 @@ if config["foresight"] in ["overnight"]:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
-            installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv',
+            # TODO REMIND couplong
+            installed_capacities = path_manager.infrastructure() + '/capacities_{planning_horizons}.csv',
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         threads: 1
         resources: mem_mb=2000
