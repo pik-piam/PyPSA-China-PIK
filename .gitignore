@@ -18,6 +18,7 @@ __pycache__
 /resources/derived_data/
 /resources/data/province_shapes
 /resources/data/landuse_availability/World_EEZ/*eez*
+/workflow/scripts/*.pdf
 /results
 !/results/.gitkeep
 /cutouts
