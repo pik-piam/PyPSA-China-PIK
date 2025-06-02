@@ -9,6 +9,8 @@ import re
 import ultraplot as uplt
 from typing import Dict, List, Tuple
 import pypsa
+from _plot_utilities import validate_hex_colors
+from _helpers import mock_snakemake
 # --------------------------------------------------
 # Constants
 # --------------------------------------------------
@@ -78,48 +80,6 @@ def load_and_clean_data(file_path: str) -> pd.DataFrame:
     except Exception as e:
         logging.error(f"Error loading file {file_path}: {e}")
         return pd.DataFrame()
-
-
-def standardize_unit(unit_str: str) -> str:
-    """Standardize a unit string by trimming whitespace, converting to lowercase, and removing internal spaces.
-
-    Args:
-        unit_str (str): The input unit string to be standardized.
-
-    Returns:
-        str: The standardized unit string. Returns empty string if input is NaN.
-    """
-    if pd.isna(unit_str):
-        return ""
-    return str(unit_str).strip().lower().replace(" ", "")
-
-
-def load_config(yaml_path: str) -> Dict[str, list]:
-    """Read the 'Techs' section from a YAML file.
-
-    Args:
-        yaml_path (str): Path to the YAML configuration file (e.g., default_config.yaml).
-
-    Returns:
-        Dict[str, list]: A dictionary containing technology lists with keys:
-            - 'vre_techs': List of variable renewable energy technologies
-            - 'conv_techs': List of conventional technologies
-            - 'store_techs': List of storage technologies
-            Returns empty lists if file cannot be loaded or parsed.
-    """
-    try:
-        with open(yaml_path, "r", encoding="utf-8") as f:
-            config = yaml.safe_load(f)
-        techs = config["Techs"]
-        # If Techs is a string, try to parse it again
-        if isinstance(techs, str):
-            techs = yaml.safe_load(techs)
-        return techs
-    except Exception as e:
-        logging.error(f"Error loading config file {yaml_path}: {e}")
-        return {"vre_techs": [], "conv_techs": [], "store_techs": []}
-
-
 
 
 # --------------------------------------------------
@@ -197,19 +157,19 @@ def filter_technologies_by_config(df: pd.DataFrame,
             for alias in aliases:
                 tech_aliases[alias.lower()] = main_tech
 
-        # 获取所有技术列表
+        # get all techs
         vre_techs = techs_dict.get("vre_techs", [])
         conv_techs = techs_dict.get("conv_techs", [])
         store_techs = techs_dict.get("store_techs", [])
-        solar_thermal = ["solar thermal"]  # 单独处理太阳能热技术
+        solar_thermal = ["solar thermal"]  # special case for solar thermal
         
-        # 合并所有技术
+        # combine all techs
         all_techs = vre_techs + conv_techs + store_techs + solar_thermal
 
-        # 创建技术到类别的映射
+        # create tech to category mapping
         tech_categories: Dict[str, str] = {}
         for tech in vre_techs:
-            if tech != "solar thermal":  # 排除太阳能热技术
+            if tech != "solar thermal":  # exclude solar thermal
                 tech_categories[tech] = "VRE Technologies"
         for tech in conv_techs:
             tech_categories[tech] = "Conventional Technologies"
@@ -372,7 +332,7 @@ def get_numeric_columns(row: pd.Series) -> List[str]:
 
 
 def convert_row_units(row: pd.Series, 
-                     target_unit_installation: str, 
+                     target_unit_installation: str,
                      target_unit_storage: str) -> pd.Series:
     """Convert row's numeric columns to target units.
 
@@ -666,131 +626,17 @@ def plot_technologies_by_category(
     return fig
 
 
-def extract_costs_from_network(n: pypsa.Network) -> pd.DataFrame:
-    """Extract cost data from a PyPSA network object.
-
-    Extract investment cost data for all components from the PyPSA network object,
-    including generators, storage units, transmission lines, and transformers.
-
-    Args:
-        n: PyPSA network object
-
-    Returns:
-        pd.DataFrame: DataFrame containing the following columns:
-            - technology: Name of the technology
-            - parameter: Parameter type (fixed as 'investment')
-            - unit: Unit of cost (EUR/kW or EUR/kWh)
-            - value: Cost value
-    """
-    costs_data = []
-    
-    if not n.generators.empty:
-        for carrier in n.generators.carrier.unique():
-            gen_mask = n.generators.carrier == carrier
-            if 'capital_cost' in n.generators.columns:
-                cost = n.generators.loc[gen_mask, 'capital_cost'].mean()
-                if not pd.isna(cost):
-                    costs_data.append({
-                        'technology': carrier,
-                        'parameter': 'investment',
-                        'unit': 'EUR/kW',
-                        'value': cost
-                    })
-    
-    if not n.storage_units.empty:
-        for carrier in n.storage_units.carrier.unique():
-            store_mask = n.storage_units.carrier == carrier
-            if 'capital_cost' in n.storage_units.columns:
-                cost = n.storage_units.loc[store_mask, 'capital_cost'].mean()
-                if not pd.isna(cost):
-                    costs_data.append({
-                        'technology': carrier,
-                        'parameter': 'investment',
-                        'unit': 'EUR/kWh',
-                        'value': cost
-                    })
-    
-    if not n.lines.empty and 'capital_cost' in n.lines.columns:
-        cost = n.lines.capital_cost.mean()
-        if not pd.isna(cost):
-            costs_data.append({
-                'technology': 'AC line',
-                'parameter': 'investment',
-                'unit': 'EUR/kW',
-                'value': cost
-            })
-    
-    if not n.transformers.empty and 'capital_cost' in n.transformers.columns:
-        cost = n.transformers.capital_cost.mean()
-        if not pd.isna(cost):
-            costs_data.append({
-                'technology': 'transformer',
-                'parameter': 'investment',
-                'unit': 'EUR/kW',
-                'value': cost
-            })
-    
-    return pd.DataFrame(costs_data)
-
 # --------------------------------------------------
 # 5) Main Execution (Snakemake or Standalone)
 # --------------------------------------------------
 
-def mock_snakemake():
-    """Create a mock snakemake object for standalone testing.
-    
-    This helper function allows to use the script in standalone mode without copied code
-    and gives access to all snakemake data/config/...
-    
-    Returns:
-        SimpleNamespace: A mock snakemake object with necessary attributes.
-    """
-    from types import SimpleNamespace
-    
-    return SimpleNamespace(
-        input=SimpleNamespace(
-            costs={
-                "2020": "resources/data/costs/costs_2020.csv",
-                "2025": "resources/data/costs/costs_2025.csv",
-                "2030": "resources/data/costs/costs_2030.csv",
-                "2035": "resources/data/costs/costs_2035.csv",
-                "2040": "resources/data/costs/costs_2040.csv",
-                "2045": "resources/data/costs/costs_2045.csv",
-                "2050": "resources/data/costs/costs_2050.csv",
-                "2055": "resources/data/costs/costs_2055.csv",
-                "2060": "resources/data/costs/costs_2060.csv"
-            },
-            reference_costs="resources/data/costs/reference_values/tech_costs_subset_litreview.csv"
-        ),
-        output=SimpleNamespace(
-            cost_map="results/v-0.2.0_unamed_run/overnight_co2pw-exp175default_topo-current+FCG_proj-positive/plots/costs/parameters_comparison.pdf"
-        ),
-        config={
-            "plotting": {
-                "tech_colors": {
-                    "default": "#999999"
-                }
-            },
-            "Techs": {
-                "vre_techs": ["solar", "wind"],
-                "conv_techs": ["coal", "gas"],
-                "store_techs": ["battery"]
-            }
-        },
-        params=SimpleNamespace(
-            get=lambda x, y: True
-        )
-    )
-
-
 if __name__ == "__main__":
     if 'snakemake' not in globals():
-        snakemake = mock_snakemake()
+        snakemake = mock_snakemake("plot_input_costs")
     
     target_unit_installation = "eur/kW"
     target_unit_storage = "eur/kWh"
     
-    from _plot_utilities import validate_hex_colors
     tech_colors = validate_hex_colors(snakemake.config["plotting"]["tech_colors"])
     
     all_data = pd.DataFrame()
@@ -821,8 +667,11 @@ if __name__ == "__main__":
 
     # 4) Plot
     ref_df = None
-    if hasattr(snakemake.input, 'reference_costs'):
-        ref_df = load_reference_data(snakemake.input.reference_costs)
+    try:
+        if snakemake.input.reference_costs is not None:
+            ref_df = load_reference_data(snakemake.input.reference_costs)
+    except AttributeError:
+        pass
     
     fig = plot_technologies_by_category(
         filtered_data, 
