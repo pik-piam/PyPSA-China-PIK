@@ -2,9 +2,6 @@ import pypsa
 import logging
 import matplotlib.pyplot as plt
 import os.path
-import seaborn as sns
-import numpy as np
-import pandas as pd
 
 import seaborn as sns
 import numpy as np
@@ -398,7 +395,7 @@ def plot_price_heatmap(
     ax.set_ylabel("Nodes")
     fig.tight_layout()
 
-    return
+    return ax
 
 
 if __name__ == "__main__":
