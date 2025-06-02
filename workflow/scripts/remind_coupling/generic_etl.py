@@ -1,4 +1,4 @@
-""" generic etl development, to be rebalanced with the remind_coupling package"""
+"""generic etl development, to be rebalanced with the remind_coupling package"""
 
 from typing import Any
 import logging
@@ -7,7 +7,15 @@ import re
 import os.path
 from os import PathLike
 
+import sys
+
+logging.info("Starting make_pypsa_config.py")
+logging.info(f"Python version: {sys.version}")
+logging.info(sys.path)
+logging.info(f"Conda prefix: {os.environ.get('CONDA_PREFIX', 'Not set')}")
+
 import setup  # setsup paths
+from _helpers import configure_logging
 import rpycpl.utils as coupl_utils
 from rpycpl.utils import read_remind_csv
 from rpycpl.etl import ETL_REGISTRY, Transformation
@@ -31,7 +39,7 @@ class RemindLoader:
         """Chat gpt regex magic to group split frames
         Args:
             keys (list): list of keys
-            pattern (str, optional): regex pattern to group split frames by. Defaults to r"_part\d+$"."
+            pattern (str, optional): regex pattern to group split frames by. Defaults to r"_part\\d+$"."
         Returns:
             dict[str, list[str]]: dictionary with base name as key and list of keys as value
         """
@@ -161,11 +169,12 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
             "transform_remind_data",
-            co2_pathway="remind_ssp2NPI",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             topology="current+FCG",
-            heating_demand="positive",
+            # heating_demand="positive",
         )
 
+    configure_logging(snakemake)
     logger.info("Transforming REMIND data")
 
     params = snakemake.params
@@ -197,6 +206,7 @@ if __name__ == "__main__":
     loader = RemindLoader(remind_dir)
     for step_dict in steps:
         step = Transformation(**step_dict)
+        logger.info(f"Running ETL step: {step.name} with method {step.method}")
         frames = loader.auto_load(step.frames, step.filters)
         if step.method == "convert_load":
             result = ETLRunner.run(step, frames, region=region, previous_outputs=outputs)
@@ -214,13 +224,20 @@ if __name__ == "__main__":
             result = ETLRunner.run(step, frames, previous_outputs=outputs)
         outputs[step.name] = result
 
+    logger.info(f"ETL steps completed for {list(outputs.keys())}")
+    logger.info("saving data")
     # TODO make more generic
     # save outputs
+
+    outp_files = dict(snakemake.output.items())
+
     outputs["loads"].to_csv(snakemake.output.loads)
     outputs["caps"].to_csv(snakemake.output.remind_caps)
     outputs["tech_groups"].to_csv(snakemake.output.remind_tech_groups)
     for year, df in outputs["technoeconomic_data"].items():
         df.to_csv(
-            os.path.join(snakemake.output.technoeconomic_data, f"costs_{year}.csv"),
+            outp_files[f"costs_{year}"],
             index=False,
         )
+
+    logger.info(f"REMIND-> pypsa ETL completed")

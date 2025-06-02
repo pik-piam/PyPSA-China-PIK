@@ -1,4 +1,4 @@
-""" generic disaggregation development
+"""generic disaggregation development
 Split steps into:
 
 - ETL
@@ -19,6 +19,7 @@ from rpycpl import capacities_etl
 
 import setup  # sets up paths
 from readers import read_yearly_load_projections
+from _helpers import configure_logging
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +43,11 @@ def disagg_ac_using_ref(
 
     regional_reference = reference_data[int(reference_year)]
     regional_reference /= regional_reference.sum()
-    electricity_demand = data["loads"].query("load == 'ac'").value
+    electricity_demand = data["loads"].query("load == 'ac'")
+    electricity_demand.set_index("year", inplace=True)
     logger.info("Disaggregating load according to Hu et al. demand projections")
     disagg_load = SpatialDisaggregator().use_static_reference(
-        electricity_demand, regional_reference
+        electricity_demand.value, regional_reference
     )
 
     return disagg_load
@@ -83,10 +85,10 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
             "disaggregate_data",
-            co2_pathway="remind_ssp2NPI",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             topology="current+FCG",
         )
-
+    configure_logging(snakemake)
     logger.info("Running disaggregation script")
     logger.debug(f"Available ETL methods: {ETL_REGISTRY.keys()}")
 
@@ -113,7 +115,7 @@ if __name__ == "__main__":
     )
     for cap_df in data["pypsa_capacities"].values():
         cap_df["tech_group"] = cap_df.Tech.map(pypsa_tech_groups)
-        cap_df.tech_group.fillna("", inplace=True)
+        cap_df.fillna({"tech_group": ""}, inplace=True)
 
     logger.info(f"Loaded data files {data.keys()}")
     missing = set(input_files.keys()) - set(data.keys())
@@ -122,9 +124,10 @@ if __name__ == "__main__":
 
     # ==== transform remind data =======
     steps = config.get("disagg", [])
-    outputs = {}
+    results = {}
     for step_dict in steps:
         step = Transformation(**step_dict)
+        logger.info(f"Running ETL step: {step.name} with method {step.method}")
         if step.method == "disagg_acload_ref":
             result = ETLRunner.run(
                 step,
@@ -139,24 +142,30 @@ if __name__ == "__main__":
             )
         elif step.method == "calc_paid_off_capacity":
             result = ETLRunner.run(
-                step, data["remind_caps"], harmonized_pypsa_caps=outputs["harmonize_model_caps"]
+                step, data["remind_caps"], harmonized_pypsa_caps=results["harmonize_model_caps"]
             )
         else:
             result = ETLRunner.run(step, data)
 
-        outputs[step.name] = result
+        results[step.name] = result
 
     # TODO export, fix index
+    logger.info("\n\nExporting results")
     outp_files = dict(snakemake.output.items())
-    if "disagg_load" in outputs:
-        outputs["disagg_load"].to_csv(
+    logger.info(f"Output files: {outp_files}")
+    if "disagg_load" in results:
+        logger.info(f"Exporting disaggregated load to {outp_files['disagg_load']}")
+        results["disagg_load"].to_csv(
             outp_files["disagg_load"],
         )
-    if "harmonize_model_caps" in outputs:
-        for year, df in outputs["harmonize_model_caps"].items():
+    if "harmonize_model_caps" in results:
+        logger.info("Ex[porting harmonized model capacities")
+        for year, df in results["harmonize_model_caps"].items():
+            logger.info(f"Exporting harmonized capacities for year {year}")
             df.to_csv(outp_files[f"caps_{year}"], index=False)
 
-    if "available_cap" in outputs:
-        paid_off = outputs["available_cap"].copy()
+    if "available_cap" in results:
+        logger.info("Exporting paid off capacities")
+        paid_off = results["available_cap"].copy()
         paid_off = add_possible_techs_to_paidoff(paid_off, pypsa_tech_groups)
-        paid_off.to_csv(outp_files["paid_off"] + "/paidoff_capacities.csv", index=False)
+        paid_off.to_csv(outp_files["paid_off"], index=False)

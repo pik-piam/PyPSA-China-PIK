@@ -158,6 +158,9 @@ def add_existing_vre_capacities(
                         df_agg.at[name, "bus"] = bus
                         df_agg.at[name, "resource_class"] = bin_id
 
+    if df_agg.empty:
+        return df_agg
+
     df_agg.loc[:, "Tech"] = df_agg.Fueltype
     return df_agg
 
@@ -226,7 +229,10 @@ def add_power_capacities_installed_before_baseyear(
     missing_techs = {k: k for k in df.Fueltype.unique() if k not in costs_map}
     costs_map.update(missing_techs)
 
-    df.resource_class.fillna("", inplace=True)
+    if "resource_class" not in df.columns:
+        df["resource_class"] = ""
+    else:
+        df.resource_class.fillna("", inplace=True)
     df.grouping_year = df.grouping_year.astype(int)
     df_ = df.pivot_table(
         index=["grouping_year", "tech_clean", "resource_class"],
@@ -541,9 +547,10 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "add_existing_baseyear",
             topology="current+FCG",
-            co2_pathway="exp175default",
-            planning_horizons="2025",
-            heating_demand="positive",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
+            planning_horizons="2150",
+            # heating_demand="positive",
         )
 
     configure_logging(snakemake, logger=logger)

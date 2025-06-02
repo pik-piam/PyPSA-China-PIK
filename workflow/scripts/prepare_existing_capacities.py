@@ -204,7 +204,15 @@ def convert_CHP_to_poweronly(capacities: pd.DataFrame) -> pd.DataFrame:
     capacities.loc[chp_mask, "Fueltype"] = (
         capacities.loc[chp_mask, "Fueltype"]
         .str.replace("central coal CHP", "coal power plant")
-        .replace("central gas CHP", "CCGT gas")
+        .str.replace("central gas CHP", "CCGT gas")
+    )
+    # update the Tech field based on the converted Fueltype
+    capacities.loc[chp_mask, "Tech"] = (
+        capacities.loc[chp_mask, "Fueltype"]
+        .str.replace(" CHP", "")
+        .str.replace("CHP ", " ")
+        .str.replace(" gas", "")
+        .str.replace("coal power plant", "coal")
     )
     return capacities
 
@@ -214,9 +222,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_baseyear_capacities",
             topology="current+FCG",
-            co2_pathway="remind_ssp2NPI",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             planning_horizons="2030",
-            heating_demand="positive",
         )
 
     configure_logging(snakemake, logger=logger)
@@ -250,3 +257,5 @@ if __name__ == "__main__":
         )
 
     installed.to_csv(snakemake.output.installed_capacities)
+
+    logger.info(f"Installed capacities saved to {snakemake.output.installed_capacities}")

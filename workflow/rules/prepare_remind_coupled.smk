@@ -28,19 +28,6 @@ rule build_run_config:
         "../scripts/remind_coupling/make_pypsa_config.py"
 
 
-# rule run:
-#     "pseudo rule to call the other rules with eas"
-#     input:
-#         loads=DERIVED_DATA + "/remind/yrly_loads.csv",
-#         disagg_load=DERIVED_DATA+ "/remind/ac_load_disagg.csv",
-#     output:
-#         dummy=DERIVED_DATA + "/remind/costs/costs_{planning_horizon}.csv"
-
-#     run: "" # dummy
-
-print(DERIVED_DATA)
-
-
 # TODO how to pass config?
 rule transform_remind_data:
     """
@@ -61,8 +48,6 @@ rule transform_remind_data:
         loads=DERIVED_DATA + "/remind/yrly_loads.csv",
         remind_caps=DERIVED_DATA + "/remind/preinv_capacities.csv",
         remind_tech_groups=DERIVED_DATA + "/remind/tech_groups.csv",
-        # TODO remove redundant?
-        technoeconomic_data=DERIVED_DATA + "/remind/costs/",
     conda:
         "remind-coupling"
     script:
@@ -79,7 +64,6 @@ rule disaggregate_data:
         reference_load_year=2025,
         expand_dirs=config["scenario"]["planning_horizons"],
     input:
-        # pypsa_powerplants=DERIVED_DATA + "/existing_infrastructure",
         **{
             f"pypsa_powerplants_{yr}": DERIVED_DATA
             + f"/existing_infrastructure/capacities_{yr}.csv"
