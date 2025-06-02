@@ -236,7 +236,7 @@ rule build_biomass_potential:
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
 
-# TODO switch to hdf5? merge all years?
+# TODO switch to hdf5? merge all years in single csv?
 rule prepare_baseyear_capacities:
     """prepare inputs for add_existing_baseyear (optional in overnight mode)"""
     params:
@@ -404,27 +404,27 @@ elif config["foresight"] == "myopic":
         script: "scripts/solve_network_myopic.py"
 
 
-# run with `snakemake results/dag/rules_graph.png `
+# run with `snakemake results/dag/rules_graph.png -f`
 rule dag:
     message:
         "Creating DAG of workflow."
     output:
-        # dag_dot="results/dag/dag.dot",
-        # dag_pdf="results/dag/dag.pdf",
-        # dag_png="results/dag/dag.png",
+        dag_dot="results/dag/dag.dot",
+        dag_pdf="results/dag/dag.pdf",
+        dag_png="results/dag/dag.png",
         rules_dot="results/dag/rules_graph.dot",
         rules_pdf="results/dag/rules_graph.pdf",
         rules_png="results/dag/rules_graph.png",
     conda:
         "envs/environment.yaml"
     shell:
-        r"""&& 
-        snakemake --dag | sed -n "/digraph/,\\$p" > {output.dag_dot}&&
-        dot -Tpdf -o {output.dag_pdf} {output.dag_dot}&&
-        dot -Tpng -o {output.dag_png} {output.dag_dot}&&
-        snakemake --rulegraph plot_all | sed -n "/digraph/,\\$p" > {output.rules_dot}&&
-        dot -Tpdf -o {output.rules_pdf} {output.rules_dot}&&
-        dot -Tpng -o {output.rules_png} {output.rules_dot}&&
+        r"""
+        snakemake --dag --quiet | sed -n "/digraph/,\$p" > {output.dag_dot}
+        dot -Tpdf -o {output.dag_pdf} {output.dag_dot}
+        dot -Tpng -o {output.dag_png} {output.dag_dot}
+        snakemake --rulegraph plot_all --quiet | sed -n "/digraph/,\$p" > {output.rules_dot}
+        dot -Tpdf -o {output.rules_pdf} {output.rules_dot}
+        dot -Tpng -o {output.rules_png} {output.rules_dot}
         """
 
 onerror:
