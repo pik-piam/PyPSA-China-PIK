@@ -545,7 +545,7 @@ def add_power_capacities_installed_before_baseyear(
             )
 
 
-def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame):
+def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, cutoff=100):
     """
     Add capacities that have been paid off to the network. This is intended
     for REMIND coupling, where (some of) the REMIND investments can be freely allocated
@@ -555,85 +555,65 @@ def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame):
     Args:
         network (pypsa.Network): the network to which the capacities are added.
         paid_off_caps (pd.DataFrame): DataFrame with paid off capacities & columns
-            [tech_group, Capacity, techs]"""
+            [tech_group, Capacity, techs]
+        cutoff (int, optional): minimum capacity to be considered. Defaults to 100 MW."""
 
     paid_off = paid_off_caps.copy()
-    paid_off.explode("techs")
+
+    # explode tech list per tech group (constraint will apply to group)
     paid_off.techs = paid_off.techs.apply(to_list)
     paid_off = paid_off.explode("techs")
     paid_off["carrier"] = paid_off.techs.str.replace("'", "")
     paid_off.set_index("carrier", inplace=True)
-    paid_off["p_nom_max"] = paid_off.Capacity.apply(lambda x: 0 if x < CUTOFF else x)
+    # clip small capacities
+    paid_off["p_nom_max"] = paid_off.Capacity.apply(lambda x: 0 if x < cutoff else x)
     paid_off.drop(columns=["Capacity", "techs"], inplace=True)
     paid_off = paid_off.query("p_nom_max > 0")
 
-    # TODO, possible to loop over components
-    # add generators
-    # remove brownfield before join
-    generators = n.generators.query("p_nom_extendable == True")
-    paid_gen = generators.join(paid_off, on=["carrier"], how="right", rsuffix="_rcl")
-    paid_gen.index += "_paid_off"
-    paid_gen["capital_cost"] = 0
-    paid_gen["p_nom_min"] = 0.0
-    paid_gen["p_nom"] = 0.0
-    paid_gen["p_nom_max"] = np.inf
+    component_settings = {
+        "Generator": {
+            "join_col": "carrier",
+            "attrs_to_fix": ["p_min_pu", "p_max_pu"],
+        },
+        "Link": {
+            "join_col": "carrier",
+            "attrs_to_fix": ["p_min_pu", "p_max_pu", "efficiency", "efficiency2"],
+        },
+        "Store": {
+            "join_col": "carrier",
+            "attrs_to_fix": [],
+        },
+    }
 
-    n.add("Generator", paid_gen.index, **paid_gen)
+    for component, settings in component_settings.items():
+        prefix = "e" if component == "Store" else "p"
+        paid_off_comp = paid_off.rename(columns={"p_nom_max": f"{prefix}_nom_max"})
 
-    to_fix = ["p_min_pu", "p_max_pu"]
-    for missing_attr in to_fix:
-        df = n.generators_t[missing_attr]
-        if not df.empty:
-            # not all paid_off have missing attribute to_fix. base = ref for copy where neede
-            base = [x for x in paid_gen.index.str.replace("_paid_off", "") if x in df.columns]
-            df.loc[:, pd.Index(base) + "_paid_off"] = df[base].rename(
-                columns=lambda x: x + "_paid_off"
-            )
+        # exclude brownfield capacities
+        df = getattr(network, component.lower() + "s").query(f"{prefix}_nom_extendable == True")
+        # join will add the tech_group and p_nom_max_rcl columns, used later for constraints
+        paid = df.join(paid_off_comp, on=[settings["join_col"]], how="right", rsuffix="_rcl")
 
-    # add links
-    # remove brownfield before join
-    paid_off.index = paid_off.index.str.replace("OCGT", "gas OCGT")
-    links = n.links.query("p_nom_extendable == True")
-    paid_links = links.join(paid_off, on=["carrier"], how="right", rsuffix="_rcl")
-    # remove links
-    paid_links.dropna(subset=["p_nom_max", "p_nom_max_rcl"], inplace=True)
+        paid.dropna(subset=[f"{prefix}_nom_max", f"{prefix}_nom_max_rcl"], inplace=True)
+        paid.index += "_paid_off"
+        # set permissive options for the paid-off capacities (constraint per group added to model later)
+        paid["capital_cost"] = 0
+        paid[f"{prefix}_nom_max"] = 0.0
+        paid[f"{prefix}_nom"] = 0.0
+        paid[f"{prefix}_nom_max"] = np.inf
 
-    paid_links.index += "_paid_off"
-    paid_links["capital_cost"] = 0
-    paid_links["p_nom_min"] = 0.0
-    paid_links["p_nom"] = 0.0
-    paid_links["p_nom_max"] = np.inf
-
-    n.add("Link", paid_links.index, **paid_links)
-
-    to_fix = ["p_min_pu", "p_max_pu", "efficiency", "efficiency2"]
-    for missing_attr in to_fix:
-        df = n.links_t[missing_attr]
-        if not df.empty:
-            # not all paid_off have missing attribute to_fix. base = ref for copy where neede
-            base = [x for x in paid_gen.index.str.replace("_paid_off", "") if x in df.columns]
-            df.loc[:, pd.Index(base) + "_paid_off"] = df[base].rename(
-                columns=lambda x: x + "_paid_off"
-            )
-
-    # stores
-    paid_off.rename(columns={"p_nom_max": "e_nom_max"}, inplace=True)
-    stores = n.stores.query("e_nom_extendable == True")
-    paid_stores = stores.join(paid_off, on=["carrier"], how="right", rsuffix="_rcl")
-    # remove stores
-    paid_stores.dropna(subset=["e_nom_max", "e_nom_max_rcl"], inplace=True)
-    paid_stores.index += "_paid_off"
-    paid_stores["capital_cost"] = 0
-    paid_stores["e_nom_min"] = 0.0
-    paid_stores["e_nom"] = 0.0
-    paid_stores["e_nom_max"] = np.inf
-    n.add("Store", paid_stores.index, **paid_stores)
-
-    # TODO fix time-dependent attributes later if needed
+        # add to the network
+        network.add(component, paid.index, **paid)
+        # now add the dynamic attributes not carried over by n.add (per unit avail etc)
+        for missing_attr in settings["attrs_to_fix"]:
+            df_t = getattr(network, component.lower() + "s_t")[missing_attr]
+            if not df_t.empty:
+                base = [x for x in paid.index.str.replace("_paid_off", "") if x in df_t.columns]
+                df_t.loc[:, pd.Index(base) + "_paid_off"] = df_t[base].rename(
+                    columns=lambda x: x + "_paid_off"
+                )
 
 
-# remove links
-paid_gen.dropna(subset=["p_nom_max", "p_nom_max_rcl"], inplace=True)
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
