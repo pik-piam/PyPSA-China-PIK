@@ -17,6 +17,9 @@ from add_electricity import load_costs
 from _helpers import mock_snakemake, configure_logging
 from _pypsa_helpers import shift_profile_to_planning_year
 
+# TODO possibly reimplement to have env separation
+from rpycpl.technoecon_etl import to_list
+
 logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
 spatial = SimpleNamespace()
@@ -542,6 +545,95 @@ def add_power_capacities_installed_before_baseyear(
             )
 
 
+def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame):
+    """
+    Add capacities that have been paid off to the network. This is intended
+    for REMIND coupling, where (some of) the REMIND investments can be freely allocated
+    to the optimal node. NB: an additional constraing is needed to ensure that
+    the capacity is not exceeded.
+
+    Args:
+        network (pypsa.Network): the network to which the capacities are added.
+        paid_off_caps (pd.DataFrame): DataFrame with paid off capacities & columns
+            [tech_group, Capacity, techs]"""
+
+    paid_off = paid_off_caps.copy()
+    paid_off.explode("techs")
+    paid_off.techs = paid_off.techs.apply(to_list)
+    paid_off = paid_off.explode("techs")
+    paid_off["carrier"] = paid_off.techs.str.replace("'", "")
+    paid_off.set_index("carrier", inplace=True)
+    paid_off["p_nom_max"] = paid_off.Capacity.apply(lambda x: 0 if x < CUTOFF else x)
+    paid_off.drop(columns=["Capacity", "techs"], inplace=True)
+    paid_off = paid_off.query("p_nom_max > 0")
+
+    # TODO, possible to loop over components
+    # add generators
+    # remove brownfield before join
+    generators = n.generators.query("p_nom_extendable == True")
+    paid_gen = generators.join(paid_off, on=["carrier"], how="right", rsuffix="_rcl")
+    paid_gen.index += "_paid_off"
+    paid_gen["capital_cost"] = 0
+    paid_gen["p_nom_min"] = 0.0
+    paid_gen["p_nom"] = 0.0
+    paid_gen["p_nom_max"] = np.inf
+
+    n.add("Generator", paid_gen.index, **paid_gen)
+
+    to_fix = ["p_min_pu", "p_max_pu"]
+    for missing_attr in to_fix:
+        df = n.generators_t[missing_attr]
+        if not df.empty:
+            # not all paid_off have missing attribute to_fix. base = ref for copy where neede
+            base = [x for x in paid_gen.index.str.replace("_paid_off", "") if x in df.columns]
+            df.loc[:, pd.Index(base) + "_paid_off"] = df[base].rename(
+                columns=lambda x: x + "_paid_off"
+            )
+
+    # add links
+    # remove brownfield before join
+    paid_off.index = paid_off.index.str.replace("OCGT", "gas OCGT")
+    links = n.links.query("p_nom_extendable == True")
+    paid_links = links.join(paid_off, on=["carrier"], how="right", rsuffix="_rcl")
+    # remove links
+    paid_links.dropna(subset=["p_nom_max", "p_nom_max_rcl"], inplace=True)
+
+    paid_links.index += "_paid_off"
+    paid_links["capital_cost"] = 0
+    paid_links["p_nom_min"] = 0.0
+    paid_links["p_nom"] = 0.0
+    paid_links["p_nom_max"] = np.inf
+
+    n.add("Link", paid_links.index, **paid_links)
+
+    to_fix = ["p_min_pu", "p_max_pu", "efficiency", "efficiency2"]
+    for missing_attr in to_fix:
+        df = n.links_t[missing_attr]
+        if not df.empty:
+            # not all paid_off have missing attribute to_fix. base = ref for copy where neede
+            base = [x for x in paid_gen.index.str.replace("_paid_off", "") if x in df.columns]
+            df.loc[:, pd.Index(base) + "_paid_off"] = df[base].rename(
+                columns=lambda x: x + "_paid_off"
+            )
+
+    # stores
+    paid_off.rename(columns={"p_nom_max": "e_nom_max"}, inplace=True)
+    stores = n.stores.query("e_nom_extendable == True")
+    paid_stores = stores.join(paid_off, on=["carrier"], how="right", rsuffix="_rcl")
+    # remove stores
+    paid_stores.dropna(subset=["e_nom_max", "e_nom_max_rcl"], inplace=True)
+    paid_stores.index += "_paid_off"
+    paid_stores["capital_cost"] = 0
+    paid_stores["e_nom_min"] = 0.0
+    paid_stores["e_nom"] = 0.0
+    paid_stores["e_nom_max"] = np.inf
+    n.add("Store", paid_stores.index, **paid_stores)
+
+    # TODO fix time-dependent attributes later if needed
+
+
+# remove links
+paid_gen.dropna(subset=["p_nom_max", "p_nom_max_rcl"], inplace=True)
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -591,7 +683,8 @@ if __name__ == "__main__":
     if data_paths.get("paid_off_capacities_remind", None):
         paid_off_caps = pd.read_csv(snakemake.input.paid_off_capacities_remind, index_col=0)
         paid_off_caps = paid_off_caps.query("year == @cost_year")
-        # TODO add to network (follow-up PR)
+        # add to network
+        add_paid_off_capacity(n, paid_off_caps)
 
     n.export_to_netcdf(snakemake.output[0])
 
