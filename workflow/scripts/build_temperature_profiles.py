@@ -1,4 +1,4 @@
-""" 
+"""
 Functions associated with the build_temperature_profiles rule.
 
 """
@@ -22,7 +22,7 @@ def build_temp_profiles(pop_map: pd.DataFrame, cutout: atlite.Cutout, temperatur
     Note that atlite only supports a single time zone shift
 
     Args:
-        pop_map (pd.DataFrae): the map to the pop density grid cell data (hdf5)
+        pop_map (pd.DataFrame): the map to the pop density grid cell data (hdf5)
         cutout (atlite.Cutout): the weather data cutout (atlite cutout)
         temperature_out (PathLike): the output path (hdf5)
     """
