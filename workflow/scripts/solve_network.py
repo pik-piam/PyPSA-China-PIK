@@ -259,7 +259,11 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         paidoff_comp = getattr(n, component.lower() + "s")
         prefix = "e" if component == "Store" else "p"
         # drop non paid off components
-        paidoff_comp.dropna(subset=[f"{component[0].lower()}_nom_max_rcl"])
+        paidoff_comp.dropna(subset=[f"{prefix}_nom_max_rcl"], inplace=True)
+
+        if paidoff_comp.empty:
+            continue
+
         # find equivalent usual components
         ususal_comps_idx = paidoff_comp.index.str.replace("_paid_off", "")
         ususal_comps = n.generators.loc[ususal_comps_idx].copy()
