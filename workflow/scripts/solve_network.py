@@ -9,6 +9,8 @@ Associated with the `solve_networks` rule in the Snakefile.
 import logging
 import numpy as np
 import pypsa
+import xarray as xr
+import pandas as pd
 from pandas import DatetimeIndex
 
 
@@ -206,6 +208,67 @@ def add_transimission_constraints(n: pypsa.Network):
     n.model.add_constraints(lhs == rhs, name="Link-transimission")
 
 
+def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
+    """
+    Add constraints to ensure that the paid off capacity from REMIND is available not
+    exceedd across the network & that it does not exceed the technical potential.
+
+    Args:
+        n (pypsa.Network): the network object to which's model the constraints are added
+    """
+
+    if not n.config["run"].get("is_remind_coupled", False):
+        logger.info("Skipping paid off constraints as REMIND is not coupled")
+        return
+
+    gens = n.generators.copy()
+
+    # select the paid_off
+    # these are extensible by virtue of add_existing_baseyear.add_paid_off_capacities
+    paidoff_gens = gens.dropna(subset=["p_nom_max_rcl"])
+
+    # RHS: get total paid off capacities per group (max allowed)
+    paid_off_totals = paidoff_gens.set_index("tech_group").p_nom_max_rcl.drop_duplicates()
+
+    # LHS: p_nom per technology grp < totals
+    groupers = [paidoff_gens["tech_group"]]
+    grouper_lhs = xr.DataArray(pd.MultiIndex.from_arrays(groupers), dims=["Generator-ext"])
+    p_nom_groups = n.model["Generator-p_nom"].loc[paidoff_gens.index].groupby(grouper_lhs).sum()
+
+    # get indices to sort RHS. the grouper is multi-indexed (legacy from PyPSA-Eur)
+    idx = p_nom_groups.indexes["group"]
+    idx = [x[0] for x in idx]
+
+    # Add constraint
+    if not p_nom_groups.empty():
+        n.model.add_constraints(
+            p_nom_groups <= paid_off_totals[idx].values,
+            name="paid_off_cap_totals",
+        )
+
+    # === ensure normal p_nom_max is respected for paid_off + normal generators
+    # usual generators associated with paid_off one
+    ususal_gens_idx = paidoff_gens.index.str.replace("_paid_off", "")
+    ususal_gens = n.generators.loc[ususal_gens_idx].copy()
+    ususal_gens = ususal_gens[~ususal_gens.p_nom_max.isin([np.inf, np.nan])]
+
+    to_constrain = pd.concat([ususal_gens, paidoff_gens], axis=0)
+    to_constrain.rename_axis(index="Generator-ext", inplace=True)
+    to_constrain["grouper"] = to_constrain.index.str.replace("_paid_off", "")
+
+    grouper = xr.DataArray(to_constrain.grouper, dims=["Generator-ext"])
+
+    lhs = n.model["Generator-p_nom"].loc[to_constrain.index].groupby(grouper).sum()
+    # RHS
+    idx = lhs.indexes["grouper"]
+
+    if not lhs.empty():
+        n.model.add_constraints(
+            lhs <= ususal_gens.loc[idx].p_nom_max.values,
+            name="paid_off_and_usual_max_potential",
+        )
+
+
 def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
     """
     Add supplementary constraints to the network model. ``pypsa.linopf.network_lopf``.
@@ -217,10 +280,12 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
         snapshots (DatetimeIndex): the time index of the network
         config (dict): the configuration dictionary
     """
-
+    config = n.config
     add_battery_constraints(n)
     add_transimission_constraints(n)
     add_chp_constraints(n)
+    if config["run"].get("is_remind_coupled", False):
+        add_remind_paid_off_constraints(n)
 
 
 def solve_network(
@@ -283,8 +348,8 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            planning_horizons=2030,
-            co2_pathway="remind_ssp2NPI",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
+            planning_horizons="2070",
             topology="current+FCG",
             heating_demand="positive",
         )
