@@ -286,7 +286,7 @@ if config["foresight"] in ["overnight"]:
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
             # TODO REMIND couplong
             installed_capacities = path_manager.infrastructure() + '/capacities_{planning_horizons}.csv',
-            paid_off_capacities_remind = paidoff_caps if config["run"].get("is_remind_coupled", False) else None,
+            paid_off_capacities_remind = paidoff_caps if config["run"].get("is_remind_coupled", False) else "",
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         threads: 1
         resources: mem_mb=2000
