@@ -558,7 +558,7 @@ def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, c
             [tech_group, Capacity, techs]
         cutoff (int, optional): minimum capacity to be considered. Defaults to 100 MW."""
 
-    paid_off = paid_off_caps.copy()
+    paid_off = paid_off_caps.reset_index()
 
     # explode tech list per tech group (constraint will apply to group)
     paid_off.techs = paid_off.techs.apply(to_list)
@@ -592,8 +592,8 @@ def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, c
         # exclude brownfield capacities
         df = getattr(network, component.lower() + "s").query(f"{prefix}_nom_extendable == True")
         # join will add the tech_group and p_nom_max_rcl columns, used later for constraints
+        # rcl is legacy name from Adrian for region country limit
         paid = df.join(paid_off_comp, on=[settings["join_col"]], how="right", rsuffix="_rcl")
-
         paid.dropna(subset=[f"{prefix}_nom_max", f"{prefix}_nom_max_rcl"], inplace=True)
         paid.index += "_paid_off"
         # set permissive options for the paid-off capacities (constraint per group added to model later)
@@ -621,7 +621,7 @@ if __name__ == "__main__":
             topology="current+FCG",
             # co2_pathway="exp175default",
             co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2150",
+            planning_horizons="2040",
             # heating_demand="positive",
         )
 
@@ -660,9 +660,13 @@ if __name__ == "__main__":
     add_power_capacities_installed_before_baseyear(n, costs, config, installed)
 
     # add paid-off REMIND capacities if requested
-    if data_paths.get("paid_off_capacities_remind", None):
+    if config["run"].get("is_remind_coupled", False) & (
+        data_paths.get("paid_off_capacities_remind", None) is not None
+    ):
+        logger.info("Adding paid-off REMIND capacities to the network")
         paid_off_caps = pd.read_csv(snakemake.input.paid_off_capacities_remind, index_col=0)
-        paid_off_caps = paid_off_caps.query("year == @cost_year")
+        yr = int(cost_year)
+        paid_off_caps = paid_off_caps.query("year == @yr")
         # add to network
         add_paid_off_capacity(n, paid_off_caps)
 
