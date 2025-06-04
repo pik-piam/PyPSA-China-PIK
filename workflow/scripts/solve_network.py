@@ -221,52 +221,65 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         logger.info("Skipping paid off constraints as REMIND is not coupled")
         return
 
-    gens = n.generators.copy()
+    # The components (generators etc) have limits p/e_nom_rcl & tech_group
+    # added by add_existing_baseyear.add_paid_off_capacity. These are the avail remind paid-off
+    # cap per tech group (nan for the usual generators). rcl is a legacy name from Aodenweller
+    for component in ["Generator", "Link", "Store"]:
 
-    # select the paid_off
-    # these are extensible by virtue of add_existing_baseyear.add_paid_off_capacities
-    paidoff_gens = gens.dropna(subset=["p_nom_max_rcl"])
+        prefix = "e" if component == "Store" else "p"
+        paid_off_col = f"{prefix}_nom_max_rcl"
 
-    # RHS: get total paid off capacities per group (max allowed)
-    paid_off_totals = paidoff_gens.set_index("tech_group").p_nom_max_rcl.drop_duplicates()
+        paid_off = getattr(n, component.lower() + "s").dropna(subset=[paid_off_col])
 
-    # LHS: p_nom per technology grp < totals
-    groupers = [paidoff_gens["tech_group"]]
-    grouper_lhs = xr.DataArray(pd.MultiIndex.from_arrays(groupers), dims=["Generator-ext"])
-    p_nom_groups = n.model["Generator-p_nom"].loc[paidoff_gens.index].groupby(grouper_lhs).sum()
+        if paid_off.empty:
+            continue
 
-    # get indices to sort RHS. the grouper is multi-indexed (legacy from PyPSA-Eur)
-    idx = p_nom_groups.indexes["group"]
-    idx = [x[0] for x in idx]
+        paid_off_totals = paid_off.set_index("tech_group")[paid_off_col].drop_duplicates()
 
-    # Add constraint
-    if not p_nom_groups.empty():
-        n.model.add_constraints(
-            p_nom_groups <= paid_off_totals[idx].values,
-            name="paid_off_cap_totals",
+        # LHS: p_nom per technology grp < totals
+        groupers = [paid_off["tech_group"]]
+        grouper_lhs = xr.DataArray(pd.MultiIndex.from_arrays(groupers), dims=[f"{component}-ext"])
+        p_nom_groups = (
+            n.model[f"{component}-{prefix}_nom"].loc[paid_off.index].groupby(grouper_lhs).sum()
         )
 
-    # === ensure normal p_nom_max is respected for paid_off + normal generators
-    # usual generators associated with paid_off one
-    ususal_gens_idx = paidoff_gens.index.str.replace("_paid_off", "")
-    ususal_gens = n.generators.loc[ususal_gens_idx].copy()
-    ususal_gens = ususal_gens[~ususal_gens.p_nom_max.isin([np.inf, np.nan])]
+        # get indices to sort RHS. the grouper is multi-indexed (legacy from PyPSA-Eur)
+        idx = p_nom_groups.indexes["group"]
+        idx = [x[0] for x in idx]
 
-    to_constrain = pd.concat([ususal_gens, paidoff_gens], axis=0)
-    to_constrain.rename_axis(index="Generator-ext", inplace=True)
-    to_constrain["grouper"] = to_constrain.index.str.replace("_paid_off", "")
+        # Add constraint
+        if not p_nom_groups.empty():
+            n.model.add_constraints(
+                p_nom_groups <= paid_off_totals[idx].values,
+                name=f"paidoff_cap_totals_{component.lower()}",
+            )
 
-    grouper = xr.DataArray(to_constrain.grouper, dims=["Generator-ext"])
+    # === ensure normal e/p_nom_max is respected for paid_off + normal generators
+    for component in ["Generator", "Link", "Store"]:
+        paidoff_comp = getattr(n, component.lower() + "s")
+        prefix = "e" if component == "Store" else "p"
+        # drop non paid off components
+        paidoff_comp.dropna(subset=[f"{component[0].lower()}_nom_max_rcl"])
+        # find equivalent usual components
+        ususal_comps_idx = paidoff_comp.index.str.replace("_paid_off", "")
+        ususal_comps = n.generators.loc[ususal_comps_idx].copy()
+        ususal_comps = ususal_comps[~ususal_comps.p_nom_max.isin([np.inf, np.nan])]
 
-    lhs = n.model["Generator-p_nom"].loc[to_constrain.index].groupby(grouper).sum()
-    # RHS
-    idx = lhs.indexes["grouper"]
+        to_constrain = pd.concat([ususal_comps, paidoff_comp], axis=0)
+        to_constrain.rename_axis(index=f"{component}-ext", inplace=True)
+        to_constrain["grouper"] = to_constrain.index.str.replace("_paid_off", "")
 
-    if not lhs.empty():
-        n.model.add_constraints(
-            lhs <= ususal_gens.loc[idx].p_nom_max.values,
-            name="paid_off_and_usual_max_potential",
-        )
+        grouper = xr.DataArray(to_constrain.grouper, dims=[f"{component}-ext"])
+
+        lhs = n.model[f"{component}-{prefix}_nom"].loc[to_constrain.index].groupby(grouper).sum()
+        # RHS
+        idx = lhs.indexes["grouper"]
+
+        if not lhs.empty():
+            n.model.add_constraints(
+                lhs <= ususal_comps.loc[idx].p_nom_max.values,
+                name=f"constrain_paidoff&usual_{component}_potential",
+            )
 
 
 def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
@@ -349,7 +362,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "solve_networks",
             co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2070",
+            planning_horizons="2040",
             topology="current+FCG",
             heating_demand="positive",
         )
