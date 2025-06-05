@@ -322,7 +322,7 @@ elif config["foresight"] == "myopic":
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
             **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
-               for tech in config['existing_infrastructure']},
+               for tech in config.get('existing_infrastructure',[])},
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         wildcard_constraints:
             planning_horizons=config['scenario']['planning_horizons'][0] #only applies to baseyear
