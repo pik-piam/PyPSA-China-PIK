@@ -47,6 +47,8 @@ dependencies:
   - pytz
   - country_converter
   - tabula-py
+  - chardet
+  - ultraplot
 
   # Keep in conda environment when calling ipython
   - ipython

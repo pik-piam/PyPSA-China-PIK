@@ -332,7 +332,7 @@ def read_yearly_projections(
 
 def project_elec_demand(
     hourly_demand_base_yr_MWh: pd.DataFrame, yearly_projections_MWh: pd.DataFrame, year=2020
-):
+) -> pd.DataFrame:
     """project the hourly demand to the future years
 
     Args:
