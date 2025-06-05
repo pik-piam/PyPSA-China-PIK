@@ -171,6 +171,7 @@ if __name__ == "__main__":
             "transform_remind_data",
             co2_pathway="SSP2-PkBudg1000-PyPS",
             topology="current+FCG",
+            configfiles="resources/tmp/remind_coupled.yaml",
             # heating_demand="positive",
         )
 
@@ -235,9 +236,10 @@ if __name__ == "__main__":
     outputs["caps"].to_csv(snakemake.output.remind_caps)
     outputs["tech_groups"].to_csv(snakemake.output.remind_tech_groups)
     for year, df in outputs["technoeconomic_data"].items():
-        df.to_csv(
-            outp_files[f"costs_{year}"],
-            index=False,
-        )
+        if f"costs_{year}" in outp_files:
+            df.to_csv(
+                outp_files[f"costs_{year}"],
+                index=False,
+            )
 
-    logger.info(f"REMIND-> pypsa ETL completed")
+    logger.info("REMIND-> pypsa ETL completed")
