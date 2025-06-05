@@ -152,9 +152,9 @@ class GHGConfigHandler:
                 raise ValueError(f"Scenario {scen} must contain 'control' and 'pathway'")
 
             ALLOWED = ["price", "reduction", "budget", None]
-
+        
             if not scen["control"] in ALLOWED:
-                err = f"Control must be {','.join(ALLOWED)} but was {name}:{scen['control']}"
+                err = f"Control must be {','.join([str(x) for x in ALLOWED])} but was {name}:{scen.get('control', "missing")}"
                 raise ValueError(err)
 
             years_int = set(map(int, self.config["scenario"]["planning_horizons"]))
