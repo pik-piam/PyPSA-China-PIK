@@ -14,7 +14,7 @@ scenario:
 
 # TODO
 paths:
-  remind_outpt_dir: "/home/ivanra/downloads/output_REMIND/SSP2-Budg1000-PyPSAxprt_2025-05-09/pypsa_export"
+  remind_outpt_dir: /p/tmp/ivanra/REMIND/output/SSP2-PkBudg1000-PyPSAxprt_2025-05-09_19.01.34/pypsa_export
   costs_dir: null
   yearly_regional_load: 
     ac: null
