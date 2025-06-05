@@ -14,6 +14,8 @@ paths:
     ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
     # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
+    remind_outpt_dir: "~/downloads/output_REMIND/SSP2-Budg1000-PyPSAxprt_2025-05-09/pypsa_export"
+
 
 scenario: 
   co2_pathway: ["exp175default"] # co2_scenarios that will be used

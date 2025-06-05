@@ -36,7 +36,7 @@ from _pypsa_helpers import (
 )
 from add_electricity import load_costs, sanitize_carriers
 from functions import haversine
-from readers import read_province_shapes
+from readers_geospatial import read_province_shapes
 
 logger = getLogger(__name__)
 logger.setLevel("INFO")
@@ -687,8 +687,50 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         )
 
         # add rivers to link station to station
-        bus0s = [0, 21, 11, 19, 22, 29, 8, 40, 25, 1, 7, 4, 10, 15, 12, 20, 26, 6, 3, 39]
-        bus1s = [5, 11, 19, 22, 32, 8, 40, 25, 35, 2, 4, 10, 9, 12, 20, 23, 6, 17, 14, 16]
+        bus0s = [
+            0,
+            21,
+            11,
+            19,
+            22,
+            29,
+            8,
+            40,
+            25,
+            1,
+            7,
+            4,
+            10,
+            15,
+            12,
+            20,
+            26,
+            6,
+            3,
+            39,
+        ]
+        bus1s = [
+            5,
+            11,
+            19,
+            22,
+            32,
+            8,
+            40,
+            25,
+            35,
+            2,
+            4,
+            10,
+            9,
+            12,
+            20,
+            23,
+            6,
+            17,
+            14,
+            16,
+        ]
 
         for bus0, bus2 in list(zip(dams.index[bus0s], dam_buses.iloc[bus1s].index)):
 
@@ -748,7 +790,8 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         # ======= add other existing hydro power
         hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
         hydro_p_max_pu = pd.read_hdf(
-            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+            config["hydro_dams"]["p_max_pu_path"],
+            key=config["hydro_dams"]["p_max_pu_key"],
         ).tz_localize(None)
 
         hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
@@ -774,7 +817,12 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
     if config["add_H2"]:
 
         network.add(
-            "Bus", nodes, suffix=" H2", x=prov_centroids.x, y=prov_centroids.y, carrier="H2"
+            "Bus",
+            nodes,
+            suffix=" H2",
+            x=prov_centroids.x,
+            y=prov_centroids.y,
+            carrier="H2",
         )
 
         network.add(

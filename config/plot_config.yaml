@@ -139,6 +139,9 @@ plotting:
     gas OCGT: '#e0986c'
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
+    CCGT: '#a85522'
+    CCGT gas: '#a85522'
+    gas CCGT: '#a85522'
     gas boiler: '#db6a25'
     gas boiler decentral: '#db6a25'
     gas boiler central: '#db6a25'
@@ -387,6 +390,8 @@ plotting:
     OCGT: "Open-Cycle Gas"
     gas OCGT: "Open-Cycle Gas"
     CCGT: "Combined-Cycle Gas"
+    gas CCGT: "Combined-Cycle Gas"
+    CCGT gas: "Combined-Cycle Gas"
     heat pump: "Heat Pump"
     stations-AC: "Reservoir & Dam"
     AC-heat: "Heat Pump"
@@ -433,7 +438,8 @@ plotting:
   - coal boiler decentral
   - coal boiler central
   - CHP coal
-  - OCGT
+  - gas CCGT
+  - Combined-Cycle Gas
   - gas boiler
   - gas boiler decentral
   - gas boiler central
@@ -468,6 +474,7 @@ plotting:
   - solar
   - battery storage
   - gas
+  - OCGT
   - gas OCGT
   - battery discharger
   - battery
