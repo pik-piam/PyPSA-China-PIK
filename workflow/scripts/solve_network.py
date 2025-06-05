@@ -229,10 +229,12 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         prefix = "e" if component == "Store" else "p"
         paid_off_col = f"{prefix}_nom_max_rcl"
 
-        paid_off = getattr(n, component.lower() + "s").dropna(subset=[paid_off_col])
-
-        if paid_off.empty:
+        paid_off = getattr(n, component.lower() + "s").copy()
+        # if there are no paid_off components
+        if paid_off_col not in paid_off.columns:
             continue
+        else:
+            paid_off.dropna(subset=[paid_off_col], inplace=True)
 
         paid_off_totals = paid_off.set_index("tech_group")[paid_off_col].drop_duplicates()
 
@@ -256,17 +258,22 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
 
     # === ensure normal e/p_nom_max is respected for paid_off + normal generators
     for component in ["Generator", "Link", "Store"]:
-        paidoff_comp = getattr(n, component.lower() + "s")
+        paidoff_comp = getattr(n, component.lower() + "s").copy()
+
         prefix = "e" if component == "Store" else "p"
-        # drop non paid off components
-        paidoff_comp.dropna(subset=[f"{prefix}_nom_max_rcl"], inplace=True)
+        paid_off_col = f"{prefix}_nom_max_rcl"
+        # if there are no paid_off components
+        if paid_off_col not in paidoff_comp.columns:
+            continue
+        else:
+            paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
 
         if paidoff_comp.empty:
             continue
 
         # find equivalent usual components
         ususal_comps_idx = paidoff_comp.index.str.replace("_paid_off", "")
-        ususal_comps = n.generators.loc[ususal_comps_idx].copy()
+        ususal_comps = getattr(n, component.lower() + "s").loc[ususal_comps_idx].copy()
         ususal_comps = ususal_comps[~ususal_comps.p_nom_max.isin([np.inf, np.nan])]
 
         to_constrain = pd.concat([ususal_comps, paidoff_comp], axis=0)
@@ -366,7 +373,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "solve_networks",
             co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2040",
+            planning_horizons="2070",
             topology="current+FCG",
             heating_demand="positive",
         )
