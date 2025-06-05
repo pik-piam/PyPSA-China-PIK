@@ -82,6 +82,8 @@ remind_etl:
         fuel_costs: "region == @region"
         co2_intensity: "region == @region"
         weights_gen: "region == @region"
+      kwargs:
+        currency_conversion: 1.1 # approx EUR2015 to USD2017
   disagg:
     - name: disagg_load
       method: "disagg_acload_ref"
