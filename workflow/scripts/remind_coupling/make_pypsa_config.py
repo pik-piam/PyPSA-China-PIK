@@ -19,6 +19,8 @@ import rpycpl.utils as coupl_utils
 
 logger = logging.getLogger(__name__)
 
+MW_C = 12  # g/mol
+MW_CO2 = 2 * 16 + MW_C  # g/mol
 
 def read_remind_data(remind_outp_dir: os.PathLike, region: str) -> dict:
     """
@@ -31,11 +33,12 @@ def read_remind_data(remind_outp_dir: os.PathLike, region: str) -> dict:
     """
 
     co2_p = (
-        coupl_utils.read_remind_csv(os.path.join(remind_outp_dir, "p_priceCO2.csv"))
+        coupl_utils.read_remind_csv(os.path.join(remind_outp_dir, "pm_taxCO2eq.csv"))
         .query("region == @region")
         .drop(columns=["region"])
         .set_index("year")
-    )
+    )* 1000 / MW_CO2 * MW_C # gC to ton CO2
+    
     # get remind version
     with open(os.path.join(remind_outp_dir, "c_model_version.csv"), "r") as f:
         remind_v = f.read().split("\n")[1].replace(",", "").replace(" ", "")
