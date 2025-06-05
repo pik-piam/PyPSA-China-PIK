@@ -12,7 +12,6 @@ import re
 
 from types import SimpleNamespace
 
-from functions import cartesian
 from constants import YEAR_HRS
 from add_electricity import load_costs
 from _helpers import mock_snakemake, configure_logging
