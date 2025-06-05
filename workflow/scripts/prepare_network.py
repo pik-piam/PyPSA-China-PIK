@@ -1589,7 +1589,10 @@ if __name__ == "__main__":
     sanitize_carriers(network, snakemake.config)
 
     outp = snakemake.output.network_name
-    network.export_to_netcdf(outp)
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    network.export_to_netcdf(outp, compression=compression)
 
     logger.info(f"Network for {yr} prepared and saved to {outp}")
 

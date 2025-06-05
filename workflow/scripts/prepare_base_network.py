@@ -1300,9 +1300,12 @@ if __name__ == "__main__":
     sanitize_carriers(network, snakemake.config)
 
     outp = snakemake.output.network_name
-    network.export_to_netcdf(snakemake.output.network_name)
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    network.export_to_netcdf(outp, compression=compression)
 
-    msg = f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {snakemake.output.network_name}"
+    msg = f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {outp}"
     logger.info(msg)
 
     costs_outp = os.path.dirname(outp) + f"/costs_{yr}.csv"

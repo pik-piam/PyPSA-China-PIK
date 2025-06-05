@@ -674,6 +674,9 @@ if __name__ == "__main__":
         # add to network
         add_paid_off_capacity(n, paid_off_caps)
 
-    n.export_to_netcdf(snakemake.output[0])
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    n.export_to_netcdf(snakemake.output.output[0], compression=compression)
 
     logger.info("Existing capacities successfully added to network")

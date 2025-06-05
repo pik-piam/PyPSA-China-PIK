@@ -15,12 +15,17 @@ paths:
     # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
 
+io:
+  nc_compression:
+    level: 4
+    zlib: True
+    
 scenario: 
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
-    - 2020
-    - 2025
+    # - 2020
+    # - 2025
     - 2030
     - 2035
     - 2040

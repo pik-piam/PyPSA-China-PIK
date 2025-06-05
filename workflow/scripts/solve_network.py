@@ -373,7 +373,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "solve_networks",
             co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2070",
+            planning_horizons="2080",
             topology="current+FCG",
             heating_demand="positive",
         )
@@ -420,7 +420,10 @@ if __name__ == "__main__":
         n.links_t.p2 = n.links_t.p2.astype(float)
 
     n.meta.update(dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards))))
-    n.export_to_netcdf(snakemake.output[0])
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    n.export_to_netcdf(snakemake.output.network_name, compression=compression)
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
 
