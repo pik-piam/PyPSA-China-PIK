@@ -595,6 +595,10 @@ def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, c
         # rcl is legacy name from Adrian for region country limit
         paid = df.join(paid_off_comp, on=[settings["join_col"]], how="right", rsuffix="_rcl")
         paid.dropna(subset=[f"{prefix}_nom_max", f"{prefix}_nom_max_rcl"], inplace=True)
+        paid = paid.loc[paid.index.dropna()]
+        if paid.empty:
+            continue
+
         paid.index += "_paid_off"
         # set permissive options for the paid-off capacities (constraint per group added to model later)
         paid["capital_cost"] = 0
@@ -621,7 +625,7 @@ if __name__ == "__main__":
             topology="current+FCG",
             # co2_pathway="exp175default",
             co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2040",
+            planning_horizons="2070",
             # heating_demand="positive",
         )
 
