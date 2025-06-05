@@ -152,15 +152,15 @@ class GHGConfigHandler:
                 raise ValueError(f"Scenario {scen} must contain 'control' and 'pathway'")
 
             ALLOWED = ["price", "reduction", "budget", None]
-
+        
             if not scen["control"] in ALLOWED:
-                err = f"Control must be {",".join([str(x) for x in ALLOWED])} but was {name}:{scen["control"]}"
+                err = f"Control must be {','.join([str(x) for x in ALLOWED])} but was {name}:{scen.get('control', "missing")}"
                 raise ValueError(err)
 
             years_int = set(map(int, self.config["scenario"]["planning_horizons"]))
             missing_yrs = years_int - set(map(int, scen["pathway"]))
             if missing_yrs:
-                raise ValueError(f"Years in scenario {scen["pathway"]} missing {missing_yrs}")
+                raise ValueError(f"Years in scenario {scen['pathway']} missing {missing_yrs}")
 
 
 # TODO return pathlib objects? so can just use / to combine paths?

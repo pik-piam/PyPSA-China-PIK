@@ -10,13 +10,13 @@ def sample_config():
     return {
         "scenario": {
             "planning_horizons": [2020, 2030],
-            "co2_pathway": ["test_path"],
+            "co2_pathway": ["test_co2_scen"],
             "topology": "test_topo",
             "heating_demand": "test_proj",
             "foresight": "overnight"
         },
         "co2_scenarios": {
-            "test_path": {
+            "test_co2_scen": {
                 "control": "reduction",
                 "pathway": {"2020": 0.1, "2030": 0.2}
             }
@@ -49,7 +49,7 @@ def test_config_manager_init_and_handle_scenarios(sample_config):
 def test_config_manager_fetch_co2_restriction(sample_config):
     cm = ConfigManager(sample_config)
     cm.handle_scenarios()
-    res = cm.fetch_co2_restriction("test_path", 2020)
+    res = cm.fetch_co2_restriction("test_co2_scen", 2020)
     assert "co2_pr_or_limit" in res
     assert "control" in res
 
@@ -70,8 +70,9 @@ def test_ghg_handler_valid(sample_config):
 def test_ghg_handler_invalid_control(sample_config):
     bad_config = dict(sample_config)
     bad_config["co2_scenarios"] = {
-        "test_path": {"control": "invalid", "pathway": {"2020": 0.1, "2030": 0.2}}
+        "test_co2_scen": {"control": "invalid", "pathway": {"2020": 0.1, "2030": 0.2}}
     }
+    print(bad_config)
     with pytest.raises(ValueError):
         GHGConfigHandler(bad_config)
 
@@ -79,7 +80,7 @@ def test_ghg_handler_invalid_control(sample_config):
 def test_ghg_handler_missing_keys(sample_config):
     bad_config = dict(sample_config)
     bad_config["co2_scenarios"] = {
-        "test_path": {"control": "reduction"}
+        "test_co2_scen": {"control": "reduction"}
     }
     with pytest.raises(ValueError):
         GHGConfigHandler(bad_config)
