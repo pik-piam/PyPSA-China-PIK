@@ -3,8 +3,12 @@
 """
 Functions for myopic pathway network generation snakemake rules
 
-Add paid-off assets from previous planning horizon to network from next
-        planning horizon
+Add assets from previous planning horizon network solution to 
+network to solve for the current planning horizon.
+
+Usage:
+- use via a snakemake rule
+- debug: use as standalone with mock_snakemake (reads snakefile)
 """
 import logging
 import pandas as pd

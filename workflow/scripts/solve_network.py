@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 # coding: utf-8
-""" Functions to add constraints and prepare the network for the solver.
- Associated with the `solve_networks` rule in the Snakefile.
+"""Functions to add constraints and prepare the network for the solver.
+Associated with the `solve_networks` rule in the Snakefile.
 """
 import logging
 import numpy as np
@@ -13,17 +13,27 @@ from pandas import DatetimeIndex
 
 
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
+from constants import YEAR_HRS
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-def prepare_network(n: pypsa.Network, solve_opts: dict):
-    """ prepare the network for the solver
+def prepare_network(
+    n: pypsa.Network, solve_opts: dict, config: dict, plan_year: int
+) -> pypsa.Network:
+    """prepare the network for solving
+
     Args:
-        n (pypsa.Network): the pypsa network object
-        solve_opts (dict): the solving options
+        n (pypsa.Network): the network object to optimize
+        solve_opts (dict): solver options
+        config (dict): snakemake config
+        plan_year (int): planning horizon year for which network is solved
+
+    Returns:
+        pypsa.Network: network object with additional constraints
     """
+
     if "clip_p_max_pu" in solve_opts:
         for df in (n.generators_t.p_max_pu, n.storage_units_t.inflow):
             df.where(df > solve_opts["clip_p_max_pu"], other=0.0, inplace=True)
@@ -60,7 +70,10 @@ def prepare_network(n: pypsa.Network, solve_opts: dict):
     if solve_opts.get("nhours"):
         nhours = solve_opts["nhours"]
         n.set_snapshots(n.snapshots[:nhours])
-        n.snapshot_weightings[:] = 8760.0 / nhours
+        n.snapshot_weightings[:] = YEAR_HRS / nhours
+
+    if config["existing_capacities"].get("add", False):
+        add_land_use_constraint(n, plan_year)
 
     return n
 
@@ -133,6 +146,46 @@ def add_chp_constraints(n: pypsa.Network):
         n.model.add_constraints(lhs <= 0, name="chplink-backpressure")
 
 
+def add_land_use_constraint(n: pypsa.Network, planning_horizons: str | int) -> None:
+    """
+    Add land use constraints for renewable energy potential. This ensures that the brownfield + greenfield
+     vre installations for each generator technology do not exceed the technical potential.
+
+    Args:
+        n (pypsa.Network): the network object to add the constraints to
+        planning_horizons (str | int): the planning horizon year as string
+    """
+    # warning: this will miss existing offwind which is not classed AC-DC and has carrier 'offwind'
+
+    for carrier in [
+        "solar",
+        "solar thermal",
+        "onwind",
+        "offwind",
+        "offwind-ac",
+        "offwind-dc",
+        "offwind-float",
+    ]:
+        ext_i = (n.generators.carrier == carrier) & ~n.generators.p_nom_extendable
+        grouper = n.generators.loc[ext_i].index.str.replace(f" {carrier}.*$", "", regex=True)
+        existing = n.generators.loc[ext_i, "p_nom"].groupby(grouper).sum()
+        existing.index += f" {carrier}"
+        n.generators.loc[existing.index, "p_nom_max"] -= existing
+
+    # check if existing capacities are larger than technical potential
+    existing_large = n.generators[n.generators["p_nom_min"] > n.generators["p_nom_max"]].index
+    if len(existing_large):
+        logger.warning(
+            f"Existing capacities larger than technical potential for {existing_large},\
+                        adjust technical potential to existing capacities"
+        )
+        n.generators.loc[existing_large, "p_nom_max"] = n.generators.loc[
+            existing_large, "p_nom_min"
+        ]
+
+    n.generators["p_nom_max"] = n.generators["p_nom_max"].clip(lower=0)
+
+
 def add_transimission_constraints(n: pypsa.Network):
     """
     Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
@@ -157,11 +210,16 @@ def add_transimission_constraints(n: pypsa.Network):
     n.model.add_constraints(lhs == rhs, name="Link-transimission")
 
 
-def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex):
+def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
     """
-    Collects supplementary constraints which will be passed to ``pypsa.linopf.network_lopf``.
+    Add supplementary constraints to the network model. ``pypsa.linopf.network_lopf``.
     If you want to enforce additional custom constraints, this is a good location to add them.
     The arguments ``opts`` and ``snakemake.config`` are expected to be attached to the network.
+
+    Args:
+        n (pypsa.Network): the network object to optimize
+        snapshots (DatetimeIndex): the time index of the network
+        config (dict): the configuration dictionary
     """
 
     add_battery_constraints(n)
@@ -229,8 +287,8 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            planning_horizons=2020,
-            co2_pathway="exp175default",
+            planning_horizons=2030,
+            co2_pathway="remind_ssp2NPI",
             topology="current+FCG",
             heating_demand="positive",
         )
@@ -254,7 +312,7 @@ if __name__ == "__main__":
 
     n = pypsa.Network(snakemake.input.network_name)
 
-    n = prepare_network(n, solve_opts)
+    n = prepare_network(n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons)
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
 

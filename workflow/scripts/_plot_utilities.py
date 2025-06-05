@@ -7,8 +7,31 @@ import pandas as pd
 import os.path
 import matplotlib.pyplot as plt
 from os import PathLike
+import re
+from typing import Dict
 
 from constants import PROV_NAMES
+
+
+def validate_hex_colors(tech_colors: Dict[str, str]) -> Dict[str, str]:
+    """Validate and standardize hex color codes in the tech_colors dictionary.
+
+    Args:
+        tech_colors (Dict[str, str]): Dictionary mapping technology names to color codes.
+
+    Returns:
+        Dict[str, str]: Dictionary with validated color codes. Invalid colors are replaced with '#999999'.
+    """
+    hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
+    validated_colors = {}
+    
+    for tech, color in tech_colors.items():
+        if not isinstance(color, str) or not hex_color_pattern.match(color):
+            validated_colors[tech] = "#999999"
+        else:
+            validated_colors[tech] = color.lower()
+            
+    return validated_colors
 
 
 def find_weeks_of_interest(
