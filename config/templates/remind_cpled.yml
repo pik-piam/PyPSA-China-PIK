@@ -16,6 +16,8 @@ scenario:
 paths:
   remind_outpt_dir: "/home/ivanra/downloads/output_REMIND/SSP2-Budg1000-PyPSAxprt_2025-05-09/pypsa_export"
   costs_dir: null
+  yearly_regional_load: 
+    ac: null
 heat_coupling: False
 add_biomass: True
 add_hydro: True
