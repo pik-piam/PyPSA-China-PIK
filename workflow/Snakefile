@@ -73,9 +73,7 @@ elif config["foresight"] in ["overnight", "myopic"]:
                 **config["scenario"]
             ),
             expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"]),
-            expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"]),
-            expand(RESULTS_DIR + "/plots/costs/parameters_comparison.pdf", 
-                   **{k: v for k, v in config["scenario"].items() if k != "planning_horizons"}) if config["enable"].get("check_parameters", True) else []
+            expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"])
 
 else:
     raise ValueError("Invalid scenario config: {}".format(config["foresight"]))
