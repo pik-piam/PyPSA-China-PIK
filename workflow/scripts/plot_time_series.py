@@ -263,7 +263,7 @@ def plot_residual_load_duration_curve(
 
 
 def plot_price_duration_curve(
-    network: pypsa.Network, carrier="AC", ax: plt.Axes = None
+    network: pypsa.Network, carrier="AC", ax: plt.Axes = None, figsize=(8, 8)
 ) -> plt.Axes:
     """plot the price duration curve for the given carrier
 
@@ -271,12 +271,12 @@ def plot_price_duration_curve(
         network (pypsa.Network): the pypasa network object
         carrier (str, optional): the load carrier, defaults to AC
         ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
-
+        figsize (tuple, optional): size of the figure (if no ax given), defaults to (8, 8)
     Returns:
         plt.Axes: the plotting axes
     """
     if not ax:
-        fig, ax = plt.subplots(figsize=(8, 8))
+        fig, ax = plt.subplots(figsize=figsize)
     else:
         fig = ax.get_figure()
 
