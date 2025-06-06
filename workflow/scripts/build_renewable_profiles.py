@@ -71,7 +71,7 @@ from atlite import Cutout
 from dask.distributed import Client
 
 from _helpers import configure_logging, mock_snakemake
-from readers import read_province_shapes, read_offshore_province_shapes
+from readers_geospatial import read_province_shapes, read_offshore_province_shapes
 from constants import PROV_NAMES, OFFSHORE_WIND_NODES, TIMEZONE
 
 logger = logging.getLogger(__name__)
@@ -106,7 +106,11 @@ def prepare_resource_config(params: dict, nprocesses: int, noprogress=True) -> t
 
 
 def build_resource_classes(
-    cutout: Cutout, nbins: int, regions: gpd.GeoSeries, capacity_factor: xr.DataArray, params: dict
+    cutout: Cutout,
+    nbins: int,
+    regions: gpd.GeoSeries,
+    capacity_factor: xr.DataArray,
+    params: dict,
 ) -> tuple[xr.DataArray, gpd.GeoSeries]:
     """Bin resources based on their capacity factor
     The number of bins can be dynamically reduced based on a min delta cf
