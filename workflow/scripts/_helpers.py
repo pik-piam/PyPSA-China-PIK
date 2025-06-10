@@ -152,7 +152,7 @@ class GHGConfigHandler:
                 raise ValueError(f"Scenario {scen} must contain 'control' and 'pathway'")
 
             ALLOWED = ["price", "reduction", "budget", None]
-        
+
             if not scen["control"] in ALLOWED:
                 err = f"Control must be {','.join([str(x) for x in ALLOWED])} but was {name}:{scen.get('control', "missing")}"
                 raise ValueError(err)
@@ -316,7 +316,7 @@ class PathManager:
             os.PathLike: the dirname
         """
 
-        default = "resources/data/costs"
+        default = "resources/data/costs/default"
         if self.config["run"].get("is_remind_coupled", False) and not ignore_remind:
             default = self.derived_data_dir() + "/remind/costs"
 
