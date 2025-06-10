@@ -592,18 +592,20 @@ def add_voltage_links(network: pypsa.Network, config: dict):
         ]
     )
 
-    cc = (
-        (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-        * LINE_SECURITY_MARGIN
+    # get for backward compatibility
+    security_config = config.get("security", {"line_security_margin": 70})
+    line_margin = security_config.get("line_security_margin", 70) / 100
+
+    line_cost = (
+        (config["line_cost_factor"] * lengths * costs.at["HVDC overhead", "capital_cost"])
         * FOM_LINES
         * n_years
         * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
-    )
+    )  # /MW
 
     # ==== lossy transport model (split into 2) ====
     # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk
     if config["line_losses"]:
-
         network.add(
             "Link",
             edges["bus0"] + "-" + edges["bus1"],
@@ -614,12 +616,13 @@ def add_voltage_links(network: pypsa.Network, config: dict):
             p_nom=edges["p_nom"].values,
             p_nom_min=edges["p_nom"].values,
             p_min_pu=0,
+            p_max_pu=line_margin,
             efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
             * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
             length=lengths,
-            capital_cost=cc,
+            capital_cost=line_cost,
         )
-        # 0 len for reversed in case line limits are specified in km
+        # 0 len for reversed in case line limits are specified in km. Limited in constraints to fwdcap
         network.add(
             "Link",
             edges["bus0"] + "-" + edges["bus1"],
@@ -1340,7 +1343,9 @@ def prepare_network(
 
     # determine whether gas/coal to be added depending on specified conv techs
     config["add_gas"] = (
-        True if [tech for tech in config["Techs"]["conv_techs"] if ("gas" in tech or "CGT" in tech)] else False
+        True
+        if [tech for tech in config["Techs"]["conv_techs"] if ("gas" in tech or "CGT" in tech)]
+        else False
     )
     config["add_coal"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False
