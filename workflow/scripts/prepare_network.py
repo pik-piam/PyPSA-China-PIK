@@ -39,8 +39,6 @@ from constants import (
     CRS,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
-    NON_LIN_PATH_SCALING,
-    LINE_SECURITY_MARGIN,
     ECON_LIFETIME_LINES,
     FOM_LINES,
 )
@@ -232,7 +230,6 @@ def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
     Args:
         network (pypsa.Network): the network to which prices or constraints are to be added
         co2_control (dict): the config
-
 
     Raises:
         ValueError: unrecognised co2 control option
@@ -493,7 +490,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
                 logger.warning("Some edges are not in the network buses")
 
         # fix this to use map with x.y
-        lengths = NON_LIN_PATH_SCALING * np.array(
+        lengths = config["lines"]["line_length_factor"] * np.array(
             [
                 haversine(
                     [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
@@ -582,7 +579,7 @@ def add_voltage_links(network: pypsa.Network, config: dict):
         if edges_.shape[0] != edges.shape[0]:
             logger.warning("Some edges are not in the network")
     # fix this to use map with x.y
-    lengths = NON_LIN_PATH_SCALING * np.array(
+    lengths = config["lines"]["line_length_factor"] * np.array(
         [
             haversine(
                 [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
@@ -597,11 +594,10 @@ def add_voltage_links(network: pypsa.Network, config: dict):
     line_margin = security_config.get("line_security_margin", 70) / 100
 
     line_cost = (
-        (config["line_cost_factor"] * lengths * costs.at["HVDC overhead", "capital_cost"])
-        * FOM_LINES
-        * n_years
-        * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
-    )  # /MW
+        lengths * costs.at["HVDC overhead", "capital_cost"] * FOM_LINES * n_years
+    ) + costs.at[
+        "HVDC inverter pair", "capital_cost"
+    ]  # /MW
 
     # ==== lossy transport model (split into 2) ====
     # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk
@@ -706,7 +702,7 @@ def add_wind_and_solar(
 
         # remove low potential bins
         cutoff = config.get("renewable_potential_cutoff", 0)
-        ds = ds.where(ds["p_nom_max"] > 200, drop=True)
+        ds = ds.where(ds["p_nom_max"] > cutoff, drop=True)
 
         # bins represent renewable generation grades
         flatten = lambda t: " grade".join(map(str, t))
@@ -1425,7 +1421,7 @@ def prepare_network(
             suffix=" PHS",
             bus=phss,
             carrier="PHS",
-            p_nom_extendable=False,
+            p_nom_extendable=True,
             p_nom=hydrocapa_df.loc[phss]["MW"],
             p_nom_min=hydrocapa_df.loc[phss]["MW"],
             max_hours=config["hydro"]["PHS_max_hours"],
@@ -1485,12 +1481,15 @@ def prepare_network(
         )
 
         # TODO Why no standing loss?: test with
+        min_charge = config["electricity"].get("min_charge", {"battery": 0})
+        min_charge = min_charge.get("battery", 0)
         network.add(
             "Store",
             nodes + " battery",
             bus=nodes + " battery",
             e_cyclic=True,
             e_nom_extendable=True,
+            e_min_pu=min_charge,
             capital_cost=costs.at["battery storage", "capital_cost"],
             lifetime=costs.at["battery storage", "lifetime"],
         )
