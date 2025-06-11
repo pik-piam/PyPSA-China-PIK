@@ -68,7 +68,9 @@ def area_from_lon_lat_poly(geometry):
     returns area in km^2."""
 
     project = partial(
-        pyproj.transform, pyproj.Proj(init="epsg:4326"), pyproj.Proj(proj="aea")  # Source: Lon-Lat
+        pyproj.transform,
+        pyproj.Proj(init="epsg:4326"),
+        pyproj.Proj(proj="aea"),  # Source: Lon-Lat
     )  # Target: Albers Equal Area Conical https://en.wikipedia.org/wiki/Albers_projection
     # TODO fix
     new_geometry = transform(project, geometry)
@@ -79,7 +81,7 @@ def area_from_lon_lat_poly(geometry):
 
 # TODO fix this/ DELETE
 def HVAC_cost_curve(distance):
-    """ Calculate the cost of HVAC lines based on distance.
+    """Calculate the cost of HVAC lines based on distance.
     Args:
         distance (float): distance in km
     Returns:

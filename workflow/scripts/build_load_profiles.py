@@ -1,5 +1,6 @@
 """Functions for the rules to build the hourly heat and load demand profiles
-- electricity load profiles are based on scaling an hourly base year profile to yearly future projections
+- electricity load profiles are based on scaling an hourly base year profile to yearly future
+    projections
 - daily heating demand is based on the degree day approx (from atlite) & upscaled hourly based
   on an intraday profile (for Denmark by default, see snakefile)
 """
@@ -18,6 +19,7 @@ from _pypsa_helpers import (
     calc_atlite_heating_timeshift,
     shift_profile_to_planning_year,
 )
+from readers import read_yearly_load_projections
 
 # TODO switch from hardocded REF_YEAR to a base year?
 from constants import (
@@ -113,7 +115,9 @@ def make_heat_demand_projections(
 
 
 def build_daily_heat_demand_profiles(
-    heat_demand_config: dict, atlite_heating_hr_shift: int, switch_month_day: bool = True
+    heat_demand_config: dict,
+    atlite_heating_hr_shift: int,
+    switch_month_day: bool = True,
 ) -> pd.DataFrame:
     """build the heat demand profile according to forecast demans
 
@@ -303,35 +307,10 @@ def prepare_hourly_load_data(
     return hourly_TWh
 
 
-def read_yearly_projections(
-    yearly_projections_p: os.PathLike = "resources/data/load/Province_Load_2020_2060.csv",
-    conversion=1,
-) -> pd.DataFrame:
-    """prepare projections for model use
-
-    Args:
-        yearly_projections_p (os.PathLike, optional): the data path.
-                Defaults to "resources/data/load/Province_Load_2020_2060.csv".
-        conversion (int, optional): the conversion factor to MWh. Defaults to 1.
-
-    Returns:
-        pd.DataFrame: the formatted data, in MWh
-    """
-    yearly_proj = pd.read_csv(yearly_projections_p)
-    yearly_proj.rename(columns={"Unnamed: 0": "province", "region": "province"}, inplace=True)
-    if "province" not in yearly_proj.columns:
-        raise ValueError(
-            "The province (or region or unamed) column is missing in the yearly projections data"
-            ". Index cannot be built"
-        )
-    yearly_proj.set_index("province", inplace=True)
-    yearly_proj.rename(columns={c: int(c) for c in yearly_proj.columns}, inplace=True)
-
-    return yearly_proj * conversion
-
-
 def project_elec_demand(
-    hourly_demand_base_yr_MWh: pd.DataFrame, yearly_projections_MWh: pd.DataFrame, year=2020
+    hourly_demand_base_yr_MWh: pd.DataFrame,
+    yearly_projections_MWh: pd.DataFrame,
+    year=2020,
 ) -> pd.DataFrame:
     """project the hourly demand to the future years
 
@@ -374,8 +353,8 @@ if __name__ == "__main__":
             "build_load_profiles",
             heating_demand="positive",
             planning_horizons="2040",
-            co2_pathway="remind_ssp2NPI",
-            # co2_pathway="exp175default",
+            # co2_pathway="remind_ssp2NPI",
+            co2_pathway="exp175default",
             topology="Current+Neigbor",
         )
 
@@ -400,33 +379,41 @@ if __name__ == "__main__":
         snakemake.input.hrly_regional_ac_load, snakemake.input.province_codes
     )
 
-    yearly_projs = read_yearly_projections(snakemake.input.elec_load_projs, conversion)
+    yearly_projs = read_yearly_load_projections(snakemake.input.elec_load_projs, conversion)
     projected_demand = project_elec_demand(hrly_MWh_load, yearly_projs, planning_horizons)
 
     with pd.HDFStore(snakemake.output.elec_load_hrly, mode="w", complevel=4) as store:
         store["load"] = projected_demand
 
-    atlite_hour_shift = calc_atlite_heating_timeshift(date_range, use_last_ts=False)
-    reg_daily_hd = build_daily_heat_demand_profiles(
-        config["heat_demand"], atlite_heating_hr_shift=atlite_hour_shift, switch_month_day=True
-    )
-
-    hot_water_per_day = build_hot_water_per_day(planning_horizons)
-
-    heat_demand, space_heat_demand, space_heating_per_hdd, water_heat_demand = (
-        build_heat_demand_profile(
-            reg_daily_hd,
-            hot_water_per_day,
-            date_range,
-            planning_horizons,
+    if config.get("heat_coupling", False):
+        atlite_hour_shift = calc_atlite_heating_timeshift(date_range, use_last_ts=False)
+        reg_daily_hd = build_daily_heat_demand_profiles(
+            config["heat_demand"],
+            atlite_heating_hr_shift=atlite_hour_shift,
+            switch_month_day=True,
         )
-    )
 
-    with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w", complevel=4) as store:
-        store["heat_demand_profiles"] = heat_demand
+        hot_water_per_day = build_hot_water_per_day(planning_horizons)
 
-    with pd.HDFStore(snakemake.output.energy_totals_name, mode="w") as store:
-        store["space_heating_per_hdd"] = space_heating_per_hdd
-        store["hot_water_per_day"] = hot_water_per_day
+        heat_demand, space_heat_demand, space_heating_per_hdd, water_heat_demand = (
+            build_heat_demand_profile(
+                reg_daily_hd,
+                hot_water_per_day,
+                date_range,
+                planning_horizons,
+            )
+        )
 
-    logger.info("Heat demand profiles successfully built")
+        with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w", complevel=4) as store:
+            store["heat_demand_profiles"] = heat_demand
+
+        with pd.HDFStore(snakemake.output.energy_totals_name, mode="w") as store:
+            store["space_heating_per_hdd"] = space_heating_per_hdd
+            store["hot_water_per_day"] = hot_water_per_day
+
+        logger.info("Heat demand profiles successfully built")
+    else:
+        with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w") as store:
+            store["skipped_not_heat_coupled"] = pd.Series(["Skipped, heat coupling is disabled"])
+        with pd.HDFStore(snakemake.output.energy_totals_name, mode="w") as store:
+            store["skipped_not_heat_coupled"] = pd.Series(["Skipped, heat coupling is disabled"])
