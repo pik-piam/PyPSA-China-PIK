@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: CC0-1.0
+# DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
   name: existinginfra_chp_converted_05x_cheaperwind
@@ -286,9 +287,11 @@ solving:
 
   mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
 
-
-line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max
-line_cost_factor: 1
+lines:
+  line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max
+  line_length_factor: 1.25
+security:
+  line_margin: 70 # max percent of line capacity
 
 existing_capacities:
   add: True 
@@ -296,7 +299,5 @@ existing_capacities:
   threshold_capacity: 1 # TODO UNIT
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
-security:
-  line_margin: 70 # max percent of line capacity
 fetch_regions:
   simplify_tol: 0.5
