@@ -93,6 +93,7 @@ rule build_population:
         population=DERIVED_COMMON+"/"+"population/population.h5"
     threads: 1
     resources: mem_mb=1000
+    log: LOGS_COMMON + "/build_population.log"
     script: "scripts/build_population.py"
 
 if config['enable'].get('build_cutout', False):
@@ -153,6 +154,7 @@ rule build_cop_profiles:
         cop= DERIVED_CUTOUT + "/heating/hp_cop.h5"
     threads: 8
     resources: mem_mb=30000
+    log: LOGS_COMMON + "/build_cop_profiles.log"
     script: "scripts/build_cop_profiles.py"
 
 rasters = ["Build_up", "Grass", "Bare", "Shrubland"]
