@@ -27,7 +27,7 @@ def prepare_network(
     config: dict,
     solve_opts=None,
 ):
-    """ prepare the network for the solver
+    """prepare the network for the solver
     Args:
         n (pypsa.Network): the pypsa network object
         solve_opts (dict): the solving options
@@ -147,7 +147,7 @@ def add_battery_constraints(n):
 
 
 def add_chp_constraints(n):
-    """ Add constraints to couple the heat and electricity output of CHP plants
+    """Add constraints to couple the heat and electricity output of CHP plants
          (using the cb and cv parameter). See the DEA technology cataloge
 
     Args:
@@ -214,7 +214,7 @@ def add_transimission_constraints(n):
 
 
 def add_retrofit_constraints(n):
-    """ 
+    """
     Add constraints to ensure retrofit capacity is linked to the original capacity
     Args:
         n (pypsa.Network): the pypsa network object to which's model the constraints are added
@@ -285,7 +285,7 @@ def extra_functionality(n, snapshots):
 
 
 def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
-    """ perform the optimisation
+    """perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
         config (dict): the configuration dictionary
@@ -380,7 +380,11 @@ if __name__ == "__main__":
 
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
-    n.export_to_netcdf(snakemake.output.network_name)
+    outp = snakemake.output.network_name
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    n.export_to_netcdf(outp, compression=compression)
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
 

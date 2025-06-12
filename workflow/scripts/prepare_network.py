@@ -32,15 +32,13 @@ from _pypsa_helpers import (
 from build_biomass_potential import estimate_co2_intensity_xing
 from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
-from readers import read_province_shapes
+from readers_geospatial import read_province_shapes
 
 from constants import (
     PROV_NAMES,
     CRS,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
-    NON_LIN_PATH_SCALING,
-    LINE_SECURITY_MARGIN,
     ECON_LIFETIME_LINES,
     FOM_LINES,
 )
@@ -48,7 +46,7 @@ from constants import (
 logger = logging.getLogger(__name__)
 
 # TODO add a heat bus that can absorb heat for free in non-coupled mode
-#  (e.g. Hydrogen electrolysis, sabatier)
+#   (e.g. Hydrogen electrolysis, sabatier)
 # TODO add heat disipator?
 
 
@@ -166,7 +164,7 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
     """
 
     network.add("Carrier", "AC")
-    if config["heat_coupling"]:
+    if config.get("heat_coupling", False):
         network.add("Carrier", "heat")
     for carrier in config["Techs"]["vre_techs"]:
         network.add("Carrier", carrier)
@@ -232,7 +230,6 @@ def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
     Args:
         network (pypsa.Network): the network to which prices or constraints are to be added
         co2_control (dict): the config
-
 
     Raises:
         ValueError: unrecognised co2 control option
@@ -387,7 +384,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         costs (pd.DataFrame): the cost database
     """
     # TODO, does it make sense?
-    if config["heat_coupling"]:
+    if config.get("heat_coupling", False):
         network.add(
             "Link",
             name=nodes + " H2 Electrolysis",
@@ -493,7 +490,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
                 logger.warning("Some edges are not in the network buses")
 
         # fix this to use map with x.y
-        lengths = NON_LIN_PATH_SCALING * np.array(
+        lengths = config["lines"]["line_length_factor"] * np.array(
             [
                 haversine(
                     [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
@@ -582,7 +579,7 @@ def add_voltage_links(network: pypsa.Network, config: dict):
         if edges_.shape[0] != edges.shape[0]:
             logger.warning("Some edges are not in the network")
     # fix this to use map with x.y
-    lengths = NON_LIN_PATH_SCALING * np.array(
+    lengths = config["lines"]["line_length_factor"] * np.array(
         [
             haversine(
                 [network.buses.at[bus0, "x"], network.buses.at[bus0, "y"]],
@@ -592,18 +589,19 @@ def add_voltage_links(network: pypsa.Network, config: dict):
         ]
     )
 
-    cc = (
-        (config["line_cost_factor"] * lengths * [HVAC_cost_curve(len_) for len_ in lengths])
-        * LINE_SECURITY_MARGIN
-        * FOM_LINES
-        * n_years
-        * annuity(ECON_LIFETIME_LINES, config["costs"]["discountrate"])
-    )
+    # get for backward compatibility
+    security_config = config.get("security", {"line_security_margin": 70})
+    line_margin = security_config.get("line_security_margin", 70) / 100
+
+    line_cost = (
+        lengths * costs.at["HVDC overhead", "capital_cost"] * FOM_LINES * n_years
+    ) + costs.at[
+        "HVDC inverter pair", "capital_cost"
+    ]  # /MW
 
     # ==== lossy transport model (split into 2) ====
     # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk
     if config["line_losses"]:
-
         network.add(
             "Link",
             edges["bus0"] + "-" + edges["bus1"],
@@ -614,12 +612,13 @@ def add_voltage_links(network: pypsa.Network, config: dict):
             p_nom=edges["p_nom"].values,
             p_nom_min=edges["p_nom"].values,
             p_min_pu=0,
+            p_max_pu=line_margin,
             efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
             * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
             length=lengths,
-            capital_cost=cc,
+            capital_cost=line_cost,
         )
-        # 0 len for reversed in case line limits are specified in km
+        # 0 len for reversed in case line limits are specified in km. Limited in constraints to fwdcap
         network.add(
             "Link",
             edges["bus0"] + "-" + edges["bus1"],
@@ -663,7 +662,7 @@ def add_wind_and_solar(
 
     Args:
         network (pypsa.Network): The PyPSA network to which the generators will be added
-        techs (list): A list of renewable energy technologies to add
+        techs (list): A list of renewable energy technologies to add.
             (e.g., ["solar", "onwind", "offwind"])
         paths (os.PathLike): file paths containing renewable profiles (snakemake.input)
         year (int): planning year
@@ -697,11 +696,13 @@ def add_wind_and_solar(
             ds = ds.sel(time=mask)
 
             if not len(ds.time) == len(network.snapshots):
-                raise ValueError(
-                    f"Mismatch in profile and network timestamps {len(ds.time)}"
-                    f" and {len(network.snapshots)}"
-                )
+                err = f"{len(ds.time)} and {len(network.snapshots)}"
+                raise ValueError("Mismatch in profile and network timestamps " + err)
             ds = ds.stack(bus_bin=["bus", "bin"])
+
+        # remove low potential bins
+        cutoff = config.get("renewable_potential_cutoff", 0)
+        ds = ds.where(ds["p_nom_max"] > cutoff, drop=True)
 
         # bins represent renewable generation grades
         flatten = lambda t: " grade".join(map(str, t))
@@ -911,7 +912,11 @@ def add_heat_coupling(
                 lifetime=costs.at[cat.lstrip() + "resistive heater", "lifetime"],
             )
 
-    if "H2 CHP" in config["Techs"]["vre_techs"] and config["add_H2"] and config["heat_coupling"]:
+    if (
+        "H2 CHP" in config["Techs"]["vre_techs"]
+        and config["add_H2"]
+        and config.get("heat_coupling", False)
+    ):
         network.add(
             "Bus",
             nodes,
@@ -1261,7 +1266,8 @@ def add_hydro(
     hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"]).loc[nodes]
     hydro_p_max_pu = (
         pd.read_hdf(
-            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+            config["hydro_dams"]["p_max_pu_path"],
+            key=config["hydro_dams"]["p_max_pu_key"],
         ).tz_localize(None)
     )[nodes]
 
@@ -1333,7 +1339,9 @@ def prepare_network(
 
     # determine whether gas/coal to be added depending on specified conv techs
     config["add_gas"] = (
-        True if [tech for tech in config["Techs"]["conv_techs"] if ("gas" in tech or "CGT" in tech)] else False
+        True
+        if [tech for tech in config["Techs"]["conv_techs"] if ("gas" in tech or "CGT" in tech)]
+        else False
     )
     config["add_coal"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False
@@ -1413,7 +1421,7 @@ def prepare_network(
             suffix=" PHS",
             bus=phss,
             carrier="PHS",
-            p_nom_extendable=False,
+            p_nom_extendable=True,
             p_nom=hydrocapa_df.loc[phss]["MW"],
             p_nom_min=hydrocapa_df.loc[phss]["MW"],
             max_hours=config["hydro"]["PHS_max_hours"],
@@ -1441,7 +1449,7 @@ def prepare_network(
             location=nodes,
         )
 
-    if config["heat_coupling"]:
+    if config.get("heat_coupling", False):
         logger.info("Adding heat and CHP to the network")
         add_heat_coupling(network, config, nodes, prov_centroids, costs, planning_horizons, paths)
 
@@ -1473,12 +1481,15 @@ def prepare_network(
         )
 
         # TODO Why no standing loss?: test with
+        min_charge = config["electricity"].get("min_charge", {"battery": 0})
+        min_charge = min_charge.get("battery", 0)
         network.add(
             "Store",
             nodes + " battery",
             bus=nodes + " battery",
             e_cyclic=True,
             e_nom_extendable=True,
+            e_min_pu=min_charge,
             capital_cost=costs.at["battery storage", "capital_cost"],
             lifetime=costs.at["battery storage", "lifetime"],
         )
@@ -1531,8 +1542,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_networks",
             topology="current+FCG",
-            co2_pathway="exp175default",
-            # co2_pathway="remind_ssp2NPI",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             planning_horizons=2040,
             heating_demand="positive",
         )
@@ -1584,7 +1595,10 @@ if __name__ == "__main__":
     sanitize_carriers(network, snakemake.config)
 
     outp = snakemake.output.network_name
-    network.export_to_netcdf(outp)
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    network.export_to_netcdf(outp, compression=compression)
 
     logger.info(f"Network for {yr} prepared and saved to {outp}")
 

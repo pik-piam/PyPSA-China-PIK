@@ -12,11 +12,17 @@ import seaborn as sns
 import os
 import logging
 from pandas import DataFrame
+import numpy as np
 
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import rename_index, fix_network_names_colors, filter_carriers
 from _pypsa_helpers import calc_lcoe
-from constants import PLOT_CAP_LABEL, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, PLOT_SUPPLY_LABEL
+from constants import (
+    PLOT_CAP_LABEL,
+    PLOT_CAP_UNITS,
+    PLOT_SUPPLY_UNITS,
+    PLOT_SUPPLY_LABEL,
+)
 
 sns.set_theme("paper", style="whitegrid")
 logger = logging.getLogger(__name__)
@@ -52,12 +58,13 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_statistics",
             carrier="AC",
-            # planning_horizons="2055",
+            planning_horizons="2035",
             # co2_pathway="exp175default",
-            planning_horizons="2130",
-            co2_pathway="remind_ssp2NPI",
+            # planning_horizons="2130",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             topology="current+FCG",
-            heating_demand="positive",
+            # heating_demand="positive",
+            configfiles="resources/tmp/remind_coupled.yaml",
         )
     configure_logging(snakemake)
     set_plot_test_backend(snakemake.config)
@@ -72,6 +79,15 @@ if __name__ == "__main__":
         "Load",
         snakemake.config["plotting"]["tech_colors"]["electric load"],
     )
+    # # ugly fix (temp)
+    # n.carriers.loc["gas CCGT"] = {
+    #     "co2_emissions": 0,
+    #     "color": snakemake.config["plotting"]["tech_colors"]["gas CCGT"],
+    #     "nice_name": snakemake.config["plotting"]["nice_names"]["gas CCGT"],
+    #     "max_growth": np.inf,
+    #     "max_relative_growth": 0,
+    # }
+
     colors = n.carriers.set_index("nice_name").color.where(lambda s: s != "", "lightgrey")
 
     outp_dir = snakemake.output.stats_dir
@@ -84,6 +100,8 @@ if __name__ == "__main__":
     if "capacity_factor" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.capacity_factor(groupby=["carrier"]).dropna()
+        ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
+        ds.drop(index=("Link", "battery"), inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
@@ -110,6 +128,8 @@ if __name__ == "__main__":
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+        ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
+        ds.drop(index=("Link", "battery"), inplace=True)
         ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
@@ -135,7 +155,6 @@ if __name__ == "__main__":
 
     if "operational_expenditure" in stats_list:
         fig, ax = plt.subplots()
-        attached_carriers = filter_carriers(n, carrier)
         ds = n.statistics.opex(groupby=["carrier"]).dropna()
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]

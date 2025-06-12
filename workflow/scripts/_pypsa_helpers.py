@@ -193,7 +193,7 @@ def aggregate_costs(
     existing_only=False,
 ) -> pd.Series | pd.DataFrame:
     """LEGACY FUNCTION used in pypsa heating plots - unclear what it does
-    
+
     Args:
         n (pypsa.Network): the network object
         flatten (bool, optional):merge capex and marginal ? Defaults to False.
@@ -231,7 +231,8 @@ def aggregate_costs(
 
         costs = costs.reset_index(level=0, drop=True)
         costs = costs["capital"].add(
-            costs["marginal"].rename({t: t + " marginal" for t in conv_techs}), fill_value=0.0
+            costs["marginal"].rename({t: t + " marginal" for t in conv_techs}),
+            fill_value=0.0,
         )
 
     return costs
@@ -312,6 +313,19 @@ def load_network_for_plots(
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, Nyears)
     update_transmission_costs(n, costs)
 
+    return n
+
+
+def mock_solve(n: pypsa.Network) -> pypsa.Network:
+    """Mock the solving step for tests
+
+    Args:
+        n (pypsa.Network): the network object
+    """
+    for c in n.iterate_components(components=["Generator", "Link", "Store", "LineType"]):
+        opt_cols = [col for col in c.df.columns if col.endswith("opt")]
+        base_cols = [col.split("_opt")[0] for col in opt_cols]
+        c.df[opt_cols] = c.df[base_cols]
     return n
 
 
