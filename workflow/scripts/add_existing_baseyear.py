@@ -317,32 +317,11 @@ def add_power_capacities_installed_before_baseyear(
                 location=buses,
             )
 
-        elif generator == "OCGT gas":
-            bus0 = buses + " gas"
-            n.add(
-                "Link",
-                capacity.index,
-                suffix="-" + str(grouping_year),
-                bus0=bus0,
-                bus1=buses,
-                carrier=carrier_map[generator],
-                marginal_cost=costs.at[costs_key, "efficiency"]
-                * costs.at[costs_key, "VOM"],  # NB: VOM is per MWel
-                # NB: fixed cost is per MWel
-                p_nom=capacity / costs.at[costs_key, "efficiency"],
-                p_nom_min=capacity / costs.at[costs_key, "efficiency"],
-                p_nom_extendable=False,
-                efficiency=costs.at[costs_key, "efficiency"],
-                build_year=grouping_year,
-                lifetime=costs.at[costs_key, "lifetime"],
-                location=buses,
-            )
-
         # TODO this does not add the carrier to the list
-        elif generator == "CCGT gas":
+        elif generator in ["CCGT gas", "OCGT gas"]:
             bus0 = buses + " gas"
             carrier_ = carrier_map[generator]
-            # ugly fix needed to register the carrier. Emissions are 0 as they are accounted for at the gas bus
+            # ugly fix to register the carrier. Emissions for sub carrier are 0: they are accounted for at gas bus
             n.carriers.loc[carrier_] = {
                 "co2_emissions": 0,
                 "color": snakemake.config["plotting"]["tech_colors"][carrier_],
