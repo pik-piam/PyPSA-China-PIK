@@ -57,7 +57,7 @@ def rename_techs(label: pd.Index) -> pd.Index:
         "onwind": "onshore wind",
         "ror": "hydroelectricity",
         "hydro": "hydroelectricity",
-        "PHS": "hydroelectricity",
+        "PHS": "pumped hydro storage",
         "hydro_inflow": "hydroelectricity",
         "stations": "hydroelectricity",
         "AC": "transmission lines",
@@ -228,7 +228,7 @@ def plot_pathway_capacities(
     fig, axes = plt.subplots(2, 2)
     fig.set_size_inches((14, 15))
 
-    for i, capacity_df in enumerate([caps_ac, caps_heat, caps_stores, caps_h2]):
+    for i, capacity_df in enumerate([caps_ac, caps_ac, caps_stores, caps_h2]):
         if capacity_df.empty:
             continue
         k, j = divmod(i, 2)

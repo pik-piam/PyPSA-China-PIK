@@ -476,18 +476,20 @@ def calculate_weighted_prices(
     weighted_prices = weighted_prices.reindex(entries)
 
     # loads
-    loads = (
-        n.statistics.revenue(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
-        / n.statistics.withdrawal(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
-        * -1
+    load_rev = -1 * n.statistics.revenue(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
+    prices = load_rev / n.statistics.withdrawal(
+        comps="Load", groupby=pypsa.statistics.get_bus_carrier
     )
-    loads.rename(index={"AC": "electricity"}, inplace=True)
+    prices.rename(index={"AC": "electricity"}, inplace=True)
 
     # stores
     w = n.statistics.withdrawal(comps="Store")
     # biomass stores have no withdrawal for some reason
     w[w == 0] = n.statistics.supply(comps="Store")[w == 0]
-    weighted_prices[label] = pd.concat([loads, n.statistics.revenue(comps="Store") / w])
+    store_rev = n.statistics.revenue(comps="Store")
+    mask = store_rev > load_rev.sum() / 400  # remove small
+    wp_stores = store_rev[mask] / w[mask]
+    weighted_prices[label] = pd.concat([prices, wp_stores.rename({"stations": "reservoir inflow"})])
     return weighted_prices
 
 
@@ -627,9 +629,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "make_summary",
             topology="current+FCG",
-            co2_pathway="exp175default",
+            # co2_pathway="exp175default",
             planning_horizons="2060",
-            heating_demand="positive",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
+            # heating_demand="positive",
+            configfiles=["resources/tmp/remind_coupled.yaml"],
         )
 
     configure_logging(snakemake)

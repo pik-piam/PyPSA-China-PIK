@@ -1422,6 +1422,7 @@ def prepare_network(
             bus=phss,
             carrier="PHS",
             p_nom_extendable=True,
+            # p_nom_max=hydrocapa_df.loc[phss]["MW"],
             p_nom=hydrocapa_df.loc[phss]["MW"],
             p_nom_min=hydrocapa_df.loc[phss]["MW"],
             max_hours=config["hydro"]["PHS_max_hours"],
