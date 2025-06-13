@@ -45,7 +45,14 @@ electricity:
 hydro:
   hydro_capital_cost: True
   PHS_max_hours: 24 # hours
-
+fossil_ramps:
+  coal:
+    ramp_limit_up: 0.5 # fraction of p_nom per hour
+    ramp_limit_down: 0.5 # fraction of p_nom per hour
+# overly simplistic to not have unit commitment
+nuclear_reactors:
+  p_max_pu: 0.8 # fraction of p_nom, after IEAE
+  p_min_pu: 0.7 # fraction of p_nom
 costs:
   discountrate: 0.06
   social_discount_rate: 0.02 # social discountrate

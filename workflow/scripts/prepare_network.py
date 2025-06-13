@@ -328,6 +328,11 @@ def add_conventional_generators(
             )
 
     if config["add_coal"]:
+        ramps = config.get(
+            "fossil_ramps", {"coal": {"ramp_limit_up": np.nan, "ramp_limit_down": np.nan}}
+        )
+        ramps = ramps.get("coal", {"ramp_limit_up": np.nan, "ramp_limit_down": np.nan})
+        ramps = {k: v * config["snapshots"]["frequency"] for k, v in ramps.items()}
         # this is the non sector-coupled approach
         # for industry may have an issue in that coal feeds to chem sector
         network.add(
@@ -342,6 +347,8 @@ def add_conventional_generators(
             capital_cost=costs.at["coal", "efficiency"]
             * costs.at["coal", "capital_cost"],  # NB: capital cost is per MWel
             lifetime=costs.at["coal", "lifetime"],
+            ramp_limit_up=ramps["ramp_limit_up"],
+            ramp_limit_down=ramps["ramp_limit_down"],
         )
 
 
@@ -1394,7 +1401,8 @@ def prepare_network(
             nuclear_nodes,
             suffix=" nuclear",
             p_nom_extendable=True,
-            p_min_pu=0.7,
+            p_max_pu=config["nuclear_reactors"]["p_max_pu"],
+            p_min_pu=config["nuclear_reactors"]["p_min_pu"],
             bus=nuclear_nodes,
             carrier="nuclear",
             efficiency=costs.at["nuclear", "efficiency"],
