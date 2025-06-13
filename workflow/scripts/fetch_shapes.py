@@ -10,7 +10,14 @@ import numpy as np
 from os import PathLike
 from pandas import DataFrame
 
-from constants import CRS, COUNTRY_ISO, COUNTRY_NAME, PROV_NAMES, EEZ_PREFIX, OFFSHORE_WIND_NODES
+from constants import (
+    CRS,
+    COUNTRY_ISO,
+    COUNTRY_NAME,
+    PROV_NAMES,
+    EEZ_PREFIX,
+    OFFSHORE_WIND_NODES,
+)
 from _helpers import mock_snakemake, configure_logging
 
 NATURAL_EARTH_RESOLUTION = "10m"
@@ -222,7 +229,10 @@ def remove_overlaps(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
 def eez_by_region(
-    eez: gpd.GeoDataFrame, province_shapes: gpd.GeoDataFrame, prov_key="region", simplify_tol=0.5
+    eez: gpd.GeoDataFrame,
+    province_shapes: gpd.GeoDataFrame,
+    prov_key="region",
+    simplify_tol=0.5,
 ) -> gpd.GeoDataFrame:
     """break up the eez by admin1 regions based on voronoi polygons of the centroids
 
@@ -247,7 +257,9 @@ def eez_by_region(
         .apply(lambda x: x.union_all("unary"))
     )
     prov_voronoi = gpd.GeoDataFrame(
-        geometry=prov_voronoi.values, crs=province_shapes.crs, data={prov_key: prov_voronoi.index}
+        geometry=prov_voronoi.values,
+        crs=province_shapes.crs,
+        data={prov_key: prov_voronoi.index},
     )
 
     # remove overlaps
@@ -260,7 +272,9 @@ def eez_by_region(
         .apply(lambda x: x.union_all("unary"))
     )
     eez_prov = gpd.GeoDataFrame(
-        geometry=eez_prov.values, crs=province_shapes.crs, data={prov_key: eez_prov.index}
+        geometry=eez_prov.values,
+        crs=province_shapes.crs,
+        data={prov_key: eez_prov.index},
     )
 
     return eez_prov[eez_prov[prov_key].isin(OFFSHORE_WIND_NODES)].set_index(prov_key)

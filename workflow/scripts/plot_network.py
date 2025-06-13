@@ -78,7 +78,10 @@ def plot_map(
 
     ax.add_feature(cfeature.BORDERS, linewidth=0.5, edgecolor="gray")
     states_provinces = cfeature.NaturalEarthFeature(
-        category="cultural", name="admin_1_states_provinces_lines", scale="50m", facecolor="none"
+        category="cultural",
+        name="admin_1_states_provinces_lines",
+        scale="50m",
+        facecolor="none",
     )
     # Add our states feature.
     ax.add_feature(states_provinces, edgecolor="lightgray", alpha=0.7)
@@ -334,7 +337,12 @@ def plot_cost_map(
         # TODO decide discount
         # df = df / (1 + discount_rate) ** (int(planning_horizon) - base_year)
         add_cost_pannel(
-            df, fig, preferred_order, tech_colors, plot_additions, ax_loc=[-0.09, 0.28, 0.09, 0.45]
+            df,
+            fig,
+            preferred_order,
+            tech_colors,
+            plot_additions,
+            ax_loc=[-0.09, 0.28, 0.09, 0.45],
         )
 
     fig.set_size_inches(opts["cost_map"][f"figsize{'_w_additions' if plot_additions else ''}"])
@@ -653,7 +661,7 @@ if __name__ == "__main__":
         components=["Generator", "Link"],
     )
 
-    if config["heat_coupling"]:
+    if config.get("heat_coupling"):
         p = snakemake.output.cost_map.replace("el_supply.png", "heat_supply.png")
         plot_energy_map(
             n,
