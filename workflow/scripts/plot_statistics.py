@@ -79,14 +79,6 @@ if __name__ == "__main__":
         "Load",
         snakemake.config["plotting"]["tech_colors"]["electric load"],
     )
-    # # ugly fix (temp)
-    # n.carriers.loc["gas CCGT"] = {
-    #     "co2_emissions": 0,
-    #     "color": snakemake.config["plotting"]["tech_colors"]["gas CCGT"],
-    #     "nice_name": snakemake.config["plotting"]["nice_names"]["gas CCGT"],
-    #     "max_growth": np.inf,
-    #     "max_relative_growth": 0,
-    # }
 
     colors = n.carriers.set_index("nice_name").color.where(lambda s: s != "", "lightgrey")
 
@@ -100,8 +92,10 @@ if __name__ == "__main__":
     if "capacity_factor" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.capacity_factor(groupby=["carrier"]).dropna()
-        ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
-        ds.drop(index=("Link", "battery"), inplace=True)
+        # avoid grouping battery uif same name
+        if ("Link", "battery") in ds.index:
+            ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
+            ds.drop(index=("Link", "battery"), inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
@@ -128,8 +122,9 @@ if __name__ == "__main__":
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
-        ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
-        ds.drop(index=("Link", "battery"), inplace=True)
+        if ("Link", "battery") in ds.index:
+            ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
+            ds.drop(index=("Link", "battery"), inplace=True)
         ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
