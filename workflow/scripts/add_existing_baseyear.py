@@ -14,7 +14,7 @@ from types import SimpleNamespace
 
 from constants import YEAR_HRS
 from add_electricity import load_costs
-from _helpers import mock_snakemake, configure_logging
+from _helpers import mock_snakemake, configure_logging, ConfigManager
 from _pypsa_helpers import shift_profile_to_planning_year
 
 # TODO possibly reimplement to have env separation
@@ -297,7 +297,7 @@ def add_power_capacities_installed_before_baseyear(
                 location=buses,
             )
 
-        elif generator in ["nuclear", "coal power plant"]:
+        elif generator in ["nuclear", "coal power plant", "biomass", "oil"]:
             n.add(
                 "Generator",
                 capacity.index,
@@ -524,7 +524,43 @@ def add_power_capacities_installed_before_baseyear(
     return
 
 
-def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, cutoff=100):
+def _add_paidoff_biomass(
+    n: pypsa.Network,
+    costs: pd.DataFrame,
+    paid_off_cap: float,
+):
+    """
+    Add existing biomass in case no biomass was defined previously.
+    Paid-off capacities can only be copied from existing generators
+
+    Args:
+        n (pypsa.Network): the network
+        costs (pd.DataFrame): techno-economic data
+        config (dict): configuration dictionary
+        paid_off_cap (float): the paid-off biomass capacity in MW
+    """
+    # 0 emissions
+    n.add(
+        "Generator",
+        n.buses.query("carrier == 'AC'").index,
+        suffix="biomass paidoff",
+        bus=n.buses.query("carrier == 'AC'").index,
+        carrier="biomass",
+        capital_cost=0,
+        p_nom=0.0,
+        p_nom_max=np.inf,
+        p_nom_extendable=True,
+        marginal_cost=costs.at["biomass", "marginal_cost"],
+        efficiency=costs.at["biomass", "efficiency"],
+        lifetime=costs.at["biomass", "lifetime"],
+        location=n.buses.query("carrier == 'AC'").index,
+        p_nom_max_rcl=paid_off_cap,
+    )
+
+
+def add_paid_off_capacity(
+    network: pypsa.Network, paid_off_caps: pd.DataFrame, costs: pd.DataFrame, cutoff=100
+):
     """
     Add capacities that have been paid off to the network. This is intended
     for REMIND coupling, where (some of) the REMIND investments can be freely allocated
@@ -535,6 +571,7 @@ def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, c
         network (pypsa.Network): the network to which the capacities are added.
         paid_off_caps (pd.DataFrame): DataFrame with paid off capacities & columns
             [tech_group, Capacity, techs]
+        costs (pd.DataFrame): techno-economic data for the technologies
         cutoff (int, optional): minimum capacity to be considered. Defaults to 100 MW."""
 
     paid_off = paid_off_caps.reset_index()
@@ -596,6 +633,43 @@ def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, c
                     columns=lambda x: x + "_paid_off"
                 )
 
+    if "biomass" in paid_off.index and "biomass" not in network.generators.carrier.unique():
+        _add_paidoff_biomass(
+            network,
+            costs,
+            paid_off.loc["biomass", "p_nom_max"],
+        )
+
+
+def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_co2=False):
+    """from pypsa-eur: add GHG price to marginal costs of generators and storage units
+    COPY OF PREPARE NETWORK BUT FOR BROWNFIEL GENE
+
+    Args:
+        n (pypsa.Network): the pypsa network
+        emission_prices (dict, optional): emission prices per GHG. Defaults to {"co2": 0.0}.
+        exclude_co2 (bool, optional): do not charge for CO2 emissions. Defaults to False.
+    """
+    if exclude_co2:
+        emission_prices.pop("co2")
+    em_price = (
+        pd.Series(emission_prices).rename(lambda x: x + "_emissions")
+        * n.carriers.filter(like="_emissions")
+    ).sum(axis=1)
+
+    n.meta.update({"emission_prices": emission_prices})
+
+    gen_em_price = n.generators.carrier.map(em_price) / n.generators.efficiency
+
+    n.generators["marginal_cost"] += gen_em_price
+    n.generators_t["marginal_cost"] += gen_em_price[n.generators_t["marginal_cost"].columns]
+    # storage units su
+    su_em_price = n.storage_units.carrier.map(em_price) / n.storage_units.efficiency_dispatch
+    n.storage_units["marginal_cost"] += su_em_price
+
+    logger.info("Added emission prices to marginal costs of generators and storage units")
+    logger.info(f"\tEmission prices: {emission_prices}")
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -643,7 +717,6 @@ if __name__ == "__main__":
 
     # add to the network
     add_power_capacities_installed_before_baseyear(n, costs, config, installed)
-
     # add paid-off REMIND capacities if requested
     if config["run"].get("is_remind_coupled", False) & (
         data_paths.get("paid_off_capacities_remind", None) is not None
@@ -653,7 +726,13 @@ if __name__ == "__main__":
         yr = int(cost_year)
         paid_off_caps = paid_off_caps.query("year == @yr")
         # add to network
-        add_paid_off_capacity(n, paid_off_caps)
+        add_paid_off_capacity(n, paid_off_caps, costs)
+
+    # do this now instead of in prepare_networks
+    pathway = snakemake.wildcards.co2_pathway
+    co2_opts = ConfigManager(config).fetch_co2_restriction(pathway, yr)
+    if co2_opts["control"] == "price":
+        add_emission_prices(n, co2_opts)
 
     compression = snakemake.config.get("io", None)
     if compression:

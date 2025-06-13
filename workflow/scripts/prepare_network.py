@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 # TODO add heat disipator?
 
 
-def add_biomass(
+def add_biomass_chp(
     network: pypsa.Network,
     costs: pd.DataFrame,
     nodes: pd.Index,
@@ -1465,7 +1465,7 @@ def prepare_network(
         if config["add_biomass"]:
             logger.info("Adding biomass to network")
             add_co2_capture_support(network, nodes, prov_centroids)
-            add_biomass(
+            add_biomass_chp(
                 network,
                 costs,
                 nodes,
@@ -1600,6 +1600,9 @@ if __name__ == "__main__":
     network = prepare_network(
         snakemake.config, costs, snapshots, biomass_potential, paths=input_paths
     )
+    # for brownfield skip co2 Prices this in add_baseyear
+    if not snakemake.params.get("skip_co2_constraints", False) and co2_opts["control"] == "price":
+        co2_opts["control"] = None
     add_co2_constraints_prices(network, co2_opts)
     sanitize_carriers(network, snakemake.config)
 
