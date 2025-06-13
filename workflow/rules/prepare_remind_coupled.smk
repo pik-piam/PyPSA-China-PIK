@@ -7,7 +7,8 @@ REMIND_REGION = config["run"].get("remind", {}).get("region")
 
 rule build_run_config:
     """
-    Build the run config for the pypsa-coupled run
+    Build the run config for the pypsa-coupled run. This extracts the REMIND Co2 price and makes a corresponding
+       pypsa CO2 scenario named after the remind c_expname
     # TODO: output per remind run & snakemake run?
     Example:
         snakemake resources/tmp/remind_coupled.yaml --cores 1 --configfile=config/templates/remind_cpled.yml
