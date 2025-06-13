@@ -263,15 +263,15 @@ def add_power_capacities_installed_before_baseyear(
 
         # capacity is the capacity in MW at each node for this
         capacity = df_.loc[grouping_year, generator]
-        capacity = capacity[~capacity.isna()]
         if capacity.values.max() == 0:
             continue
         # fix index for network.add (merge grade to name)
         capacity = capacity.unstack()
+        capacity = capacity[~capacity.isna()]
         capacity = capacity[capacity > config["existing_capacities"]["threshold_capacity"]].dropna()
-        buses = capacity.index.get_level_values(1)
+        buses = capacity.index.get_level_values(0)
         capacity.index = (
-            capacity.index.get_level_values(1) + " " + capacity.index.get_level_values(0)
+            capacity.index.get_level_values(0) + " " + capacity.index.get_level_values(1)
         )
         capacity.index = capacity.index.str.rstrip() + " " + costs_map[generator]
 
