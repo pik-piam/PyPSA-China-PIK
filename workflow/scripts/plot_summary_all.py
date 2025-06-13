@@ -481,6 +481,71 @@ def plot_electricty_heat_balance(
             )
 
 
+def plot_capacity_factors(
+    file_list: list, config: dict, techs: list, fig_name=None, ax: object = None
+):
+    """Plot evolution of capacity factors for the given technologies
+
+    Args:
+        file_list (list): the input csvs from make_summary
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
+        techs (list): the technologies to plot
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+        ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
+    """
+
+    capfacs_df = pd.DataFrame()
+    for results_file in file_list:
+        df_year = pd.read_csv(results_file, index_col=list(range(2)), header=[1]).T
+        capfacs_df = pd.concat([df_year, capfacs_df])
+
+    capfacs_df = capfacs_df.droplevel(0, axis=1).fillna(0)
+    capfacs_df.sort_index(axis=0, inplace=True)
+
+    invalid = [t for t in techs if t not in capfacs_df.columns]
+    logger.warning(f"Technologies {invalid} not found in capacity factors data. Skipping them.")
+    valid_techs = [t for t in techs if t in capfacs_df.columns]
+    capfacs_df = capfacs_df[valid_techs]
+
+    if not ax:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    fig.set_size_inches((12, 8))
+
+    colors = pd.Series(
+        config["tech_colors"],
+        index=capfacs_df.columns
+    )
+    # missing color may have had nice name, else NAN default
+    nice_name_colors = pd.Series(
+        config["tech_colors"],
+        index=capfacs_df.columns.map(config["nice_names"])
+    ).dropna()
+    colors = colors.fillna(nice_name_colors).fillna(NAN_COLOR)
+
+    capfacs_df.plot(
+        ax=ax,
+        kind="line",
+        color=colors,
+        linewidth=3,
+        marker="o",
+    )
+    ax.set_ylim([0, capfacs_df.max().max() * 1.1])
+    ax.set_ylabel("capacity factor")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+
+    handles, labels = ax.get_legend_handles_labels()
+    handles.reverse()
+    labels.reverse()
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=False)
+
+
 def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax: object = None):
     """plot the prices
 
@@ -575,6 +640,55 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
     fig.tight_layout()
     if fig_name is not None:
         fig.savefig(fig_name, transparent=config["transparent"])
+
+
+def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax: object = None):
+    """plot the prices
+
+    Args:
+        file_list (list): the input csvs from make_summary
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+        absolute (bool, optional): plot absolute prices. Defaults to False.
+        ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
+    """
+    prices_df = pd.DataFrame()
+    for results_file in file_list:
+        df_year = pd.read_csv(results_file, index_col=list(range(1)), header=[1]).T
+
+        prices_df = pd.concat([df_year, prices_df])
+    prices_df.sort_index(axis=0, inplace=True)
+    if not ax:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    fig.set_size_inches((12, 8))
+
+    colors = config["tech_colors"]
+
+    if absolute:
+        prices_df = prices_df.abs()
+
+    prices_df.plot(
+        ax=ax,
+        kind="line",
+        color=[colors[k] if k in colors else "k" for k in prices_df.columns],
+        linewidth=3,
+    )
+    ax.set_ylim([prices_df.min().min() * 1.1, prices_df.max().max() * 1.1])
+    ax.set_ylabel("prices [X/UNIT]")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+
+    handles, labels = ax.get_legend_handles_labels()
+
+    handles.reverse()
+    labels.reverse()
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=False)
 
 
 def plot_co2_prices(co2_prices: dict, config: dict, fig_name=None):
@@ -746,9 +860,16 @@ if __name__ == "__main__":
         "co2_balance": [os.path.join(p, "co2_balance.csv") for p in paths],
         "energy_supply": [os.path.join(p, "supply_energy.csv") for p in paths],
         "capacity": [os.path.join(p, "capacities.csv") for p in paths],
+        "capacity_factors": [os.path.join(p, "cfs.csv") for p in paths],
     }
 
     sdr = float(config["costs"]["social_discount_rate"])
+    plot_capacity_factors(
+        data_paths["capacity_factors"],
+        config["plotting"],
+        techs=["solar", "onwind", "offwind", "battery", "coal", "CCGT", "OCGT", "H2 Electrolysis"],
+        fig_name=os.path.dirname(output_paths.costs) + "/capacity_factors.png",
+    )
     plot_pathway_costs(
         data_paths["costs"],
         config["plotting"],
