@@ -247,8 +247,10 @@ def add_power_capacities_installed_before_baseyear(
     df_.fillna(0, inplace=True)
 
     defined_carriers = n.carriers.index.unique().to_list()
+    vre_carriers = ["solar", "onwind", "offwind"]
 
-    # TODO do we really need to loop over the years?
+    # TODO do we really need to loop over the years? / so many things?
+    # something like df_.unstack(level=0) would be more efficient
     for grouping_year, generator, resource_grade in df_.index:
         grouping_year = int(grouping_year)
         logger.info(f"Adding existing generator {generator} with year grp {grouping_year}")
@@ -262,12 +264,11 @@ def add_power_capacities_installed_before_baseyear(
         # capacity is the capacity in MW at each node for this
         capacity = df_.loc[grouping_year, generator]
         capacity = capacity[~capacity.isna()]
-        capacity = capacity[capacity > config["existing_capacities"]["threshold_capacity"]].T
         if capacity.values.max() == 0:
             continue
-        capacity = capacity[capacity > 0].dropna()
         # fix index for network.add (merge grade to name)
         capacity = capacity.unstack()
+        capacity = capacity[capacity > config["existing_capacities"]["threshold_capacity"]].dropna()
         buses = capacity.index.get_level_values(1)
         capacity.index = (
             capacity.index.get_level_values(1) + " " + capacity.index.get_level_values(0)
@@ -276,12 +277,9 @@ def add_power_capacities_installed_before_baseyear(
 
         costs_key = costs_map[generator]
 
-        vre_carriers = ["solar", "onwind", "offwind"]
-
         if generator in vre_carriers:
             mask = n.generators_t.p_max_pu.columns.map(n.generators.carrier) == generator
             p_max_pu = n.generators_t.p_max_pu.loc[:, mask]
-
             n.add(
                 "Generator",
                 capacity.index,
@@ -523,6 +521,8 @@ def add_power_capacities_installed_before_baseyear(
                 + " - tech not implemented as existing capacity"
             )
 
+    return
+
 
 def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, cutoff=100):
     """
@@ -604,7 +604,8 @@ if __name__ == "__main__":
             topology="current+FCG",
             # co2_pathway="exp175default",
             co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2070",
+            planning_horizons="2020",
+            configfiles="resources/tmp/remind_coupled.yaml",
             # heating_demand="positive",
         )
 
@@ -634,6 +635,7 @@ if __name__ == "__main__":
     vre_caps = existing_capacities.query("Tech in @vre_techs | Fueltype in @vre_techs")
     # vre_caps.loc[:, "Country"] = coco.CountryConverter().convert(["China"], to="iso2")
     vres = add_existing_vre_capacities(n, costs, vre_caps, config)
+    # TODO: fix bug, installed has less vre/wind cap than vres.
     installed = pd.concat(
         [existing_capacities.query("Tech not in @vre_techs & Fueltype not in @vre_techs"), vres],
         axis=0,
