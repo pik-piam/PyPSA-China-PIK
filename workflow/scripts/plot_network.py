@@ -358,6 +358,7 @@ def plot_energy_map(
     save_path: os.PathLike = None,
     carrier="AC",
     plot_ac_imports=False,
+    exclude_batteries=True,
     components=["Generator", "Link"],
 ):
     """A map plot of energy, either AC or heat
@@ -369,6 +370,7 @@ def plot_energy_map(
         save_path (os.PathLike, optional): Fig outp path. Defaults to None (no save).
         carrier (str, optional): the energy carrier. Defaults to "AC".
         plot_ac_imports (bool, optional): plot electricity imports. Defaults to False.
+        exclude_batteries (bool, optional): exclude battery dischargers from the supply pie.
         components (list, optional): the components to plot. Defaults to ["Generator", "Link"].
     raises:
         ValueError: if carrier is not AC or heat
@@ -441,12 +443,20 @@ def plot_energy_map(
         opts_plot["ref_edge_sizes"] = opts_plot["ref_edge_sizes_heat"]
         opts_plot["linewidth_factor"] = opts_plot["linewidth_factor_heat"]
         opts_plot["bus_size_factor"] = opts_plot["bus_size_factor_heat"]
+    # exclude battery dischargers from bus sizes
+    if exclude_batteries:
+        bus_sizes = (
+            supply_pies.loc[~supply_pies.index.get_level_values(1).str.contains("battery")]
+            / opts_plot["bus_size_factor"]
+        )
+    else:
+        bus_sizes = supply_pies / opts_plot["bus_size_factor"]
     plot_map(
         network,
         tech_colors=tech_colors,  # colors.to_dict(),
         edge_widths=edge_widths / opts_plot["linewidth_factor"],
         bus_colors=bus_colors.loc[reordered],
-        bus_sizes=supply_pies / opts_plot["bus_size_factor"],
+        bus_sizes=bus_sizes,
         edge_colors=opts_plot["edge_color"],
         ax=ax,
         edge_unit_conv=PLOT_CAP_UNITS,
@@ -605,9 +615,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_network",
             topology="current+FCG",
-            co2_pathway="exp175default",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             planning_horizons="2060",
-            heating_demand="positive",
+            # heating_demand="positive",
+            configfiles=["resources/tmp/remind_coupled.yaml"],
         )
     set_plot_test_backend(snakemake.config)
     configure_logging(snakemake, logger=logger)
