@@ -513,14 +513,10 @@ def plot_capacity_factors(
         fig = ax.get_figure()
     fig.set_size_inches((12, 8))
 
-    colors = pd.Series(
-        config["tech_colors"],
-        index=capfacs_df.columns
-    )
+    colors = pd.Series(config["tech_colors"], index=capfacs_df.columns)
     # missing color may have had nice name, else NAN default
     nice_name_colors = pd.Series(
-        config["tech_colors"],
-        index=capfacs_df.columns.map(config["nice_names"])
+        config["tech_colors"], index=capfacs_df.columns.map(config["nice_names"])
     ).dropna()
     colors = colors.fillna(nice_name_colors).fillna(NAN_COLOR)
 
@@ -910,7 +906,7 @@ if __name__ == "__main__":
 
     if co2_prices is not None:
         plot_co2_prices(
-            co2_prices.query("year in @config['scenario']['planning_horizons']"),
+            {k: v for k, v in co2_prices.items() if k in config["scenario"]["planning_horizons"]},
             config["plotting"],
             fig_name=os.path.dirname(output_paths.costs) + "/co2_prices.png",
         )
