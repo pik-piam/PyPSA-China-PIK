@@ -528,6 +528,7 @@ def _add_paidoff_biomass(
     n: pypsa.Network,
     costs: pd.DataFrame,
     paid_off_cap: float,
+    tech_group: str = "biomass",
 ):
     """
     Add existing biomass in case no biomass was defined previously.
@@ -538,6 +539,8 @@ def _add_paidoff_biomass(
         costs (pd.DataFrame): techno-economic data
         config (dict): configuration dictionary
         paid_off_cap (float): the paid-off biomass capacity in MW
+        tech_group (str, optional): the remind technology group for biomass.
+            Defaults to "biomass".
     """
     # 0 emissions
     n.add(
@@ -555,6 +558,7 @@ def _add_paidoff_biomass(
         lifetime=costs.at["biomass", "lifetime"],
         location=n.buses.query("carrier == 'AC'").index,
         p_nom_max_rcl=paid_off_cap,
+        tech_group=tech_group,
     )
 
 
@@ -638,6 +642,7 @@ def add_paid_off_capacity(
             network,
             costs,
             paid_off.loc["biomass", "p_nom_max"],
+            tech_group=paid_off.loc["biomass", "tech_group"],
         )
 
 
@@ -659,6 +664,7 @@ def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_
 
     n.meta.update({"emission_prices": emission_prices})
 
+    # emisions are in tCO2/MWh_th
     gen_em_price = n.generators.carrier.map(em_price) / n.generators.efficiency
 
     n.generators["marginal_cost"] += gen_em_price
