@@ -879,7 +879,7 @@ if __name__ == "__main__":
         plot_heat=plot_heat,
         plot_h2=plot_h2,
     )
-    plot_energy(data_paths["energy"], config["plotting"], fig_name=output_paths.energy)
+    # plot_energy(data_paths["energy"], config["plotting"], fig_name=output_paths.energy)
     plot_electricty_heat_balance(
         data_paths["energy_supply"],
         config["plotting"],

@@ -325,6 +325,7 @@ def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFram
     return curtailment
 
 
+# TODO what does this actually do? is it needed?
 def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame) -> pd.DataFrame:
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         if c.name in n.one_port_components:
@@ -578,8 +579,8 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]) -> dict[str, pd.Data
         "co2_balance": calculate_co2_balance,
         "capacities": calculate_capacities,
         "curtailment_pc": calculate_curtailment,
-        "energy": calculate_energy,
         "peak_dispatch": calculate_peak_dispatch,
+        # "energy": calculate_energy,
         "supply_energy": calculate_supply_energy,
         "time_averaged_prices": calculate_t_avgd_prices,
         "weighted_prices": calculate_weighted_prices,
@@ -630,10 +631,10 @@ if __name__ == "__main__":
             "make_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            planning_horizons="2060",
+            planning_horizons="2025",
             co2_pathway="SSP2-PkBudg1000-PyPS",
-            # heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled.yaml"],
+            heating_demand="positive",
+            configfiles=["resources/tmp/remind_coupled_heat.yaml"],
         )
 
     configure_logging(snakemake)
