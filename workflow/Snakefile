@@ -259,7 +259,11 @@ rule prepare_baseyear_capacities:
 resource_class_cfg = {tech: config["renewable"][tech]["resource_classes"] for tech in config["renewable"]}
 rsc_params = {key : "_".join([f"{k}{v}" for k, v in resource_class_cfg[key].items()]) for key in resource_class_cfg}
 if config["foresight"] in ["overnight"]:
+    add_brownfield = "-brownfield" if config["existing_capacities"].get("add", False) else ""
+
     rule prepare_networks:
+        params:
+            skip_co2_constraints = not add_brownfield
         input:
             heat_demand_profile=DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
@@ -289,14 +293,12 @@ if config["foresight"] in ["overnight"]:
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
             installed_capacities = path_manager.infrastructure() + '/capacities_{planning_horizons}.csv',
-            # else is a dummy
             paid_off_capacities_remind = paidoff_caps,
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         threads: 1
         resources: mem_mb=2000
         script: "scripts/add_existing_baseyear.py"
 
-    add_brownfield = "-brownfield" if config["existing_capacities"].get("add", False) else ""
     rule solve_networks:
         params:
             solving = config["solving"],
