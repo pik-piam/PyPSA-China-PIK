@@ -8,10 +8,14 @@ run:
     run_name: null
     region: "CHA"
 
+
 scenario:
   planning_horizons:
     - 2025
 
+existing_capacities:
+  remind_only_tech_groups: ["biomass"]
+  
 # TODO
 paths:
   remind_outpt_dir: /p/tmp/ivanra/REMIND/output/SSP2-PkBudg1000-PyPSAxprt_2025-05-09_19.01.34/pypsa_export

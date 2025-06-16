@@ -260,7 +260,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
                 name=f"paidoff_cap_totals_{component.lower()}",
             )
 
-    # === ensure normal e/p_nom_max is respected for paid_off + normal generators
+    # === ensure normal e/p_nom_max is respected for (paid_off + normal) components
+    # e.g. if PV has 100MW tech potential at nodeA, paid_off+normal p_nom_opt <100MW
     for component in ["Generator", "Link", "Store"]:
         paidoff_comp = getattr(n, component.lower() + "s").copy()
 
@@ -271,6 +272,10 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             continue
         else:
             paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
+
+        # techs that only exist as paid-off don't have usual counterparts
+        remind_only_techs = n.config["existing_capacities"].get("remind_only_tech_groups", [])
+        paidoff_comp = paidoff_comp.query("tech_group not in @remind_only_techs")
 
         if paidoff_comp.empty:
             continue
@@ -313,6 +318,7 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
     add_transimission_constraints(n)
     add_chp_constraints(n)
     if config["run"].get("is_remind_coupled", False):
+        logger.info("Adding remind paid off constraints")
         add_remind_paid_off_constraints(n)
 
 
@@ -377,9 +383,10 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "solve_networks",
             co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2080",
+            planning_horizons="2030",
             topology="current+FCG",
-            heating_demand="positive",
+            # heating_demand="positive",
+            configfiles="resources/tmp/remind_coupled.yaml",
         )
     configure_logging(snakemake)
 
