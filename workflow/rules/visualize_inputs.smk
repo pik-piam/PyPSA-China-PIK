@@ -9,7 +9,6 @@ scenario_wildcards = {
 
 COSTS_DATA = path_manager.costs_dir()
 
-
 rule plot_input_costs:
     input:
         costs=[
