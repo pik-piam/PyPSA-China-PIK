@@ -25,8 +25,7 @@ scenario:
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
-    # - 2020
-    # - 2025
+    - 2025
     - 2030
     - 2035
     - 2040
@@ -55,9 +54,9 @@ snapshots:
   start: "01-01 00:00"
   end: "12-31 23:00"
   bounds: 'both'
-  freq: '5h'
+  freq: '1h'
   # test weighings -> to be improved
-  frequency: 5.
+  frequency: 1.
   # in case snapshots cross the planning horizon year
   end_year_plus1: false
 
@@ -168,7 +167,7 @@ bus_carrier: {
 
 Techs:
   ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
-  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","heat pump","resistive heater","Sabatier","H2 CHP"]
+  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier","H2 CHP"]
   conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
   coal_cc: true # currently myopic pathway only.  CC = co2 cap 

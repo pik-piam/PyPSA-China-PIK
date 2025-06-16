@@ -56,6 +56,7 @@ def add_biomass_chp(
     nodes: pd.Index,
     biomass_potential: pd.DataFrame,
     prov_centroids: gpd.GeoDataFrame,
+    add_beccs: bool = True,
 ):
     """add biomass to the network. Biomass is here a new build (and not a retrofit)
     and is not co-fired with coal. An optional CC can be added to biomass
@@ -68,6 +69,7 @@ def add_biomass_chp(
         nodes (pd.Index): the nodes
         biomass_potential (pd.DataFrame): the biomass potential
         prov_centroids (gpd.GeoDataFrame): the x,y locations of the nodes
+        add_beccs (bool, optional): whether to add BECCS. Defaults to True.
     """
 
     suffix = " biomass"
@@ -118,23 +120,23 @@ def add_biomass_chp(
         + costs.at["solid biomass", "fuel"],
         lifetime=costs.at["biomass CHP", "lifetime"],
     )
-
-    network.add(
-        "Link",
-        nodes + " central biomass CHP capture",
-        bus0=nodes + " CO2",
-        bus1=nodes + " CO2 capture",
-        bus2=nodes,
-        p_nom_extendable=True,
-        carrier="CO2 capture",
-        efficiency=costs.at["biomass CHP capture", "capture_rate"],
-        efficiency2=-1
-        * costs.at["biomass CHP capture", "capture_rate"]
-        * costs.at["biomass CHP capture", "electricity-input"],
-        capital_cost=costs.at["biomass CHP capture", "capture_rate"]
-        * costs.at["biomass CHP capture", "capital_cost"],
-        lifetime=costs.at["biomass CHP capture", "lifetime"],
-    )
+    if add_beccs:
+        network.add(
+            "Link",
+            nodes + " central biomass CHP capture",
+            bus0=nodes + " CO2",
+            bus1=nodes + " CO2 capture",
+            bus2=nodes,
+            p_nom_extendable=True,
+            carrier="CO2 capture",
+            efficiency=costs.at["biomass CHP capture", "capture_rate"],
+            efficiency2=-1
+            * costs.at["biomass CHP capture", "capture_rate"]
+            * costs.at["biomass CHP capture", "electricity-input"],
+            capital_cost=costs.at["biomass CHP capture", "capture_rate"]
+            * costs.at["biomass CHP capture", "capital_cost"],
+            lifetime=costs.at["biomass CHP capture", "lifetime"],
+        )
 
     network.add(
         "Link",
@@ -757,7 +759,6 @@ def add_heat_coupling(
         costs (pd.DataFrame): the costs dataframe for emissions
         paths (dict): the paths to the data files
     """
-
     central_fraction = pd.read_hdf(paths["central_fraction"])
     with pd.HDFStore(paths["heat_demand_profile"], mode="r") as store:
         heat_demand = store["heat_demand_profiles"]
@@ -1471,6 +1472,7 @@ def prepare_network(
                 nodes,
                 biomass_potential[nodes],
                 prov_centroids,
+                add_beccs="beccs" in config["Techs"]["vre_techs"],
             )
 
     if config["add_H2"]:
@@ -1553,8 +1555,9 @@ if __name__ == "__main__":
             topology="current+FCG",
             # co2_pathway="exp175default",
             co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons=2040,
+            planning_horizons=2030,
             heating_demand="positive",
+            configfiles="resources/tmp/remind_coupled_heat.yaml",
         )
 
     configure_logging(snakemake)
