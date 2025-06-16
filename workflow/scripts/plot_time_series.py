@@ -94,7 +94,8 @@ def plot_energy_balance(
         {"Battery Discharger": "Battery", "Battery Storage": "Battery"},
         inplace=True,
     )
-    color_series = color_series.drop_duplicates()
+    # Deduplicate color_series
+    color_series = color_series[~color_series.index.duplicated(keep="first")]
 
     preferred_order = plot_config["preferred_order"]
     plot_order = (
@@ -114,7 +115,7 @@ def plot_energy_balance(
     supply.plot.area(
         ax=ax,
         linewidth=0,
-        color=color_series.loc[supply.columns],
+        color=color_series.loc[supply.columns].values,
     )
     if add_load_line:
         charge["load_pos"] = charge["Load"] * -1
@@ -410,9 +411,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_snapshots",
             topology="current+FCG",
-            co2_pathway="exp175default",
-            planning_horizons="2025",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             heating_demand="positive",
+            configfiles=["resources/tmp/remind_coupled_heat.yaml"],
+            planning_horizons="2020",
             winter_day1="12-10 21:00",  # mm-dd HH:MM
             winter_day2="12-17 12:00",  # mm-dd HH:MM
             spring_day1="03-31 21:00",  # mm-dd HH:MM
