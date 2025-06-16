@@ -62,7 +62,7 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
                 },
             ),
         output:
-            energy=RESULTS_DIR + "/plots/summary/pathway_energy.png",
+            energy=RESULTS_DIR + "/plots/summary/elc_balance.png",
             costs=RESULTS_DIR + "/plots/summary/pathway_costs.png",
         log:
             LOG_DIR + "/plot/summary_plot_ntwk_summary.log",
