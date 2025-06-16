@@ -1393,8 +1393,6 @@ def prepare_network(
 
     # nuclear is brownfield
     if "nuclear" in config["Techs"]["vre_techs"]:
-        nuclear_p_nom = pd.read_csv(config["nuclear_reactors"]["pp_path"], index_col=0)
-        nuclear_p_nom = pd.Series(nuclear_p_nom.squeeze())
 
         nuclear_nodes = pd.Index(NUCLEAR_EXTENDABLE)
         network.add(
