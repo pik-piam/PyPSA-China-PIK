@@ -32,7 +32,7 @@ from _pypsa_helpers import (
     make_periodic_snapshots,
 )
 from functions import HVAC_cost_curve
-from readers import read_province_shapes
+from readers_geospatial import read_province_shapes
 from add_electricity import load_costs, sanitize_carriers
 from functions import haversine
 from prepare_base_network import (
@@ -268,8 +268,50 @@ def prepare_network(config: dict, paths: dict):
         )
 
         # add rivers to link station to station
-        bus0s = [0, 21, 11, 19, 22, 29, 8, 40, 25, 1, 7, 4, 10, 15, 12, 20, 26, 6, 3, 39]
-        bus1s = [5, 11, 19, 22, 32, 8, 40, 25, 35, 2, 4, 10, 9, 12, 20, 23, 6, 17, 14, 16]
+        bus0s = [
+            0,
+            21,
+            11,
+            19,
+            22,
+            29,
+            8,
+            40,
+            25,
+            1,
+            7,
+            4,
+            10,
+            15,
+            12,
+            20,
+            26,
+            6,
+            3,
+            39,
+        ]
+        bus1s = [
+            5,
+            11,
+            19,
+            22,
+            32,
+            8,
+            40,
+            25,
+            35,
+            2,
+            4,
+            10,
+            9,
+            12,
+            20,
+            23,
+            6,
+            17,
+            14,
+            16,
+        ]
 
         for bus0, bus2 in list(zip(dams.index[bus0s], dam_buses.iloc[bus1s].index)):
 
@@ -330,7 +372,8 @@ def prepare_network(config: dict, paths: dict):
         # ======= add other existing hydro power
         hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
         hydro_p_max_pu = pd.read_hdf(
-            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+            config["hydro_dams"]["p_max_pu_path"],
+            key=config["hydro_dams"]["p_max_pu_key"],
         ).tz_localize(None)
 
         hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
@@ -669,6 +712,10 @@ if __name__ == "__main__":
     add_co2_constraints_prices(network, co2_opts)
     sanitize_carriers(network, snakemake.config)
 
-    network.export_to_netcdf(snakemake.output.network_name)
+    outp = snakemake.output.network_name
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    network.export_to_netcdf(outp, compression=compression)
 
-    logger.info(f"Network prepared and saved to {snakemake.output.network_name}")
+    logger.info(f"Network prepared and saved to {outp}")
