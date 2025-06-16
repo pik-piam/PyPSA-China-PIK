@@ -1,4 +1,19 @@
-"""generic etl development, to be rebalanced with the remind_coupling package"""
+"""generic etl development, to be rebalanced with the remind_coupling package
+
+The ETL operations are governed by the config file. Allowed fields are defined by the
+rpycpl.etl.Transformation class and are
+    name: str
+    method: Optional[str]
+    frames: Dict[str, Any]
+    params: Dict[str, Any]
+    filters: Dict[str, Any
+    kwargs: Dict[str, Any]
+    dependencies: Dict[str, Any]
+
+The sequence of operations matters: Dependencies represents previous step outputs.
+
+
+"""
 
 from typing import Any
 import logging
@@ -171,8 +186,8 @@ if __name__ == "__main__":
             "transform_remind_data",
             co2_pathway="SSP2-PkBudg1000-PyPS",
             topology="current+FCG",
-            configfiles="resources/tmp/remind_coupled.yaml",
-            # heating_demand="positive",
+            configfiles="resources/tmp/remind_coupled_heat.yaml",
+            heating_demand="positive",
         )
 
     configure_logging(snakemake)
@@ -186,6 +201,7 @@ if __name__ == "__main__":
         raise ValueError("Aborting: No REMIND data ETL config provided")
 
     # load anscilliary data
+    logger.info(f"Loading PyPSA costs from {snakemake.input.pypsa_costs}")
     pypsa_cost_files = [
         os.path.join(snakemake.input.pypsa_costs, f)
         for f in os.listdir(snakemake.input.pypsa_costs)
@@ -217,6 +233,7 @@ if __name__ == "__main__":
                 frames,
                 mappings=aux_data["tech_mapping"],
                 pypsa_costs=aux_data["pypsa_costs"],
+                years=snakemake.config["scenario"]["planning_horizons"],
             )
             result = {k: v for k, v in result.groupby("year")}
         elif step.name == "tech_groups":
