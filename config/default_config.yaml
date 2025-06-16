@@ -194,8 +194,8 @@ hydro_dams:
   p_max_pu_path: "resources/data/p_nom/hydro_p_max_pu.h5"
   p_max_pu_key : "hydro_p_max_pu"
   damn_flows_path: "resources/data/hydro/dam_flow_links.csv"
-nuclear_reactors:
-  pp_path: "resources/data/p_nom/nuclear_p_nom.csv"
+# nuclear_reactors:
+#   pp_path: "resources/data/p_nom/nuclear_p_nom.csv"
 H2:
   geo_storage_nodes: [ "Sichuan", "Chongqing", "Hubei", "Jiangxi", "Anhui", "Jiangsu", "Shandong", "Guangdong" ]
 edge_paths:
