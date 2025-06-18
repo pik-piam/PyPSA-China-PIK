@@ -4,7 +4,6 @@ Soft coded centalized `constants`
 
 import os
 import re
-import pandas as pd
 
 # ======= CONVERSIONS =======
 PLOT_COST_UNITS = 1e9  # bnEur
@@ -23,74 +22,105 @@ CURRENCY = "Eur"
 YEARBOOK_DATA2POP = 1e4
 POP_YEAR = "2020"
 
+# ========= SETUP REGIONS ==========
+# problem section due to pytests and snakemake not integrating well (snakmekae is as subprocess)
+
 TIMEZONE = "Asia/Shanghai"
+# THIS is used to heating demand and is a bit of a problem since currently all are set to
+# the administrative timezone and not the geo timezoones
+
+REGIONAL_GEO_TIMEZONES_DEFAULT = {
+    "Anhui": TIMEZONE,
+    "Beijing": TIMEZONE,
+    "Chongqing": TIMEZONE,
+    "Fujian": TIMEZONE,
+    "Gansu": TIMEZONE,
+    "Guangdong": TIMEZONE,
+    "Guangxi": TIMEZONE,
+    "Guizhou": TIMEZONE,
+    "Hainan": TIMEZONE,
+    "Hebei": TIMEZONE,
+    "Heilongjiang": TIMEZONE,
+    "Henan": TIMEZONE,
+    "Hubei": TIMEZONE,
+    "Hunan": TIMEZONE,
+    "InnerMongolia": TIMEZONE,
+    "Jiangsu": TIMEZONE,
+    "Jiangxi": TIMEZONE,
+    "Jilin": TIMEZONE,
+    "Liaoning": TIMEZONE,
+    "Ningxia": TIMEZONE,
+    "Qinghai": TIMEZONE,
+    "Shaanxi": TIMEZONE,
+    "Shandong": TIMEZONE,
+    "Shanghai": TIMEZONE,
+    "Shanxi": TIMEZONE,
+    "Sichuan": TIMEZONE,
+    "Tianjin": TIMEZONE,
+    "Tibet": TIMEZONE,
+    "Xinjiang": TIMEZONE,
+    "Yunnan": TIMEZONE,
+    "Zhejiang": TIMEZONE,
+}
 
 
-def read_province_data(path: str = "resources/data/regions/province_codes.csv") -> list[str]:
-    """
-    Read province names from a CSV file, excluding Hong Kong, Macau, and Taiwan.
-
-    Args:
-        path (str): Path to the CSV file containing province names.
-
-    Returns:
-        list[str]: List of province names.
-    """
-    try:
-        df = pd.read_csv(path)
-        excluded = ["HongKong", "Macau", "Taiwan"]
-        df = df[~df["Full name"].isin(excluded)]
-        return df["Full name"].tolist()
-    except Exception as e:
-        print(f"Warning: Could not read province codes from {path}: {e}")
-        return []
-
-
-def get_province_names() -> list[str]:
-    """
-    Get list of provinces to include in the model.
-
-    If the environment variable PROV_NAMES is set (e.g., "Jiangsu Zhejiang"),
-    it overrides the default list from the CSV. Used for testing or regional modeling.
-
-    Returns:
-        list[str]: List of province names to model.
+# TODO really ugly, load the REGIONAL_GEO_TIMEZONES_DEFAULT from a file
+# use different file for tests
+def get_province_names() -> list:
+    """HACK to make it possible for pytest to generate a smaller network
 
     Raises:
-        ValueError: If unknown provinces are specified via PROV_NAMES.
+        ValueError: if the PROV_NAMES is not a list or str
+
+    Returns:
+        list: the province node names to build the network
     """
-    default_provs = read_province_data()
-    env_input = os.getenv("PROV_NAMES")
-
-    if env_input:
-        provs = re.findall(r"[\w']+", env_input)
-        unknown = set(provs) - set(default_provs)
-        if unknown:
-            raise ValueError(f"Unknown provinces in PROV_NAMES: {unknown}")
-        return provs
-
-    return default_provs
-
-
-# Constants derived from province configuration
-PROV_NAMES = get_province_names()
-REGIONAL_GEO_TIMEZONES_DEFAULT = {prov: TIMEZONE for prov in PROV_NAMES}
-REGIONAL_GEO_TIMEZONES = REGIONAL_GEO_TIMEZONES_DEFAULT
+    default_prov_names = list(REGIONAL_GEO_TIMEZONES_DEFAULT)
+    _provs = os.getenv("PROV_NAMES", default_prov_names)
+    if isinstance(_provs, str):
+        _provs = re.findall(r"[\w']+", _provs)
+        if not _provs:
+            xpected = '["region1", ...]'
+            err = f"Environment var PROV_NAMES {_provs} for tests did not have expected format: "
+            raise ValueError(err + xpected)
+    elif not isinstance(_provs, list):
+        raise ValueError("PROV_NAMES must be a list or str")
+    return _provs
 
 
 def filter_buses(names) -> list:
     return [name for name in names if name in PROV_NAMES]
 
+
+PROV_NAMES = get_province_names()
+REGIONAL_GEO_TIMEZONES = {
+    k: v for k, v in REGIONAL_GEO_TIMEZONES_DEFAULT.items() if k in PROV_NAMES
+}
+
 NUCLEAR_EXTENDABLE_DEFAULT = [
-    "Liaoning", "Shandong", "Jiangsu", "Zhejiang",
-    "Fujian", "Guangdong", "Hainan", "Guangxi"
+    "Liaoning",
+    "Shandong",
+    "Jiangsu",
+    "Zhejiang",
+    "Fujian",
+    "Guangdong",
+    "Hainan",
+    "Guangxi",
 ]
 NUCLEAR_EXTENDABLE = filter_buses(NUCLEAR_EXTENDABLE_DEFAULT)
 
 OFFSHORE_WIND_NODES_DEFAULT = [
-    "Fujian", "Guangdong", "Guangxi", "Hainan",
-    "Hebei", "Jiangsu", "Liaoning", "Shandong",
-    "Shanghai", "Tianjin", "Zhejiang"
+    "Fujian",
+    "Guangdong",
+    "Guangxi",
+    "Hainan",
+    "Hebei",
+    "Jiangsu",
+    "Liaoning",
+    "Shandong",
+    "Shanghai",
+    "Tianjin",
+    "Zhejiang",
 ]
 OFFSHORE_WIND_NODES = filter_buses(OFFSHORE_WIND_NODES_DEFAULT)
 
