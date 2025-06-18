@@ -4,7 +4,7 @@
 
 run:
   # name: 'new_load_overnight_5hr_newcutout'
-  name: test_co2_pr_baseline_0421_SD_withCB_dual
+  name: test_co2_pr_baseline_0618_SD_withCB_dual
 foresight: "overnight"
 results_dir: 'results/'
 summary_dir: 'summary/'
