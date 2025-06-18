@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 # coding: utf-8
-""" Functions to add constraints and prepare the network for the solver. 
+"""Functions to add constraints and prepare the network for the solver.
 Associated with the `solve_network_myopic` rule in the Snakefile.
 To be merged/consolidated with the `solve_network` script.
 """
@@ -14,23 +14,19 @@ import socket
 import numpy as np
 import pandas as pd
 import pypsa
-import xarray as xr
 from _helpers import (
     configure_logging,
-    override_component_attrs,
-    mock_snakemake,
-    setup_gurobi_tunnel_and_env,
     mock_snakemake,
     setup_gurobi_tunnel_and_env,
 )
 
 logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
-from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 
 def prepare_network(
     n,
+    config: dict,
     solve_opts=None,
 ):
 
@@ -81,7 +77,51 @@ def prepare_network(
         n.set_snapshots(n.snapshots[:nhours])
         n.snapshot_weightings[:] = 8760.0 / nhours
 
+    if config["existing_capacities"].get("add", True):
+        add_land_use_constraint(n)
+
     return n
+
+
+def add_land_use_constraint(n: pypsa.Network, planning_horizons: str | int) -> None:
+    """
+    Add land use constraints for renewable energy potential. This ensures that the brownfield + greenfield
+     vre installations for each generator technology do not exceed the technical potential.
+
+    Args:
+        n (pypsa.Network): the network object to add the constraints to
+        planning_horizons (str | int): the planning horizon year as string
+    """
+    # warning: this will miss existing offwind which is not classed AC-DC and has carrier 'offwind'
+
+    for carrier in [
+        "solar",
+        "solar rooftop",
+        "solar-hsat",
+        "onwind",
+        "offwind",
+        "offwind-ac",
+        "offwind-dc",
+        "offwind-float",
+    ]:
+        ext_i = (n.generators.carrier == carrier) & ~n.generators.p_nom_extendable
+        grouper = n.generators.loc[ext_i].index.str.replace(f" {carrier}.*$", "", regex=True)
+        existing = n.generators.loc[ext_i, "p_nom"].groupby(grouper).sum()
+        existing.index += f" {carrier}-{planning_horizons}"
+        n.generators.loc[existing.index, "p_nom_max"] -= existing
+
+    # check if existing capacities are larger than technical potential
+    existing_large = n.generators[n.generators["p_nom_min"] > n.generators["p_nom_max"]].index
+    if len(existing_large):
+        logger.warning(
+            f"Existing capacities larger than technical potential for {existing_large},\
+                        adjust technical potential to existing capacities"
+        )
+        n.generators.loc[existing_large, "p_nom_max"] = n.generators.loc[
+            existing_large, "p_nom_min"
+        ]
+
+    n.generators["p_nom_max"] = n.generators["p_nom_max"].clip(lower=0)
 
 
 def add_battery_constraints(n):
@@ -223,8 +263,7 @@ def extra_functionality(n, snapshots):
     If you want to enforce additional custom constraints, this is a good location to add them.
     The arguments ``opts`` and ``snakemake.config`` are expected to be attached to the network.
     """
-    opts = n.opts
-    config = n.config
+
     add_chp_constraints(n)
     add_battery_constraints(n)
     add_transimission_constraints(n)
@@ -326,16 +365,9 @@ if __name__ == "__main__":
 
     np.random.seed(solve_opts.get("seed", 123))
 
-    if "overrides" in snakemake.input.keys():
-        overrides = override_component_attrs(snakemake.input.overrides)
-        n = pypsa.Network(snakemake.input.network, override_component_attrs=overrides)
-    else:
-        n = pypsa.Network(snakemake.input.network)
+    n = pypsa.Network(snakemake.input.network)
 
-    n = prepare_network(n, solve_opts)
-
-    if not check_tunnel(tunnel_port):
-        raise RuntimeError("SSH tunnel is not accessible")
+    n = prepare_network(n, solve_opts, snakemake.config)
 
     n = solve_network(
         n,

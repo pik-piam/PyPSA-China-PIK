@@ -47,6 +47,8 @@ dependencies:
   - pytz
   - country_converter
   - tabula-py
+  - chardet
+  - ultraplot
 
   # Keep in conda environment when calling ipython
   - ipython
@@ -60,3 +62,4 @@ dependencies:
     - vresutils>=0.3.1
     - tsam>=1.1.0
     - gurobipy==11.0.3
+    - jwt

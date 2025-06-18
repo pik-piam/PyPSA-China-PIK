@@ -31,8 +31,8 @@ LOGIN_NODE = "01"
 
 
 class ConfigManager:
-    """Config manager class for the snakemake configs
-    """
+    """Config manager class for the snakemake configs"""
+
     def __init__(self, config: dict):
         self._raw_config = deepcopy(config)
         self.config = deepcopy(config)
@@ -45,7 +45,8 @@ class ConfigManager:
             dict: processed config
         """
         self.config["scenario"]["planning_horizons"] = [
-            int(v) for v in self._raw_config["scenario"]["planning_horizons"]]
+            int(v) for v in self._raw_config["scenario"]["planning_horizons"]
+        ]
         ghg_handler = GHGConfigHandler(self.config.copy())
         self.config = ghg_handler.handle_ghg_scenarios()
 
@@ -62,7 +63,7 @@ class ConfigManager:
             dict: the pathway
         """
         scenario = self.config["co2_scenarios"][pthw_name]
-        return {"co2_pr_limit": scenario["pathway"][year], "control": scenario["control"]}
+        return {"co2_pr_or_limit": scenario["pathway"][year], "control": scenario["control"]}
 
     def make_wildcards(self) -> list:
         """Expand wildcards in config"""
@@ -71,6 +72,7 @@ class ConfigManager:
 
 class GHGConfigHandler:
     """A class to handle & validate GHG scenarios in the config"""
+
     def __init__(self, config: dict):
         self.config = deepcopy(config)
         self._raw_config = deepcopy(config)
@@ -96,15 +98,14 @@ class GHGConfigHandler:
         return self.config
 
     def _filter_active_scenarios(self):
-        """select active ghg scenarios
-        """
+        """select active ghg scenarios"""
         scenarios = self.config["scenario"].get("co2_pathway", [])
         if not isinstance(scenarios, list):
             scenarios = [scenarios]
 
         self.config["co2_scenarios"] = {
             k: v for k, v in self.config["co2_scenarios"].items() if k in scenarios
-            }
+        }
 
     def _reduction_to_budget(self, base_yr_ems: float):
         """transform reduction to budget
@@ -113,7 +114,7 @@ class GHGConfigHandler:
         """
         for name, co2_scen in self.config["co2_scenarios"].items():
             if co2_scen["control"] == "reduction":
-                budget = {yr: base_yr_ems*(1 - redu) for yr, redu in co2_scen["pathway"].items()}
+                budget = {yr: base_yr_ems * (1 - redu) for yr, redu in co2_scen["pathway"].items()}
                 self.config["co2_scenarios"][name]["pathway"] = budget
                 self.config["co2_scenarios"][name]["control"] = "budget_from_reduction"
 
@@ -123,24 +124,32 @@ class GHGConfigHandler:
         """Validate CO2 scenarios"""
 
         for name, scen in self._raw_config["co2_scenarios"].items():
+
+            # do not validate if not selected
+            if not name in self.config["scenario"]["co2_pathway"]:
+                continue
+
+            # check type
             if not isinstance(scen, dict):
                 raise ValueError(f"Expected a dictionary for co2 scenario but got {scen}")
 
+            # control type none = free emissions. DOn't validate
             if "control" in set(scen) and scen["control"] is None:
                 continue
 
+            # otherwise check expected keys in scenario
             if {"control", "pathway"} - set(scen):
                 raise ValueError(f"Scenario {scen} must contain 'control' and 'pathway'")
 
             ALLOWED = ["price", "reduction", "budget", None]
             if not scen["control"] in ALLOWED:
-                err = f"Control must be {",".join(ALLOWED)} but was {name}:{scen["control"]}"
+                err = f"Control must be {','.join(ALLOWED)} but was {name}:{scen['control']}"
                 raise ValueError(err)
 
             years_int = set(map(int, self.config["scenario"]["planning_horizons"]))
             missing_yrs = years_int - set(map(int, scen["pathway"]))
             if missing_yrs:
-                raise ValueError(f"Years in scenario {scen["pathway"]} missing {missing_yrs}")
+                raise ValueError(f"Years in scenario {scen['pathway']} missing {missing_yrs}")
 
 
 # TODO return pathlib objects? so can just use / to combine paths?
@@ -201,7 +210,32 @@ class PathManager:
         sub_dir = foresight + "_" + self._join_scenario_vars()
         if extra_opts:
             sub_dir += "_" + "".join(extra_opts.values())
-        return os.path.join(self.config["results_dir"], base_dir, sub_dir)
+        return os.path.join(self.config["paths"]["results_dir"], base_dir, sub_dir)
+
+    def costs_dir(self) -> os.PathLike:
+
+        # backward compat
+        default = "resources/data/costs"
+        costs_dir = self.config["paths"].get("costs_dir", default)
+        # if not absolute path & rel not recognised by snakemake
+        if not os.path.exists(costs_dir):
+            # if relative path, make it absolute
+            costs_dir = os.path.abspath(costs_dir)
+
+        return os.path.dirname(costs_dir)
+
+    def elec_load(self) -> os.PathLike:
+
+        #
+        default = "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+        loads = self.config["paths"].get("yearly_regional_load", {"ac": default})
+        elec_load = loads["ac"]
+        # if not absolute path and rel not recognised by snakemake
+        if not os.path.exists(elec_load):
+            # if relative path, make it absolute
+            elec_load = os.path.abspath(elec_load)
+
+        return elec_load
 
     def derived_data_dir(self, shared=False) -> os.PathLike:
         """Generate the derived data directory path.
@@ -257,6 +291,22 @@ class PathManager:
         else:
             return "resources/data/landuse_availability"
 
+    def profile_base_p(self, technology: str) -> os.PathLike:
+        """Generate the profile data directory base path.
+
+        Args:
+            technology (str): The technology name.
+
+        Returns:
+            os.PathLike: The path to the profile data directory.
+        """
+        cutout_name = self.config["atlite"]["cutout_name"]
+        base_p = self.derived_data_dir(shared=True) + f"/cutout_{cutout_name}/"
+        resource_cfg = self.config["renewable"][technology]
+        rsrc = "_".join([f"{k}{v}" for k, v in resource_cfg.items()])
+
+        return base_p + rsrc
+
 
 # ============== HPC helpers ==================
 
@@ -291,7 +341,7 @@ def setup_gurobi_tunnel_and_env(
     )
 
     try:
-        stdout, stderr = socks_proc.communicate(timeout=timeout+2)
+        stdout, stderr = socks_proc.communicate(timeout=timeout + 2)
         err = stderr.decode()
         logger.info(f"ssh err returns {str(err)}")
         logger.info(f"ssh stdout returns {str(stdout)}")
@@ -300,9 +350,7 @@ def setup_gurobi_tunnel_and_env(
         else:
             logger.info("Gurobi Environment variables & tunnel set up successfully at attempt {i}.")
     except subprocess.TimeoutExpired:
-        logger.error(
-            f"SSH tunnel communication timed out."
-        )
+        logger.error(f"SSH tunnel communication timed out.")
 
     os.environ["https_proxy"] = f"socks5://127.0.0.1:{port}"
     os.environ["SSL_CERT_FILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
@@ -319,7 +367,7 @@ def setup_gurobi_tunnel_and_env(
     return socks_proc
 
 
-def _check_gurobi_license_subprocess()->bool:
+def _check_gurobi_license_subprocess() -> bool:
     """
     Subprocess function to check Gurobi license availability.
     This function will start the Gurobi environment to verify if a license is available.

@@ -3,15 +3,20 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  # name: 'new_load_overnight_5hr_newcutout'
-  name: test_co2_pr_baseline_0618_SD_withCB_dual
+  name: unamed_run
 foresight: "overnight"
-results_dir: 'results/'
-summary_dir: 'summary/'
 
+paths:
+  results_dir: "results/"
+  summary_dir: "summary/" # TODO useless?
+  costs_dir: "resources/data/costs/"
+  yearly_regional_load: 
+    ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+    # conversion factor to MWh in case ac load file in another unit
+    ac_to_mwh: 1
 
-scenario:
-  co2_pathway: ['exp175default'] # co2_scenarios that will be used
+scenario: 
+  co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
     - 2020
@@ -23,7 +28,7 @@ scenario:
     - 2050
     - 2055
     - 2060
-  heating_demand: ['positive']
+  heating_demand: ["positive"]
 
 co2_scenarios: 
   exp175default:
@@ -93,6 +98,10 @@ renewable:
     resource:
       method: wind
       turbine: Vestas_V112_3MW
+    # bin by capacity factor
+    resource_classes:
+      min_cf_delta: 0.05
+      n: 3  
     capacity_per_sqkm: 3 # ScholzPhd Tab 4.3.1: 10MW/km^2
     potential: simple # or conservative
     natura: false
@@ -103,6 +112,9 @@ renewable:
     resource:
       method: wind
       turbine: NREL_ReferenceTurbine_5MW_offshore
+    resource_classes:
+      min_cf_delta: 0.05
+      n: 3
     capacity_per_sqkm: 2 # ScholzPhd Tab 4.3.1: 20MW/km^2
     correction_factor: 0.8855
     potential: simple # or conservative
@@ -118,6 +130,9 @@ renewable:
       orientation:
         slope: 35.
         azimuth: 180.
+    resource_classes:
+      min_cf_delta: 0.02
+      n: 2
     capacity_per_sqkm: 5.1 # ScholzPhd Tab 4.3.1: 170 MW/km^2 3%
     potential: simple # or conservative
     correction_factor: 0.85
@@ -144,8 +159,6 @@ Technique:
 #   existing_hydro: False
 #   existing_nuclear: False
 #   existing_PHS: False
-
-existing_infrastructure: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
 bus_suffix: [""," central heat"," decentral heat"," gas"," coal"]
 bus_carrier: {
@@ -283,8 +296,10 @@ line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max
 line_cost_factor: 1
 
 existing_capacities:
+  add: False 
   grouping_years: [1980,1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  threshold_capacity: 1
+  threshold_capacity: 1 # TODO UNIT
+  techs: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
 
 fetch_regions:

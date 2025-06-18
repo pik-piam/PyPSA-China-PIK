@@ -13,12 +13,13 @@ __pycache__
 .vscode
 
 /site/**
-/resources/**/*
 !/resources/data/shapefiles/
 !/resources/**/*.csv
+/resources/**/*
 /resources/derived_data/
 /resources/data/province_shapes
 /resources/data/landuse_availability/World_EEZ/*eez*
+/workflow/scripts/*.pdf
 /results
 !/results/.gitkeep
 /cutouts

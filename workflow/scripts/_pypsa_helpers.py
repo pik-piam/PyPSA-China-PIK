@@ -1,6 +1,5 @@
+"""Helper functions for pypsa network handling"""
 
-"""Helper functions for pypsa network handling
-"""
 import os
 import pandas as pd
 import logging
@@ -76,8 +75,9 @@ def aggregate_p(n: pypsa.Network) -> pd.Series:
     )
 
 
-def calc_lcoe(n: pypsa.Network, grouper=pypsa.statistics.get_carrier_and_bus_carrier, **kwargs
-              ) -> pd.DataFrame:
+def calc_lcoe(
+    n: pypsa.Network, grouper=pypsa.statistics.get_carrier_and_bus_carrier, **kwargs
+) -> pd.DataFrame:
     """calculate the LCOE for the network: (capex+opex)/supply.
 
     Args:
@@ -102,14 +102,15 @@ def calc_lcoe(n: pypsa.Network, grouper=pypsa.statistics.get_carrier_and_bus_car
     profits = pd.concat(
         [opex, capex, tot_capex, rev, supply],
         axis=1,
-        keys=["OPEX", "CAPEX", "CAPEX_wBROWN", "Revenue", "supply"]
-        ).fillna(0)
-    profits["rev-costs"] = profits.apply(lambda row: row.Revenue-row.CAPEX-row.OPEX, axis=1)
-    profits["LCOE"] = profits.apply(lambda row: (row.CAPEX + row.OPEX)/row.supply, axis=1)
+        keys=["OPEX", "CAPEX", "CAPEX_wBROWN", "Revenue", "supply"],
+    ).fillna(0)
+    profits["rev-costs"] = profits.apply(lambda row: row.Revenue - row.CAPEX - row.OPEX, axis=1)
+    profits["LCOE"] = profits.apply(lambda row: (row.CAPEX + row.OPEX) / row.supply, axis=1)
     profits["LCOE_wbrownfield"] = profits.apply(
-        lambda row: (row.CAPEX_wBROWN + row.OPEX)/row.supply, axis=1)
-    profits["MV"] = profits.apply(lambda row: row.Revenue/row.supply, axis=1)
-    profits["profit_pu"] = profits["rev-costs"]/profits.supply
+        lambda row: (row.CAPEX_wBROWN + row.OPEX) / row.supply, axis=1
+    )
+    profits["MV"] = profits.apply(lambda row: row.Revenue / row.supply, axis=1)
+    profits["profit_pu"] = profits["rev-costs"] / profits.supply
     profits.sort_values("profit_pu", ascending=False, inplace=True)
 
     return profits[profits.supply > 0]
@@ -165,7 +166,7 @@ def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
 
     for ptr in prefix_to_remove:
         if label[: len(ptr)] == ptr:
-            label = label[len(ptr):]
+            label = label[len(ptr) :]
 
     for rif in rename_if_contains:
         if rif in label:
@@ -333,17 +334,19 @@ def make_periodic_snapshots(
     """
     if not end_year:
         end_year = year
+
+    # do not apply freq yet or get inconsistencies with leap years
     snapshots = pd.date_range(
         f"{int(year)}-{start_day_hour}",
         f"{int(end_year)}-{end_day_hour}",
-        freq=freq,
+        freq="1h",
         inclusive=bounds,
         tz=tz,
     )
-
     if is_leap_year(int(year)):
         snapshots = snapshots[~((snapshots.month == 2) & (snapshots.day == 29))]
-    return snapshots
+    freq_hours = int("".join(filter(str.isdigit, str(freq))))
+    return snapshots[::freq_hours]  # every freq hour
 
 
 def shift_profile_to_planning_year(data: pd.DataFrame, planning_yr: int | str) -> pd.DataFrame:

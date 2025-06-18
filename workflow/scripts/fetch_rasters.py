@@ -10,12 +10,19 @@ import jwt
 import time
 import os
 import requests
+import logging
 
+logger = logging.getLogger(__name__)
 # Load saved key from filesystem
 TOKEN_PATH = os.path.expanduser("~/documents/token_land_cover_copernicus.json")
 
 
-def authenticate():
+def authenticate() -> dict:
+    """authenticae with the copernicus API
+
+    Returns:
+        dict: the access token dict
+    """
     service_key = json.load(open(TOKEN_PATH, "rb"))
 
     private_key = service_key["private_key"].encode("utf-8")
@@ -41,19 +48,28 @@ def authenticate():
     return token
 
 
-def search_items(json_return: dict, target_name="global-dynamic-land-cover"):
+def search_items(json_items: dict, target_name="global-dynamic-land-cover") -> list:
+    """filter items for target name
 
-    return [itm["@id"] for itm in json_return["items"] if itm["@id"].find(target_name) != -1]
+    Args:
+        json_items (dict): the json response to the seach query
+        target_name (str, optional): The items to find. Defaults to "global-dynamic-land-cover".
+
+    Returns:
+        list: the items list
+    """
+
+    return [itm["@id"] for itm in json_items["items"] if itm["@id"].find(target_name) != -1]
 
 
-def find_dataset_ids(name="global-dynamic-land-cover") -> dict:
+def find_dataset_ids(name="global-dynamic-land-cover") -> tuple[str]:
     """find the catalogue ID of the dataset
 
     Args:
         name (str, optional): dataset product name. Defaults to "global-dynamic-land-cover".
 
     Returns:
-        dict: the results
+        tuple: the results (download_info_id, download_id)
     """
     bid = 0
     # batches of 25
@@ -64,7 +80,7 @@ def find_dataset_ids(name="global-dynamic-land-cover") -> dict:
             headers={"Accept": "application/json"},
         )
         if search_req.status_code != 200:
-            print(search_req.text)
+            logger.error(f"failed request: {search_req.text}")
             exit(1)
         search_results = search_req.json()
         res = search_items(search_results, target_name=name)
@@ -73,9 +89,6 @@ def find_dataset_ids(name="global-dynamic-land-cover") -> dict:
         else:
             break
 
-    if search_results.status_code != 200:
-        raise ValueError(search_results.text)
-
     res_list = [r for r in search_results["items"] if r["@id"].find("2019") != -1]
     download_info_id = res_list[0]["dataset_download_information"]["items"][0]["@id"]
     download_id = res_list[0]["UID"]
@@ -83,7 +96,17 @@ def find_dataset_ids(name="global-dynamic-land-cover") -> dict:
     return download_info_id, download_id
 
 
-def post_data_request(token, download_info_id, download_id):
+def post_data_request(token: dict, download_info_id: str, download_id: str) -> tuple[dict, str]:
+    """post the request to the copernicus API
+
+    Args:
+        token (dict): the access token
+        download_info_id (str): output of find_dataset_ids
+        download_id (str): output of find_dataset_ids
+
+    Returns:
+        tuple: the data request (json dict) and task id (string?)
+    """
     base_url = "https://land.copernicus.eu"
     data_req = requests.post(
         f"{base_url}/api/@datarequest_post",
@@ -112,11 +135,9 @@ def post_data_request(token, download_info_id, download_id):
 if __name__ == "__main__":
     token = authenticate()
     download_info_id, download_id = find_dataset_ids()
-    print(post_data_request(token, download_info_id, download_id))
 
     data_req, task_id = post_data_request(token, download_info_id, download_id)
-    print(data_req)
-    print(task_id)
+    logger.info(f"data request post returned: {data_req}, {task_id}")
 
     # once ready run this
     status = requests.get(

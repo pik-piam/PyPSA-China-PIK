@@ -2,6 +2,10 @@ import pypsa
 import logging
 import matplotlib.pyplot as plt
 import os.path
+import seaborn as sns
+import numpy as np
+import pandas as pd
+
 from os import makedirs
 
 from _plot_utilities import (
@@ -16,7 +20,7 @@ from _helpers import (
     mock_snakemake,
     set_plot_test_backend,
 )
-from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL
+from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL, PROV_NAMES
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +46,8 @@ def plot_energy_balance(
     """
     if not ax:
         fig, ax = plt.subplots(figsize=(16, 8))
+    else:
+        fig = ax.get_figure()
 
     p = (
         n.statistics.energy_balance(aggregate_time=False, bus_carrier=bus_carrier)
@@ -131,11 +137,14 @@ def plot_energy_balance(
         charge["load_pos"] = charge["Load"] * -1
         charge["load_pos"].plot(linewidth=2, color="black", label="Load", ax=ax, linestyle="--")
         charge.drop(columns="load_pos", inplace=True)
+
     ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
     ax.set_ylabel(PLOT_CAP_LABEL)
     ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
     ax.grid(axis="y")
     ax.set_xlim(supply.index.min(), supply.index.max())
+
+    fig.tight_layout()
 
     return ax
 
@@ -156,6 +165,9 @@ def plot_load_duration_curve(
 
     if not ax:
         fig, ax = plt.subplots(figsize=(16, 8))
+    else:
+        fig = ax.get_figure()
+
     load = network.statistics.withdrawal(
         groupby=get_location_and_carrier,
         aggregate_time=False,
@@ -167,6 +179,7 @@ def plot_load_duration_curve(
     ax.set_ylabel(f"Load [{PLOT_CAP_LABEL}]")
     ax.set_xlabel("Hours")
 
+    fig.tight_layout()
     return ax
 
 
@@ -185,6 +198,8 @@ def plot_regional_load_durations(
     """
     if not ax:
         fig, ax = plt.subplots(figsize=(10, 8))
+    else:
+        fig = ax.get_figure()
 
     loads_all = network.statistics.withdrawal(
         groupby=get_location_and_carrier, aggregate_time=False, bus_carrier=carrier, comps="Load"
@@ -209,6 +224,9 @@ def plot_regional_load_durations(
         fancybox=True,
         shadow=True,
     )
+
+    fig.tight_layout()
+
     return ax
 
 
@@ -255,6 +273,133 @@ def plot_residual_load_duration_curve(
     return ax
 
 
+def plot_price_duration_curve(network: pypsa.Network, ax: plt.Axes = None) -> plt.Axes:
+    """plot the price duration curve for the given carrier
+
+    Args:
+        network (pypsa.Network): the pypasa network object
+        ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
+
+    Returns:
+        plt.Axes: the plotting axes
+    """
+    if not ax:
+        fig, ax = plt.subplots(figsize=(16, 8))
+    else:
+        fig = ax.get_figure()
+
+    ntwk_el_price = (
+        -1
+        * network.statistics.revenue(bus_carrier="AC", aggregate_time=False, comps="Load")
+        / network.statistics.withdrawal(bus_carrier="AC", aggregate_time=False, comps="Load")
+    )
+    ntwk_el_price.T.Load.sort_values(ascending=False).reset_index(drop=True).plot(title="Price Duration Curve", ax =ax, lw=2)
+    fig.tight_layout()
+
+    return ax
+
+
+def plot_load_duration_by_node(
+    network: pypsa.Network, carrier: str = "AC", logy=True, y_lower=1e-3, fig_shape=(8, 4)
+) -> plt.Axes:
+    """Plot the load duration curve for the given carrier by node
+    Args:
+        network (pypsa.Network): the pypsa network object
+        carrier (str, optional): the load carrier, defaults to AC (bus suffix)
+        logy (bool, optional): use log scale for y axis, defaults to True
+        y_lower (float, optional): lower limit for y axis, defaults to 1e-3
+        fig_shape (tuple, optional): shape of the figure, defaults to (8, 4)
+    Returns:
+        plt.Axes: the plotting axes
+    Raises:
+        ValueError: if the figure shape is too small for the number of regions"""
+
+    if carrier == "AC":
+        suffix = ""
+    else:
+        suffix = f" {carrier}"
+
+    nodal_prices = network.buses_t.marginal_price[pd.Index(PROV_NAMES) + suffix]
+
+    if fig_shape[0] * fig_shape[1] < len(nodal_prices.columns):
+        raise ValueError(
+            f"Figure shape {fig_shape} is too small for {len(nodal_prices.columns)} regions. "
+            + "Please increase the number of subplots."
+        )
+    fig, axes = plt.subplots(fig_shape[0], fig_shape[1], sharex=True, sharey=True, figsize=(12, 12))
+
+    # region by region sorting of prices
+    for i, region in enumerate(nodal_prices.columns):
+        reg_pr = nodal_prices[region]
+        reg_pr.sort_values(ascending=False).reset_index(drop=True).plot(
+            ax=axes[i // 4, i % fig_shape[1]], label=region
+        )
+        axes[i // 4, i % fig_shape[1]].set_title(region, fontsize=10)
+        if logy:
+            axes[i // 4, i % fig_shape[1]].semilogy()
+        if y_lower:
+            axes[i // 4, i % fig_shape[1]].set_ylim(y_lower, reg_pr.max() * 1.2)
+        elif reg_pr.min() > 1e-5 and not logy:
+            axes[i // 4, i % fig_shape[1]].set_ylim(0, reg_pr.max() * 1.2)
+    fig.tight_layout(h_pad=0.2, w_pad=0.2)
+    for ax in axes.flat:
+        # Remove all x-tick labels except the largest value
+        xticks = ax.get_xticks()
+        if len(xticks) > 0:
+            ax.set_xticks([xticks[0], xticks[-1]])
+            ax.set_xticklabels([f"{xticks[0]:.0f}", f"{xticks[-1]:.0f}"])
+
+    return ax
+
+
+def plot_price_map(
+    network: pypsa.Network, carrier="AC", log_values=False, color_map="viridis", ax: plt.Axes = None
+) -> plt.Axes:
+    """plot the price heat map (region vs time) for the given carrier
+
+    Args:
+        network (pypsa.Network): the pypsa network object
+        carrier (str, optional): the carrier for which to get the price. Defaults to "AC".
+        log_values (bool, optional): whether to use log scale for the prices. Defaults to False.
+        color_map (str, optional): the color map to use. Defaults to "viridis".
+        ax (plt.Axes, optional): the plotting axis. Defaults to None (new fig).
+
+    Returns:
+        plt.Axes: the axes for plotting
+    """
+
+    if not ax:
+        fig, ax = plt.subplots(figsize=(20, 8))
+    else:
+        fig = ax.get_figure()
+
+    carrier_buses = network.buses.carrier[network.buses.carrier == carrier].index.values
+    nodal_prices = network.buses_t.marginal_price[carrier_buses]
+    # Normalize nodal_prices with log transformation
+    if log_values:
+        # Avoid log(0) by clipping values to a minimum of 0.1
+        normalized_prices = np.log(nodal_prices.clip(lower=0.1))
+        label = "Log-Transformed Price [€/MWh]"
+    else:
+        normalized_prices = nodal_prices
+        label = "Price [€/MWh]"
+    # Create a heatmap of normalized nodal_prices
+    sns.heatmap(
+        normalized_prices.reset_index(drop=True).T,
+        cmap=color_map,
+        cbar_kws={"label": label},
+        ax=ax,
+    )
+
+    # Customize the plot
+    ax.set_title("Heatmap of Log-Transformed Nodal Prices")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Nodes")
+    fig.tight_layout()
+
+    return
+
+
 if __name__ == "__main__":
 
     # Detect running outside of snakemake and mock snakemake for testing
@@ -292,8 +437,8 @@ if __name__ == "__main__":
     n = pypsa.Network(snakemake.input.network)
     fix_network_names_colors(n, snakemake.config)
 
-    fig, ax = plt.subplots(figsize=(16, 8))
     for carrier in carriers:
+        fig, ax = plt.subplots(figsize=(16, 8))
         plot_energy_balance(
             n,
             config["plotting"],

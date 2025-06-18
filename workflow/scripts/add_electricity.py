@@ -64,7 +64,7 @@ def load_costs(
 
     # set all asset costs and other parameters
     costs = pd.read_csv(tech_costs, index_col=list(range(3))).sort_index()
-
+    costs.fillna(" ", inplace=True)
     # correct units to MW and EUR
     costs.loc[costs.unit.str.contains("/kW"), "value"] *= 1e3
     costs.loc[costs.unit.str.contains("USD"), "value"] *= cost_config["USD2013_to_EUR2013"]
@@ -79,12 +79,13 @@ def load_costs(
     )
 
     # TODO set default lifetime as option
+    if "discount rate" not in costs.columns:
+        costs.loc[:, "discount rate"] = cost_config["discountrate"]
     costs = costs.fillna(
         {
             "CO2 intensity": 0,
             "FOM": 0,
             "VOM": 0,
-            "discount rate": cost_config["discountrate"],
             "discount rate": cost_config["discountrate"],
             "efficiency": 1,
             "fuel": 0,
@@ -111,11 +112,11 @@ def load_costs(
 
     if not 0 <= cost_config["pv_utility_fraction"] <= 1:
         raise ValueError("pv_utility_fraction must be between 0 and 1 in cost config")
-    f_util = cost_config["pv_utility_fraction"]
-    costs.at["solar", "capital_cost"] = (
-        f_util * costs.at["solar-utility", "capital_cost"]
-        + (1 - f_util) * costs.at["solar-rooftop", "capital_cost"]
-    )
+    # f_util = cost_config["pv_utility_fraction"]
+    # costs.at["solar", "capital_cost"] = (
+    #     f_util * costs.at["solar-utility", "capital_cost"]
+    #     + (1 - f_util) * costs.at["solar-rooftop", "capital_cost"]
+    # )
 
     def costs_for_storage(store, link1, link2=None, max_hours=1.0):
         capital_cost = link1["capital_cost"] + max_hours * store["capital_cost"]

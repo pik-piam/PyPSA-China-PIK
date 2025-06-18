@@ -1,6 +1,7 @@
-
 plot: True
 plotting:
+  visualize_inputs:
+    reference_costs: true
   network_style_config_file: "config/plotting_styles/network_map.mplstyle"
   transparent: false
   statistics:
@@ -83,6 +84,8 @@ plotting:
     coal boiler: '#787575'
     central coal boiler: '#787575'
     decentral coal boiler: '#787575'
+    coal boiler decentral: '#787575'
+    coal boiler central: '#787575'
     Coal marginal: '#545454'
     solid: '#545454'
     Lignite: '#826837'
@@ -139,6 +142,8 @@ plotting:
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
     gas boiler: '#db6a25'
+    gas boiler decentral: '#db6a25'
+    gas boiler central: '#db6a25'
     gas boilers: '#db6a25'
     gas boiler marginal: '#db6a25'
     residential rural gas boiler: '#d4722e'
@@ -215,7 +220,7 @@ plotting:
     CHP coal: '#8a5751'
     central coal CHP: '#8a5751'
     CHP coal generator: '#8a5751'
-    CHP coal boiler: '#8a7f7d'
+    coal heat: '#8a7f7d'
     gas CHP: '#8f6e6a'
     CHP gas: '#8f6e6a'
     central gas CHP: '#8f6e6a'
@@ -420,6 +425,7 @@ plotting:
   - heat load
   - Load
   - Transmission Lines
+  - transmission lines
   - transmission losses
   - nuclear
   - Nuclear
@@ -431,31 +437,47 @@ plotting:
   - coal power plant
   - coal power plant retrofit
   - coal boiler
+  - coal boiler decentral
+  - coal boiler central
   - CHP coal
   - OCGT
   - gas boiler
+  - gas boiler decentral
+  - gas boiler central
   - CHP gas
   - biomass
   - biomass carbon capture
   - heat pump
   - Heat Pump
-  - resistive heater
   - methanation
   - H2
   - Hydrogen Storage
   - H2 fuel cell
   - H2 CHP
+  - H2
+  - H2 Electrolysis
+  - Hydrogen Storage
+  - H2 fuel cell
+  - H2 CHP
+  - CO2 capture
+  - H2 pipeline
   - hot water storage
   - hydrogen storage
   - solar thermal
   - offshore wind
+  - onwind
+  - offwind
   - Offshore Wind
   - onshore wind
   - Onshore Wind
   - solar PV
   - Solar
+  - solar
   - battery storage
+  - gas
+  - gas OCGT
   - battery discharger
   - battery
   - Battery
-  - gas
+  - resistive heater
+  - Other

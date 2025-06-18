@@ -1,10 +1,14 @@
 # coding: utf-8
 
-""" 
+"""
 Functions for myopic pathway network generation snakemake rules
 
-Add paid-off assets from previous planning horizon to network from next
-        planning horizon
+Add assets from previous planning horizon network solution to 
+network to solve for the current planning horizon.
+
+Usage:
+- use via a snakemake rule
+- debug: use as standalone with mock_snakemake (reads snakefile)
 """
 import logging
 import pandas as pd
@@ -14,7 +18,7 @@ import numpy as np
 import xarray as xr
 
 from add_existing_baseyear import add_build_year_to_new_assets
-from _helpers import override_component_attrs, mock_snakemake, configure_logging
+from _helpers import mock_snakemake, configure_logging
 from constants import PROV_NAMES, OFFSHORE_WIND_NODES
 
 idx = pd.IndexSlice
@@ -139,10 +143,9 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "add_brownfield",
-            opts="ll",
             topology="current+FCG",
             co2_pathway="exp175default",
-            co2_reduction="1.0",
+            heating_demand="positive",
             planning_horizons=2025,
         )
 
@@ -150,12 +153,11 @@ if __name__ == "__main__":
 
     year = int(snakemake.wildcards.planning_horizons)
 
-    overrides = override_component_attrs(snakemake.input.overrides)
-    n = pypsa.Network(snakemake.input.network, override_component_attrs=overrides)
+    n = pypsa.Network(snakemake.input.network)
 
     add_build_year_to_new_assets(n, year)
 
-    n_p = pypsa.Network(snakemake.input.network_p, override_component_attrs=overrides)
+    n_p = pypsa.Network(snakemake.input.network_p)
 
     add_brownfield(n, n_p, year)
 
