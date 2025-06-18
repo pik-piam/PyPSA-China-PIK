@@ -34,9 +34,25 @@ from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
 from readers import read_province_shapes
 
+import pypsa
+import numpy as np
+import geopandas as gpd
+import pandas as pd
+import xarray as xr
+from shapely.geometry import Point
+
+import logging
+
+from _pypsa_helpers import shift_profile_to_planning_year
+from functions import HVAC_cost_curve, haversine
+from vresutils.costdata import annuity
+
 from constants import (
     PROV_NAMES,
     CRS,
+    CO2_HEATING_2020,
+    CO2_EL_2020,
+    LOAD_CONVERSION_FACTOR,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
     NON_LIN_PATH_SCALING,
@@ -775,20 +791,22 @@ def add_heat_coupling(
         location=nodes,
     )
 
+    available_provs = [prov for prov in nodes if prov in heat_demand.columns]
+    if not available_provs:
+        raise ValueError("没有任何省份热需求数据可用，请检查输入数据！")
     network.add(
         "Load",
-        nodes,
+        available_provs,
         suffix=" decentral heat",
-        bus=nodes + " decentral heat",
-        p_set=heat_demand[nodes].multiply(1 - central_fraction[nodes]),
+        bus=[prov + " decentral heat" for prov in available_provs],
+        p_set=heat_demand[available_provs].multiply(1 - central_fraction[available_provs]),
     )
-
     network.add(
         "Load",
-        nodes,
+        available_provs,
         suffix=" central heat",
-        bus=nodes + " central heat",
-        p_set=heat_demand[nodes].multiply(central_fraction[nodes]),
+        bus=[prov + " central heat" for prov in available_provs],
+        p_set=heat_demand[available_provs].multiply(central_fraction[available_provs]),
     )
 
     if "heat pump" in config["Techs"]["vre_techs"]:
@@ -1388,8 +1406,11 @@ def prepare_network(
         print("Load data index:", load.index)
         
         # 最后再选择需要的数据
-        load = load.loc[network.snapshots, PROV_NAMES]
-    network.add("Load", nodes, bus=nodes, p_set=load[nodes])
+        available_provs = [prov for prov in nodes if prov in load.columns]
+        if not available_provs:
+            raise ValueError("没有任何省份数据可用，请检查输入数据！")
+        load = load.loc[network.snapshots, available_provs]
+    network.add("Load", available_provs, bus=available_provs, p_set=load[available_provs])
 
     # add renewables
     network.add(
