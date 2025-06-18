@@ -16,7 +16,7 @@ from scripts._helpers import PathManager, get_cutout_params, ConfigManager
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
-configfile: "config/remind.yaml"
+# configfile: "config/remind.yaml"
 
 
 # ====== make paths =======
@@ -74,7 +74,7 @@ elif config["foresight"] in ["overnight", "myopic"]:
             ),
             expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"]),
             expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"]),
-            expand(RESULTS_DIR + "/plots/costs/parameters_comparison.pdf", 
+            expand(RESULTS_DIR + "/plots/costs/costs_comparison.pdf", 
                    **{k: v for k, v in config["scenario"].items() if k != "planning_horizons"}) if config["enable"].get("check_parameters", True) else []
 
 else:
