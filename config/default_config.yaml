@@ -4,13 +4,13 @@
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
-  name: existinginfra_chp_converted_05x_cheaperwind
+  name: unamed)run
 foresight: "overnight"
 
 paths:
   results_dir: "results/"
   summary_dir: "summary/" # TODO useless?
-  costs_dir: "resources/data/costs/EUR_wind_2x_cheaper"
+  costs_dir: "resources/data/costs/default"
   yearly_regional_load: 
     ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
     # conversion factor to MWh in case ac load file in another unit

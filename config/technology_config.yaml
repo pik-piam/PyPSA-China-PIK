@@ -51,7 +51,7 @@ fossil_ramps:
     ramp_limit_down: 0.5 # fraction of p_nom per hour
 # overly simplistic to not have unit commitment
 nuclear_reactors:
-  p_max_pu: 0.8 # fraction of p_nom, after IEAE
+  p_max_pu: 0.88 # fraction of p_nom, after IEAE
   p_min_pu: 0.7 # fraction of p_nom
 costs:
   discountrate: 0.06
