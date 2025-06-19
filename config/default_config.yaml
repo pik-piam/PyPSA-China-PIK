@@ -72,7 +72,6 @@ enable:
   build_cutout: false
   retrieve_cutout: true
   retrieve_raster: false
-  check_parameters: true 
 
 atlite:
   cutout_name: "China-2020c"

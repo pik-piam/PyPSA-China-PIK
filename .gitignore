@@ -20,6 +20,8 @@ __pycache__
 /resources/data/province_shapes
 /resources/data/landuse_availability/World_EEZ/*eez*
 /workflow/scripts/*.pdf
+/workflow/notebooks/*.py
+
 /results
 !/results/.gitkeep
 /cutouts
