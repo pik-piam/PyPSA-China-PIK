@@ -46,8 +46,8 @@ cluster-generic-cancel-cmd: scancel
 
 # now define the resources
 default-resources:
-  partition: meidum
-  qos: meidum
+  partition: standard
+  qos: short
   mem_mb: 2000
   threads: 4
 set-resources:

@@ -293,7 +293,13 @@ def solve_network(
         # 根据年份导出对偶变量
         if "planning_horizons" in n.meta.get("wildcards", {}):
             current_year = n.meta["wildcards"]["planning_horizons"]
-            export_duals_to_csv_by_year(n, current_year)
+            
+            # 构建dual输出目录路径
+            # 从snakemake输出路径推断结果目录
+            results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
+            dual_output_dir = os.path.join(results_dir, 'dual')
+            
+            export_duals_to_csv_by_year(n, current_year, output_base_dir=dual_output_dir)
     
     return n
 

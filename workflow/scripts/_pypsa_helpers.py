@@ -498,13 +498,14 @@ def process_dual_variables(n):
     
     return n
 
-def export_duals_to_csv_by_year(n, current_year):
+def export_duals_to_csv_by_year(n, current_year, output_base_dir=None):
     """
     将网络模型的对偶变量导出为按年份组织的 CSV 文件。
 
     Args:
         n: 包含 model 属性和 dual 解决方案的网络对象。
         current_year: 当前模拟的年份。
+        output_base_dir: 可选的输出基础目录。如果为None，将尝试从网络文件路径推断。
     """
     if not (hasattr(n, "model") and hasattr(n.model, "dual")):
         logger.info("Network object does not have 'model' or 'model.dual' attribute, skipping dual export.")
@@ -518,8 +519,27 @@ def export_duals_to_csv_by_year(n, current_year):
     # 获取所有对偶变量 (作为一个 pandas Series，方便迭代)
     all_duals = pd.Series(n.model.dual)
 
+    # 确定输出目录
+    if output_base_dir is None:
+        # 尝试从网络文件路径推断结果目录
+        if hasattr(n, '_path') and n._path:
+            network_path = n._path
+        else:
+            # 如果没有路径信息，使用当前工作目录
+            network_path = os.getcwd()
+        
+        # 解析结果目录路径
+        if 'postnetworks' in network_path:
+            results_dir = os.path.dirname(os.path.dirname(network_path))
+        else:
+            # 如果无法确定，使用默认路径
+            results_dir = os.path.join(os.getcwd(), 'results')
+        
+        # 构建dual文件夹路径
+        output_base_dir = os.path.join(results_dir, 'dual')
+    
     # 构建年份相关的输出目录
-    output_dir = f"dual_values_raw_{current_year}"
+    output_dir = os.path.join(output_base_dir, f"dual_values_raw_{current_year}")
     logger.info(f"Attempting to export {len(all_duals)} raw dual variables to '{output_dir}'...")
     os.makedirs(output_dir, exist_ok=True) # 确保年份目录存在
 
