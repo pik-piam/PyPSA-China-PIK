@@ -403,6 +403,27 @@ def process_dual_variables(n):
     import pandas as pd
     import xarray as xr
     
+    # 组件名称映射，处理大小写和复数形式
+    component_mapping = {
+        'generator': 'generators',
+        'generators': 'generators',
+        'link': 'links',
+        'links': 'links',
+        'line': 'lines',
+        'lines': 'lines',
+        'store': 'stores',
+        'stores': 'stores',
+        'storageunit': 'storage_units',
+        'storageunits': 'storage_units',
+        'storage_units': 'storage_units',
+        'bus': 'buses',
+        'buss': 'buses',
+        'buses': 'buses',
+        'globalconstraint': 'global_constraints',
+        'globalconstraints': 'global_constraints',
+        'global_constraints': 'global_constraints',
+    }
+    
     # 获取所有对偶变量
     all_duals = pd.Series(n.model.dual)
     
@@ -414,7 +435,9 @@ def process_dual_variables(n):
         if len(parts) >= 2:
             component = parts[0].lower()
             constraint_type = "-".join(parts[1:])
-            component_name = f"{component}s"
+            
+            # 使用映射获取正确的组件名称
+            component_name = component_mapping.get(component, component)
             attr_name = f"mu_{constraint_type.replace('[', '_').replace(']', '')}"
             
             # 跳过不存在的组件
@@ -507,30 +530,53 @@ def export_duals_to_csv_by_year(n, current_year):
         filepath = os.path.join(output_dir, f"{safe_name}.csv")
 
         try:
-            # 尝试转换为 pandas 对象并保存
-            # 这里我们更积极地尝试各种转换方式，以便保存大多数情况的值
+            # 处理不同类型的对偶变量
             if np.isscalar(value):
+                # 标量值
                 pd.Series([value], index=[name]).to_csv(filepath, header=False)
+                
             elif hasattr(value, 'to_pandas'):
-                 # 优先使用对象自己的 to_pandas 方法 (适合 xarray DataArray/Dataset <= 1D)
-                 # 对于多维 xarray.Dataset，to_pandas() 会失败，我们会在 except 块处理
-                 value.to_pandas().to_csv(filepath)
+                # xarray DataArray 或 Dataset
+                try:
+                    value.to_pandas().to_csv(filepath)
+                except:
+                    # 如果to_pandas失败，尝试其他方法
+                    if hasattr(value, 'values'):
+                        pd.Series(value.values.flatten()).to_csv(filepath, header=False)
+                    else:
+                        pd.Series(value).to_csv(filepath, header=False)
+                        
+            elif isinstance(value, np.ndarray):
+                # numpy数组
+                if value.ndim == 0:
+                    # 0维数组（标量）
+                    pd.Series([value.item()], index=[name]).to_csv(filepath, header=False)
+                elif value.ndim == 1:
+                    # 1维数组
+                    pd.Series(value).to_csv(filepath, header=False)
+                else:
+                    # 多维数组 - 展平后保存
+                    flattened = value.flatten()
+                    pd.Series(flattened).to_csv(filepath, header=False)
+                    
+            elif isinstance(value, (list, tuple)):
+                # 列表或元组
+                pd.Series(value).to_csv(filepath, header=False)
+                
+            elif isinstance(value, dict):
+                # 字典
+                pd.Series(value).to_csv(filepath)
+                
             else:
-                # 尝试将其他类型的数组/列表/字典等转换为 pandas Series 或 DataFrame
+                # 其他类型 - 尝试转换为Series
                 try:
                     pd.Series(value).to_csv(filepath, header=False)
-                except:
-                    try:
-                        pd.DataFrame(value).to_csv(filepath)
-                    except Exception as e:
-                        # 如果上述转换都失败，记录警告并跳过保存
-                        logger.warning(f"Could not convert dual '{name}' to pandas Series or DataFrame for saving: {str(e)}. Skipping CSV save.")
-                        continue # 跳过当前循环，不保存这个变量
-
-            # logger.debug(f"Saved raw dual '{name}' to {filepath}") # 可以根据需要调整日志级别
+                except Exception as e:
+                    logger.warning(f"Could not convert dual '{name}' to pandas format: {str(e)}. Skipping CSV save.")
+                    continue
 
         except Exception as e:
-             # 捕获文件写入错误或 to_pandas() 对多维 Dataset 失败等情况
+             # 捕获文件写入错误或其他异常
              logger.warning(f"Error saving raw dual '{name}' to {filepath}: {str(e)}")
 
     logger.info("Finished attempting to save raw dual variables to CSV.")

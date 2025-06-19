@@ -655,7 +655,6 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         "nodal_cfs": calculate_nodal_cfs,
         "cfs": calculate_cfs,
         "costs": calculate_costs,
-        "costs_by_region": calculate_costs_by_region,
         "co2_balance": calculate_co2_balance,
         "capacities": calculate_capacities,
         "curtailment_pc": calculate_curtailment,

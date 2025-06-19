@@ -35,6 +35,11 @@ def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, dro
         ds = ds[ds != 0]
     ds = ds.dropna()
 
+    # 检查数据是否为空
+    if ds.empty:
+        logger.warning("No data to plot after filtering (dropping zeros and NaN values)")
+        return
+
     logger.info("debuggin plot stat")
     logger.info("all colors:")
     logger.info(colors)
