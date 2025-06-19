@@ -163,7 +163,7 @@ bus_carrier: {
 Techs:
   ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
   vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","heat pump","resistive heater","Sabatier","H2 CHP"]
-  conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
+  conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
   coal_cc: true # currently myopic pathway only.  CC = co2 cap 
   hydrogen_lines: true # currently myopic pathway only
