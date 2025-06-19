@@ -27,12 +27,24 @@ idx = pd.IndexSlice
 opt_name = {"Store": "e", "Line": "s", "Transformer": "s"}
 
 
-def assign_carriers(n):
+def assign_carriers(n: pypsa.Network):
+    """ Assign AC where missing
+    Args:
+        n (pypsa.Network): the network object to fix"""
     if "carrier" not in n.lines:
         n.lines["carrier"] = "AC"
 
 
+# TODO swith to stats backend
 def calculate_nodal_cfs(n: pypsa.Network, label: str, nodal_cfs: pd.DataFrame):
+    """ Calculate the capacity factors by for each node and genertor
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        nodal_cfs (pd.DataFrame): the cap fac dataframe to fill/update
+    Returns:
+        pd.DataFrame: updated nodal_cfs
+    """
     # Beware this also has extraneous locations for country (e.g. biomass)
     # or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
@@ -54,7 +66,6 @@ def calculate_nodal_cfs(n: pypsa.Network, label: str, nodal_cfs: pd.DataFrame):
 
         c.df["p"] = p
         p_c = c.df.groupby(["location", "carrier"])["p"].sum()
-
         cf_c = p_c / capacities_c
 
         index = pd.MultiIndex.from_tuples([(c.list_name,) + t for t in cf_c.index.to_list()])
@@ -64,7 +75,16 @@ def calculate_nodal_cfs(n: pypsa.Network, label: str, nodal_cfs: pd.DataFrame):
     return nodal_cfs
 
 
-def calculate_cfs(n: pypsa.Network, label: str, cfs: pd.DataFrame):
+def calculate_cfs(n: pypsa.Network, label: str, cfs: pd.DataFrame)-> pd.DataFrame:
+    """ Calculate the capacity factors by carrier
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        cfs (pd.DataFrame): the dataframe to fill/update
+    Returns:
+        pd.DataFrame: updated cfs
+    """
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load", "StorageUnit"}
     ):
@@ -78,19 +98,23 @@ def calculate_cfs(n: pypsa.Network, label: str, cfs: pd.DataFrame):
             p = c.pnl.p.abs().mean()
 
         p_c = p.groupby(c.df.carrier).sum()
-
         cf_c = p_c / capacities_c
-
         cf_c = pd.concat([cf_c], keys=[c.list_name])
-
         cfs = cfs.reindex(cf_c.index.union(cfs.index))
-
         cfs.loc[cf_c.index, label] = cf_c
 
     return cfs
 
 
 def calculate_nodal_costs(n: pypsa.Network, label: str, nodal_costs: pd.DataFrame):
+    """Calculate the costs by carrier and location
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        nodal_costs (pd.DataFrame): the dataframe to fill/update
+    Returns:
+        pd.DataFrame: updated nodal_costs
+    """
     # Beware this also has extraneous locations for country (e.g. biomass)
     #  or continent-wide (e.g. fossil gas/oil) stuff
     for c in n.iterate_components(
@@ -131,7 +155,16 @@ def calculate_nodal_costs(n: pypsa.Network, label: str, nodal_costs: pd.DataFram
     return nodal_costs
 
 
-def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame):
+def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame)->pd.DataFrame:
+    """Calculate the costs by carrier
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        costs (pd.DataFrame): the dataframe to fill/update
+    Returns:
+        pd.DataFrame: updated costs
+    """
+
     for c in n.iterate_components(
         n.branch_components | n.controllable_one_port_components ^ {"Load"}
     ):
@@ -180,119 +213,16 @@ def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame):
 
     return costs
 
-def calculate_costs_by_region(n: pypsa.Network, label: str, costs: pd.DataFrame) -> pd.DataFrame:
-    records = []
+
+def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: pd.DataFrame)->pd.DataFrame:
+    """ Calculate the capacities by carrier and node
     
-    try:
-        for c in n.iterate_components(
-            n.branch_components | n.controllable_one_port_components ^ {"Load"}
-        ):
-            if "bus" in c.df.columns:
-                region_map = c.df["bus"].map(n.buses["name"])
-            elif "bus0" in c.df.columns:
-                region_map = c.df["bus0"].map(n.buses["name"])
-            else:
-                continue
-
-            if c.name == "Link":
-                p = c.pnl.p0.multiply(n.snapshot_weightings.generators, axis=0)
-            elif c.name == "Line":
-                continue
-            elif c.name == "StorageUnit":
-                p = c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0)
-                p[p < 0.0] = 0.0
-            else:
-                p = c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0)
-
-            total_energy = p.sum()
-            nom_col = opt_name.get(c.name, "p") + "_nom_opt"
-            capital_costs = c.df.capital_cost * c.df[nom_col]
-
-            energy_grouped = total_energy.groupby([c.df.carrier, region_map]).sum()
-            capital_costs_grouped = capital_costs.groupby([c.df.carrier, region_map]).sum()
-
-            national_energy_cap = {}
-            national_cost_cap = {}
-
-            for (carrier, region) in capital_costs_grouped.index:
-                energy = energy_grouped.get((carrier, region), 0)
-                cost = capital_costs_grouped.loc[(carrier, region)]
-                if energy > 0:
-                    unit_capital_cost = cost / energy
-                    records.append({
-                        "component": c.list_name,
-                        "cost_type": "capital",
-                        "carrier": carrier,
-                        "region": region,
-                        label: unit_capital_cost
-                    })
-                    national_energy_cap[carrier] = national_energy_cap.get(carrier, 0) + energy
-                    national_cost_cap[carrier] = national_cost_cap.get(carrier, 0) + cost
-
-            for carrier in national_cost_cap:
-                if national_energy_cap[carrier] > 0:
-                    unit_national_capital_cost = national_cost_cap[carrier] / national_energy_cap[carrier]
-                    records.append({
-                        "component": c.list_name,
-                        "cost_type": "capital",
-                        "carrier": carrier,
-                        "region": "National",
-                        label: unit_national_capital_cost
-                    })
-
-            # === Marginal ===
-            if c.name == "Store":
-                items = c.df.index[(c.df.carrier == "co2 stored") & (c.df.marginal_cost <= -100.0)]
-                c.df.loc[items, "marginal_cost"] = -20.0
-
-            marginal_costs = (p * c.df.marginal_cost).sum()
-            marginal_costs_grouped = marginal_costs.groupby([c.df.carrier, region_map]).sum()
-
-            national_energy_mar = {}
-            national_cost_mar = {}
-
-            for (carrier, region) in marginal_costs_grouped.index:
-                energy = energy_grouped.get((carrier, region), 0)
-                cost = marginal_costs_grouped.loc[(carrier, region)]
-                if energy > 0:
-                    unit_marginal_cost = cost / energy
-                    records.append({
-                        "component": c.list_name,
-                        "cost_type": "marginal",
-                        "carrier": carrier,
-                        "region": region,
-                        label: unit_marginal_cost
-                    })
-                    national_energy_mar[carrier] = national_energy_mar.get(carrier, 0) + energy
-                    national_cost_mar[carrier] = national_cost_mar.get(carrier, 0) + cost
-
-            for carrier in national_cost_mar:
-                if national_energy_mar[carrier] > 0:
-                    unit_national_marginal_cost = national_cost_mar[carrier] / national_energy_mar[carrier]
-                    records.append({
-                        "component": c.list_name,
-                        "cost_type": "marginal",
-                        "carrier": carrier,
-                        "region": "National",
-                        label: unit_national_marginal_cost
-                    })
-
-        df = pd.DataFrame(records)
-        
-        if df.empty:
-            logger.warning("No records generated in calculate_costs_by_region")
-            return pd.DataFrame(columns=["component", "cost_type", "carrier", "region", label])
-            
-        return df.set_index(["tech", "region"]).sort_index()
-        
-    except Exception as e:
-        logger.error(f"Error in calculate_costs_by_region: {str(e)}")
-        return pd.DataFrame(columns=["component", "cost_type", "carrier", "region", label])
-
-
-
-
-def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: pd.DataFrame):
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        nodal_capacities (pd.DataFrame): the dataframe to fill/update
+    Returns:
+        pd.DataFrame: updated nodal_capacities"""
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide
     #  (e.g. fossil gas/oil) stuff
     nodal_cap = n.statistics.optimal_capacity(groupby=pypsa.statistics.get_bus_and_carrier)
@@ -365,7 +295,16 @@ def calculate_co2_balance(
     return co2_balance
 
 
-def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFrame):
+def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFrame) -> pd.DataFrame:
+    """Calculate curtailed energy by carrier
+    
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        curtailment (pd.DataFrame): the dataframe to fill/update
+    Returns:
+        pd.DataFrame: updated curtailment 
+    """
     p_avail_by_carr = (
         n.generators_t.p_max_pu.multiply(n.generators.p_nom_opt)
         .sum()
@@ -381,7 +320,7 @@ def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFram
     return curtailment
 
 
-def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame):
+def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame)->pd.DataFrame:
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         try:
             if c.name in n.one_port_components:
@@ -473,6 +412,14 @@ def calculate_supply_energy(
 
 
 def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
+    """LEGACY calculate a set of metrics for lines and co2
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label to update the table row with
+        metrics (pd.DataFrame): the dataframe to write to (not needed, refactor)
+    Returns:
+        pd.DataFrame: updated metrics"""
+
     metrics_list = [
         "line_volume",
         "line_volume_limit",
@@ -504,6 +451,15 @@ def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
 
 
 def calculate_t_avgd_prices(n: pypsa.Network, label: str, prices: pd.DataFrame):
+    """ Time averaged prices for nodes averaged over carrier (bit silly?)
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label representing the pathway (not needed, refactor)
+        prices (pd.DataFrame): the dataframe to write to (not needed, refactor)
+    Returns:
+        pd.DataFrame: updated prices
+    """
     prices = prices.reindex(prices.index.union(n.buses.carrier.unique()))
 
     # WARNING: this is time-averaged, see weighted_prices for load-weighted average
@@ -544,7 +500,15 @@ def calculate_weighted_prices(
     return weighted_prices
 
 
-def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.DataFrame):
+def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.DataFrame)-> pd.DataFrame:
+    """ Calculate the market value of the generators and links
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label representing the pathway
+        market_values (pd.DataFrame): the dataframe to write to (not needed, refactor)
+    Returns:
+        pd.DataFrame: updated market_values
+    """
     # Warning: doesn't include storage units
         
     carrier = "AC"
@@ -740,7 +704,14 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
 
 
 # TODO move to helper?
-def expand_from_wildcard(key, config):
+def expand_from_wildcard(key, config)-> list:
+    """return a list of values for the given key in the config file
+    Args:
+        key (str): the key to look for in the config file
+        config (dict): the config file
+    Returns:
+        list: a list of values for the given key
+    """
     w = getattr(wildcards, key)
     return config["scenario"][key] if w == "all" else [w]
 

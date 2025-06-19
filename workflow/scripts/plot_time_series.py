@@ -273,36 +273,46 @@ def plot_residual_load_duration_curve(
     return ax
 
 
-def plot_price_duration_curve(network: pypsa.Network, ax: plt.Axes = None) -> plt.Axes:
+def plot_price_duration_curve(
+    network: pypsa.Network, carrier="AC", ax: plt.Axes = None, figsize=(8, 8)
+) -> plt.Axes:
     """plot the price duration curve for the given carrier
 
     Args:
         network (pypsa.Network): the pypasa network object
+        carrier (str, optional): the load carrier, defaults to AC
         ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
-
+        figsize (tuple, optional): size of the figure (if no ax given), defaults to (8, 8)
     Returns:
         plt.Axes: the plotting axes
     """
     if not ax:
-        fig, ax = plt.subplots(figsize=(16, 8))
+        fig, ax = plt.subplots(figsize=figsize)
     else:
         fig = ax.get_figure()
 
     ntwk_el_price = (
         -1
-        * network.statistics.revenue(bus_carrier="AC", aggregate_time=False, comps="Load")
-        / network.statistics.withdrawal(bus_carrier="AC", aggregate_time=False, comps="Load")
+        * network.statistics.revenue(bus_carrier=carrier, aggregate_time=False, comps="Load")
+        / network.statistics.withdrawal(bus_carrier=carrier, aggregate_time=False, comps="Load")
+    ).T
+    ntwk_el_price.rename(columns={"-": "Load"}, inplace=True)
+    ntwk_el_price.Load.sort_values(ascending=False).reset_index(drop=True).plot(
+        title="Price Duration Curve", ax=ax, lw=2
     )
-    ntwk_el_price.T.Load.sort_values(ascending=False).reset_index(drop=True).plot(title="Price Duration Curve", ax =ax, lw=2)
     fig.tight_layout()
 
     return ax
 
 
-def plot_load_duration_by_node(
-    network: pypsa.Network, carrier: str = "AC", logy=True, y_lower=1e-3, fig_shape=(8, 4)
+def plot_price_duration_by_node(
+    network: pypsa.Network,
+    carrier: str = "AC",
+    logy=True,
+    y_lower=1e-3,
+    fig_shape=(8, 4),
 ) -> plt.Axes:
-    """Plot the load duration curve for the given carrier by node
+    """Plot the price duration curve for the given carrier by node
     Args:
         network (pypsa.Network): the pypsa network object
         carrier (str, optional): the load carrier, defaults to AC (bus suffix)
@@ -352,8 +362,12 @@ def plot_load_duration_by_node(
     return ax
 
 
-def plot_price_map(
-    network: pypsa.Network, carrier="AC", log_values=False, color_map="viridis", ax: plt.Axes = None
+def plot_price_heatmap(
+    network: pypsa.Network,
+    carrier="AC",
+    log_values=False,
+    color_map="viridis",
+    ax: plt.Axes = None,
 ) -> plt.Axes:
     """plot the price heat map (region vs time) for the given carrier
 
@@ -397,7 +411,7 @@ def plot_price_map(
     ax.set_ylabel("Nodes")
     fig.tight_layout()
 
-    return
+    return ax
 
 
 if __name__ == "__main__":

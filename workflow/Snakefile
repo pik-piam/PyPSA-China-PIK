@@ -73,9 +73,7 @@ elif config["foresight"] in ["overnight", "myopic"]:
                 **config["scenario"]
             ),
             expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"]),
-            expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"]),
-            expand(RESULTS_DIR + "/plots/costs/costs_comparison.pdf", 
-                   **{k: v for k, v in config["scenario"].items() if k != "planning_horizons"}) if config["enable"].get("check_parameters", True) else []
+            expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"])
 
 else:
     raise ValueError("Invalid scenario config: {}".format(config["foresight"]))
@@ -349,7 +347,7 @@ elif config["foresight"] == "myopic":
             tech_costs="resources/data/costs/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
             **{f"existing_{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
-               for tech in config['existing_capacities']['techs']},
+               for tech in config.get('existing_infrastructure',[])},
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         wildcard_constraints:
             planning_horizons=config['scenario']['planning_horizons'][0] #only applies to baseyear
