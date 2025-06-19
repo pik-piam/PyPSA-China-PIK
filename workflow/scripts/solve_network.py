@@ -353,6 +353,10 @@ if __name__ == "__main__":
     n = pypsa.Network(snakemake.input.network_name)
 
     n = prepare_network(n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons)
+    
+    # 在solve_network之前设置meta信息，这样对偶变量导出时能获取到wildcards
+    n.meta.update(dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards))))
+    
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
 
@@ -374,7 +378,6 @@ if __name__ == "__main__":
     if "p2" in n.links_t:
         n.links_t.p2 = n.links_t.p2.astype(float)
 
-    n.meta.update(dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards))))
     n.export_to_netcdf(snakemake.output[0])
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")

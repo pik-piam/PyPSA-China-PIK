@@ -104,7 +104,8 @@ if __name__ == "__main__":
     if "installed_capacity" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.installed_capacity(groupby=["carrier"]).dropna()
-        ds.drop("stations", level=1, inplace=True)
+        if ds.index.names and "stations" in ds.index.names:
+            ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
@@ -120,7 +121,8 @@ if __name__ == "__main__":
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
-        ds.drop("stations", level=1, inplace=True)
+        if ds.index.names and "stations" in ds.index.names:
+            ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])

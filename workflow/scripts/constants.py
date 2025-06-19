@@ -4,6 +4,7 @@ Soft coded centalized `constants`
 
 import os
 import re
+import pandas as pd
 
 # ======= CONVERSIONS =======
 PLOT_COST_UNITS = 1e9  # bnEur
@@ -68,6 +69,7 @@ REGIONAL_GEO_TIMEZONES_DEFAULT = {
 # use different file for tests
 def get_province_names() -> list:
     """HACK to make it possible for pytest to generate a smaller network
+    支持通过环境变量 PROV_NAMES 或 province_codes.csv 文件来控制运行区域
 
     Raises:
         ValueError: if the PROV_NAMES is not a list or str
@@ -76,16 +78,34 @@ def get_province_names() -> list:
         list: the province node names to build the network
     """
     default_prov_names = list(REGIONAL_GEO_TIMEZONES_DEFAULT)
-    _provs = os.getenv("PROV_NAMES", default_prov_names)
-    if isinstance(_provs, str):
-        _provs = re.findall(r"[\w']+", _provs)
-        if not _provs:
-            xpected = '["region1", ...]'
-            err = f"Environment var PROV_NAMES {_provs} for tests did not have expected format: "
-            raise ValueError(err + xpected)
-    elif not isinstance(_provs, list):
-        raise ValueError("PROV_NAMES must be a list or str")
-    return _provs
+    
+    # 首先尝试从环境变量读取
+    _provs = os.getenv("PROV_NAMES", None)
+    if _provs is not None:
+        if isinstance(_provs, str):
+            _provs = re.findall(r"[\w']+", _provs)
+            if not _provs:
+                expected = '["region1", ...]'
+                err = f"Environment var PROV_NAMES {_provs} for tests did not have expected format: "
+                raise ValueError(err + expected)
+        elif not isinstance(_provs, list):
+            raise ValueError("PROV_NAMES must be a list or str")
+        return _provs
+    
+    # 如果环境变量不存在，尝试从 province_codes.csv 文件读取
+    csv_path = "resources/data/regions/province_codes.csv"
+    if os.path.exists(csv_path):
+        try:
+            df = pd.read_csv(csv_path)
+            if "Full name" in df.columns:  # 使用"Full name"列
+                provs = df["Full name"].dropna().unique().tolist()
+                if provs:
+                    return provs
+        except Exception as e:
+            print(f"读取 {csv_path} 失败，使用默认省份。错误信息：{e}")
+    
+    # 最后使用默认省份列表
+    return default_prov_names
 
 
 def filter_buses(names) -> list:
