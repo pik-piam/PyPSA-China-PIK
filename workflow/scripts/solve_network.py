@@ -286,6 +286,9 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
 
         to_constrain = pd.concat([ususal_comps, paidoff_comp], axis=0)
         to_constrain.rename_axis(index=f"{component}-ext", inplace=True)
+        # otherwise n.model query will fail. This is needed in case freeze_compoents was used
+        # it is fine so long as p_nom is zero for the frozen components
+        to_constrain = to_constrain.query("p_nom_extendable==True")
         to_constrain["grouper"] = to_constrain.index.str.replace("_paid_off", "")
 
         grouper = xr.DataArray(to_constrain.grouper, dims=[f"{component}-ext"])
@@ -381,7 +384,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
+            co2_pathway="SSP2-PkBudg1000-AdjCosts",
             planning_horizons="2090",
             topology="current+FCG",
             # heating_demand="positive",
