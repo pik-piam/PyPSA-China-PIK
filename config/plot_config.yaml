@@ -142,6 +142,9 @@ plotting:
     CCGT: '#a85522'
     CCGT gas: '#a85522'
     gas CCGT: '#a85522'
+    gas cc: '#a85522'
+    CCGT-CCS: '#76855B'
+    gas CCGT-CCS: '#76855B'
     gas boiler: '#db6a25'
     gas boiler decentral: '#db6a25'
     gas boiler central: '#db6a25'
@@ -325,7 +328,7 @@ plotting:
     industry electricity: '#2d2a66'
     industry new electricity: '#2d2a66'
     agriculture electricity: '#494778'
-
+    load shedding: "#dd2e23"
     # syngas
     Sabatier: '#9850ad'
     methanation: '#c44ce6'
@@ -393,6 +396,7 @@ plotting:
     gas OCGT: "Open-Cycle Gas"
     CCGT: "Combined-Cycle Gas"
     gas CCGT: "Combined-Cycle Gas"
+    gas cc: "Gas with Carbon Capture"
     CCGT gas: "Combined-Cycle Gas"
     heat pump: "Heat Pump"
     stations-AC: "Reservoir & Dam"
@@ -427,10 +431,10 @@ plotting:
   - Transmission Lines
   - transmission lines
   - transmission losses
-  - nuclear
-  - Nuclear
   - hydroelectricity
   - Hydroelectricity
+  - nuclear
+  - Nuclear
   - Coal
   - coal
   - coal carbon capture
@@ -439,8 +443,11 @@ plotting:
   - coal boiler
   - coal boiler decentral
   - coal boiler central
+  - gas
   - CHP coal
   - gas CCGT
+  - CCGT-CCS
+  - gas CCGT-CCS 
   - Combined-Cycle Gas
   - gas boiler
   - gas boiler decentral
@@ -475,7 +482,6 @@ plotting:
   - Solar
   - solar
   - battery storage
-  - gas
   - OCGT
   - gas OCGT
   - battery discharger
