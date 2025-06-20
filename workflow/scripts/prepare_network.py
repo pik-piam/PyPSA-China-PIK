@@ -182,6 +182,8 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         network.add("Carrier", "gas", co2_emissions=costs.at["gas", "co2_emissions"])
     if config["add_coal"]:
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
+    if "CCGT-CCS" in config["Techs"]["conv_techs"]:
+        network.add("Carrier", "gas cc", co2_emissions=costs.at["gas cc", "co2_emissions"])
 
 
 def add_co2_capture_support(
@@ -329,6 +331,22 @@ def add_conventional_generators(
                 carrier=f"gas {tech}",
             )
 
+    if "CCGT-CCS" in config["Techs"]["conv_techs"]:
+        network.add(
+            "Generator",
+            nodes,
+            suffix=" CCGT-CCS",
+            bus=nodes,
+            carrier="gas cc",
+            p_nom_extendable=True,
+            efficiency=costs.at["CCGT-CCS", "efficiency"],
+            marginal_cost=costs.at["CCGT-CCS", "marginal_cost"],
+            capital_cost=costs.at["CCGT-CCS", "efficiency"]
+            * costs.at["CCGT-CCS", "capital_cost"],  # NB: capital cost is per MWel
+            lifetime=costs.at["CCGT-CCS", "lifetime"],
+            p_max_pu=0.9,  # planned and forced outages
+        )
+
     if config["add_coal"]:
         ramps = config.get(
             "fossil_ramps", {"coal": {"ramp_limit_up": np.nan, "ramp_limit_down": np.nan}}
@@ -351,6 +369,7 @@ def add_conventional_generators(
             lifetime=costs.at["coal", "lifetime"],
             ramp_limit_up=ramps["ramp_limit_up"],
             ramp_limit_down=ramps["ramp_limit_down"],
+            p_max_pu=0.9,  # planned and forced outages
         )
 
 
@@ -803,7 +822,7 @@ def add_heat_coupling(
     )
 
     if "heat pump" in config["Techs"]["vre_techs"]:
-        logger.info(f"loading cop profiles from {paths["cop_name"]}")
+        logger.info(f"loading cop profiles from {paths['cop_name']}")
         with pd.HDFStore(paths["cop_name"], mode="r") as store:
             ashp_cop = store["ashp_cop_profiles"]
             ashp_cop.index = ashp_cop.index.tz_localize(None)
@@ -1552,10 +1571,10 @@ if __name__ == "__main__":
             "prepare_networks",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
+            co2_pathway="SSP2-PkBudg1000-freeze",
             planning_horizons=2030,
             heating_demand="positive",
-            configfiles="resources/tmp/remind_coupled_heat.yaml",
+            configfiles="resources/tmp/remind_coupled.yaml",
         )
 
     configure_logging(snakemake)

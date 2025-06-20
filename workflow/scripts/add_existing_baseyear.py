@@ -691,6 +691,9 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["OCGT"]):
     # Freeze VRE and conventional techs
     freeze = config["Techs"]["vre_techs"] + config["Techs"]["conv_techs"]
     freeze = [f for f in freeze if not f in exclude]
+    # very ugly
+    to_fix = {"OCGT": "gas OCGT", "CCGT": "gas CCGT", "CCGT-CCS": "gas cc"}
+    freeze += [to_fix[k] for k in to_fix if k in freeze]
 
     for comp in ["generators", "links"]:
         query = "carrier in @freeze & p_nom_extendable == True"
@@ -701,6 +704,24 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["OCGT"]):
         mask = components.query(query).index
         components.loc[mask, "p_nom_extendable"] = False
 
+    # add load shedding
+    # intersect between macroeconomic and surveybased willingness to pay
+    # http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full
+    n.add("Carrier", "load shedding", color="#dd2e23", nice_name="Load shedding")
+    buses_i = n.buses.query("carrier == 'AC'").index
+    # TODO: do not scale via sign attribute (use Eur/MWh instead of Eur/kWh)
+    load_shedding = 1e5  # Eur/MWh
+
+    n.add(
+        "Generator",
+        buses_i,
+        " load shedding",
+        bus=buses_i,
+        carrier="load shedding",
+        marginal_cost=load_shedding,  # Eur/Wh
+        p_nom_extendable=True,
+    )
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -708,8 +729,8 @@ if __name__ == "__main__":
             "add_existing_baseyear",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-AdjCosts",
-            planning_horizons="2055",
+            co2_pathway="SSP2-PkBudg1000-freeze",
+            planning_horizons="2025",
             configfiles="resources/tmp/remind_coupled.yaml",
             # heating_demand="positive",
         )
@@ -763,12 +784,12 @@ if __name__ == "__main__":
     pathway = snakemake.wildcards.co2_pathway
     co2_opts = ConfigManager(config).fetch_co2_restriction(pathway, yr)
     if co2_opts["control"] == "price":
-        add_emission_prices(n, co2_opts)
+        add_emission_prices(n, emission_prices={"co2": co2_opts["co2_pr_or_limit"]})
 
     if config["run"].get("is_remind_coupled", False) & (
         config["existing_capacities"].get("freeze_new", False)
     ):
-        freeze_components(n, config, exclude=["OCGT"])
+        freeze_components(n, config, exclude=["H2 fuel cell", "H2 Electrolysis"])
 
     compression = snakemake.config.get("io", None)
     if compression:
