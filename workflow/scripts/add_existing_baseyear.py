@@ -678,14 +678,38 @@ def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_
     logger.info(f"\tEmission prices: {emission_prices}")
 
 
+def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["OCGT"]):
+    """Set p_nom_extendable=False for the components in the network.
+    Applies to vre_techs and conventional technologies not in the exclude list.
+
+    Args:
+        n (pypsa.Network): the network object
+        config (dict): the configuration dictionary
+        exclude (list, optional): list of technologies to exclude from freezing. Defaults to ["OCGT"]
+    """
+
+    # Freeze VRE and conventional techs
+    freeze = config["Techs"]["vre_techs"] + config["Techs"]["conv_techs"]
+    freeze = [f for f in freeze if not f in exclude]
+
+    for comp in ["generators", "links"]:
+        query = "carrier in @freeze & p_nom_extendable == True"
+        components = getattr(n, comp)
+        # p_nom_max_rcl.isna(): exclude paid_off as needed
+        if "p_nom_max_rcl" in components.columns:
+            query += " & p_nom_max_rcl.isna()"
+        mask = components.query(query).index
+        components.loc[mask, "p_nom_extendable"] = False
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "add_existing_baseyear",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2020",
+            co2_pathway="SSP2-PkBudg1000-AdjCosts",
+            planning_horizons="2055",
             configfiles="resources/tmp/remind_coupled.yaml",
             # heating_demand="positive",
         )
@@ -740,6 +764,11 @@ if __name__ == "__main__":
     co2_opts = ConfigManager(config).fetch_co2_restriction(pathway, yr)
     if co2_opts["control"] == "price":
         add_emission_prices(n, co2_opts)
+
+    if config["run"].get("is_remind_coupled", False) & (
+        config["existing_capacities"].get("freeze_new", False)
+    ):
+        freeze_components(n, config, exclude=["OCGT"])
 
     compression = snakemake.config.get("io", None)
     if compression:

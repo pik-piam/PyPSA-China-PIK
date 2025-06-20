@@ -283,7 +283,6 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         # find equivalent usual components
         ususal_comps_idx = paidoff_comp.index.str.replace("_paid_off", "")
         ususal_comps = getattr(n, component.lower() + "s").loc[ususal_comps_idx].copy()
-        ususal_comps = ususal_comps[~ususal_comps.p_nom_max.isin([np.inf, np.nan])]
 
         to_constrain = pd.concat([ususal_comps, paidoff_comp], axis=0)
         to_constrain.rename_axis(index=f"{component}-ext", inplace=True)
@@ -383,7 +382,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "solve_networks",
             co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2030",
+            planning_horizons="2090",
             topology="current+FCG",
             # heating_demand="positive",
             configfiles="resources/tmp/remind_coupled.yaml",
