@@ -1,0 +1,44 @@
+general:
+  output_dir: "../../workflow/output"
+  target_year: 2030
+  weekdays_per_year: 260
+  weekends_holidays_per_year: 105
+  ej_to_twh: 277.778
+
+gompertz:
+  enabled: true
+  saturation_level: 500
+  alpha: -5.58
+  start_year: 2020
+  end_year: 2060
+
+models:
+  remind:
+    file_path: "/p/tmp/ivanra/REMIND/output/SSP2-PkBudg1000-NoExprt_2025-06-11_14.54.13/EDGE-T/Transport.mif"
+    separator: ";"
+    region: "CHA"
+
+departments:
+  transport:
+    enabled: true
+    variable_prefix: "FE|Transport"
+    variable_contains: "Electricity"
+    profile_file: "../../workflow/output/normalized_profiles.csv"
+    ev_types_file: "../../resources/data/load/EVtypes.xlsx"
+    weekend_ratios:
+      Private car: 1.0290
+      Taxi: 0.9411
+      Official car: 1.0373
+      Rental car: 1.1713
+      Bus: 0.8772
+      SPV: 1.0948
+  
+  heating:
+    enabled: false
+    variable_prefix: "FE|Buildings"
+    variable_contains: "Electricity"
+    profile_file: "../../workflow/output/heating_profiles.csv"
+    weekend_ratios:
+      Residential: 1.1
+      Commercial: 0.8
+      Industrial: 0.9 

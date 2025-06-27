@@ -5,11 +5,39 @@ import pandas as pd
 import numpy as np
 import logging
 import pytz
+from typing import Optional, Dict, Any, Union, List
+from pathlib import Path
 
 import pypsa
 
 # get root logger
 logger = logging.getLogger()
+
+# 类型别名定义
+ComponentName = str
+ConstraintType = str
+DualValue = Union[float, np.ndarray, xr.DataArray, List[float], Dict[str, float]]
+
+# 组件映射常量
+COMPONENT_MAPPING: Dict[str, str] = {
+    'generator': 'generators',
+    'generators': 'generators',
+    'link': 'links',
+    'links': 'links',
+    'line': 'lines',
+    'lines': 'lines',
+    'store': 'stores',
+    'stores': 'stores',
+    'storageunit': 'storage_units',
+    'storageunits': 'storage_units',
+    'storage_units': 'storage_units',
+    'bus': 'buses',
+    'buss': 'buses',
+    'buses': 'buses',
+    'globalconstraint': 'global_constraints',
+    'globalconstraints': 'global_constraints',
+    'global_constraints': 'global_constraints',
+}
 
 
 def get_location_and_carrier(
@@ -393,210 +421,296 @@ def update_p_nom_max(n: pypsa.Network) -> None:
     n.generators.p_nom_max = n.generators[["p_nom_min", "p_nom_max"]].max(1)
 
 
-def process_dual_variables(n):
+def process_dual_variables(network: pypsa.Network) -> pypsa.Network:
     """
-    处理网络模型的对偶变量并将其添加到网络对象中
+    处理网络模型的对偶变量并将其添加到网络对象中。
+    
+    该函数解析模型的对偶变量，将其映射到相应的网络组件，并添加为组件的属性。
+    对于无法直接映射的复杂对偶变量，将其存储在network.duals字典中。
     
     Args:
-        n: 包含模型和对偶变量的网络对象
+        network: 包含模型和对偶变量的PyPSA网络对象
+        
+    Returns:
+        pypsa.Network: 处理后的网络对象，包含对偶变量属性
+        
+    Raises:
+        AttributeError: 如果网络对象没有model或dual属性
+        ValueError: 如果对偶变量格式不正确
+        
+    Example:
+        >>> n = pypsa.Network("network.nc")
+        >>> n = process_dual_variables(n)
+        >>> # 现在可以访问对偶变量
+        >>> shadow_price = n.generators.mu_p_nom_upper
+        >>> nodal_balance = n.buses.mu_nodal_balance
     """
-    import pandas as pd
-    import xarray as xr
+    if not hasattr(network, "model") or not hasattr(network.model, "dual"):
+        raise AttributeError("Network object must have 'model' and 'model.dual' attributes")
     
-    # 组件名称映射，处理大小写和复数形式
-    component_mapping = {
-        'generator': 'generators',
-        'generators': 'generators',
-        'link': 'links',
-        'links': 'links',
-        'line': 'lines',
-        'lines': 'lines',
-        'store': 'stores',
-        'stores': 'stores',
-        'storageunit': 'storage_units',
-        'storageunits': 'storage_units',
-        'storage_units': 'storage_units',
-        'bus': 'buses',
-        'buss': 'buses',
-        'buses': 'buses',
-        'globalconstraint': 'global_constraints',
-        'globalconstraints': 'global_constraints',
-        'global_constraints': 'global_constraints',
-    }
+    if network.model.dual is None or len(network.model.dual) == 0:
+        logger.info("No dual variables found in network model")
+        return network
     
     # 获取所有对偶变量
-    all_duals = pd.Series(n.model.dual)
+    all_duals = pd.Series(network.model.dual)
+    processed_duals: Dict[str, Any] = {}
     
-    # 创建一个字典临时存储处理后的对偶变量
-    processed_duals = {}
+    for dual_name, dual_value in all_duals.items():
+        try:
+            _process_single_dual_variable(network, dual_name, dual_value, processed_duals)
+        except Exception as e:
+            logger.warning(f"Failed to process dual variable '{dual_name}': {str(e)}")
+            continue
     
-    for name, value in all_duals.items():
-        parts = name.split("-")
-        if len(parts) >= 2:
-            component = parts[0].lower()
-            constraint_type = "-".join(parts[1:])
-            
-            # 使用映射获取正确的组件名称
-            component_name = component_mapping.get(component, component)
-            attr_name = f"mu_{constraint_type.replace('[', '_').replace(']', '')}"
-            
-            # 跳过不存在的组件
-            if not hasattr(n, component_name):
-                logger.warning(f"Component {component_name} not found in network")
-                continue
-            
-            # 获取组件对象
-            component_obj = getattr(n, component_name)
-            
-            try:
-                if np.isscalar(value):
-                    # 标量值 - 创建包含该值的Series并添加
-                    component_obj[attr_name] = pd.Series(value, index=component_obj.index)
-                    logger.info(f"Added scalar value {value} for {component_name}.{attr_name}")
-                
-                elif len(np.shape(value)) == 1:
-                    # 一维数组 - 需要映射到正确的索引
-                    if isinstance(value, xr.DataArray) and hasattr(value, 'coords'):
-                        # 从xarray获取索引映射
-                        orig_indices = value.coords[value.dims[0]].values
-                        # 创建一个映射字典
-                        value_dict = {str(idx): val for idx, val in zip(orig_indices, value.values)}
-                        
-                        # 为网络组件的每个索引分配值
-                        series = pd.Series(index=component_obj.index)
-                        for idx in component_obj.index:
-                            # 尝试不同的匹配方式
-                            if idx in value_dict:
-                                series[idx] = value_dict[idx]
-                            elif str(idx) in value_dict:
-                                series[idx] = value_dict[str(idx)]
-                            # 如果找不到匹配项，保持为NaN
-                        
-                        component_obj[attr_name] = series
-                        logger.info(f"Added matched 1D array for {component_name}.{attr_name}")
-                    else:
-                        # 如果没有坐标信息，尝试直接匹配
-                        if len(value) == len(component_obj):
-                            component_obj[attr_name] = pd.Series(value, index=component_obj.index)
-                            logger.info(f"Added 1D array for {component_name}.{attr_name} based on length match")
-                        else:
-                            logger.warning(f"Cannot match indices for {component_name}.{attr_name}, storing separately")
-                            # 保存到单独的字典中
-                            processed_duals[f"{component_name}_{attr_name}"] = value
-                
-                else:
-                    # 多维数组 - 单独保存
-                    logger.warning(f"Multi-dimensional array for {component_name}.{attr_name}, storing separately")
-                    processed_duals[f"{component_name}_{attr_name}"] = value
-                
-            except Exception as e:
-                logger.warning(f"Error processing {component_name}.{attr_name}: {str(e)}")
+    # 将处理过的对偶变量添加到网络对象
+    network.duals = processed_duals
+    logger.info(f"Successfully processed {len(processed_duals)} dual variables")
+    
+    return network
 
-    # 将处理过的对偶变量添加到网络对象的属性中
-    n.duals = processed_duals
-    logger.info(f"Added {len(processed_duals)} processed dual variables to network.duals")
-    
-    return n
 
-def export_duals_to_csv_by_year(n, current_year, output_base_dir=None):
+def _process_single_dual_variable(
+    network: pypsa.Network, 
+    dual_name: str, 
+    dual_value: DualValue, 
+    processed_duals: Dict[str, Any]
+) -> None:
     """
-    将网络模型的对偶变量导出为按年份组织的 CSV 文件。
-
+    处理单个对偶变量。
+    
     Args:
-        n: 包含 model 属性和 dual 解决方案的网络对象。
-        current_year: 当前模拟的年份。
-        output_base_dir: 可选的输出基础目录。如果为None，将尝试从网络文件路径推断。
+        network: PyPSA网络对象
+        dual_name: 对偶变量名称
+        dual_value: 对偶变量值
+        processed_duals: 存储无法直接映射的对偶变量的字典
     """
-    if not (hasattr(n, "model") and hasattr(n.model, "dual")):
-        logger.info("Network object does not have 'model' or 'model.dual' attribute, skipping dual export.")
-        return # 不满足条件，直接返回
-
-    # 检查对偶变量是否为空
-    if n.model.dual is None or len(n.model.dual) == 0:
-        logger.info("n.model.dual is empty or None, no dual variables to export.")
+    parts = dual_name.split("-")
+    if len(parts) < 2:
+        logger.warning(f"Invalid dual variable name format: {dual_name}")
         return
+    
+    component_type = parts[0].lower()
+    constraint_type = "-".join(parts[1:])
+    
+    # 获取正确的组件名称
+    component_name = COMPONENT_MAPPING.get(component_type, component_type)
+    if not hasattr(network, component_name):
+        logger.warning(f"Component '{component_name}' not found in network")
+        return
+    
+    # 生成属性名称
+    attr_name = f"mu_{constraint_type.replace('[', '_').replace(']', '')}"
+    component_obj = getattr(network, component_name)
+    
+    # 根据对偶变量类型进行处理
+    if np.isscalar(dual_value):
+        _add_scalar_dual(component_obj, attr_name, dual_value)
+    elif len(np.shape(dual_value)) == 1:
+        _add_1d_dual(component_obj, attr_name, dual_value, processed_duals, dual_name)
+    else:
+        _add_multidimensional_dual(component_obj, attr_name, dual_value, processed_duals, dual_name)
 
-    # 获取所有对偶变量 (作为一个 pandas Series，方便迭代)
-    all_duals = pd.Series(n.model.dual)
 
+def _add_scalar_dual(component_obj: pd.DataFrame, attr_name: str, value: float) -> None:
+    """为组件添加标量对偶变量。"""
+    component_obj[attr_name] = pd.Series(value, index=component_obj.index)
+    logger.debug(f"Added scalar dual variable: {attr_name} = {value}")
+
+
+def _add_1d_dual(
+    component_obj: pd.DataFrame, 
+    attr_name: str, 
+    value: Union[np.ndarray, xr.DataArray], 
+    processed_duals: Dict[str, Any], 
+    dual_name: str
+) -> None:
+    """为组件添加一维对偶变量。"""
+    if isinstance(value, xr.DataArray) and hasattr(value, 'coords'):
+        _add_xarray_dual(component_obj, attr_name, value)
+    elif len(value) == len(component_obj):
+        component_obj[attr_name] = pd.Series(value, index=component_obj.index)
+        logger.debug(f"Added 1D dual variable: {attr_name}")
+    else:
+        processed_duals[f"{component_obj.name}_{attr_name}"] = value
+        logger.warning(f"Could not match indices for {attr_name}, stored in processed_duals")
+
+
+def _add_xarray_dual(component_obj: pd.DataFrame, attr_name: str, value: xr.DataArray) -> None:
+    """处理xarray类型的对偶变量。"""
+    orig_indices = value.coords[value.dims[0]].values
+    value_dict = {str(idx): val for idx, val in zip(orig_indices, value.values)}
+    
+    series = pd.Series(index=component_obj.index)
+    for idx in component_obj.index:
+        if idx in value_dict:
+            series[idx] = value_dict[idx]
+        elif str(idx) in value_dict:
+            series[idx] = value_dict[str(idx)]
+    
+    component_obj[attr_name] = series
+    logger.debug(f"Added xarray dual variable: {attr_name}")
+
+
+def _add_multidimensional_dual(
+    component_obj: pd.DataFrame, 
+    attr_name: str, 
+    value: np.ndarray, 
+    processed_duals: Dict[str, Any], 
+    dual_name: str
+) -> None:
+    """处理多维对偶变量。"""
+    processed_duals[f"{component_obj.name}_{attr_name}"] = value
+    logger.warning(f"Multi-dimensional dual variable '{dual_name}' stored in processed_duals")
+
+
+def export_duals_to_csv_by_year(
+    network: pypsa.Network, 
+    current_year: Union[int, str], 
+    output_base_dir: Optional[Union[str, Path]] = None
+) -> None:
+    """
+    将网络模型的对偶变量导出为按年份组织的CSV文件。
+    
+    该函数将网络模型中的所有对偶变量导出为CSV文件，按年份组织在指定目录下。
+    支持多种数据类型，包括标量、数组、xarray对象等。
+    
+    Args:
+        network: 包含模型和对偶变量的PyPSA网络对象
+        current_year: 当前模拟的年份
+        output_base_dir: 输出基础目录。如果为None，将尝试从网络文件路径推断
+        
+    Raises:
+        AttributeError: 如果网络对象没有model或dual属性
+        OSError: 如果无法创建输出目录或写入文件
+        
+    Example:
+        >>> n = pypsa.Network("network.nc")
+        >>> export_duals_to_csv_by_year(n, 2025, "/path/to/results/dual")
+        >>> # 文件将保存在 /path/to/results/dual/dual_values_raw_2025/
+    """
+    if not hasattr(network, "model") or not hasattr(network.model, "dual"):
+        raise AttributeError("Network object must have 'model' and 'model.dual' attributes")
+    
+    if network.model.dual is None or len(network.model.dual) == 0:
+        logger.info("No dual variables to export")
+        return
+    
     # 确定输出目录
+    output_dir = _determine_output_directory(network, current_year, output_base_dir)
+    logger.info(f"Exporting {len(network.model.dual)} dual variables to '{output_dir}'")
+    
+    # 导出所有对偶变量
+    for dual_name, dual_value in network.model.dual.items():
+        _export_single_dual_variable(dual_name, dual_value, output_dir)
+
+
+def _determine_output_directory(
+    network: pypsa.Network, 
+    current_year: Union[int, str], 
+    output_base_dir: Optional[Union[str, Path]]
+) -> Path:
+    """
+    确定输出目录路径。
+    
+    Args:
+        network: PyPSA网络对象
+        current_year: 当前年份
+        output_base_dir: 可选的输出基础目录
+        
+    Returns:
+        Path: 完整的输出目录路径
+    """
     if output_base_dir is None:
         # 尝试从网络文件路径推断结果目录
-        if hasattr(n, '_path') and n._path:
-            network_path = n._path
+        network_path = getattr(network, '_path', None)
+        if network_path and 'postnetworks' in str(network_path):
+            results_dir = Path(network_path).parent.parent
         else:
-            # 如果没有路径信息，使用当前工作目录
-            network_path = os.getcwd()
+            results_dir = Path.cwd() / 'results'
         
-        # 解析结果目录路径
-        if 'postnetworks' in network_path:
-            results_dir = os.path.dirname(os.path.dirname(network_path))
-        else:
-            # 如果无法确定，使用默认路径
-            results_dir = os.path.join(os.getcwd(), 'results')
-        
-        # 构建dual文件夹路径
-        output_base_dir = os.path.join(results_dir, 'dual')
+        output_base_dir = results_dir / 'dual'
+    else:
+        output_base_dir = Path(output_base_dir)
     
-    # 构建年份相关的输出目录
-    output_dir = os.path.join(output_base_dir, f"dual_values_raw_{current_year}")
-    logger.info(f"Attempting to export {len(all_duals)} raw dual variables to '{output_dir}'...")
-    os.makedirs(output_dir, exist_ok=True) # 确保年份目录存在
+    output_dir = output_base_dir / f"dual_values_raw_{current_year}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    return output_dir
 
-    # 遍历所有对偶变量并保存为 CSV
-    for name, value in all_duals.items():
-        # 清理文件名，避免特殊字符问题
-        safe_name = name.replace('[', '_').replace(']', '_').replace('-', '_').replace('.', '_').replace(':', '_').replace('/', '_')
-        filepath = os.path.join(output_dir, f"{safe_name}.csv")
 
-        try:
-            # 处理不同类型的对偶变量
-            if np.isscalar(value):
-                # 标量值
-                pd.Series([value], index=[name]).to_csv(filepath, header=False)
-                
-            elif hasattr(value, 'to_pandas'):
-                # xarray DataArray 或 Dataset
-                try:
-                    value.to_pandas().to_csv(filepath)
-                except:
-                    # 如果to_pandas失败，尝试其他方法
-                    if hasattr(value, 'values'):
-                        pd.Series(value.values.flatten()).to_csv(filepath, header=False)
-                    else:
-                        pd.Series(value).to_csv(filepath, header=False)
-                        
-            elif isinstance(value, np.ndarray):
-                # numpy数组
-                if value.ndim == 0:
-                    # 0维数组（标量）
-                    pd.Series([value.item()], index=[name]).to_csv(filepath, header=False)
-                elif value.ndim == 1:
-                    # 1维数组
-                    pd.Series(value).to_csv(filepath, header=False)
-                else:
-                    # 多维数组 - 展平后保存
-                    flattened = value.flatten()
-                    pd.Series(flattened).to_csv(filepath, header=False)
-                    
-            elif isinstance(value, (list, tuple)):
-                # 列表或元组
-                pd.Series(value).to_csv(filepath, header=False)
-                
-            elif isinstance(value, dict):
-                # 字典
-                pd.Series(value).to_csv(filepath)
-                
-            else:
-                # 其他类型 - 尝试转换为Series
-                try:
-                    pd.Series(value).to_csv(filepath, header=False)
-                except Exception as e:
-                    logger.warning(f"Could not convert dual '{name}' to pandas format: {str(e)}. Skipping CSV save.")
-                    continue
+def _export_single_dual_variable(
+    dual_name: str, 
+    dual_value: DualValue, 
+    output_dir: Path
+) -> None:
+    """
+    导出单个对偶变量到CSV文件。
+    
+    Args:
+        dual_name: 对偶变量名称
+        dual_value: 对偶变量值
+        output_dir: 输出目录路径
+    """
+    # 清理文件名
+    safe_name = _sanitize_filename(dual_name)
+    filepath = output_dir / f"{safe_name}.csv"
+    
+    try:
+        if np.isscalar(dual_value):
+            _export_scalar_dual(dual_name, dual_value, filepath)
+        elif hasattr(dual_value, 'to_pandas'):
+            _export_xarray_dual(dual_value, filepath)
+        elif isinstance(dual_value, np.ndarray):
+            _export_numpy_dual(dual_value, filepath)
+        elif isinstance(dual_value, (list, tuple)):
+            pd.Series(dual_value).to_csv(filepath, header=False)
+        elif isinstance(dual_value, dict):
+            pd.Series(dual_value).to_csv(filepath)
+        else:
+            _export_generic_dual(dual_value, filepath)
+            
+    except Exception as e:
+        logger.warning(f"Failed to export dual variable '{dual_name}': {str(e)}")
 
-        except Exception as e:
-             # 捕获文件写入错误或其他异常
-             logger.warning(f"Error saving raw dual '{name}' to {filepath}: {str(e)}")
 
-    logger.info("Finished attempting to save raw dual variables to CSV.")
+def _sanitize_filename(filename: str) -> str:
+    """清理文件名，移除或替换特殊字符。"""
+    invalid_chars = ['[', ']', '-', '.', ':', '/', '\\', '*', '?', '"', '<', '>', '|']
+    for char in invalid_chars:
+        filename = filename.replace(char, '_')
+    return filename
+
+
+def _export_scalar_dual(dual_name: str, value: float, filepath: Path) -> None:
+    """导出标量对偶变量。"""
+    pd.Series([value], index=[dual_name]).to_csv(filepath, header=False)
+
+
+def _export_xarray_dual(value: xr.DataArray, filepath: Path) -> None:
+    """导出xarray类型的对偶变量。"""
+    try:
+        value.to_pandas().to_csv(filepath)
+    except Exception:
+        if hasattr(value, 'values'):
+            pd.Series(value.values.flatten()).to_csv(filepath, header=False)
+        else:
+            pd.Series(value).to_csv(filepath, header=False)
+
+
+def _export_numpy_dual(value: np.ndarray, filepath: Path) -> None:
+    """导出numpy数组类型的对偶变量。"""
+    if value.ndim == 0:
+        pd.Series([value.item()]).to_csv(filepath, header=False)
+    elif value.ndim == 1:
+        pd.Series(value).to_csv(filepath, header=False)
+    else:
+        pd.Series(value.flatten()).to_csv(filepath, header=False)
+
+
+def _export_generic_dual(value: Any, filepath: Path) -> None:
+    """导出通用类型的对偶变量。"""
+    try:
+        pd.Series(value).to_csv(filepath, header=False)
+    except Exception as e:
+        logger.warning(f"Could not convert dual value to pandas format: {str(e)}")
