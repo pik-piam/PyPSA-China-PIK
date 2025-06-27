@@ -10,10 +10,13 @@ To be merged/consolidated with the `solve_network` script.
 import logging
 import re
 import socket
+import os
+import pandas as pd
+import xarray as xr
 
 import numpy as np
-import pandas as pd
 import pypsa
+from _pypsa_helpers import process_dual_variables, export_duals_to_csv_by_year
 from _helpers import (
     configure_logging,
     mock_snakemake,
@@ -303,6 +306,9 @@ def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
     max_iterations = cf_solving.get("max_iterations", 6)
     transmission_losses = cf_solving.get("transmission_losses", 0)
 
+    # Check if dual functionality is enabled and extract the flag
+    export_duals = solver_options.pop("export_duals", False)
+
     # add to network for extra_functionality
     n.config = config
     n.opts = opts
@@ -336,6 +342,25 @@ def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
         logger.warning(f"Solving status '{status}' with termination condition '{condition}'")
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
+
+    # Check if dual functionality is enabled
+    if export_duals:
+        if hasattr(n, "model") and hasattr(n.model, "dual"):
+            # Process dual variables and add them to network object
+            process_dual_variables(n)
+            
+            # Export dual variables by year
+            if "planning_horizons" in n.meta.get("wildcards", {}):
+                current_year = n.meta["wildcards"]["planning_horizons"]
+                
+                # Build dual output directory path
+                # Infer results directory from snakemake output path
+                results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
+                dual_output_dir = os.path.join(results_dir, 'dual')
+                
+                export_duals_to_csv_by_year(n, current_year, output_base_dir=dual_output_dir)
+        else:
+            logger.warning("Network model does not have dual variables. Dual export will be skipped.")
 
     return n
 
