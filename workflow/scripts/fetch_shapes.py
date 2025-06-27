@@ -90,12 +90,18 @@ def fetch_province_shapes() -> gpd.GeoDataFrame:
     logger.debug("province shapes:\n", province_shapes)
 
     filtered = province_shapes[province_shapes["province"].isin(PROV_NAMES)]
-    if (filtered["province"].unique() != sorted(PROV_NAMES)).all():
-        logger.warning(
-            f"Missing provinces: {set(PROV_NAMES) - set(province_shapes['province'].unique())}"
-        )
+    
+    # Check if configured provinces are found in data
+    found_provinces = set(filtered["province"].unique())
+    configured_provinces = set(PROV_NAMES)
+    
+    # Check for missing configured provinces
+    missing_provinces = configured_provinces - found_provinces
+    if missing_provinces:
+        logger.warning(f"Configured provinces not found in data: {missing_provinces}")
+        logger.info(f"Found {len(found_provinces)} out of {len(configured_provinces)} configured provinces")
+    
     filtered.set_index("province", inplace=True)
-
     return filtered.sort_index()
 
 
