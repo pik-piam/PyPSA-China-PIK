@@ -20,7 +20,6 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 import os
-
 import logging
 
 from _helpers import configure_logging, mock_snakemake, ConfigManager
@@ -35,24 +34,9 @@ from add_electricity import load_costs, sanitize_carriers
 from readers import read_province_shapes
 from prepare_network_common import calc_renewable_pu_avail
 
-import pypsa
-import numpy as np
-import geopandas as gpd
-import pandas as pd
-import xarray as xr
-from shapely.geometry import Point
-
-import logging
-
-from _pypsa_helpers import shift_profile_to_planning_year
-from functions import HVAC_cost_curve, haversine
-from vresutils.costdata import annuity
-
 from constants import (
     PROV_NAMES,
     CRS,
-    CO2_HEATING_2020,
-    CO2_EL_2020,
     LOAD_CONVERSION_FACTOR,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
@@ -796,7 +780,7 @@ def add_heat_coupling(
 
     available_provs = [prov for prov in nodes if prov in heat_demand.columns]
     if not available_provs:
-        raise ValueError("没有任何省份热需求数据可用，请检查输入数据！")
+        raise ValueError("No province heat demand data available, please check input data!")
     network.add(
         "Load",
         available_provs,
@@ -1364,21 +1348,16 @@ def prepare_network(
     network = pypsa.Network()
     network.set_snapshots(snapshots)
     network.snapshot_weightings[:] = config["snapshots"]["frequency"]
+    
     # load graph
     nodes = pd.Index(PROV_NAMES)
-    # toso soft code
     countries = ["CN"] * len(nodes)
 
     # TODO check crs projection correct
-    # load provinces
+    # load provinces and align data
     prov_shapes = read_province_shapes(paths["province_shape"])
     prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
-    # 在添加Bus之前，先对齐数据
     prov_centroids = prov_centroids.reindex(nodes)
-    network.add("Bus", nodes, x=prov_centroids.x, y=prov_centroids.y, location=nodes)
-    # 检查两边的索引
-    print("Nodes:", nodes)
-    print("Centroids index:", prov_centroids.index)
 
     # add AC buses
     network.add(
@@ -1387,24 +1366,23 @@ def prepare_network(
 
     # add carriers
     add_carriers(network, config, costs)
+    
     # load datasets calculated by build_renewable_profiles
     ds_solar = xr.open_dataset(snakemake.input.profile_solar)
     ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)
     ds_offwind = xr.open_dataset(snakemake.input.profile_offwind)
 
-    # 处理 onwind p_nom_max
+    # Handle p_nom_max for renewable technologies
     p_nom_max_onwind = ds_onwind["p_nom_max"]
     if "bin" in p_nom_max_onwind.dims:
         p_nom_max_onwind = p_nom_max_onwind.isel(bin=0)
     p_nom_max_onwind = p_nom_max_onwind.to_pandas()
 
-    # 处理 offwind p_nom_max
     p_nom_max_offwind = ds_offwind["p_nom_max"]
     if "bin" in p_nom_max_offwind.dims:
         p_nom_max_offwind = p_nom_max_offwind.isel(bin=0)
     p_nom_max_offwind = p_nom_max_offwind.to_pandas()
 
-    # 处理 solar p_nom_max
     p_nom_max_solar = ds_solar["p_nom_max"]
     if "bin" in p_nom_max_solar.dims:
         p_nom_max_solar = p_nom_max_solar.isel(bin=0)
@@ -1416,33 +1394,21 @@ def prepare_network(
     offwind_p_max_pu = calc_renewable_pu_avail(ds_offwind, planning_horizons, snapshots)
 
     # load electricity demand data
-    # 1. 首先获取路径
     demand_path = snakemake.input.elec_load.replace("{planning_horizons}", f"{cost_year}")
-    print("Demand path:", demand_path)
-
-    # 2. 检查文件是否存在
-    import os
-    print("File exists:", os.path.exists(demand_path))
-
-    # 3. 读取并检查数据
+    
     with pd.HDFStore(demand_path, mode="r") as store:
         raw_load = store["load"]
-        print("Raw load data columns:", raw_load.columns)
-        print("Raw load data shape:", raw_load.shape)
-        
-        # 应用转换因子
         load = LOAD_CONVERSION_FACTOR * raw_load
-        print("Load data columns after conversion:", load.columns)
-        print("Load data index:", load.index)
         
-        # 最后再选择需要的数据
+        # Check data availability
         available_provs = [prov for prov in nodes if prov in load.columns]
         if not available_provs:
-            raise ValueError("没有任何省份数据可用，请检查输入数据！")
+            raise ValueError("No province data available, please check input data!")
         load = load.loc[network.snapshots, available_provs]
+    
     network.add("Load", available_provs, bus=available_provs, p_set=load[available_provs])
     
-    # add renewables
+    # add renewables with availability check
     available_onwind_provs = [prov for prov in nodes if prov in p_nom_max_onwind.index]
     network.add(
         "Generator",
@@ -1540,7 +1506,7 @@ def prepare_network(
         )
 
     if config["add_hydro"]:
-        # 检查选定省份中是否有水电站
+        # Check if there are hydro dams in selected provinces
         df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
         dams = df[df["Province"].isin(nodes)]
         if not dams.empty:
@@ -1645,7 +1611,7 @@ def prepare_network(
             edges_ = pd.read_csv(
                 edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
             ).fillna(0)
-            # 只保留选定省份之间的连接
+            # Only keep connections between selected provinces
             edges = edges_[
                 edges_["bus0"].isin(nodes) & edges_["bus1"].isin(nodes)
             ]

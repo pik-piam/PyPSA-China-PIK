@@ -280,44 +280,28 @@ def solve_network(
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
 
-    # 确保 assign_all_duals 在 solver_options 中
+    # Ensure assign_all_duals is in solver_options
     assert solver_options.get("assign_all_duals", False), "assign_all_duals should be set to True"
 
     if hasattr(n, "model") and hasattr(n.model, "dual"):
         import pandas as pd
         import xarray as xr
         
-        # 处理对偶变量并将其添加到网络对象
+        # Process dual variables and add them to network object
         process_dual_variables(n)
         
-        # 根据年份导出对偶变量
+        # Export dual variables by year
         if "planning_horizons" in n.meta.get("wildcards", {}):
             current_year = n.meta["wildcards"]["planning_horizons"]
             
-            # 构建dual输出目录路径
-            # 从snakemake输出路径推断结果目录
+            # Build dual output directory path
+            # Infer results directory from snakemake output path
             results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
             dual_output_dir = os.path.join(results_dir, 'dual')
             
             export_duals_to_csv_by_year(n, current_year, output_base_dir=dual_output_dir)
     
     return n
-
-
-
-def check_tunnel(port):
-    """检查SSH隧道是否正常工作"""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(2)
-    try:
-        sock.connect(("127.0.0.1", port))
-        logger.info(f"SSH tunnel on port {port} is accessible")
-        return True
-    except (socket.timeout, socket.error):
-        logger.error(f"SSH tunnel on port {port} is not accessible")
-        return False
-    finally:
-        sock.close()
 
 
 if __name__ == "__main__":
@@ -331,49 +315,25 @@ if __name__ == "__main__":
         )
     configure_logging(snakemake)
 
-    # 添加隧道检查函数
-    def check_tunnel(port):
-        """检查SSH隧道是否正常工作"""
-        import socket
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(2)
-        try:
-            sock.connect(("127.0.0.1", port))
-            logger.info(f"SSH tunnel on port {port} is accessible")
-            return True
-        except (socket.timeout, socket.error):
-            logger.error(f"SSH tunnel on port {port} is not accessible")
-            return False
-        finally:
-            sock.close()
-
-    # 保持原有代码不变
     solver_config = snakemake.config["solving"]["solver"]
     gurobi_tnl_cfg = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
     logger.info(f"Solver config {solver_config} and license cfg {gurobi_tnl_cfg}")
     
-    tunnel = None
     if (solver_config["name"] == "gurobi") & (gurobi_tnl_cfg is not None):
         tunnel = setup_gurobi_tunnel_and_env(gurobi_tnl_cfg, logger=logger)
-        # 添加隧道检查
-        if tunnel and check_tunnel(gurobi_tnl_cfg.get("tunnel_port", 1080)):
-            logger.info("SSH tunnel successfully established")
-        else:
-            logger.error("SSH tunnel setup failed")
-
+        logger.info(tunnel)
+    else:
+        tunnel = None
     opts = snakemake.wildcards.get("opts", "")
     if "sector_opts" in snakemake.wildcards.keys():
         opts += "-" + snakemake.wildcards.sector_opts
     opts = [o for o in opts.split("-") if o != ""]
     solve_opts = snakemake.params.solving["options"]
 
-    # 其余代码保持不变...
-
     n = pypsa.Network(snakemake.input.network_name)
 
     n = prepare_network(n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons)
     
-    # 在solve_network之前设置meta信息，这样对偶变量导出时能获取到wildcards
     n.meta.update(dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards))))
     
     if tunnel:

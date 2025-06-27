@@ -85,7 +85,7 @@ def plot_map(
 
     if add_legend:
         carriers = bus_sizes.index.get_level_values(1).unique()
-        # 只选择在tech_colors中存在的carriers
+        # Only select carriers that exist in tech_colors
         available_carriers = carriers.intersection(tech_colors.keys())
         colors = available_carriers.map(tech_colors).to_list()
         labels = available_carriers.to_list()
@@ -171,8 +171,6 @@ def add_cost_pannel(
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
     colors = {k.lower(): v for k, v in tech_colors.items()}
-    print("DEBUG df in add_cost_pannel:\n", df)
-    print("DEBUG reordered:\n", reordered)
     df.loc[reordered, df.columns].T.plot(
         kind="bar",
         ax=ax3,
@@ -295,7 +293,7 @@ def plot_cost_map(
     bus_size_factor = opts["cost_map"]["bus_size_factor"]
     linewidth_factor = opts["cost_map"]["linewidth_factor"]
     
-    # 根据cost_pies中的carriers创建bus_colors
+    # Create bus_colors based on carriers in cost_pies
     carriers_in_cost_pies = cost_pies.index.get_level_values(1).unique()
     bus_colors = pd.Series({carrier: tech_colors.get(carrier, "lightgrey") for carrier in carriers_in_cost_pies})
     
@@ -315,7 +313,7 @@ def plot_cost_map(
     # TODO check edges is working
     # Add the added pathway costs
     if plot_additions:
-        # 根据cost_pies_additional中的carriers创建bus_colors
+        # Create bus_colors based on carriers in cost_pies_additional
         carriers_in_additions = cost_pies_additional.index.get_level_values(1).unique()
         bus_colors_additions = pd.Series({carrier: tech_colors.get(carrier, "lightgrey") for carrier in carriers_in_additions})
         

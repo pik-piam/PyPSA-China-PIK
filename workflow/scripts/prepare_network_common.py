@@ -216,13 +216,13 @@ def calc_renewable_pu_avail(
     if "year" in profile.dims:
         profile = profile.isel(year=0)
     if "bin" in profile.dims:
-        profile = profile.isel(bin=0)  # 只用第一个 bin
+        profile = profile.isel(bin=0)  # Use only the first bin
     rnwable_p_max_pu = profile.transpose("time", "bus").to_pandas()
     rnwable_p_max_pu = shift_profile_to_planning_year(rnwable_p_max_pu, planning_year)
     if not (snapshots.isin(rnwable_p_max_pu.index)).all():
         err = "Snapshots do not match renewable data profile data:"
         err += f"\n\tmissing {snapshots.difference(rnwable_p_max_pu.index)}.\n"
-        tip = "You may may need to regenerate your cutout或adapt the snapshots"
+        tip = "You may need to regenerate your cutout or adapt the snapshots"
         raise ValueError(err + tip)
     rnwable_p_max_pu = rnwable_p_max_pu.loc[snapshots]
     return rnwable_p_max_pu.sort_index(axis=1)

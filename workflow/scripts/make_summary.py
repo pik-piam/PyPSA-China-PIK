@@ -679,16 +679,13 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]):
         dataframes_dict[output] = pd.DataFrame(columns=columns, dtype=float)
 
     for label, filename in networks_dict.items():
-        logger.info(f"Make summary for scenario {label}, using {filename}")
-
         n = pypsa.Network(filename)
         assign_carriers(n)
         assign_locations(n)
-    if "name" not in n.buses.columns:
-        n.buses["name"] = n.buses.index.astype(str)
+        if "name" not in n.buses.columns:
+            n.buses["name"] = n.buses.index.astype(str)
 
         for output, output_fn in output_funcs.items():
-            logger.info(f"Processing function: {output}")
             try:
                 result = output_fn(n, label, dataframes_dict[output])
                 if result is None:
@@ -717,7 +714,6 @@ def expand_from_wildcard(key, config)-> list:
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
         snakemake = mock_snakemake(
             "make_summary",
             topology="current+FCG",
@@ -748,9 +744,6 @@ if __name__ == "__main__":
         pathway, planning_horizons = pathways[0], years[0]
 
     networks_dict = {(pathway, planning_horizons): snakemake.input.network}
-
-    logger.info("Starting summary generation...")
-    logger.info(f"Processing network: {snakemake.input.network}")
     
     df = make_summaries(networks_dict)
     
@@ -762,9 +755,6 @@ if __name__ == "__main__":
         logger.error("make_summaries returned empty dict")
         sys.exit(1)
         
-    logger.info(f"Available keys in df: {list(df.keys())}")
-    
-    logger.info("Calculating total costs...")
     try:
         if "costs" not in df:
             logger.error("costs not found in results")
@@ -778,7 +768,6 @@ if __name__ == "__main__":
         logger.error(f"Error calculating total costs: {str(e)}")
         sys.exit(1)
         
-    logger.info("Writing output files...")
     def to_csv(dfs, dir):
         if not isinstance(dfs, dict):
             logger.error(f"Expected dict, got {type(dfs)}")

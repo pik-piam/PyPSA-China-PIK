@@ -340,17 +340,6 @@ def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
     return n
 
 
-def check_tunnel(port):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        sock.connect(("127.0.0.1", port))
-        return True
-    except:
-        return False
-    finally:
-        sock.close()
-
-
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
@@ -368,15 +357,8 @@ if __name__ == "__main__":
     solver_config = snakemake.config["solving"]["solver"]
     gurobi_license_config = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
     logger.info(f"Solver config {solver_config} and license cfg {gurobi_license_config}")
-
-    for attempt in range(3):
-        try:
-            # 尝试建立隧道
-            tunnel = setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
-            if check_tunnel(tunnel_port):
-                break
-        except Exception as e:
-            logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
+    if (solver_config["name"] == "gurobi") & (gurobi_license_config is not None):
+        setup_gurobi_tunnel_and_env(gurobi_license_config, logger=logger)
 
     opts = snakemake.wildcards.get("opts", "")
     if "sector_opts" in snakemake.wildcards.keys():

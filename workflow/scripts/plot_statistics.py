@@ -35,7 +35,7 @@ def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, dro
         ds = ds[ds != 0]
     ds = ds.dropna()
 
-    # 检查数据是否为空
+    # Check if data is empty
     if ds.empty:
         logger.warning("No data to plot after filtering (dropping zeros and NaN values)")
         return
@@ -109,6 +109,7 @@ if __name__ == "__main__":
     if "installed_capacity" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.installed_capacity(groupby=["carrier"]).dropna()
+        # Avoid error when plotting by region where some areas have no hydro stations
         if ds.index.names and "stations" in ds.index.names:
             ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
@@ -126,6 +127,7 @@ if __name__ == "__main__":
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+        # Avoid error when plotting by region where some areas have no hydro stations
         if ds.index.names and "stations" in ds.index.names:
             ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()

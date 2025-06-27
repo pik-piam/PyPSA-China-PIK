@@ -71,107 +71,38 @@ REGIONAL_GEO_TIMEZONES_DEFAULT = {
 
 
 def get_province_names() -> List[str]:
+    """Get province names for network construction.
+    
+    Priority: 1. Environment variable (for testing)
+              2. CSV file (for configuration)
+              3. Default list (fallback)
     """
-    Get the list of province names for network construction.
-    
-    This function supports multiple ways to specify province names:
-    1. Environment variable PROV_NAMES (for testing)
-    2. Province codes CSV file
-    3. Default province list
-    
-    Returns:
-        List[str]: List of province names to build the network
-        
-    Raises:
-        ValueError: If PROV_NAMES environment variable has invalid format
-        
-    Example:
-        >>> get_province_names()
-        ['Beijing', 'Shanghai', 'Guangdong', ...]
-        
-        # For testing with specific provinces:
-        >>> os.environ['PROV_NAMES'] = '["Beijing", "Shanghai"]'
-        >>> get_province_names()
-        ['Beijing', 'Shanghai']
-    """
-    default_province_names = list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys())
-    
     # Try environment variable first (for testing)
-    env_provinces = _get_provinces_from_environment()
-    if env_provinces is not None:
-        return env_provinces
+    env_provs = os.getenv("PROV_NAMES")
+    if env_provs:
+        if isinstance(env_provs, str):
+            provinces = re.findall(r"[\w']+", env_provs)
+            if provinces:
+                logger.info(f"Using {len(provinces)} provinces from PROV_NAMES env var")
+                return provinces
     
-    # Try CSV file
-    csv_provinces = _get_provinces_from_csv()
-    if csv_provinces is not None:
-        return csv_provinces
-    
-    # Use default province list
-    logger.info(f"Using default province list with {len(default_province_names)} provinces")
-    return default_province_names
-
-
-def _get_provinces_from_environment() -> List[str]:
-    """
-    Get province names from PROV_NAMES environment variable.
-    
-    Returns:
-        List[str]: Province names from environment variable, or None if not set
-    """
-    env_value = os.getenv("PROV_NAMES")
-    if env_value is None:
-        return None
-    
-    if isinstance(env_value, str):
-        # Parse string format like '["Beijing", "Shanghai"]'
-        provinces = re.findall(r'[\w\']+', env_value)
-        if not provinces:
-            raise ValueError(
-                f"PROV_NAMES environment variable '{env_value}' has invalid format. "
-                "Expected format: '[\"region1\", \"region2\", ...]'"
-            )
-        logger.info(f"Using {len(provinces)} provinces from PROV_NAMES environment variable")
-        return provinces
-    
-    if isinstance(env_value, list):
-        logger.info(f"Using {len(env_value)} provinces from PROV_NAMES environment variable")
-        return env_value
-    
-    raise ValueError("PROV_NAMES environment variable must be a string or list")
-
-
-def _get_provinces_from_csv() -> List[str]:
-    """
-    Get province names from province_codes.csv file.
-    
-    Returns:
-        List[str]: Province names from CSV file, or None if file not found or invalid
-    """
+    # Try CSV file (for configuration)
     csv_path = "resources/data/regions/province_codes.csv"
+    if os.path.exists(csv_path):
+        try:
+            df = pd.read_csv(csv_path)
+            if "Full name" in df.columns:
+                provinces = df["Full name"].dropna().unique().tolist()
+                if provinces:
+                    logger.info(f"Using {len(provinces)} provinces from {csv_path}")
+                    return provinces
+        except Exception as e:
+            logger.warning(f"Failed to read {csv_path}: {e}")
     
-    if not os.path.exists(csv_path):
-        logger.debug(f"Province codes file not found: {csv_path}")
-        return None
-    
-    try:
-        df = pd.read_csv(csv_path)
-        
-        if "Full name" not in df.columns:
-            logger.warning(f"CSV file {csv_path} does not contain 'Full name' column")
-            return None
-        
-        provinces = df["Full name"].dropna().unique().tolist()
-        
-        if not provinces:
-            logger.warning(f"No valid province names found in {csv_path}")
-            return None
-        
-        logger.info(f"Using {len(provinces)} provinces from {csv_path}")
-        return provinces
-        
-    except Exception as e:
-        logger.warning(f"Failed to read province codes from {csv_path}: {e}")
-        return None
+    # Default fallback
+    default_provinces = list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys())
+    logger.info(f"Using default province list with {len(default_provinces)} provinces")
+    return default_provinces
 
 
 def filter_buses(names) -> list:

@@ -92,7 +92,7 @@ def plot_energy_balance(
         "battery storage": "Battery"
     }
 
-    # 只重命名存在的列
+    # Only rename existing columns
     for old_name, new_name in battery_names.items():
         if old_name in charge.columns:
             charge.rename(columns={old_name: new_name}, inplace=True)
@@ -102,10 +102,6 @@ def plot_energy_balance(
             color_series.rename({old_name: new_name}, inplace=True)
 
     color_series = color_series[charge.columns.union(supply.columns)]
-    color_series.rename(
-        {"Battery Discharger": "Battery", "Battery Storage": "Battery"},
-        inplace=True,
-    )
 
     preferred_order = plot_config["preferred_order"]
     plot_order = list(dict.fromkeys(
@@ -118,9 +114,9 @@ def plot_energy_balance(
         + [name for name in charge.columns if name not in preferred_order]
     ))
 
-    # 如果有重复的Battery列，需要合并它们
+    # Merge duplicate Battery columns if they exist
     if supply.columns.duplicated().any():
-        # 合并重复的列
+        # Merge duplicate columns
         supply = supply.groupby(supply.columns, axis=1).sum()
 
     supply = supply.reindex(columns=plot_order)

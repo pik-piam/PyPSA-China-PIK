@@ -14,30 +14,22 @@ import pypsa
 # get root logger
 logger = logging.getLogger()
 
-# 类型别名定义
+# Type aliases
 ComponentName = str
 ConstraintType = str
-DualValue = Union[float, np.ndarray, xr.DataArray, List[float], Dict[str, float]]
+DualValue = Union[float, np.ndarray, xr.DataArray, List[float], Dict[str, float], pd.Series, pd.DataFrame]
 
-# 组件映射常量
+# Simplified component mapping - only essential mappings
 COMPONENT_MAPPING: Dict[str, str] = {
     'generator': 'generators',
-    'generators': 'generators',
     'link': 'links',
-    'links': 'links',
     'line': 'lines',
-    'lines': 'lines',
     'store': 'stores',
-    'stores': 'stores',
     'storageunit': 'storage_units',
-    'storageunits': 'storage_units',
-    'storage_units': 'storage_units',
     'bus': 'buses',
-    'buss': 'buses',
-    'buses': 'buses',
     'globalconstraint': 'global_constraints',
-    'globalconstraints': 'global_constraints',
-    'global_constraints': 'global_constraints',
+    'load': 'loads',
+    'transformer': 'transformers',
 }
 
 
@@ -424,25 +416,26 @@ def update_p_nom_max(n: pypsa.Network) -> None:
 
 def process_dual_variables(network: pypsa.Network) -> pypsa.Network:
     """
-    处理网络模型的对偶变量并将其添加到网络对象中。
+    Process dual variables from network model and add them to network object.
     
-    该函数解析模型的对偶变量，将其映射到相应的网络组件，并添加为组件的属性。
-    对于无法直接映射的复杂对偶变量，将其存储在network.duals字典中。
+    This function parses dual variables from the model, maps them to corresponding network components,
+    and adds them as component attributes. Complex dual variables that cannot be directly mapped
+    are stored in the network.duals dictionary.
     
     Args:
-        network: 包含模型和对偶变量的PyPSA网络对象
+        network: PyPSA network object containing model and dual variables
         
     Returns:
-        pypsa.Network: 处理后的网络对象，包含对偶变量属性
+        pypsa.Network: Processed network object with dual variable attributes
         
     Raises:
-        AttributeError: 如果网络对象没有model或dual属性
-        ValueError: 如果对偶变量格式不正确
+        AttributeError: If network object lacks 'model' or 'dual' attributes
+        ValueError: If dual variable format is incorrect
         
     Example:
         >>> n = pypsa.Network("network.nc")
         >>> n = process_dual_variables(n)
-        >>> # 现在可以访问对偶变量
+        >>> # Now can access dual variables
         >>> shadow_price = n.generators.mu_p_nom_upper
         >>> nodal_balance = n.buses.mu_nodal_balance
     """
@@ -453,7 +446,7 @@ def process_dual_variables(network: pypsa.Network) -> pypsa.Network:
         logger.info("No dual variables found in network model")
         return network
     
-    # 获取所有对偶变量
+    # Get all dual variables
     all_duals = pd.Series(network.model.dual)
     processed_duals: Dict[str, Any] = {}
     
@@ -464,7 +457,7 @@ def process_dual_variables(network: pypsa.Network) -> pypsa.Network:
             logger.warning(f"Failed to process dual variable '{dual_name}': {str(e)}")
             continue
     
-    # 将处理过的对偶变量添加到网络对象
+    # Add processed dual variables to network object
     network.duals = processed_duals
     logger.info(f"Successfully processed {len(processed_duals)} dual variables")
     
@@ -472,235 +465,128 @@ def process_dual_variables(network: pypsa.Network) -> pypsa.Network:
 
 
 def _process_single_dual_variable(
-    network: pypsa.Network, 
-    dual_name: str, 
-    dual_value: DualValue, 
-    processed_duals: Dict[str, Any]
+    network: pypsa.Network,
+    dual_name: str,
+    dual_value: DualValue,
+    processed_duals_storage: Dict[str, Any],
 ) -> None:
-    """
-    处理单个对偶变量。
+    """Processes a single dual variable and attempts to map it to a network component."""
     
-    Args:
-        network: PyPSA网络对象
-        dual_name: 对偶变量名称
-        dual_value: 对偶变量值
-        processed_duals: 存储无法直接映射的对偶变量的字典
-    """
-    parts = dual_name.split("-")
-    if len(parts) < 2:
-        logger.warning(f"Invalid dual variable name format: {dual_name}")
+    # Safely partition the dual name into component type and constraint type
+    component_type_raw, _, constraint_type = dual_name.partition("-")
+    
+    if not constraint_type:
+        logger.warning(f"Invalid dual name format (no '-' found): '{dual_name}'. Skipping.")
         return
-    
-    component_type = parts[0].lower()
-    constraint_type = "-".join(parts[1:])
-    
-    # 获取正确的组件名称
-    component_name = COMPONENT_MAPPING.get(component_type, component_type)
+
+    component_type = component_type_raw.lower()
+    component_name = COMPONENT_MAPPING.get(component_type)
+
+    # Fallback to using the raw component type if not found in mapping
+    if component_name is None:
+        component_name = component_type
+        if not hasattr(network, component_name):
+            logger.warning(f"Component type '{component_type}' from '{dual_name}' not mapped and not found as attribute in network. Skipping.")
+            return
+
     if not hasattr(network, component_name):
-        logger.warning(f"Component '{component_name}' not found in network")
+        logger.warning(f"Network attribute '{component_name}' not found for dual '{dual_name}'. Skipping.")
         return
     
-    # 生成属性名称
-    attr_name = f"mu_{constraint_type.replace('[', '_').replace(']', '')}"
     component_obj = getattr(network, component_name)
     
-    # 根据对偶变量类型进行处理
-    if np.isscalar(dual_value):
-        _add_scalar_dual(component_obj, attr_name, dual_value)
-    elif len(np.shape(dual_value)) == 1:
-        _add_1d_dual(component_obj, attr_name, dual_value, processed_duals, dual_name)
+    # Generate attribute name, simplifying square brackets
+    attr_name = f"mu_{constraint_type.replace('[', '_').replace(']', '')}"
+    
+    # Process based on dual value type
+    try:
+        if np.isscalar(dual_value):
+            _add_scalar_dual(component_obj, attr_name, float(dual_value))
+        elif isinstance(dual_value, xr.DataArray):
+            _add_xarray_dual(component_obj, attr_name, dual_value)
+        elif isinstance(dual_value, np.ndarray) and dual_value.ndim == 1:
+            _add_1d_numpy_dual(component_obj, attr_name, dual_value)
+        else:
+            # Store complex or unhandled types directly in network.duals
+            processed_duals_storage[dual_name] = dual_value
+            logger.debug(f"Stored complex dual '{dual_name}' (type: {type(dual_value)}) in network.duals.")
+    except Exception as e:
+        # Catch any error during processing and store the original value
+        logger.warning(f"Error processing dual '{dual_name}' (type: {type(dual_value)}): {e}. Storing original value in network.duals.")
+        processed_duals_storage[dual_name] = dual_value
+
+
+def _add_1d_numpy_dual(
+    component_obj: pd.DataFrame,
+    attr_name: str,
+    value: np.ndarray,
+) -> None:
+    """Adds a 1D numpy array dual variable to the component DataFrame."""
+    if len(value) == len(component_obj):
+        component_obj[attr_name] = pd.Series(value, index=component_obj.index)
+        logger.debug(f"Added 1D numpy dual: '{attr_name}'.")
     else:
-        _add_multidimensional_dual(component_obj, attr_name, dual_value, processed_duals, dual_name)
+        raise ValueError(f"Index length mismatch for '{attr_name}': data length {len(value)}, component length {len(component_obj)}.")
+
+
+def _add_xarray_dual(
+    component_obj: pd.DataFrame,
+    attr_name: str,
+    value: xr.DataArray,
+) -> None:
+    """Adds an xarray DataArray dual variable, attempting robust alignment."""
+    try:
+        # Attempt to convert to pandas Series, which handles basic index alignment
+        value_series = value.to_pandas()
+        
+        # Reindex to match the component's index, NaNs for mismatches
+        aligned_series = value_series.reindex(component_obj.index)
+        
+        component_obj[attr_name] = aligned_series
+        logger.debug(f"Added aligned xarray dual: '{attr_name}'.")
+        
+    except Exception as e:
+        # If any error occurs during alignment, raise it to be caught by the caller
+        raise ValueError(f"Failed to align xarray dual '{attr_name}': {e}") from e
 
 
 def _add_scalar_dual(component_obj: pd.DataFrame, attr_name: str, value: float) -> None:
-    """为组件添加标量对偶变量。"""
-    component_obj[attr_name] = pd.Series(value, index=component_obj.index)
-    logger.debug(f"Added scalar dual variable: {attr_name} = {value}")
-
-
-def _add_1d_dual(
-    component_obj: pd.DataFrame, 
-    attr_name: str, 
-    value: Union[np.ndarray, xr.DataArray], 
-    processed_duals: Dict[str, Any], 
-    dual_name: str
-) -> None:
-    """为组件添加一维对偶变量。"""
-    if isinstance(value, xr.DataArray) and hasattr(value, 'coords'):
-        _add_xarray_dual(component_obj, attr_name, value)
-    elif len(value) == len(component_obj):
-        component_obj[attr_name] = pd.Series(value, index=component_obj.index)
-        logger.debug(f"Added 1D dual variable: {attr_name}")
-    else:
-        processed_duals[f"{component_obj.name}_{attr_name}"] = value
-        logger.warning(f"Could not match indices for {attr_name}, stored in processed_duals")
-
-
-def _add_xarray_dual(component_obj: pd.DataFrame, attr_name: str, value: xr.DataArray) -> None:
-    """处理xarray类型的对偶变量。"""
-    orig_indices = value.coords[value.dims[0]].values
-    value_dict = {str(idx): val for idx, val in zip(orig_indices, value.values)}
-    
-    series = pd.Series(index=component_obj.index)
-    for idx in component_obj.index:
-        if idx in value_dict:
-            series[idx] = value_dict[idx]
-        elif str(idx) in value_dict:
-            series[idx] = value_dict[str(idx)]
-    
-    component_obj[attr_name] = series
-    logger.debug(f"Added xarray dual variable: {attr_name}")
-
-
-def _add_multidimensional_dual(
-    component_obj: pd.DataFrame, 
-    attr_name: str, 
-    value: np.ndarray, 
-    processed_duals: Dict[str, Any], 
-    dual_name: str
-) -> None:
-    """处理多维对偶变量。"""
-    processed_duals[f"{component_obj.name}_{attr_name}"] = value
-    logger.warning(f"Multi-dimensional dual variable '{dual_name}' stored in processed_duals")
-
-
-def export_duals_to_csv_by_year(
-    network: pypsa.Network, 
-    current_year: Union[int, str], 
-    output_base_dir: Optional[Union[str, Path]] = None
-) -> None:
-    """
-    将网络模型的对偶变量导出为按年份组织的CSV文件。
-    
-    该函数将网络模型中的所有对偶变量导出为CSV文件，按年份组织在指定目录下。
-    支持多种数据类型，包括标量、数组、xarray对象等。
-    
-    Args:
-        network: 包含模型和对偶变量的PyPSA网络对象
-        current_year: 当前模拟的年份
-        output_base_dir: 输出基础目录。如果为None，将尝试从网络文件路径推断
-        
-    Raises:
-        AttributeError: 如果网络对象没有model或dual属性
-        OSError: 如果无法创建输出目录或写入文件
-        
-    Example:
-        >>> n = pypsa.Network("network.nc")
-        >>> export_duals_to_csv_by_year(n, 2025, "/path/to/results/dual")
-        >>> # 文件将保存在 /path/to/results/dual/dual_values_raw_2025/
-    """
-    if not hasattr(network, "model") or not hasattr(network.model, "dual"):
-        raise AttributeError("Network object must have 'model' and 'model.dual' attributes")
-    
-    if network.model.dual is None or len(network.model.dual) == 0:
-        logger.info("No dual variables to export")
-        return
-    
-    # 确定输出目录
-    output_dir = _determine_output_directory(network, current_year, output_base_dir)
-    logger.info(f"Exporting {len(network.model.dual)} dual variables to '{output_dir}'")
-    
-    # 导出所有对偶变量
-    for dual_name, dual_value in network.model.dual.items():
-        _export_single_dual_variable(dual_name, dual_value, output_dir)
-
-
-def _determine_output_directory(
-    network: pypsa.Network, 
-    current_year: Union[int, str], 
-    output_base_dir: Optional[Union[str, Path]]
-) -> Path:
-    """
-    确定输出目录路径。
-    
-    Args:
-        network: PyPSA网络对象
-        current_year: 当前年份
-        output_base_dir: 可选的输出基础目录
-        
-    Returns:
-        Path: 完整的输出目录路径
-    """
-    if output_base_dir is None:
-        # 尝试从网络文件路径推断结果目录
-        network_path = getattr(network, '_path', None)
-        if network_path and 'postnetworks' in str(network_path):
-            results_dir = Path(network_path).parent.parent
-        else:
-            results_dir = Path.cwd() / 'results'
-        
-        output_base_dir = results_dir / 'dual'
-    else:
-        output_base_dir = Path(output_base_dir)
-    
-    output_dir = output_base_dir / f"dual_values_raw_{current_year}"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    
-    return output_dir
-
-
-def _export_single_dual_variable(
-    dual_name: str, 
-    dual_value: DualValue, 
-    output_dir: Path
-) -> None:
-    """
-    导出单个对偶变量到CSV文件。
-    
-    Args:
-        dual_name: 对偶变量名称
-        dual_value: 对偶变量值
-        output_dir: 输出目录路径
-    """
-    # 清理文件名
-    safe_name = _sanitize_filename(dual_name)
-    filepath = output_dir / f"{safe_name}.csv"
-    
-    try:
-        if np.isscalar(dual_value):
-            _export_scalar_dual(dual_name, dual_value, filepath)
-        elif hasattr(dual_value, 'to_pandas'):
-            _export_xarray_dual(dual_value, filepath)
-        elif isinstance(dual_value, np.ndarray):
-            _export_numpy_dual(dual_value, filepath)
-        elif isinstance(dual_value, (list, tuple)):
-            pd.Series(dual_value).to_csv(filepath, header=False)
-        elif isinstance(dual_value, dict):
-            pd.Series(dual_value).to_csv(filepath)
-        else:
-            _export_generic_dual(dual_value, filepath)
-            
-    except Exception as e:
-        logger.warning(f"Failed to export dual variable '{dual_name}': {str(e)}")
+    """Adds a scalar dual variable to the component DataFrame."""
+    # Assign scalar to all rows, ensuring it's a float
+    component_obj[attr_name] = float(value)
+    logger.debug(f"Added scalar dual: '{attr_name}'.")
 
 
 def _sanitize_filename(filename: str) -> str:
-    """清理文件名，移除或替换特殊字符。"""
+    """Sanitizes a string for use as a filename, replacing invalid characters with underscores."""
     invalid_chars = ['[', ']', '-', '.', ':', '/', '\\', '*', '?', '"', '<', '>', '|']
+    safe_name = filename
     for char in invalid_chars:
-        filename = filename.replace(char, '_')
-    return filename
+        safe_name = safe_name.replace(char, '_')
+    # Remove consecutive underscores resulting from replacements
+    safe_name = '_'.join(filter(None, safe_name.split('_')))
+    return safe_name
 
 
+# --- Exporting scalar duals ---
 def _export_scalar_dual(dual_name: str, value: float, filepath: Path) -> None:
-    """导出标量对偶变量。"""
+    """Exports a scalar dual variable to CSV."""
     pd.Series([value], index=[dual_name]).to_csv(filepath, header=False)
 
 
+# --- Exporting xarray duals ---
 def _export_xarray_dual(value: xr.DataArray, filepath: Path) -> None:
-    """导出xarray类型的对偶变量。"""
+    """Exports an xarray DataArray to CSV, prioritizing pandas conversion."""
     try:
         value.to_pandas().to_csv(filepath)
     except Exception:
-        if hasattr(value, 'values'):
-            pd.Series(value.values.flatten()).to_csv(filepath, header=False)
-        else:
-            pd.Series(value).to_csv(filepath, header=False)
+        # Fallback for cases where to_pandas fails, export flattened values
+        pd.Series(value.values.flatten()).to_csv(filepath, header=False)
 
 
+# --- Exporting numpy duals ---
 def _export_numpy_dual(value: np.ndarray, filepath: Path) -> None:
-    """导出numpy数组类型的对偶变量。"""
+    """Exports a numpy ndarray to CSV."""
     if value.ndim == 0:
         pd.Series([value.item()]).to_csv(filepath, header=False)
     elif value.ndim == 1:
@@ -709,9 +595,100 @@ def _export_numpy_dual(value: np.ndarray, filepath: Path) -> None:
         pd.Series(value.flatten()).to_csv(filepath, header=False)
 
 
-def _export_generic_dual(value: Any, filepath: Path) -> None:
-    """导出通用类型的对偶变量。"""
+# --- Generic export for other types ---
+def _export_generic_dual(dual_name: str, value: Any, filepath: Path) -> None:
+    """Exports generic dual values to CSV, attempting pandas Series conversion."""
     try:
-        pd.Series(value).to_csv(filepath, header=False)
+        # Try to convert to Series with a name for better CSV output
+        pd.Series(value, name=dual_name).to_csv(filepath, header=False)
     except Exception as e:
-        logger.warning(f"Could not convert dual value to pandas format: {str(e)}")
+        logger.warning(f"Could not convert dual value (for '{dual_name}') to pandas format: {e}")
+
+
+# --- Main export function for a single dual variable ---
+def _export_single_dual_variable(
+    dual_name: str,  # The original name of the dual variable
+    dual_value: DualValue,
+    output_dir: Path,
+) -> None:
+    """Exports a single dual variable to a CSV file."""
+    safe_name = _sanitize_filename(dual_name)
+    filepath = output_dir / f"{safe_name}.csv"
+    
+    try:
+        if np.isscalar(dual_value):
+            _export_scalar_dual(dual_name, dual_value, filepath)
+        elif isinstance(dual_value, xr.DataArray):
+            _export_xarray_dual(dual_value, filepath)
+        elif isinstance(dual_value, np.ndarray):
+            _export_numpy_dual(dual_value, filepath)
+        elif isinstance(dual_value, (list, tuple)):
+            pd.Series(dual_value, name=dual_name).to_csv(filepath, header=False)
+        elif isinstance(dual_value, dict):
+            pd.Series(dual_value, name=dual_name).to_csv(filepath) # Dict to Series maps keys to index, values to data
+        else:
+            _export_generic_dual(dual_name, dual_value, filepath) # Fallback for other types
+            
+    except Exception as e:
+        logger.warning(f"Failed to export dual variable '{dual_name}': {str(e)}")
+
+
+# --- Determine output directory ---
+def _determine_output_directory(
+    network: pypsa.Network,
+    current_year: Union[int, str],
+    output_base_dir: Optional[Union[str, Path]]
+) -> Path:
+    """Determines and creates the output directory for dual variables."""
+    if output_base_dir is None:
+        # Attempt to infer from network path, otherwise use current working directory
+        network_path = getattr(network, '_path', None)
+        if network_path and 'postnetworks' in str(network_path): # Keep original inference logic
+            results_dir = Path(network_path).parent.parent
+        else:
+            results_dir = Path.cwd() / 'results'
+        output_base_dir = results_dir / 'dual'
+    else:
+        output_base_dir = Path(output_base_dir)
+    
+    output_dir = output_base_dir / f"dual_values_raw_{current_year}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir
+
+
+# --- Main export function ---
+def export_duals_to_csv_by_year(
+    network: pypsa.Network,
+    current_year: Union[int, str],
+    output_base_dir: Optional[Union[str, Path]] = None
+) -> None:
+    """
+    Exports dual variables to CSV files, organized by year.
+    Exports from both network.model.dual and network.duals.
+    """
+    if not hasattr(network, "model") or not hasattr(network.model, "dual"):
+        raise AttributeError("Network object must have 'model' and 'model.dual' attributes.")
+    
+    # Combine all duals to export
+    dual_data_to_export = {}
+    if network.model.dual:
+        # Ensure model.dual is dict-like for easy updating
+        if isinstance(network.model.dual, (dict, pd.Series)):
+            dual_data_to_export.update(dict(network.model.dual)) # Convert Series to dict
+        else:
+            logger.warning(f"network.model.dual is of unexpected type {type(network.model.dual)}. Skipping export for this source.")
+
+    if hasattr(network, 'duals') and network.duals:
+        dual_data_to_export.update(network.duals) # Add any complex/failed duals
+    
+    if not dual_data_to_export:
+        logger.info("No dual variables found to export.")
+        return
+    
+    # Determine output directory
+    output_dir = _determine_output_directory(network, current_year, output_base_dir)
+    logger.info(f"Exporting {len(dual_data_to_export)} dual variables to '{output_dir}'")
+    
+    # Export each dual variable
+    for dual_name, dual_value in dual_data_to_export.items():
+        _export_single_dual_variable(dual_name, dual_value, output_dir)
