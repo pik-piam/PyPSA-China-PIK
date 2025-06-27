@@ -109,7 +109,21 @@ if __name__ == "__main__":
 
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
+        
+        # Temporarily save original link capacities
+        original_p_nom_opt = n.links.p_nom_opt.copy()
+        
+        # For links where bus1 is AC, multiply capacity by efficiency coefficient
+        # This ensures statistics report capacity at the AC side (bus1) rather than input side (bus0)
+        ac_links = n.links[n.links.bus1.map(n.buses.carrier) == "AC"].index
+        n.links.loc[ac_links, "p_nom_opt"] *= n.links.loc[ac_links, "efficiency"]
+        
+        # Calculate optimal capacity using default grouper
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+        
+        # Restore original link capacities to avoid modifying the network object
+        n.links.p_nom_opt = original_p_nom_opt
+        
         ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]

@@ -231,19 +231,36 @@ def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: p
 
 
 def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame) -> pd.DataFrame:
-    """calculate the capacities by carrier
+    """Calculate the optimal capacities by carrier and bus carrier
+    
+    For links that connect to AC buses (bus1=AC), the capacity is multiplied by efficiency
+    to report the actual capacity available at the AC side rather than the input side.
+    This ensures consistent capacity reporting across the network.
 
     Args:
         n (pypsa.Network): the network object
         label (str): the label used by make summaries
-        capacities (pd.DataFrame): the dataframe to fill
+        capacities (pd.DataFrame): the dataframe to fill/update
 
     Returns:
-        pd.Dataframe: updated capacities (bad style)
+        pd.DataFrame: updated capacities
     """
+    # Temporarily save original link capacities
+    original_p_nom_opt = n.links.p_nom_opt.copy()
+    
+    # For links where bus1 is AC, multiply capacity by efficiency coefficient
+    # This ensures statistics report capacity at the AC side (bus1) rather than input side (bus0)
+    ac_links = n.links[n.links.bus1.map(n.buses.carrier) == "AC"].index
+    n.links.loc[ac_links, "p_nom_opt"] *= n.links.loc[ac_links, "efficiency"]
+    
+    # Calculate optimal capacity using default grouper
     caps = n.statistics.optimal_capacity(
         groupby=pypsa.statistics.get_carrier_and_bus_carrier, nice_names=False
     )
+    
+    # Restore original link capacities to avoid modifying the network object
+    n.links.p_nom_opt = original_p_nom_opt
+    
     caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
     capacities[label] = caps.sort_index(level=0)
     return capacities

@@ -224,7 +224,7 @@ def fix_network_names_colors(n: pypsa.Network, config: dict):
         n.carriers.nice_name = n.carriers.index.map(nice_names)
         t_colors = config["plotting"]["tech_colors"]
         n.carriers.color = n.carriers.index.map(t_colors)
-        NAN_COLOR = "lightgrey"
+        NAN_COLOR = config["plotting"].get("nan_color", "lightgrey")
         n.carriers.color.fillna(NAN_COLOR, inplace=True)
 
 
