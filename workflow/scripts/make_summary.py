@@ -322,29 +322,43 @@ def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFram
 
 def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame)->pd.DataFrame:
     for c in n.iterate_components(n.one_port_components | n.branch_components):
-        if c.name in n.one_port_components:
-            c_energies = (
-                c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0)
-                .sum()
-                .multiply(c.df.sign)
-                .groupby(c.df.carrier)
-                .sum()
-            )
-        else:
-            c_energies = pd.Series(0.0, c.df.carrier.unique())
-            for port in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
-                totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
-                # remove values where bus is missing (bug in nomopyomo)
-                no_bus = c.df.index[c.df["bus" + port] == ""]
-                totals.loc[no_bus] = float(n.component_attrs[c.name].loc["p" + port, "default"])
-                c_energies -= totals.groupby(c.df.carrier).sum()
+        try:
+            if c.name in n.one_port_components:
+                c_energies = (
+                    c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0)
+                    .sum()
+                    .multiply(c.df.sign)
+                    .groupby(c.df.carrier)
+                    .sum()
+                )
+            else:
+                c_energies = pd.Series(0.0, c.df.carrier.unique())
+                for port in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
+                    totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
+                    bus_col = "bus" + port
+                    if bus_col not in c.df.columns:
+                        logger.warning(f"Missing bus column {bus_col} for {c.name}")
+                        continue
 
-        c_energies = pd.concat([c_energies], keys=[c.list_name])
+                    totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
 
-        energy = energy.reindex(c_energies.index.union(energy.index))
+                    # fallback for empty bus entries
+                    no_bus = c.df.index[c.df[bus_col] == ""]
+                    if not no_bus.empty:
+                        default_val = float(n.component_attrs[c.name].loc["p" + port, "default"])
+                        totals.loc[no_bus] = default_val
 
-        energy.loc[c_energies.index, label] = c_energies
+                    c_energies -= totals.groupby(c.df.carrier).sum()
 
+            
+            c_energies = pd.concat([c_energies], keys=[c.list_name])
+            energy = energy.reindex(c_energies.index.union(energy.index))
+            energy.loc[c_energies.index, label] = c_energies
+            
+        except Exception as e:
+            logger.warning(f"Error processing component {c.name}: {str(e)}")
+            continue
+            
     return energy
 
 
@@ -496,7 +510,7 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
         pd.DataFrame: updated market_values
     """
     # Warning: doesn't include storage units
-
+        
     carrier = "AC"
 
     buses = n.buses.index[n.buses.carrier == carrier]
@@ -525,7 +539,6 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
         market_values.at[tech, label] = revenue.sum().sum() / dispatch.sum().sum()
 
     # === Now do market value of links  ===
-    # === Now do market value of links  ===
 
     for i in ["0", "1"]:
         carrier_links = n.links[n.links["bus" + i].isin(buses)].index
@@ -550,15 +563,92 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
 
     return market_values
 
-# TODO improve netwroks_dict arg
-def make_summaries(networks_dict: dict[tuple, os.PathLike])->dict[str, pd.DataFrame]:
-    """ Make summary tables for the given network
-    Args:
-        networks_dict (dict): a dictionary of (pathway, time):network_path used in the run
-    Returns:
-        dict: a dictionary of dataframes with the summary tables
-
+def calculate_market_values_by_region(n: pypsa.Network, label: str, market_values: pd.DataFrame):
     """
+    Calculate the market value broken down by region (bus) and add the "National" average.
+    """
+        
+    carrier = "AC"
+    buses = n.buses.index[n.buses.carrier == carrier]
+    records = []
+
+    # === generators ===
+    generators = n.generators.index[n.buses.loc[n.generators.bus, "carrier"] == carrier]
+    gen_techs = n.generators.loc[generators, "carrier"].unique()
+
+    for tech in gen_techs:
+        gens = generators[n.generators.loc[generators, "carrier"] == tech]
+        gen_buses = n.generators.loc[gens, "bus"]
+
+        dispatch = (
+            n.generators_t.p[gens]
+            .groupby(gen_buses, axis=1)
+            .sum()
+            .reindex(columns=buses, fill_value=0.0)
+        )
+        revenue = dispatch * n.buses_t.marginal_price[buses]
+
+        revenue_by_bus = revenue.sum()
+        dispatch_by_bus = dispatch.sum()
+
+        total_revenue = 0.0
+        total_dispatch = 0.0
+
+        for bus in buses:
+            if dispatch_by_bus[bus] > 0:
+                mv = revenue_by_bus[bus] / dispatch_by_bus[bus]
+                records.append({"tech": tech, "region": bus, label: mv})
+                total_revenue += revenue_by_bus[bus]
+                total_dispatch += dispatch_by_bus[bus]
+
+        if total_dispatch > 0:
+            national_mv = total_revenue / total_dispatch
+            records.append({"tech": tech, "region": "National", label: national_mv})
+
+    # === links ===
+    for i in ["0", "1"]:
+        links_i = n.links.index[n.links["bus" + i].isin(buses)]
+        if len(links_i) == 0:
+            continue
+
+        link_techs = n.links.loc[links_i, "carrier"].unique()
+
+        for tech in link_techs:
+            links_tech = links_i[n.links.loc[links_i, "carrier"] == tech]
+            link_buses = n.links.loc[links_tech, "bus" + i]
+
+            dispatch = (
+                n.links_t["p" + i][links_tech]
+                .groupby(link_buses, axis=1)
+                .sum()
+                .reindex(columns=buses, fill_value=0.0)
+            )
+            revenue = dispatch * n.buses_t.marginal_price[buses]
+
+            revenue_by_bus = revenue.sum()
+            dispatch_by_bus = dispatch.sum()
+
+            total_revenue = 0.0
+            total_dispatch = 0.0
+
+            for bus in buses:
+                if dispatch_by_bus[bus] > 0:
+                    mv = revenue_by_bus[bus] / dispatch_by_bus[bus]
+                    records.append({"tech": "link_" + tech, "region": bus, label: mv})
+                    total_revenue += revenue_by_bus[bus]
+                    total_dispatch += dispatch_by_bus[bus]
+
+            if total_dispatch > 0:
+                national_mv = total_revenue / total_dispatch
+                records.append({"tech": "link_" + tech, "region": "National", label: national_mv})
+
+    df = pd.DataFrame(records)
+    df = df.set_index(["tech", "region"]).sort_index()
+    return df
+
+
+
+def make_summaries(networks_dict: dict[tuple, os.PathLike]):
     output_funcs = {
         "nodal_costs": calculate_nodal_costs,
         "nodal_capacities": calculate_nodal_capacities,
@@ -575,6 +665,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike])->dict[str, pd.DataFr
         "weighted_prices": calculate_weighted_prices,
         # "price_statistics": calculate_price_statistics,
         "market_values": calculate_market_values,
+        "market_values_by_region": calculate_market_values_by_region,
         "metrics": calculate_metrics,
     }
 
@@ -588,14 +679,22 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike])->dict[str, pd.DataFr
         dataframes_dict[output] = pd.DataFrame(columns=columns, dtype=float)
 
     for label, filename in networks_dict.items():
-        logger.info(f"Make summary for scenario {label}, using {filename}")
-
         n = pypsa.Network(filename)
         assign_carriers(n)
         assign_locations(n)
+        if "name" not in n.buses.columns:
+            n.buses["name"] = n.buses.index.astype(str)
 
         for output, output_fn in output_funcs.items():
-            dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
+            try:
+                result = output_fn(n, label, dataframes_dict[output])
+                if result is None:
+                    logger.error(f"Function {output} returned None")
+                    result = pd.DataFrame()
+                dataframes_dict[output] = result
+            except Exception as e:
+                logger.error(f"Error in {output}: {str(e)}")
+                dataframes_dict[output] = pd.DataFrame()
 
     return dataframes_dict
 
@@ -615,7 +714,6 @@ def expand_from_wildcard(key, config)-> list:
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
         snakemake = mock_snakemake(
             "make_summary",
             topology="current+FCG",
@@ -646,13 +744,39 @@ if __name__ == "__main__":
         pathway, planning_horizons = pathways[0], years[0]
 
     networks_dict = {(pathway, planning_horizons): snakemake.input.network}
-
+    
     df = make_summaries(networks_dict)
-    df["metrics"].loc["total costs"] = df["costs"].sum()
-
+    
+    if df is None:
+        logger.error("make_summaries returned None")
+        sys.exit(1)
+    
+    if not df:
+        logger.error("make_summaries returned empty dict")
+        sys.exit(1)
+        
+    try:
+        if "costs" not in df:
+            logger.error("costs not found in results")
+            sys.exit(1)
+        if "metrics" not in df:
+            logger.error("metrics not found in results")
+            sys.exit(1)
+            
+        df["metrics"].loc["total costs"] = df["costs"].sum()
+    except Exception as e:
+        logger.error(f"Error calculating total costs: {str(e)}")
+        sys.exit(1)
+        
     def to_csv(dfs, dir):
+        if not isinstance(dfs, dict):
+            logger.error(f"Expected dict, got {type(dfs)}")
+            sys.exit(1)
         os.makedirs(dir, exist_ok=True)
         for key, df in dfs.items():
+            if df is None:
+                logger.error(f"DataFrame for key {key} is None")
+                continue
             df.to_csv(os.path.join(dir, f"{key}.csv"))
 
     to_csv(df, snakemake.output[0])

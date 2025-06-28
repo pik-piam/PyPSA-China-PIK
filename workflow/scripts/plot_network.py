@@ -85,11 +85,14 @@ def plot_map(
 
     if add_legend:
         carriers = bus_sizes.index.get_level_values(1).unique()
-        colors = carriers.intersection(tech_colors).map(tech_colors).to_list()
+        # Only select carriers that exist in tech_colors
+        available_carriers = carriers.intersection(tech_colors.keys())
+        colors = available_carriers.map(tech_colors).to_list()
+        labels = available_carriers.to_list()
 
         if isinstance(edge_colors, str):
             colors += [edge_colors]
-            labels = carriers.to_list() + ["HVDC or HVAC link"]
+            labels += ["HVDC or HVAC link"]
         else:
             colors += edge_colors.values.to_list()
             labels = carriers.to_list() + edge_colors.index.to_list()
@@ -229,7 +232,9 @@ def plot_cost_map(
     # ============ === Stats by bus ===
     # calc costs & sum over component types to keep bus & carrier (remove no loc)
     costs = network.statistics.capex(groupby=["location", "carrier"])
-    costs = costs.groupby(level=[1, 2]).sum().drop("")
+    costs = costs.groupby(level=[1, 2]).sum()
+    if "" in costs.index:
+        costs = costs.drop("")    
     # we miss some buses by grouping epr location, fill w 0s
     bus_idx = pd.MultiIndex.from_product([network.buses.index, ["AC"]])
     costs = costs.reindex(bus_idx.union(costs.index), fill_value=0)
@@ -287,11 +292,16 @@ def plot_cost_map(
     # Add the total costs
     bus_size_factor = opts["cost_map"]["bus_size_factor"]
     linewidth_factor = opts["cost_map"]["linewidth_factor"]
+    
+    # Create bus_colors based on carriers in cost_pies
+    carriers_in_cost_pies = cost_pies.index.get_level_values(1).unique()
+    bus_colors = pd.Series({carrier: tech_colors.get(carrier, "lightgrey") for carrier in carriers_in_cost_pies})
+    
     plot_map(
         network,
         tech_colors=tech_colors,
         edge_widths=edge_widths / linewidth_factor,
-        bus_colors=tech_colors,
+        bus_colors=bus_colors,
         bus_sizes=cost_pies / bus_size_factor,
         edge_colors=opts["cost_map"]["edge_color"],
         ax=ax1,
@@ -303,11 +313,15 @@ def plot_cost_map(
     # TODO check edges is working
     # Add the added pathway costs
     if plot_additions:
+        # Create bus_colors based on carriers in cost_pies_additional
+        carriers_in_additions = cost_pies_additional.index.get_level_values(1).unique()
+        bus_colors_additions = pd.Series({carrier: tech_colors.get(carrier, "lightgrey") for carrier in carriers_in_additions})
+        
         plot_map(
             network,
             tech_colors=tech_colors,
             edge_widths=edge_widths_added / linewidth_factor,
-            bus_colors=tech_colors,
+            bus_colors=bus_colors_additions,
             bus_sizes=cost_pies_additional / bus_size_factor,
             edge_colors="rosybrown",
             ax=ax2,

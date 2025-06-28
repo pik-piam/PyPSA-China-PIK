@@ -4,6 +4,11 @@ Soft coded centalized `constants`
 
 import os
 import re
+import pandas as pd
+from typing import List
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ======= CONVERSIONS =======
 PLOT_COST_UNITS = 1e9  # bnEur
@@ -29,6 +34,7 @@ TIMEZONE = "Asia/Shanghai"
 # THIS is used to heating demand and is a bit of a problem since currently all are set to
 # the administrative timezone and not the geo timezoones
 
+# Default province names for network construction
 REGIONAL_GEO_TIMEZONES_DEFAULT = {
     "Anhui": TIMEZONE,
     "Beijing": TIMEZONE,
@@ -64,28 +70,39 @@ REGIONAL_GEO_TIMEZONES_DEFAULT = {
 }
 
 
-# TODO really ugly, load the REGIONAL_GEO_TIMEZONES_DEFAULT from a file
-# use different file for tests
-def get_province_names() -> list:
-    """HACK to make it possible for pytest to generate a smaller network
-
-    Raises:
-        ValueError: if the PROV_NAMES is not a list or str
-
-    Returns:
-        list: the province node names to build the network
+def get_province_names() -> List[str]:
+    """Get province names for network construction.
+    
+    Priority: 1. Environment variable (for testing)
+              2. CSV file (for configuration)
+              3. Default list (fallback)
     """
-    default_prov_names = list(REGIONAL_GEO_TIMEZONES_DEFAULT)
-    _provs = os.getenv("PROV_NAMES", default_prov_names)
-    if isinstance(_provs, str):
-        _provs = re.findall(r"[\w']+", _provs)
-        if not _provs:
-            xpected = '["region1", ...]'
-            err = f"Environment var PROV_NAMES {_provs} for tests did not have expected format: "
-            raise ValueError(err + xpected)
-    elif not isinstance(_provs, list):
-        raise ValueError("PROV_NAMES must be a list or str")
-    return _provs
+    # Try environment variable first (for testing)
+    env_provs = os.getenv("PROV_NAMES")
+    if env_provs:
+        if isinstance(env_provs, str):
+            provinces = re.findall(r"[\w']+", env_provs)
+            if provinces:
+                logger.info(f"Using {len(provinces)} provinces from PROV_NAMES env var")
+                return provinces
+    
+    # Try CSV file (for configuration)
+    csv_path = "resources/data/regions/province_codes.csv"
+    if os.path.exists(csv_path):
+        try:
+            df = pd.read_csv(csv_path)
+            if "Full name" in df.columns:
+                provinces = df["Full name"].dropna().unique().tolist()
+                if provinces:
+                    logger.info(f"Using {len(provinces)} provinces from {csv_path}")
+                    return provinces
+        except Exception as e:
+            logger.warning(f"Failed to read {csv_path}: {e}")
+    
+    # Default fallback
+    default_provinces = list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys())
+    logger.info(f"Using default province list with {len(default_provinces)} provinces")
+    return default_provinces
 
 
 def filter_buses(names) -> list:

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: unamed_run
+  name: 0627SDNM_withdual
 foresight: "overnight"
 
 paths:
@@ -35,6 +35,15 @@ co2_scenarios:
     control: "reduction" # price | reduction | budget | None
     pathway:
       '2020': 0.0
+      # '2025': 0.0
+      # '2030': 0.0
+      # '2035': 0.0
+      # '2040': 0.0
+      # '2045': 0.0
+      # '2050': 0.0
+      # '2055': 0.0
+      # '2060': 0.0
+      '2020': 0.0
       '2025': 0.22623418
       '2030': 0.41175086
       '2035': 0.56387834
@@ -42,15 +51,14 @@ co2_scenarios:
       '2045': 0.79092165
       '2050': 0.87480618
       '2055': 0.94359322
-      '2060': 1.0
-
+      '2060': 1
 # TODO Need to test timezones and functionality of end_year_plus1
 snapshots:
   start: "01-01 00:00"
   end: "12-31 23:00"
   bounds: 'both'
   freq: '5h'
-  # test weighings -> to be improved
+  # for weighings -> to be improved
   frequency: 5.
   # in case snapshots cross the planning horizon year
   end_year_plus1: false
@@ -62,7 +70,7 @@ logging:
 
 enable:
   build_cutout: false
-  retrieve_cutout: false
+  retrieve_cutout: true
   retrieve_raster: false
 
 atlite:
@@ -243,6 +251,7 @@ solving:
       PreDual: 0
       GURO_PAR_BARDENSETHRESH: 200
       DualReductions: 0
+      export_duals: true      # Single switch for dual functionality
 #      BarConvTol: 1.e-6
 #      Seed: 123
 #      AggFill: 0
