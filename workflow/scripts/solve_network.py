@@ -25,11 +25,15 @@ def prepare_network(
 ) -> pypsa.Network:
     """prepare the network for the solver
     Args:
-        n (pypsa.Network): the pypsa network object
-        solve_opts (dict): the solving options
-        config (dict): the (snakemake) configuration dictionary
-        plan_year (int): the planning horizon year
+        n (pypsa.Network): the pypsa network to optimize
+        solve_opts (dict): solver options
+        config (dict): the snakemake configuration
+        plan_year (int): planning horizon year for which network is solved
+
+    Returns:
+        pypsa.Network: network object with additional constraints
     """
+
     if "clip_p_max_pu" in solve_opts:
         for df in (n.generators_t.p_max_pu, n.storage_units_t.inflow):
             df.where(df > solve_opts["clip_p_max_pu"], other=0.0, inplace=True)

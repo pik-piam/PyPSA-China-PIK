@@ -311,22 +311,24 @@ def add_conventional_generators(
         )
 
     # add gas will then be true
-    if "OCGT gas" in config["Techs"]["conv_techs"]:
-        network.add(
-            "Link",
-            nodes,
-            suffix=" OCGT",
-            bus0=nodes + " gas",
-            bus1=nodes,
-            marginal_cost=costs.at["OCGT", "efficiency"]
-            * costs.at["OCGT", "VOM"],  # NB: VOM is per MWel
-            capital_cost=costs.at["OCGT", "efficiency"]
-            * costs.at["OCGT", "capital_cost"],  # NB: capital cost is per MWel
-            p_nom_extendable=True,
-            efficiency=costs.at["OCGT", "efficiency"],
-            lifetime=costs.at["OCGT", "lifetime"],
-            carrier="gas OCGT",
-        )
+    gas_techs = ["OCGT", "CCGT"]
+    for tech in gas_techs:
+        if tech in config["Techs"]["conv_techs"]:
+            network.add(
+                "Link",
+                nodes,
+                suffix=f" {tech}",
+                bus0=nodes + " gas",
+                bus1=nodes,
+                marginal_cost=costs.at[tech, "efficiency"]
+                * costs.at[tech, "VOM"],  # NB: VOM is per MWel
+                capital_cost=costs.at[tech, "efficiency"]
+                * costs.at[tech, "capital_cost"],  # NB: capital cost is per MWel
+                p_nom_extendable=True,
+                efficiency=costs.at[tech, "efficiency"],
+                lifetime=costs.at[tech, "lifetime"],
+                carrier=f"gas {tech}",
+            )
 
     if config["add_coal"]:
         # this is the non sector-coupled approach
@@ -1334,7 +1336,7 @@ def prepare_network(
 
     # determine whether gas/coal to be added depending on specified conv techs
     config["add_gas"] = (
-        True if [tech for tech in config["Techs"]["conv_techs"] if "gas" in tech] else False
+        True if [tech for tech in config["Techs"]["conv_techs"] if ("gas" in tech or "CGT" in tech)] else False
     )
     config["add_coal"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "coal" in tech] else False

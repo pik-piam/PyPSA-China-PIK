@@ -17,9 +17,6 @@ configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
 
-# for dev of remind with mocksnakemake, activate this
-# configfile: "resources/tmp/remind_coupled.yaml"
-
 
 # ====== make paths =======
 config_manager = ConfigManager(config)
@@ -75,9 +72,7 @@ elif config["foresight"] in ["overnight", "myopic"]:
                 **config["scenario"]
             ),
             expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"]),
-            expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"]),
-            expand(RESULTS_DIR + "/plots/costs/parameters_comparison.pdf", 
-                   **{k: v for k, v in config["scenario"].items() if k != "planning_horizons"}) if config["enable"].get("check_parameters", True) else []
+            expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"])
 
 else:
     raise ValueError("Invalid scenario config: {}".format(config["foresight"]))
