@@ -151,6 +151,11 @@ Technique:
 #   existing_nuclear: False
 #   existing_PHS: False
 
+statistics:
+  # Whether to adjust link capacities by efficiency for AC-side reporting
+  # This ensures consistent capacity reporting across the network
+  adjust_link_capacities: true
+
 bus_suffix: [""," central heat"," decentral heat"," gas"," coal"]
 bus_carrier: {
     "": "AC",
