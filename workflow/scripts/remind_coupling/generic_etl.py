@@ -9,11 +9,6 @@ from os import PathLike
 
 import sys
 
-logging.info("Starting make_pypsa_config.py")
-logging.info(f"Python version: {sys.version}")
-logging.info(sys.path)
-logging.info(f"Conda prefix: {os.environ.get('CONDA_PREFIX', 'Not set')}")
-
 import setup  # setsup paths
 from _helpers import configure_logging
 import rpycpl.utils as coupl_utils
@@ -22,7 +17,6 @@ from rpycpl.etl import ETL_REGISTRY, Transformation
 
 
 logger = logging.getLogger(__name__)
-
 
 class RemindLoader:
     """Load Remind symbol tables from csvs or gdx"""
