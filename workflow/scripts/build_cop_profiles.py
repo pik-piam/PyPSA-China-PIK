@@ -22,11 +22,10 @@ def build_cop_profiles(pop_map: pd.DateOffset, cutout: atlite.cutout, output_pat
     """Build COP time profiles with atlite and write outputs to output_path as hf5
 
     Args:
-        pop_map (pd.DataFrame): the population map (node resolution) 
+        pop_map (pd.DataFrame): the population map (node resolution)
         cutout (atlite.cutout): the atlite cutout (weather data)
         output_path (os.PathLike): the path to write the output to as hdf5
     """
-
 
     pop_matrix = sp.sparse.csr_matrix(pop_map.T)
     index = pop_map.columns
@@ -86,6 +85,6 @@ if __name__ == "__main__":
 
     cutout = atlite.Cutout(snakemake.input.cutout)
 
-    build_cop_profiles(pop_map, cutout,  snakemake.output.cop)
+    build_cop_profiles(pop_map, cutout, snakemake.output.cop)
 
     logger.info("COP profiles successfully built")

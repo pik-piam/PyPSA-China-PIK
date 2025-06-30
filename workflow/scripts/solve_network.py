@@ -12,7 +12,8 @@ import pypsa
 from pandas import DatetimeIndex
 
 
-from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
+from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env
+from _pypsa_helpers import mock_solve
 from constants import YEAR_HRS
 
 pypsa.pf.logger.setLevel(logging.WARNING)
@@ -22,12 +23,11 @@ logger = logging.getLogger(__name__)
 def prepare_network(
     n: pypsa.Network, solve_opts: dict, config: dict, plan_year: int
 ) -> pypsa.Network:
-    """prepare the network for solving
-
+    """prepare the network for the solver
     Args:
-        n (pypsa.Network): the network object to optimize
+        n (pypsa.Network): the pypsa network to optimize
         solve_opts (dict): solver options
-        config (dict): snakemake config
+        config (dict): the snakemake configuration
         plan_year (int): planning horizon year for which network is solved
 
     Returns:
@@ -99,9 +99,9 @@ def add_battery_constraints(n: pypsa.Network):
 
 
 def add_chp_constraints(n: pypsa.Network):
-    """ Add constraints to couple the heat and electricity output of CHP plants
+    """Add constraints to couple the heat and electricity output of CHP plants
          (using the cb and cv parameter). See the DEA technology cataloge
-    
+
     Args:
         n (pypsa.Network): the pypsa network object to which's model the constraints are added
     """
@@ -230,7 +230,7 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
 def solve_network(
     n: pypsa.Network, config: dict, solving: dict, opts: str = "", **kwargs
 ) -> pypsa.Network:
-    """ perform the optimisation
+    """perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
         config (dict): the configuration dictionary

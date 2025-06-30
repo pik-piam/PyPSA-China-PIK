@@ -1,0 +1,223 @@
+PyPSA_tech,parameter,mapper,reference,unit,comment
+battery inverter,CO2 intensity,set_value,0,tCO2/MWh_th,
+battery inverter,efficiency,use_pypsa,,,
+battery inverter,FOM,use_pypsa,,%,
+battery inverter,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+battery inverter,investment,use_pypsa,,,
+battery inverter,lifetime,use_pypsa,,,
+battery inverter,VOM,set_value,0,USD/MWh,"No value originally in PyPSA-EUR databse, using default fill value"
+battery storage,CO2 intensity,set_value,0,tCO2/MWh_th,
+battery storage,efficiency,set_value,1,p.u.,Storage without losses
+battery storage,FOM,set_value,0,,
+battery storage,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+battery storage,investment,use_pypsa,btstor,,
+battery storage,lifetime,use_pypsa,btstor,,
+battery storage,VOM,set_value,0,USD/MWh,"No value originally in PyPSA-EUR databse, using default fill value"
+biomass,CO2 intensity,set_value,0,tCO2/MWh_th,"TODO coupling with REMIND-EU difficult, as biomass has not CO2 intensity there, assuming carbon-neutral for now as well"
+biomass,efficiency,weigh_remind_by_gen,"[biochp, bioigcc, bioigccc]",,
+biomass,FOM,weigh_remind_by_gen,"[biochp, bioigcc, bioigccc]",,
+biomass,fuel,use_remind,pebiolc,,
+biomass,investment,weigh_remind_by_gen,"[biochp, bioigcc, bioigccc]",,
+biomass,lifetime,weigh_remind_by_gen,"[biochp, bioigcc, bioigccc]",,
+biomass,VOM,weigh_remind_by_gen,"[biochp, bioigcc, bioigccc]",,
+CCGT,CO2 intensity,weigh_remind_by_gen,"[ngcc, ngccc, gaschp]",,
+CCGT,efficiency,weigh_remind_by_gen,"[ngcc, ngccc, gaschp]",,
+CCGT,FOM,weigh_remind_by_gen,"[ngcc, ngccc, gaschp]",,
+CCGT,investment,weigh_remind_by_gen,"[ngcc, ngccc, gaschp]",,
+CCGT,lifetime,weigh_remind_by_gen,"[ngcc, ngccc, gaschp]",,
+CCGT,VOM,weigh_remind_by_gen,"[ngcc, ngccc, gaschp]",,
+coal,CO2 intensity,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+coal,efficiency,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+coal,FOM,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+coal,fuel,use_remind,pecoal,,
+coal,investment,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+coal,lifetime,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+coal,VOM,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+csp-tower power block,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+csp-tower power block,efficiency,set_value,1,, Remind value is in pm_data not pm_dataeta as expected
+csp-tower power block,FOM,use_remind,csp,,
+csp-tower power block,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+csp-tower power block,investment,use_pypsa,USD/MW,"Currently not in REMIND-EU output, else could be mapped to technology “csp”"
+csp-tower power block,lifetime,use_remind,csp,,
+csp-tower power block,VOM,set_value,0,USD/MWh,"Currently not in REMIND-EU output, else could be mapped to technology “csp”"
+electrolysis,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+electrolysis,efficiency,use_remind,elh2,,
+electrolysis,FOM,use_remind,elh2,,
+electrolysis,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+electrolysis,investment,use_remind,elh2,,
+electrolysis,lifetime,use_remind,elh2,,
+electrolysis,VOM,use_remind,elh2,,
+fuel cell,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+fuel cell,efficiency,use_remind,h2turb,,
+fuel cell,FOM,use_remind,h2turb,,
+fuel cell,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+fuel cell,investment,use_remind,h2turb,,
+fuel cell,lifetime,use_remind,h2turb,,
+fuel cell,VOM,use_remind,h2turb,,
+gas,CO2 intensity,weigh_remind_by_gen,"[ngcc,ngccc,ngt,gaschp]",,TODO this is partially wrong and not correct emission factor from REMIND but PyPSA-Eur uses same emission factor for OCGT and CCGT
+gas,efficiency,set_value,1,p.u.,Dummy technology to avoid PyPSA-EUR throwing an error
+gas,FOM,set_value,0,%/year,Dummy technology to avoid PyPSA-EUR throwing an error
+gas,fuel,use_remind,pegas,,
+gas,investment,set_value,0,USD/MW,Dummy technology to avoid PyPSA-EUR throwing an error
+gas,lifetime,set_value,1,years,Dummy technology to avoid PyPSA-EUR throwing an error
+gas,VOM,set_value,0,USD/MWh,Dummy technology to avoid PyPSA-EUR throwing an error
+HVAC overhead,CO2 intensity,set_value,0,tCO2/MWh_th,
+HVAC overhead,efficiency,set_value,1,p.u.,Process without direct losses
+HVAC overhead,FOM,use_pypsa,,%,
+HVAC overhead,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+HVAC overhead,investment,use_pypsa,,,
+HVAC overhead,lifetime,use_pypsa,,,
+HVAC overhead,VOM,set_value,0,USD/MWh,"No value originally in PyPSA-EUR databse, using default fill value"
+HVDC inverter pair,CO2 intensity,set_value,0,tCO2/MWh_th,
+HVDC inverter pair,efficiency,set_value,1,p.u.,Process without direct losses
+HVDC inverter pair,FOM,use_pypsa,,%,
+HVDC inverter pair,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+HVDC inverter pair,investment,use_pypsa,,,
+HVDC inverter pair,lifetime,use_pypsa,,,
+HVDC inverter pair,VOM,set_value,0,USD/MWh,"No value originally in PyPSA-EUR databse, using default fill value"
+HVDC overhead,CO2 intensity,set_value,0,tCO2/MWh_th,
+HVDC overhead,efficiency,set_value,1,p.u.,Process without direct losses
+HVDC overhead,FOM,use_pypsa,,%,
+HVDC overhead,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+HVDC overhead,investment,use_pypsa,,,
+HVDC overhead,lifetime,use_pypsa,,,
+HVDC overhead,VOM,set_value,0,USD/MWh,"No value originally in PyPSA-EUR databse, using default fill value"
+HVDC submarine,CO2 intensity,set_value,0,tCO2/MWh_th,
+HVDC submarine,efficiency,set_value,1,p.u.,Process without direct losses
+HVDC submarine,FOM,use_pypsa,,%,
+HVDC submarine,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+HVDC submarine,investment,use_pypsa,,,
+HVDC submarine,lifetime,use_pypsa,,,
+HVDC submarine,VOM,set_value,0,USD/MWh,"No value originally in PyPSA-EUR databse, using default fill value"
+hydro,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+hydro,efficiency,use_pypsa,0,,
+hydro,FOM,set_value,0,,
+hydro,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+hydro,investment,use_pypsa,,,
+hydro,lifetime,use_pypsa,,,
+hydro,VOM,set_value,0,USD/MWh,"No value originally in PyPSA-EUR databse, using default fill value"
+hydrogen storage underground,CO2 intensity,set_value,0,tCO2/MWh_th,
+hydrogen storage underground,efficiency,set_value,1,p.u.,Storage without losses
+hydrogen storage underground,FOM,use_pypsa,,%,
+hydrogen storage underground,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+hydrogen storage underground,investment,use_pypsa,,,
+hydrogen storage underground,lifetime,use_pypsa,,,
+hydrogen storage underground,VOM,set_value,0,USD/MWh,"No VOM for storage technologies"
+hydrogen storage tank type 1,CO2 intensity,set_value,0,tCO2/MWh_th,
+hydrogen storage tank type 1,efficiency,set_value,1,p.u.,Storage without losses
+hydrogen storage tank type 1,FOM,use_pypsa,,%,
+hydrogen storage tank type 1,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+hydrogen storage tank type 1,investment,use_pypsa,,,
+hydrogen storage tank type 1,lifetime,use_pypsa,,,
+hydrogen storage tank type 1,VOM,set_value,0,USD/MWh,"No VOM for storage technologies"
+hydrogen storage tank type 1 including compressor,CO2 intensity,set_value,0,tCO2/MWh_th,
+hydrogen storage tank type 1 including compressor,efficiency,set_value,1,p.u.,Storage without losses
+hydrogen storage tank type 1 including compressor,FOM,use_pypsa,,%,
+hydrogen storage tank type 1 including compressor,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+hydrogen storage tank type 1 including compressor,investment,use_pypsa,,,
+hydrogen storage tank type 1 including compressor,lifetime,use_pypsa,,,
+hydrogen storage tank type 1 including compressor,VOM,set_value,0,USD/MWh,"No VOM for storage technologies"
+H2 (g) pipeline,CO2 intensity,set_value,0,tCO2/MWh_th,
+H2 (g) pipeline,efficiency,set_value,1,p.u., Dummy losses specified in transmission config
+H2 (g) pipeline,FOM,use_pypsa,,%,
+H2 (g) pipeline,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+H2 (g) pipeline,investment,use_pypsa,,,
+H2 (g) pipeline,lifetime,use_pypsa,,,
+H2 (g) pipeline,VOM,set_value,0,USD/MWh,"No VOM for pipeline yet"  
+lignite,CO2 intensity,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+lignite,efficiency,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+lignite,FOM,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+lignite,fuel,use_remind,pecoal,,
+lignite,investment,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+lignite,lifetime,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+lignite,VOM,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+nuclear,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+nuclear,efficiency,weigh_remind_by_gen,"[fnrs, tnrs]",,
+nuclear,FOM,weigh_remind_by_gen,"[fnrs, tnrs]",,
+nuclear,fuel,use_remind,peur,,
+nuclear,investment,weigh_remind_by_gen,"[fnrs, tnrs]",,
+nuclear,lifetime,weigh_remind_by_gen,"[fnrs, tnrs]",,
+nuclear,VOM,weigh_remind_by_gen,"[fnrs, tnrs]",,
+OCGT,CO2 intensity,use_remind,ngt,,
+OCGT,efficiency,use_remind,ngt,,
+OCGT,FOM,use_remind,ngt,,
+OCGT,investment,use_remind,ngt,,
+OCGT,lifetime,use_remind,ngt,,
+OCGT,VOM,use_remind,ngt,,
+offwind,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+offwind,efficiency,use_remind,windoff,,
+offwind,FOM,use_remind,windoff,,
+offwind,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+offwind,investment,use_remind,windoff,,
+offwind,lifetime,use_remind,windoff,,
+offwind,VOM,set_value,0,USD/MWh,"Currently not in REMIND-EU output, else could be mapped to technology “csp”"
+offwind-ac-connection-submarine,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+offwind-ac-connection-submarine,efficiency,set_value,1,p.u.,Process without direct losses
+offwind-ac-connection-submarine,FOM,set_value,0,%/year,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-connection-submarine,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+offwind-ac-connection-submarine,investment,set_value,0,USD/MW/km,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-connection-submarine,lifetime,set_value,1,years,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-connection-submarine,VOM,set_value,0,USD/MWh,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-connection-underground,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+offwind-ac-connection-underground,efficiency,set_value,1,p.u.,Process without direct losses
+offwind-ac-connection-underground,FOM,set_value,0,%/year,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-connection-underground,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+offwind-ac-connection-underground,investment,set_value,0,USD/MW/km,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-connection-underground,lifetime,set_value,1,years,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-connection-underground,VOM,set_value,0,USD/MWh,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-station,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+offwind-ac-station,efficiency,set_value,1,p.u.,Process without direct losses
+offwind-ac-station,FOM,set_value,0,%/year,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-station,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+offwind-ac-station,investment,set_value,0,USD/MW,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-station,lifetime,set_value,1,years,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-ac-station,VOM,set_value,0,USD/MWh,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-connection-submarine,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+offwind-dc-connection-submarine,efficiency,set_value,1,p.u.,Process without direct losses
+offwind-dc-connection-submarine,FOM,set_value,0,%/year,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-connection-submarine,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+offwind-dc-connection-submarine,investment,set_value,0,USD/MW/km,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-connection-submarine,lifetime,set_value,1,years,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-connection-submarine,VOM,set_value,0,USD/MWh,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-connection-underground,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+offwind-dc-connection-underground,efficiency,set_value,1,p.u.,Process without direct losses
+offwind-dc-connection-underground,FOM,set_value,0,%/year,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-connection-underground,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+offwind-dc-connection-underground,investment,set_value,0,USD/MW/km,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-connection-underground,lifetime,set_value,1,years,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-connection-underground,VOM,set_value,0,USD/MWh,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-station,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+offwind-dc-station,efficiency,set_value,1,p.u.,Process without direct losses
+offwind-dc-station,FOM,set_value,0,%/year,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-station,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+offwind-dc-station,investment,set_value,0,USD/MW,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-station,lifetime,set_value,1,years,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+offwind-dc-station,VOM,set_value,0,USD/MWh,"No corresponding technology in REMIND-EU, setting to an (hopefully) non-disruptive default value."
+oil,CO2 intensity,use_remind,dot,,
+oil,efficiency,use_remind,dot,,
+oil,FOM,use_remind,dot,,
+oil,fuel,use_remind,peoil,,
+oil,investment,use_remind,dot,,
+oil,lifetime,use_remind,dot,,
+oil,VOM,use_remind,dot,,
+onwind,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+onwind,efficiency,use_remind,windon,,
+onwind,FOM,use_remind,windon,,
+onwind,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+onwind,investment,use_remind,windon,,
+onwind,lifetime,use_remind,windon,,
+onwind,VOM,set_value,0,USD/MWh,"Currently not in REMIND-EU output, else could be mapped to technology “csp”"
+PHS,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+PHS,efficiency,use_pypsa,hydro,,
+PHS,FOM,use_pypsa,,%,
+PHS,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+PHS,investment,use_pypsa,,,
+PHS,lifetime,use_pypsa,,,
+PHS,VOM,set_value,0,USD/MWh,"No value originally in PyPSA-EUR databse, using default fill value"
+solar,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+solar,efficiency,use_remind,spv,,
+solar,FOM,use_remind,spv,,
+solar,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+solar,investment,use_remind,spv,,
+solar,lifetime,use_remind,spv,,
+solar,VOM,set_value,0,USD/MWh,"No value originally in PyPSA-EUR databse, using default fill value"

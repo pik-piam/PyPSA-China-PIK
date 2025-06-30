@@ -29,7 +29,7 @@ import os.path
 from pandas import concat
 from os import mkdir
 
-from readers import read_province_shapes, read_offshore_province_shapes
+from readers_geospatial import read_province_shapes, read_offshore_province_shapes
 from _helpers import configure_logging, mock_snakemake
 from constants import PROV_NAMES, OFFSHORE_WIND_NODES
 
@@ -117,7 +117,9 @@ if __name__ == "__main__":
     if "max_shore_distance" in params:
         buffer = params["max_shore_distance"]
         excluder.add_geometry(
-            excluder.add_geometry(regions.union_all("unary")), buffer=buffer, invert=True
+            excluder.add_geometry(regions.union_all("unary")),
+            buffer=buffer,
+            invert=True,
         )
 
     logger.info(f"Calculate landuse availability for {technology}...")

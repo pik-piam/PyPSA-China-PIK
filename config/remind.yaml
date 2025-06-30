@@ -1,0 +1,83 @@
+run:
+  name: remind_brownfield_pk1000_2018weather
+  remind:
+    is_remind_coupled: true
+    coupling: 1w
+    version: 3-5-0
+    run_name: SSP2-PkBudget1000-PyPSAxprt
+  comment: "costs 2025 are copy of 2030"
+foresight: overnight
+existing_capacities:
+  add: True
+scenario:
+  co2_pathway: "remind_ssp2pk1000"
+  planning_horizons:
+  - 2025
+  - 2030
+  - 2035
+  - 2040
+  - 2045
+  - 2050
+  - 2055
+  - 2060
+  - 2070
+  - 2080
+  - 2090
+  - 2100
+  - 2110
+  - 2130
+  - 2150
+co2_scenarios:
+  remind_ssp2pk1000:
+    control: price
+    pathway:
+      2020: 34.173364400000004
+      2025: 41.0300373
+      2030: 151.40279450390364
+      2035: 206.66739621767024
+      2040: 297.02273326463865
+      2045: 438.6341916650227
+      2050: 647.6671574390364
+      2055: 733.8825495468436
+      2060: 820.0979416546509
+      2070: 992.5287258702656
+      2080: 1164.95951008588
+      2090: 1164.95951008588
+      2100: 1164.95951008588
+      2110: 1164.95951008588
+      2130: 1164.95951008588
+      2150: 1164.95951008588
+paths:
+  costs_dir: /p/tmp/ivanra/formatted_remind_outputs/test_remind_3-5-0_pk1000
+  yearly_regional_load: 
+    ac: /p/tmp/ivanra/formatted_remind_outputs/test_remind_3-5-0_pk1000/CHA_load_disagg.csv
+heat_coupling: false
+add_biomass: true
+add_hydro: true
+add_H2: true
+add_methanation: false
+line_losses: true
+no_lines: false
+Techs:
+  vre_techs:
+  - onwind
+  - offwind
+  - solar
+  - hydroelectricity
+  - nuclear
+  - biomass
+  - H2 CHP
+  conv_techs:
+  - OCGT gas
+  - CHP gas
+  - gas boiler
+  - coal boiler
+  - coal power plant
+  - CHP coal
+  store_techs:
+  - H2
+  - battery
+  - water tanks
+  - PHS
+  coal_cc: true
+  hydrogen_lines: true
