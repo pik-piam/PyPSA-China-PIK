@@ -56,11 +56,7 @@ class RemindLoader:
     def load_frames_gdx(
         self, frames: dict[str, str], gdx_file: PathLike
     ) -> dict[str, pd.DataFrame]:
-        # TODO add the variable renaming in the frame
-        p = os.path.join(self.remind_dir, "gdx")
-        read_data = {}
-        for k, v in frames.items():
-            read_data[k] = coupl_utils.read_gdx(p, v)
+
         raise NotImplementedError("GDX loading not implemented yet")
 
     def merge_split_frames(self, frames: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
