@@ -115,14 +115,14 @@ if __name__ == "__main__":
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
         
         # Optionally adjust link capacities by efficiency
-        # This can be controlled by a config parameter
+        # pypsa links capacity defined by input but nameplate capacity often AC
         try:
-            adjust_link_capacities = snakemake.config["statistics"].get("adjust_link_capacities", True)
+            adjust_link_capacities_by_efficiency = snakemake.config["reporting"].get("adjust_link_capacities_by_efficiency", True)
         except (KeyError, NameError):
             # Fallback if snakemake or config not available
-            adjust_link_capacities = True
+            adjust_link_capacities_by_efficiency = True
         
-        if adjust_link_capacities:
+        if adjust_link_capacities_by_efficiency:
             # Create mask for AC links 
             ac_links_mask = n.links.bus1.map(n.buses.carrier) == "AC"
             

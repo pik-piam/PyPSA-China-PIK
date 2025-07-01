@@ -230,7 +230,7 @@ def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: p
     return nodal_capacities
 
 
-def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame, adjust_link_capacities=None) -> pd.DataFrame:
+def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame, adjust_link_capacities_by_efficiency=None) -> pd.DataFrame:
     """Calculate the optimal capacities by carrier and bus carrier
     
     For links that connect to AC buses (bus1=AC), the capacity can be multiplied by efficiency
@@ -241,27 +241,27 @@ def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame,
         n (pypsa.Network): the network object
         label (str): the label used by make summaries
         capacities (pd.DataFrame): the dataframe to fill/update
-        adjust_link_capacities (bool, optional): Whether to adjust link capacities by efficiency. 
+        adjust_link_capacities_by_efficiency (bool, optional): Whether to adjust link capacities by efficiency. 
             If None, reads from config. Defaults to None.
 
     Returns:
         pd.DataFrame: updated capacities
     """
     # Get configuration if not provided
-    if adjust_link_capacities is None:
+    if adjust_link_capacities_by_efficiency is None:
         try:
-            adjust_link_capacities = snakemake.config["statistics"].get("adjust_link_capacities", True)
+            adjust_link_capacities_by_efficiency = snakemake.config["reporting"].get("adjust_link_capacities_by_efficiency", True)
         except (KeyError, NameError):
             # Fallback if snakemake or config not available
-            adjust_link_capacities = True
+            adjust_link_capacities_by_efficiency = True
     
     # Calculate optimal capacity using default grouper
     caps = n.statistics.optimal_capacity(
         groupby=pypsa.statistics.get_carrier_and_bus_carrier, nice_names=False
     )
     
-    # Only adjust if requested
-    if adjust_link_capacities:
+    # pypsa links capacity defined by input but nameplate capacity often AC
+    if adjust_link_capacities_by_efficiency:
         # Create mask for AC links 
         ac_links_mask = n.links.bus1.map(n.buses.carrier) == "AC"
         
