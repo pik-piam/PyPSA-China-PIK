@@ -24,13 +24,10 @@ from os import PathLike
 
 import sys
 
-logging.info("Starting make_pypsa_config.py")
-logging.info(f"Python version: {sys.version}")
-logging.info(sys.path)
-logging.info(f"Conda prefix: {os.environ.get('CONDA_PREFIX', 'Not set')}")
-
-import setup  # setsup paths
+import setup  # sets up paths
 from _helpers import configure_logging
+
+# remind pypsa coupling package
 import rpycpl.utils as coupl_utils
 from rpycpl.utils import read_remind_csv
 from rpycpl.etl import ETL_REGISTRY, Transformation
@@ -184,9 +181,9 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
             "transform_remind_data",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
+            co2_pathway="SSP2-PkBudg1000-freeze",
             topology="current+FCG",
-            configfiles="resources/tmp/remind_coupled_heat.yaml",
+            configfiles="resources/tmp/remind_coupled.yaml",
             heating_demand="positive",
         )
 

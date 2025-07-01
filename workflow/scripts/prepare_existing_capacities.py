@@ -63,7 +63,8 @@ def read_existing_capacities(paths_dict: dict[str, os.PathLike]) -> pd.DataFrame
         "coal": "coal power plant",
         "CHP coal": "central coal CHP",
         "CHP gas": "central gas CHP",
-        "OCGT": "OCGT gas",
+        "OCGT": "gas OCGT",
+        "CCGT": "gas CCGT",
         "solar": "solar",
         "solar thermal": "central solar thermal",
         "onwind": "onwind",
@@ -204,14 +205,14 @@ def convert_CHP_to_poweronly(capacities: pd.DataFrame) -> pd.DataFrame:
     capacities.loc[chp_mask, "Fueltype"] = (
         capacities.loc[chp_mask, "Fueltype"]
         .str.replace("central coal CHP", "coal power plant")
-        .str.replace("central gas CHP", "CCGT gas")
+        .str.replace("central gas CHP", "gas CCGT")
     )
     # update the Tech field based on the converted Fueltype
     capacities.loc[chp_mask, "Tech"] = (
         capacities.loc[chp_mask, "Fueltype"]
         .str.replace(" CHP", "")
         .str.replace("CHP ", " ")
-        .str.replace(" gas", "")
+        .str.replace("gas ", "")
         .str.replace("coal power plant", "coal")
     )
     return capacities
@@ -222,8 +223,9 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_baseyear_capacities",
             topology="current+FCG",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2030",
+            co2_pathway="SSP2-PkBudg1000-freeze",
+            planning_horizons="2020",
+            configfiles="resources/tmp/remind_coupled.yaml",
         )
 
     configure_logging(snakemake, logger=logger)

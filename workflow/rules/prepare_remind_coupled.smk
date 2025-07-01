@@ -16,6 +16,7 @@ rule build_run_config:
     params:
         remind_region=REMIND_REGION,
         expname_max_len=20,
+        currency_conv=0.912,
     input:
         remind_output=config["paths"].get("remind_outpt_dir", ""),
         config_template="config/templates/remind_cpled.yml",
@@ -49,6 +50,8 @@ rule transform_remind_data:
         loads=DERIVED_DATA + "/remind/yrly_loads.csv",
         remind_caps=DERIVED_DATA + "/remind/preinv_capacities.csv",
         remind_tech_groups=DERIVED_DATA + "/remind/tech_groups.csv",
+    log:
+        LOG_DIR + "/remind_coupling/transform_remind_data.log",
     conda:
         "remind-coupling"
     script:
@@ -83,6 +86,8 @@ rule disaggregate_data:
         },
         paid_off=DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv",
         disagg_load=DERIVED_DATA + "/remind/ac_load_disagg.csv",
+    log:
+        LOG_DIR + "/remind_coupling/disaggregate_data.log",
     conda:
         "remind-coupling"
     script:

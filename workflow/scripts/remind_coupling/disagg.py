@@ -85,8 +85,10 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
             "disaggregate_data",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
+            co2_pathway="SSP2-PkBudg1000-freeze",
             topology="current+FCG",
+            config_files="resources/tmp/remind_coupled.yaml",
+            heating_demand="positive",
         )
     configure_logging(snakemake)
     logger.info("Running disaggregation script")
@@ -159,7 +161,7 @@ if __name__ == "__main__":
             outp_files["disagg_load"],
         )
     if "harmonize_model_caps" in results:
-        logger.info("Ex[porting harmonized model capacities")
+        logger.info("Exporting harmonized model capacities")
         for year, df in results["harmonize_model_caps"].items():
             logger.info(f"Exporting harmonized capacities for year {year}")
             df.to_csv(outp_files[f"caps_{year}"], index=False)

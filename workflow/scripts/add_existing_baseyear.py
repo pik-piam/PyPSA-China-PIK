@@ -200,8 +200,8 @@ def add_power_capacities_installed_before_baseyear(
         "coal CHP": "CHP coal",
         "CHP gas": "CHP gas",
         "gas CHP": "CHP gas",
-        "OCGT gas": "gas OCGT",
-        "CCGT gas": "gas CCGT",
+        "gas OCGT": "gas OCGT",
+        "gas CCGT": "gas CCGT",
         "solar": "solar",
         "solar thermal": "solar thermal",
         "onwind": "onwind",
@@ -216,8 +216,8 @@ def add_power_capacities_installed_before_baseyear(
         "coal power plant": "coal",
         "coal CHP": "central coal CHP",
         "gas CHP": "central gas CHP",
-        "OCGT gas": "OCGT",
-        "CCGT gas": "CCGT",
+        "gas OCGT": "OCGT",
+        "gas CCGT": "CCGT",
         "solar": "solar",
         "solar thermal": "central solar thermal",
         "onwind": "onwind",
@@ -317,7 +317,7 @@ def add_power_capacities_installed_before_baseyear(
             )
 
         # TODO this does not add the carrier to the list
-        elif generator in ["CCGT gas", "OCGT gas"]:
+        elif generator in ["gas CCGT", "gas OCGT"]:
             bus0 = buses + " gas"
             carrier_ = carrier_map[generator]
             # ugly fix to register the carrier. Emissions for sub carrier are 0: they are accounted for at gas bus
