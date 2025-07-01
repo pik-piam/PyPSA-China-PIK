@@ -228,7 +228,7 @@ def plot_pathway_capacities(
     fig, axes = plt.subplots(2, 2)
     fig.set_size_inches((14, 15))
 
-    for i, capacity_df in enumerate([caps_ac, caps_ac, caps_stores, caps_h2]):
+    for i, capacity_df in enumerate([caps_ac, caps_heat, caps_stores, caps_h2]):
         if capacity_df.empty:
             continue
         k, j = divmod(i, 2)
@@ -264,6 +264,31 @@ def plot_pathway_capacities(
         ax.legend(handles, labels, ncol=2, bbox_to_anchor=(0.5, -0.15), loc="upper center")
     fig.tight_layout()
     fig.subplots_adjust(wspace=0.42)
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=config["transparent"])
+
+    return fig, axes
+
+
+def plot_expanded_capacities(
+    file_list: list, config: dict, plot_heat=False, plot_h2=True, fig_name=None
+):
+    """plot the expanded capacities
+
+    Args:
+        file_list (list): the input csvs from make_summary
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+        plot_heat (bool, optional): plot heat capacities. Defaults to True.
+        plot_h2 (bool, optional): plot hydrogen capacities. Defaults to True.
+    """
+
+    fig, axes = plot_pathway_capacities(file_list, config, plot_heat, plot_h2, fig_name=None)
+    for i, ax in enumerate(axes.flat):
+        ylabel = ax.get_ylabel()
+        if "Installed" in ylabel:
+            ax.set_ylabel(ylabel.replace("Installed", "Additional"))
 
     if fig_name is not None:
         fig.savefig(fig_name, transparent=config["transparent"])
@@ -809,17 +834,17 @@ if __name__ == "__main__":
             # co2_pathway="exp175default",
             co2_pathway="SSP2-PkBudg1000-PyPS",
             heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled.yaml"],
+            configfiles=["resources/tmp/tmp.yaml"],
             planning_horizons=[
-                # 2020,
-                # 2025,
+                2020,
+                2025,
                 2030,
                 2035,
-                2040,
-                2045,
-                2050,
-                2055,
-                2060,
+                # 2040,
+                # 2045,
+                # 2050,
+                # 2055,
+                # 2060,
             ],
         )
 
@@ -856,6 +881,7 @@ if __name__ == "__main__":
         "co2_balance": [os.path.join(p, "co2_balance.csv") for p in paths],
         "energy_supply": [os.path.join(p, "supply_energy.csv") for p in paths],
         "capacity": [os.path.join(p, "capacities.csv") for p in paths],
+        "expanded_capacity": [os.path.join(p, "capacities_expanded.csv") for p in paths],
         "capacity_factors": [os.path.join(p, "cfs.csv") for p in paths],
     }
 
@@ -876,6 +902,13 @@ if __name__ == "__main__":
         data_paths["capacity"],
         config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/capacities.png",
+        plot_heat=plot_heat,
+        plot_h2=plot_h2,
+    )
+    plot_expanded_capacities(
+        data_paths["expanded_capacity"],
+        config["plotting"],
+        fig_name=os.path.dirname(output_paths.costs) + "/capacities_expanded.png",
         plot_heat=plot_heat,
         plot_h2=plot_h2,
     )

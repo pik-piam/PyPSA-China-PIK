@@ -246,6 +246,29 @@ def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame)
     caps = n.statistics.optimal_capacity(
         groupby=pypsa.statistics.get_carrier_and_bus_carrier, nice_names=False
     )
+    caps.drop("load shedding", level=1, inplace=True)
+    caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
+    capacities[label] = caps.sort_index(level=0)
+    return capacities
+
+
+def calculate_expanded_capacities(
+    n: pypsa.Network, label: str, capacities: pd.DataFrame
+) -> pd.DataFrame:
+    """calculate the capacities by carrier
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        capacities (pd.DataFrame): the dataframe to fill
+
+    Returns:
+        pd.Dataframe: updated capacities (bad style)
+    """
+    caps = n.statistics.expanded_capacity(
+        groupby=pypsa.statistics.get_carrier_and_bus_carrier, nice_names=False
+    )
+    caps.drop("load shedding", level=1, inplace=True)
     caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
     capacities[label] = caps.sort_index(level=0)
     return capacities
@@ -578,6 +601,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike]) -> dict[str, pd.Data
         "costs": calculate_costs,
         "co2_balance": calculate_co2_balance,
         "capacities": calculate_capacities,
+        "capacities_expanded": calculate_expanded_capacities,
         "curtailment_pc": calculate_curtailment,
         "peak_dispatch": calculate_peak_dispatch,
         # "energy": calculate_energy,
