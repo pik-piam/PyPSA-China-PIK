@@ -111,8 +111,17 @@ if __name__ == "__main__":
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
         
-        # Calculate optimal capacity using default grouper
-        ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+        # Filter out reversed links to avoid double-counting transmission capacity
+        # Only include positive links since positive and reversed links have the same capacity
+        positive_links_mask = n.links.index.str.contains("positive")
+        
+        # Create a temporary network with only positive links for capacity calculation
+        n_temp = n.copy()
+        reversed_links = n.links.index[~positive_links_mask]
+        n_temp.links = n_temp.links.drop(reversed_links)
+        
+        # Calculate optimal capacity using default grouper (only positive links)
+        ds = n_temp.statistics.optimal_capacity(groupby=["carrier"]).dropna()
         
         # Optionally adjust link capacities by efficiency
         # pypsa links capacity defined by input but nameplate capacity often AC
@@ -120,23 +129,23 @@ if __name__ == "__main__":
         adjust_link_capacities_by_efficiency = snakemake.config.get("reporting", {}).get("adjust_link_capacities_by_efficiency", True)
         
         if adjust_link_capacities_by_efficiency:
-            # Create mask for AC links 
-            ac_links_mask = n.links.bus1.map(n.buses.carrier) == "AC"
+            # Create mask for AC links (only positive links)
+            ac_links_mask = n_temp.links.bus1.map(n_temp.buses.carrier) == "AC"
             
             # Get AC links that have optimal capacity > 0
-            ac_links_with_capacity = n.links[ac_links_mask & (n.links.p_nom_opt > 0)]
+            ac_links_with_capacity = n_temp.links[ac_links_mask & (n_temp.links.p_nom_opt > 0)]
             
             # Directly adjust the ds values for AC links
             # This avoids modifying the network object and works with n.statistics output
             for link_idx in ac_links_with_capacity.index:
-                link_carrier = n.links.loc[link_idx, "carrier"]
-                efficiency = n.links.loc[link_idx, "efficiency"]
+                link_carrier = n_temp.links.loc[link_idx, "carrier"]
+                efficiency = n_temp.links.loc[link_idx, "efficiency"]
                 
                 # Find the corresponding entry in ds and adjust it
                 if link_carrier in ds.index:
                     # For AC links, we want to report the capacity at the AC side
                     # So we multiply the original capacity by efficiency
-                    original_capacity = n.links.loc[link_idx, "p_nom_opt"]
+                    original_capacity = n_temp.links.loc[link_idx, "p_nom_opt"]
                     adjusted_capacity = original_capacity * efficiency
                     
                     # Update the ds value for this carrier
