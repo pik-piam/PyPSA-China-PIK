@@ -230,7 +230,7 @@ def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: p
     return nodal_capacities
 
 
-def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame, adjust_link_capacities_by_efficiency=None) -> pd.DataFrame:
+def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame, adjust_link_capacities_by_efficiency=False) -> pd.DataFrame:
     """Calculate the optimal capacities by carrier and bus carrier
     
     For links that connect to AC buses (bus1=AC), the capacity can be multiplied by efficiency
@@ -241,19 +241,12 @@ def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame,
         n (pypsa.Network): the network object
         label (str): the label used by make summaries
         capacities (pd.DataFrame): the dataframe to fill/update
-        adjust_link_capacities_by_efficiency (bool, optional): Whether to adjust link capacities by efficiency. 
-            If None, reads from config. Defaults to None.
+        adjust_link_capacities_by_efficiency (bool): Whether to adjust link capacities by efficiency. 
+            Defaults to False for transparency.
 
     Returns:
         pd.DataFrame: updated capacities
     """
-    # Get configuration if not provided
-    if adjust_link_capacities_by_efficiency is None:
-        try:
-            adjust_link_capacities_by_efficiency = snakemake.config["reporting"].get("adjust_link_capacities_by_efficiency", True)
-        except (KeyError, NameError):
-            # Fallback if snakemake or config not available
-            adjust_link_capacities_by_efficiency = True
     
     # Calculate optimal capacity using default grouper
     caps = n.statistics.optimal_capacity(
@@ -598,14 +591,18 @@ def calculate_market_values(n: pypsa.Network, label: str, market_values: pd.Data
     return market_values
 
 # TODO improve netwroks_dict arg
-def make_summaries(networks_dict: dict[tuple, os.PathLike])->dict[str, pd.DataFrame]:
+def make_summaries(networks_dict: dict[tuple, os.PathLike], opts: dict = None)->dict[str, pd.DataFrame]:
     """ Make summary tables for the given network
     Args:
         networks_dict (dict): a dictionary of (pathway, time):network_path used in the run
+        opts (dict): options for each summary function
     Returns:
         dict: a dictionary of dataframes with the summary tables
 
     """
+    if opts is None:
+        opts = {}
+        
     output_funcs = {
         "nodal_costs": calculate_nodal_costs,
         "nodal_capacities": calculate_nodal_capacities,
@@ -642,7 +639,10 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike])->dict[str, pd.DataFr
         assign_locations(n)
 
         for output, output_fn in output_funcs.items():
-            dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
+            if output in opts:
+                dataframes_dict[output] = output_fn(n, label, dataframes_dict[output], **opts[output])
+            else:
+                dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
 
     return dataframes_dict
 
@@ -694,7 +694,11 @@ if __name__ == "__main__":
 
     networks_dict = {(pathway, planning_horizons): snakemake.input.network}
 
-    df = make_summaries(networks_dict)
+    # Access snakemake config only in main
+    reporting_cfg = snakemake.config.get("reporting", {})
+    summary_cfg = {"capacities": {"adjust_link_capacities_by_efficiency": reporting_cfg.get("adjust_link_capacities_by_efficiency", False)}}
+
+    df = make_summaries(networks_dict, opts=summary_cfg)
     df["metrics"].loc["total costs"] = df["costs"].sum()
 
     def to_csv(dfs, dir):

@@ -116,11 +116,8 @@ if __name__ == "__main__":
         
         # Optionally adjust link capacities by efficiency
         # pypsa links capacity defined by input but nameplate capacity often AC
-        try:
-            adjust_link_capacities_by_efficiency = snakemake.config["reporting"].get("adjust_link_capacities_by_efficiency", True)
-        except (KeyError, NameError):
-            # Fallback if snakemake or config not available
-            adjust_link_capacities_by_efficiency = True
+        # Get configuration from snakemake (only accessed in main)
+        adjust_link_capacities_by_efficiency = snakemake.config.get("reporting", {}).get("adjust_link_capacities_by_efficiency", True)
         
         if adjust_link_capacities_by_efficiency:
             # Create mask for AC links 
