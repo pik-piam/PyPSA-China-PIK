@@ -111,52 +111,27 @@ if __name__ == "__main__":
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
         
-        # Filter out reversed links to avoid double-counting transmission capacity
-        # Only include positive links since positive and reversed links have the same capacity
-        positive_links_mask = n.links.index.str.contains("positive")
+        # Temporarily save original link capacities
+        original_p_nom_opt = n.links.p_nom_opt.copy()
         
-        # Create a temporary network with only positive links for capacity calculation
-        n_temp = n.copy()
-        reversed_links = n.links.index[~positive_links_mask]
-        n_temp.links = n_temp.links.drop(reversed_links)
+        # Get configuration from snakemake
+        adjust_link_capacities = snakemake.config.get("reporting", {}).get("adjust_link_capacities_by_efficiency", True)
         
-        # Calculate optimal capacity using default grouper (only positive links)
-        ds = n_temp.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+        # Drop reversed links & report AC capacities for links from X to AC
+        if adjust_link_capacities:
+            # For links where bus1 is AC, multiply capacity by efficiency coefficient to get AC side capacity
+            ac_links = n.links[n.links.bus1.map(n.buses.carrier) == "AC"].index
+            n.links.loc[ac_links, "p_nom_opt"] *= n.links.loc[ac_links, "efficiency"]
+
+        # ignore lossy link dummies
+        pseudo_links = n.links.query("Link.str.contains('reversed') & capital_cost ==0 ").index
+        n.links.loc[pseudo_links, "p_nom_opt"] = 0
         
-        # Optionally adjust link capacities by efficiency
-        # pypsa links capacity defined by input but nameplate capacity often AC
-        # Get configuration from snakemake (only accessed in main)
-        adjust_link_capacities_by_efficiency = snakemake.config.get("reporting", {}).get("adjust_link_capacities_by_efficiency", True)
+        # Calculate optimal capacity for all components
+        ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
         
-        if adjust_link_capacities_by_efficiency:
-            # Create mask for AC links (only positive links)
-            ac_links_mask = n_temp.links.bus1.map(n_temp.buses.carrier) == "AC"
-            
-            # Get AC links that have optimal capacity > 0
-            ac_links_with_capacity = n_temp.links[ac_links_mask & (n_temp.links.p_nom_opt > 0)]
-            
-            # Directly adjust the ds values for AC links
-            # This avoids modifying the network object and works with n.statistics output
-            for link_idx in ac_links_with_capacity.index:
-                link_carrier = n_temp.links.loc[link_idx, "carrier"]
-                efficiency = n_temp.links.loc[link_idx, "efficiency"]
-                
-                # Find the corresponding entry in ds and adjust it
-                if link_carrier in ds.index:
-                    # For AC links, we want to report the capacity at the AC side
-                    # So we multiply the original capacity by efficiency
-                    original_capacity = n_temp.links.loc[link_idx, "p_nom_opt"]
-                    adjusted_capacity = original_capacity * efficiency
-                    
-                    # Update the ds value for this carrier
-                    # Note: This is a simplified approach - in practice, you might need
-                    # to handle multiple links with the same carrier more carefully
-                    if isinstance(ds.loc[link_carrier], pd.Series):
-                        # If there are multiple bus carriers for this carrier
-                        ds.loc[link_carrier] *= (adjusted_capacity / original_capacity)
-                    else:
-                        # If it's a single value
-                        ds.loc[link_carrier] *= (adjusted_capacity / original_capacity)
+        # Restore original link capacities to avoid modifying the network object
+        n.links.p_nom_opt = original_p_nom_opt
         
         ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()

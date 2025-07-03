@@ -240,71 +240,44 @@ def calculate_nodal_capacities(n: pypsa.Network, label: str, nodal_capacities: p
     return nodal_capacities
 
 
-def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame, adjust_link_capacities_by_efficiency=False) -> pd.DataFrame:
+def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame, adjust_link_capacities=None) -> pd.DataFrame:
     """Calculate the optimal capacities by carrier and bus carrier
     
     For links that connect to AC buses (bus1=AC), the capacity can be multiplied by efficiency
     to report the actual capacity available at the AC side rather than the input side.
     This ensures consistent capacity reporting across the network.
-    
-    Note: Only positive transmission links are included to avoid double-counting
-    reversed links, since positive and reversed links have the same capacity.
 
     Args:
         n (pypsa.Network): the network object
         label (str): the label used by make summaries
         capacities (pd.DataFrame): the dataframe to fill/update
-        adjust_link_capacities_by_efficiency (bool): Whether to adjust link capacities by efficiency. 
-            Defaults to False for transparency.
+        adjust_link_capacities (bool, optional): Whether to adjust link capacities by efficiency. 
+            If None, reads from config. Defaults to None.
 
     Returns:
         pd.DataFrame: updated capacities
     """
-    
-    # Filter out reversed links to avoid double-counting transmission capacity
-    # Only include positive links since positive and reversed links have the same capacity
-    positive_links_mask = n.links.index.str.contains("positive")
-    
-    # Create a temporary network with only positive links for capacity calculation
-    n_temp = n.copy()
-    reversed_links = n.links.index[~positive_links_mask]
-    n_temp.links = n_temp.links.drop(reversed_links)
-    
-    # Calculate optimal capacity using default grouper (only positive links)
-    caps = n_temp.statistics.optimal_capacity(
+
+    # Temporarily save original link capacities
+    original_p_nom_opt = n.links.p_nom_opt.copy()
+
+    # Drop reversed links & report AC capacities for links from X to AC
+    if adjust_link_capacities:
+
+        # For links where bus1 is AC, multiply capacity by efficiency coefficient to get AC side capacity
+        ac_links = n.links[n.links.bus1.map(n.buses.carrier) == "AC"].index
+        n.links.loc[ac_links, "p_nom_opt"] *= n.links.loc[ac_links, "efficiency"]
+
+        # ignore lossy link dummies
+        pseudo_links = n.links.query("Link.str.contains('reversed') & capital_cost ==0 ").index
+        n.links.loc[pseudo_links, "p_nom_opt"] = 0
+    # Calculate optimal capacity using default grouper
+    caps = n.statistics.optimal_capacity(
         groupby=pypsa.statistics.get_carrier_and_bus_carrier, nice_names=False
     )
     
-    # pypsa links capacity defined by input but nameplate capacity often AC
-    if adjust_link_capacities_by_efficiency:
-        # Create mask for AC links (only positive links)
-        ac_links_mask = n_temp.links.bus1.map(n_temp.buses.carrier) == "AC"
-        
-        # Get AC links that have optimal capacity > 0
-        ac_links_with_capacity = n_temp.links[ac_links_mask & (n_temp.links.p_nom_opt > 0)]
-        
-        # Directly adjust the caps values for AC links 
-        # This avoids modifying the network object and works with n.statistics output
-        for link_idx in ac_links_with_capacity.index:
-            link_carrier = n_temp.links.loc[link_idx, "carrier"]
-            efficiency = n_temp.links.loc[link_idx, "efficiency"]
-            
-            # Find the corresponding entry in caps and adjust it
-            if link_carrier in caps.index:
-                # For AC links, we want to report the capacity at the AC side
-                # So we multiply the original capacity by efficiency
-                original_capacity = n_temp.links.loc[link_idx, "p_nom_opt"]
-                adjusted_capacity = original_capacity * efficiency
-                
-                # Update the caps value for this carrier
-                # Note: This is a simplified approach - in practice, you might need
-                # to handle multiple links with the same carrier more carefully
-                if isinstance(caps.loc[link_carrier], pd.Series):
-                    # If there are multiple bus carriers for this carrier
-                    caps.loc[link_carrier] *= (adjusted_capacity / original_capacity)
-                else:
-                    # If it's a single value
-                    caps.loc[link_carrier] *= (adjusted_capacity / original_capacity)
+    # Restore original link capacities to avoid modifying the network object
+    n.links.p_nom_opt = original_p_nom_opt
     
     caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
     capacities[label] = caps.sort_index(level=0)
@@ -718,7 +691,7 @@ if __name__ == "__main__":
 
     # Access snakemake config only in main
     reporting_cfg = snakemake.config.get("reporting", {})
-    summary_cfg = {"capacities": {"adjust_link_capacities_by_efficiency": reporting_cfg.get("adjust_link_capacities_by_efficiency", False)}}
+    summary_cfg = {"capacities": {"adjust_link_capacities": reporting_cfg.get("adjust_link_capacities_by_efficiency", False)}}
 
     df = make_summaries(networks_dict, opts=summary_cfg)
     df["metrics"].loc["total costs"] = df["costs"].sum()
