@@ -5,6 +5,7 @@
 __pycache__
 
 **.log
+**.pdf
 **.out
 **.er
 **.DS_Store

@@ -1,4 +1,5 @@
-# template config for remind coupling - will be filled 
+# template config for remind coupling 
+# will be filled by scripts/remind_coupling/make_pypsa_config.py
 
 run:
   is_remind_coupled: True
