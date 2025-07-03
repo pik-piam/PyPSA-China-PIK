@@ -279,11 +279,11 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             continue
 
         # find equivalent usual (not paid-off) components
-        ususal_comps_idx = paidoff_comp.index.str.replace("_paid_off", "")
-        ususal_comps = getattr(n, component.lower() + "s").loc[ususal_comps_idx].copy()
-        ususal_comps = ususal_comps[~ususal_comps.p_nom_max.isin([np.inf, np.nan])]
+        usual_comps_idx = paidoff_comp.index.str.replace("_paid_off", "")
+        usual_comps = getattr(n, component.lower() + "s").loc[usual_comps_idx].copy()
+        usual_comps = usual_comps[~usual_comps.p_nom_max.isin([np.inf, np.nan])]
 
-        to_constrain = pd.concat([ususal_comps, paidoff_comp], axis=0)
+        to_constrain = pd.concat([usual_comps, paidoff_comp], axis=0)
         to_constrain.rename_axis(index=f"{component}-ext", inplace=True)
         to_constrain["grouper"] = to_constrain.index.str.replace("_paid_off", "")
 
@@ -295,7 +295,7 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
 
         if not lhs.empty():
             n.model.add_constraints(
-                lhs <= ususal_comps.loc[idx].p_nom_max.values,
+                lhs <= usual_comps.loc[idx].p_nom_max.values,
                 name=f"constrain_paidoff&usual_{component}_potential",
             )
 
