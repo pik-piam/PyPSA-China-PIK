@@ -30,7 +30,7 @@ from _pypsa_helpers import (
     assign_locations,
 )
 from build_biomass_potential import estimate_co2_intensity_xing
-from functions import haversine, HVAC_cost_curve
+from functions import haversine
 from add_electricity import load_costs, sanitize_carriers
 from readers_geospatial import read_province_shapes
 
@@ -39,7 +39,6 @@ from constants import (
     CRS,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
-    ECON_LIFETIME_LINES,
     FOM_LINES,
 )
 
@@ -183,7 +182,7 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
     if config["add_coal"]:
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
     if "CCGT-CCS" in config["Techs"]["conv_techs"]:
-        network.add("Carrier", "gas cc", co2_emissions=costs.at["gas cc", "co2_emissions"])
+        network.add("Carrier", "gas ccs", co2_emissions=costs.at["gas ccs", "co2_emissions"])
 
 
 def add_co2_capture_support(
@@ -337,7 +336,7 @@ def add_conventional_generators(
             nodes,
             suffix=" CCGT-CCS",
             bus=nodes,
-            carrier="gas cc",
+            carrier="gas ccs",
             p_nom_extendable=True,
             efficiency=costs.at["CCGT-CCS", "efficiency"],
             marginal_cost=costs.at["CCGT-CCS", "marginal_cost"],
@@ -355,11 +354,12 @@ def add_conventional_generators(
         ramps = {k: v * config["snapshots"]["frequency"] for k, v in ramps.items()}
         # this is the non sector-coupled approach
         # for industry may have an issue in that coal feeds to chem sector
+        # no coal in Beijing - political decision
         network.add(
             "Generator",
-            nodes,
+            nodes[nodes != "Beijing"],
             suffix=" coal power",
-            bus=nodes,
+            bus=nodes[nodes != "Beijing"],
             carrier="coal",
             p_nom_extendable=True,
             efficiency=costs.at["coal", "efficiency"],
@@ -645,6 +645,7 @@ def add_voltage_links(network: pypsa.Network, config: dict):
             * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
             length=lengths,
             capital_cost=line_cost,
+            carrier="AC",  # Fake - actually DC
         )
         # 0 len for reversed in case line limits are specified in km. Limited in constraints to fwdcap
         network.add(
@@ -661,6 +662,7 @@ def add_voltage_links(network: pypsa.Network, config: dict):
             * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
             length=0,
             capital_cost=0,
+            carrier="AC",
         )
     # lossless transport model
     else:
@@ -674,7 +676,8 @@ def add_voltage_links(network: pypsa.Network, config: dict):
             p_nom_extendable=True,
             p_min_pu=-1,
             length=lengths,
-            capital_cost=cc,
+            capital_cost=line_cost,
+            carrier="AC",
         )
 
 
