@@ -87,11 +87,20 @@ def calc_lcoe(
                 Defaults to pypsa.statistics.get_carrier_and_bus_carrier.
         **kwargs: other arguments to be passed to network.statistics
     Returns:
-        pd.DataFrame: The LCOE for the network  with or without brownfield CAPEX. MV and delta
+        pd.DataFrame: The LCOE for the network with or without brownfield CAPEX, MV and delta
 
     """
     if "groupby" in kwargs:
         grouper = kwargs.pop("groupby")
+
+    # store marginal costs we will manipulate to merge gas costs
+    original_marginal_costs = n.links.marginal_cost.copy()
+    # TODO remve the != Inner Mongolia gas, there for backward compat with a bug
+    gas_links = n.links.query("carrier.str.contains('gas') & bus0 != 'Inner Mongolia gas'").index
+    fuel_costs = n.generators.loc[n.links.loc[gas_links, "bus0"] + " fuel"].marginal_cost.values
+    # eta is applied by statistics
+    n.links.loc[gas_links, "marginal_cost"] += fuel_costs
+    # TODO same with BECCS? & other links?
 
     rev = n.statistics.revenue(groupby=grouper, **kwargs)
     opex = n.statistics.opex(groupby=grouper, **kwargs)
@@ -99,21 +108,22 @@ def calc_lcoe(
     tot_capex = n.statistics.capex(groupby=grouper, **kwargs)
     supply = n.statistics.supply(groupby=grouper, **kwargs)
 
-    profits = pd.concat(
+    # restore original marginal costs
+    n.links.marginal_cost = original_marginal_costs
+
+    outputs = pd.concat(
         [opex, capex, tot_capex, rev, supply],
         axis=1,
         keys=["OPEX", "CAPEX", "CAPEX_wBROWN", "Revenue", "supply"],
     ).fillna(0)
-    profits["rev-costs"] = profits.apply(lambda row: row.Revenue - row.CAPEX - row.OPEX, axis=1)
-    profits["LCOE"] = profits.apply(lambda row: (row.CAPEX + row.OPEX) / row.supply, axis=1)
-    profits["LCOE_wbrownfield"] = profits.apply(
-        lambda row: (row.CAPEX_wBROWN + row.OPEX) / row.supply, axis=1
-    )
-    profits["MV"] = profits.apply(lambda row: row.Revenue / row.supply, axis=1)
-    profits["profit_pu"] = profits["rev-costs"] / profits.supply
-    profits.sort_values("profit_pu", ascending=False, inplace=True)
+    outputs["rev-costs"] = outputs.apply(lambda row: row.Revenue - row.CAPEX - row.OPEX, axis=1)
+    outputs["LCOE"] = (outputs.CAPEX + outputs.OPEX) / outputs.supply
+    outputs["LCOE_wbrownfield"] = (outputs.CAPEX_wBROWN + outputs.OPEX) / outputs.supply
+    outputs["MV"] = outputs.apply(lambda row: row.Revenue / row.supply, axis=1)
+    outputs["profit_pu"] = outputs["rev-costs"] / outputs.supply
+    outputs.sort_values("profit_pu", ascending=False, inplace=True)
 
-    return profits[profits.supply > 0]
+    return outputs[outputs.supply > 0]
 
 
 # TODO is thsi really good? useful?
