@@ -518,8 +518,8 @@ def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, c
         for missing_attr in settings["attrs_to_fix"]:
             df_t = getattr(network, component.lower() + "s_t")[missing_attr]
             if not df_t.empty:
-                base = [x for x in paid.index.str.replace("_paid_off", "") if x in df_t.columns]
-                df_t.loc[:, pd.Index(base) + "_paid_off"] = df_t[base].rename(
+                base_cols = [x for x in paid.index.str.replace("_paid_off", "") if x in df_t.columns]
+                df_t.loc[:, pd.Index(base_cols) + "_paid_off"] = df_t[base_cols].rename(
                     columns=lambda x: x + "_paid_off"
                 )
 
