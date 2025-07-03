@@ -1340,7 +1340,7 @@ def add_hydro(
             "Link",
             bus0 + " spillage",
             bus0=bus0 + " station",
-            bus1="Tibet",
+            bus1=bus0 + " station",
             p_nom_extendable=True,
             efficiency=0.0,
         )

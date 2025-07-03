@@ -118,14 +118,6 @@ def load_costs(
     costs.at["OCGT", "co2_emissions"] = costs.at["gas", "co2_emissions"]
     costs.at["CCGT", "co2_emissions"] = costs.at["gas", "co2_emissions"]
 
-    if not 0 <= cost_config["pv_utility_fraction"] <= 1:
-        raise ValueError("pv_utility_fraction must be between 0 and 1 in cost config")
-    # f_util = cost_config["pv_utility_fraction"]
-    # costs.at["solar", "capital_cost"] = (
-    #     f_util * costs.at["solar-utility", "capital_cost"]
-    #     + (1 - f_util) * costs.at["solar-rooftop", "capital_cost"]
-    # )
-
     def costs_for_storage(store, link1, link2=None, max_hours=1.0):
         capital_cost = link1["capital_cost"] + max_hours * store["capital_cost"]
         if link2 is not None:
@@ -135,12 +127,6 @@ def load_costs(
     max_hours = elec_config["max_hours"]
     costs.loc["battery"] = costs_for_storage(
         costs.loc["battery storage"], costs.loc["battery inverter"], max_hours=max_hours["battery"]
-    )
-    costs.loc["H2"] = costs_for_storage(
-        costs.loc["hydrogen storage tank type 1"],
-        costs.loc["fuel cell"],
-        costs.loc["electrolysis"],
-        max_hours=max_hours["H2"],
     )
 
     for attr in ("marginal_cost", "capital_cost"):
