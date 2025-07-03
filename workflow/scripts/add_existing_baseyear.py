@@ -508,7 +508,7 @@ def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, c
         paid.index += "_paid_off"
         # set permissive options for the paid-off capacities (constraint per group added to model later)
         paid["capital_cost"] = 0
-        paid[f"{prefix}_nom_max"] = 0.0
+        paid[f"{prefix}_nom_min"] = 0.0
         paid[f"{prefix}_nom"] = 0.0
         paid[f"{prefix}_nom_max"] = np.inf
 
