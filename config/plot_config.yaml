@@ -142,7 +142,7 @@ plotting:
     CCGT: '#a85522'
     CCGT gas: '#a85522'
     gas CCGT: '#a85522'
-    gas cc: '#a85522'
+    gas ccs: '#a85522'
     CCGT-CCS: '#76855B'
     gas CCGT-CCS: '#76855B'
     gas boiler: '#db6a25'
@@ -396,7 +396,7 @@ plotting:
     gas OCGT: "Open-Cycle Gas"
     CCGT: "Combined-Cycle Gas"
     gas CCGT: "Combined-Cycle Gas"
-    gas cc: "Gas with Carbon Capture"
+    gas ccs: "Gas with Carbon Capture"
     CCGT gas: "Combined-Cycle Gas"
     heat pump: "Heat Pump"
     stations-AC: "Reservoir & Dam"
