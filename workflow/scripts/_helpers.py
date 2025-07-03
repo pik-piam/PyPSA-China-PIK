@@ -333,6 +333,14 @@ class PathManager:
         return costs_dir
 
     def elec_load(self, ignore_remind=False) -> os.PathLike:
+        """Determine the path to the electric load data. If a path
+         is specified in the config, it will be used, otherwise the defaukt
+        The default path is different for remind coupled & standalone runs.
+        
+        Args:
+            ignore_remind (bool, optional): use the non-remind default regardless
+                of coupling
+        """
 
         default = "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
         # if remind coupling is enabled, use the remind data
@@ -351,7 +359,14 @@ class PathManager:
         return elec_load
 
     def infrastructure(self, ignore_remind=False) -> os.PathLike:
-
+        """Determine the path to the existing insrastructure data. If a path
+         is specified in the config, it will be used, otherwise the defaukt
+        The default path is different for remind coupled & standalone runs.
+        
+        Args:
+            ignore_remind (bool, optional): use the non-remind default regardless
+                of coupling
+        """
         default = self.derived_data_dir() + "/existing_infrastructure"
         if self.config["run"].get("is_remind_coupled", False) and not ignore_remind:
             default = self.derived_data_dir() + "/remind/harmonized_capacities"

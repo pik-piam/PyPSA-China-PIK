@@ -214,8 +214,10 @@ def add_transimission_constraints(n: pypsa.Network):
 
 def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
     """
-    Add constraints to ensure that the paid off capacity from REMIND is available not
-    exceedd across the network & that it does not exceed the technical potential.
+    Paid-off components can be placed wherever PyPSA wants but have a total limit.
+
+    Add constraints to ensure that the paid off capacity from REMIND is not
+    exceeded across the network & that it does not exceed the technical potential.
 
     Args:
         n (pypsa.Network): the network object to which's model the constraints are added
@@ -225,9 +227,10 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         logger.info("Skipping paid off constraints as REMIND is not coupled")
         return
 
-    # The components (generators etc) have limits p/e_nom_rcl & tech_group
-    # added by add_existing_baseyear.add_paid_off_capacity. These are the avail remind paid-off
-    # cap per tech group (nan for the usual generators). rcl is a legacy name from Aodenweller
+    # In coupled-mode components (Generators, Links,..) have limits p/e_nom_rcl & a tech_group
+    # These columns are added by `add_existing_baseyear.add_paid_off_capacity`. 
+    # p/e_nom_rcl is the availale paid-off capacity per tech group and is nan for non paid-off (usual) generators. 
+    # rcl is a legacy name from Aodenweller
     for component in ["Generator", "Link", "Store"]:
 
         prefix = "e" if component == "Store" else "p"
@@ -275,12 +278,12 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         if paidoff_comp.empty:
             continue
 
-        # find equivalent usual components
-        ususal_comps_idx = paidoff_comp.index.str.replace("_paid_off", "")
-        ususal_comps = getattr(n, component.lower() + "s").loc[ususal_comps_idx].copy()
-        ususal_comps = ususal_comps[~ususal_comps.p_nom_max.isin([np.inf, np.nan])]
+        # find equivalent usual (not paid-off) components
+        usual_comps_idx = paidoff_comp.index.str.replace("_paid_off", "")
+        usual_comps = getattr(n, component.lower() + "s").loc[usual_comps_idx].copy()
+        usual_comps = usual_comps[~usual_comps.p_nom_max.isin([np.inf, np.nan])]
 
-        to_constrain = pd.concat([ususal_comps, paidoff_comp], axis=0)
+        to_constrain = pd.concat([usual_comps, paidoff_comp], axis=0)
         to_constrain.rename_axis(index=f"{component}-ext", inplace=True)
         to_constrain["grouper"] = to_constrain.index.str.replace("_paid_off", "")
 
@@ -292,7 +295,7 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
 
         if not lhs.empty():
             n.model.add_constraints(
-                lhs <= ususal_comps.loc[idx].p_nom_max.values,
+                lhs <= usual_comps.loc[idx].p_nom_max.values,
                 name=f"constrain_paidoff&usual_{component}_potential",
             )
 
