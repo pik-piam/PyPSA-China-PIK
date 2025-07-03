@@ -248,6 +248,16 @@ def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame)
     )
     caps.drop("load shedding", level=1, inplace=True)
     caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
+
+    # track links that feed into AC
+    mask = (n.links.bus1.map(n.buses.carrier) == "AC") & (n.links.carrier != "stations")
+    to_ac = n.links.loc[mask, "carrier"].unique()
+
+    caps_df = caps.reset_index()
+    ac_mask = caps_df["carrier"].isin(to_ac)
+    caps_df.loc[ac_mask, "end_carrier"] = "AC"
+    caps = caps_df.fillna("-").set_index(["component", "carrier", "bus_carrier", "end_carrier"])[0]
+
     capacities[label] = caps.sort_index(level=0)
     return capacities
 
@@ -270,6 +280,16 @@ def calculate_expanded_capacities(
     )
     caps.drop("load shedding", level=1, inplace=True)
     caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
+
+    # track links that feed into AC
+    mask = (n.links.bus1.map(n.buses.carrier) == "AC") & (n.links.carrier != "stations")
+    to_ac = n.links.loc[mask, "carrier"].unique()
+
+    caps_df = caps.reset_index()
+    ac_mask = caps_df["carrier"].isin(to_ac)
+    caps_df.loc[ac_mask, "end_carrier"] = "AC"
+    caps = caps_df.fillna("-").set_index(["component", "carrier", "bus_carrier", "end_carrier"])[0]
+
     capacities[label] = caps.sort_index(level=0)
     return capacities
 
@@ -655,10 +675,10 @@ if __name__ == "__main__":
             "make_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            planning_horizons="2025",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
-            heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled_heat.yaml"],
+            planning_horizons="2060",
+            co2_pathway="SSP2-PkBudg1000-freeze",
+            # heating_demand="positive",
+            configfiles=["resources/tmp/remind_coupled.yaml"],
         )
 
     configure_logging(snakemake)

@@ -187,12 +187,12 @@ def plot_pathway_capacities(
         pd.DataFrame(),
         pd.DataFrame(),
     )
+    # loop over each year result
     for results_file in file_list:
-        cap_df = pd.read_csv(results_file, index_col=list(range(3)), header=[1])
-        # cap_df.drop(index="component", level=0, inplace=True)
+        cap_df = pd.read_csv(results_file, index_col=list(range(4)), header=[2])
         cap_df /= PLOT_CAP_UNITS
 
-        # get relevant stores
+        # get stores relevant for reporting according to config, use later
         stores = (
             cap_df[
                 (cap_df.index.get_level_values(0) == "Store")
@@ -201,7 +201,8 @@ def plot_pathway_capacities(
             .groupby(level=1)
             .sum()
         )
-        # drop storesfor rest
+
+        # drop stores from cap df
         cap_df.drop(cap_df[cap_df.index.get_level_values(0) == "Store"].index, inplace=True)
         # drop charger/dischargers for stores
         cap_df.drop(
@@ -212,14 +213,24 @@ def plot_pathway_capacities(
             inplace=True,
         )
 
-        # sum identical
-        cap_ac = cap_df.loc[cap_df.index.get_level_values(2) == "AC"].groupby(level=1).sum()
+        # select AC (important for links) and group
+        cap_ac = cap_df.reset_index().query(
+            "bus_carrier == 'AC' | carrier =='AC' | end_carrier =='AC'"
+        )
+        cap_ac = cap_ac.groupby("carrier").sum()["Unnamed: 4"]
 
         if plot_h2:
-            cap_h2 = cap_df.loc[cap_df.index.get_level_values(2) == "H2"].groupby(level=1).sum()
+            cap_h2 = cap_df.reset_index().query(
+                "bus_carrier == 'H2' | carrier =='H2' | end_carrier =='H2'"
+            )
+            cap_h2 = cap_h2.groupby("carrier").sum()["Unnamed: 4"]
             caps_h2 = pd.concat([cap_h2, caps_h2], axis=1)
         if plot_heat:
-            cap_heat = cap_df.loc[cap_df.index.get_level_values(2) == "heat"].groupby(level=1).sum()
+            # TODO issue for CHP in case of several end buses. Bus2 will not be caught
+            cap_heat = cap_df.reset_index().query(
+                "bus_carrier == 'heat' | carrier =='heat' | end_carrier =='heat'"
+            )
+            cap_heat = cap_heat.groupby("carrier").sum()["Unnamed: 4"]
             caps_heat = pd.concat([cap_heat, caps_heat], axis=1)
 
         caps_stores = pd.concat([stores, caps_stores], axis=1)
@@ -832,14 +843,14 @@ if __name__ == "__main__":
             "plot_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
+            co2_pathway="SSP2-PkBudg1000-freeze",
             heating_demand="positive",
-            configfiles=["resources/tmp/tmp.yaml"],
+            configfiles=["resources/tmp/remind_coupled.yaml"],
             planning_horizons=[
                 2020,
                 2025,
                 2030,
-                2035,
+                # 2035,
                 # 2040,
                 # 2045,
                 # 2050,
