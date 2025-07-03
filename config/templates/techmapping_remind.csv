@@ -14,7 +14,7 @@ battery storage,investment,use_pypsa,btstor,,
 battery storage,lifetime,use_pypsa,btstor,,
 battery storage,VOM,set_value,0,USD/MWh,"No value originally in PyPSA-EUR databse, using default fill value"
 biomass,CO2 intensity,set_value,0,tCO2/MWh_th,"TODO coupling with REMIND-EU difficult, as biomass has not CO2 intensity there, assuming carbon-neutral for now as well"
-biomass,efficiency,weigh_remind_by_gen,"[biochp, bioigcc, bioigccc]",,
+biomass,efficiency,weigh_remind_by_gen,"[bioigcc, bioigccc]",,
 biomass,FOM,weigh_remind_by_gen,"[biochp, bioigcc, bioigccc]",,
 biomass,fuel,use_remind,pebiolc,,
 biomass,investment,weigh_remind_by_gen,"[biochp, bioigcc, bioigccc]",,
@@ -47,13 +47,13 @@ electrolysis,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an
 electrolysis,investment,use_remind,elh2,,
 electrolysis,lifetime,use_remind,elh2,,
 electrolysis,VOM,use_remind,elh2,,
-fuel cell,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
-fuel cell,efficiency,use_remind,h2turb,,
-fuel cell,FOM,use_remind,h2turb,,
-fuel cell,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
-fuel cell,investment,use_remind,h2turb,,
-fuel cell,lifetime,use_remind,h2turb,,
-fuel cell,VOM,use_remind,h2turb,,
+H2 turbine,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
+H2 turbine,efficiency,use_remind,h2turb,,
+H2 turbine,FOM,use_remind,h2turb,,
+H2 turbine,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
+H2 turbine,investment,use_remind,h2turb,,
+H2 turbine,lifetime,use_remind,h2turb,,
+H2 turbine,VOM,use_remind,h2turb,,
 gas,CO2 intensity,weigh_remind_by_gen,"[ngcc,ngccc,ngt,gaschp]",,TODO this is partially wrong and not correct emission factor from REMIND but PyPSA-Eur uses same emission factor for OCGT and CCGT
 gas,efficiency,set_value,1,p.u.,Dummy technology to avoid PyPSA-EUR throwing an error
 gas,FOM,set_value,0,%/year,Dummy technology to avoid PyPSA-EUR throwing an error

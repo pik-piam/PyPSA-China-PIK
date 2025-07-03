@@ -439,19 +439,32 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
             lifetime=costs.at["electrolysis", "lifetime"],
         )
 
-    # TODO consider switching to turbines and making a switch for off
-    # TODO understand MVs
-    network.add(
-        "Link",
-        name=nodes + " H2 Fuel Cell",
-        bus0=nodes + " H2",
-        bus1=nodes,
-        p_nom_extendable=True,
-        efficiency=costs.at["fuel cell", "efficiency"],
-        capital_cost=costs.at["fuel cell", "efficiency"] * costs.at["fuel cell", "capital_cost"],
-        lifetime=costs.at["fuel cell", "lifetime"],
-        carrier="H2 fuel cell",
-    )
+    if "fuel cell" in config["Techs"]["vre_techs"]:
+        network.add(
+            "Link",
+            name=nodes + " H2 Fuel Cell",
+            bus0=nodes + " H2",
+            bus1=nodes,
+            p_nom_extendable=True,
+            efficiency=costs.at["fuel cell", "efficiency"],
+            capital_cost=costs.at["fuel cell", "efficiency"]
+            * costs.at["fuel cell", "capital_cost"],
+            lifetime=costs.at["fuel cell", "lifetime"],
+            carrier="H2 fuel cell",
+        )
+    if "H2 turbine" in config["Techs"]["vre_techs"]:
+        network.add(
+            "Link",
+            name=nodes + " H2 Turbine",
+            bus0=nodes + " H2",
+            bus1=nodes,
+            p_nom_extendable=True,
+            efficiency=costs.at["H2 turbine", "efficiency"],
+            capital_cost=costs.at["H2 turbine", "efficiency"]
+            * costs.at["H2 turbine", "capital_cost"],
+            lifetime=costs.at["H2 turbine", "lifetime"],
+            carrier="H2 turbine",
+        )
 
     H2_under_nodes_ = pd.Index(config["H2"]["geo_storage_nodes"])
     H2_type1_nodes_ = nodes.difference(H2_under_nodes_)
