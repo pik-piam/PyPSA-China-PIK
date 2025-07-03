@@ -188,7 +188,7 @@ def add_land_use_constraint(n: pypsa.Network, planning_horizons: str | int) -> N
     n.generators["p_nom_max"] = n.generators["p_nom_max"].clip(lower=0)
 
 
-def add_transimission_constraints(n: pypsa.Network):
+def add_transmission_constraints(n: pypsa.Network):
     """
     Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
     p_nom positive = p_nom negative
@@ -209,7 +209,7 @@ def add_transimission_constraints(n: pypsa.Network):
     lhs = n.model["Link-p_nom"].loc[positive_ext]
     rhs = n.model["Link-p_nom"].loc[negative_ext]
 
-    n.model.add_constraints(lhs == rhs, name="Link-transimission")
+    n.model.add_constraints(lhs == rhs, name="Link-transmission")
 
 
 def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
@@ -317,7 +317,7 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
     """
     config = n.config
     add_battery_constraints(n)
-    add_transimission_constraints(n)
+    add_transmission_constraints(n)
     add_chp_constraints(n)
     if config["run"].get("is_remind_coupled", False):
         logger.info("Adding remind paid off constraints")
@@ -384,8 +384,8 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-AdjCosts",
-            planning_horizons="2090",
+            co2_pathway="SSP2-PkBudg1000-freeze",
+            planning_horizons="2020",
             topology="current+FCG",
             # heating_demand="positive",
             configfiles="resources/tmp/remind_coupled.yaml",

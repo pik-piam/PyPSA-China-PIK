@@ -194,7 +194,7 @@ def add_chp_constraints(n):
         n.model.add_constraints(lhs <= 0, name="chplink-backpressure")
 
 
-def add_transimission_constraints(n):
+def add_transmission_constraints(n):
     """
     Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
     p_nom positive = p_nom negative
@@ -279,7 +279,7 @@ def extra_functionality(n, snapshots):
 
     add_chp_constraints(n)
     add_battery_constraints(n)
-    add_transimission_constraints(n)
+    add_transmission_constraints(n)
     if snakemake.wildcards.planning_horizons != "2020":
         add_retrofit_constraints(n)
 
