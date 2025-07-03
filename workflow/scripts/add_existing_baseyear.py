@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import pypsa
 
-import re
 
 from types import SimpleNamespace
 
@@ -95,79 +94,6 @@ def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series)
     return pd.DataFrame(data=allocation, columns=grade_capacities.index, index=availability.index)
 
 
-def add_existing_vre_capacities(
-    n: pypsa.Network,
-    costs: pd.DataFrame,
-    vre_caps: pd.DataFrame,
-    config: dict,
-) -> pd.DataFrame:
-    """
-    Add existing VRE capacities to the network and distribute them by vre grade potential.
-    Adapted from pypsa-eur but the VRE capacities are province resolved.
-
-    NOTE that using this function requires adding the land-use constraint in solve_network so
-      that the existing capacities are subtracted from the available potential
-
-    Args:
-        n (pypsa.Network): the network
-        costs (pd.DataFrame): costs of the technologies
-        vre_caps (pd.DataFrame): existing VRE capacities in MW
-        config (dict): snakemake configuration dictionary
-    Returns:
-        pd.DataFrame: DataFrame with existing VRE capacities distributed by CF grade
-
-    """
-
-    tech_map = {"solar": "PV", "onwind": "Onshore", "offwind-ac": "Offshore", "offwind": "Offshore"}
-    tech_map = {k: tech_map[k] for k in tech_map if k in config["Techs"]["vre_techs"]}
-
-    grouped_vre = vre_caps.groupby(["Tech", "bus", "DateIn"]).Capacity.sum()
-    vre_df = grouped_vre.unstack().reset_index()
-    df_agg = pd.DataFrame()
-
-    for carrier in tech_map:
-
-        df = vre_df[vre_df.Tech == carrier].drop(columns=["Tech"])
-        df.set_index("bus", inplace=True)
-        df.columns = df.columns.astype(int)
-
-        # fetch existing vre generators (n grade bins per node)
-        gen_i = n.generators.query("carrier == @carrier").index
-        carrier_gens = n.generators.loc[gen_i]
-        res_capacities = []
-        # for each bus, distribute the vre capacities by grade potential - best first
-        for bus, group in carrier_gens.groupby("bus"):
-            if bus not in df.index:
-                continue
-            res_capacities.append(distribute_vre_by_grade(group.p_nom_max, df.loc[bus]))
-
-        if res_capacities:
-            res_capacities = pd.concat(res_capacities, axis=0)
-
-            for year in df.columns:
-                for gen in res_capacities.index:
-                    bus_bin = re.sub(f" {carrier}.*", "", gen)
-                    bus, bin_id = bus_bin.rsplit(" ", maxsplit=1)
-                    name = f"{bus_bin} {carrier}-{int(year)}"
-                    capacity = res_capacities.loc[gen, year]
-                    if capacity > 0.0:
-                        cost_key = carrier.split("-", maxsplit=1)[0]
-                        df_agg.at[name, "Fueltype"] = carrier
-                        df_agg.at[name, "Capacity"] = capacity
-                        df_agg.at[name, "DateIn"] = int(year)
-                        df_agg.at[name, "grouping_year"] = int(year)
-                        df_agg.at[name, "lifetime"] = costs.at[cost_key, "lifetime"]
-                        df_agg.at[name, "DateOut"] = year + costs.at[cost_key, "lifetime"] - 1
-                        df_agg.at[name, "bus"] = bus
-                        df_agg.at[name, "resource_class"] = bin_id
-
-    if df_agg.empty:
-        return df_agg
-
-    df_agg.loc[:, "Tech"] = df_agg.Fueltype
-    return df_agg
-
-
 def add_power_capacities_installed_before_baseyear(
     n: pypsa.Network,
     costs: pd.DataFrame,
@@ -247,8 +173,10 @@ def add_power_capacities_installed_before_baseyear(
     df_.fillna(0, inplace=True)
 
     defined_carriers = n.carriers.index.unique().to_list()
+    vre_carriers = ["solar", "onwind", "offwind"]
 
-    # TODO do we really need to loop over the years?
+    # TODO do we really need to loop over the years? / so many things?
+    # something like df_.unstack(level=0) would be more efficient
     for grouping_year, generator, resource_grade in df_.index:
         grouping_year = int(grouping_year)
         logger.info(f"Adding existing generator {generator} with year grp {grouping_year}")
@@ -261,27 +189,23 @@ def add_power_capacities_installed_before_baseyear(
 
         # capacity is the capacity in MW at each node for this
         capacity = df_.loc[grouping_year, generator]
-        capacity = capacity[~capacity.isna()]
-        capacity = capacity[capacity > config["existing_capacities"]["threshold_capacity"]].T
         if capacity.values.max() == 0:
             continue
-        capacity = capacity[capacity > 0].dropna()
         # fix index for network.add (merge grade to name)
         capacity = capacity.unstack()
-        buses = capacity.index.get_level_values(1)
+        capacity = capacity[~capacity.isna()]
+        capacity = capacity[capacity > config["existing_capacities"]["threshold_capacity"]].dropna()
+        buses = capacity.index.get_level_values(0)
         capacity.index = (
-            capacity.index.get_level_values(1) + " " + capacity.index.get_level_values(0)
+            capacity.index.get_level_values(0) + " " + capacity.index.get_level_values(1)
         )
         capacity.index = capacity.index.str.rstrip() + " " + costs_map[generator]
 
         costs_key = costs_map[generator]
 
-        vre_carriers = ["solar", "onwind", "offwind"]
-
         if generator in vre_carriers:
             mask = n.generators_t.p_max_pu.columns.map(n.generators.carrier) == generator
             p_max_pu = n.generators_t.p_max_pu.loc[:, mask]
-
             n.add(
                 "Generator",
                 capacity.index,
@@ -523,6 +447,9 @@ def add_power_capacities_installed_before_baseyear(
                 + " - tech not implemented as existing capacity"
             )
 
+    return
+
+
 
 def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, cutoff=100):
     """
@@ -581,7 +508,7 @@ def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, c
         paid.index += "_paid_off"
         # set permissive options for the paid-off capacities (constraint per group added to model later)
         paid["capital_cost"] = 0
-        paid[f"{prefix}_nom_max"] = 0.0
+        paid[f"{prefix}_nom_min"] = 0.0
         paid[f"{prefix}_nom"] = 0.0
         paid[f"{prefix}_nom_max"] = np.inf
 
@@ -591,8 +518,8 @@ def add_paid_off_capacity(network: pypsa.Network, paid_off_caps: pd.DataFrame, c
         for missing_attr in settings["attrs_to_fix"]:
             df_t = getattr(network, component.lower() + "s_t")[missing_attr]
             if not df_t.empty:
-                base = [x for x in paid.index.str.replace("_paid_off", "") if x in df_t.columns]
-                df_t.loc[:, pd.Index(base) + "_paid_off"] = df_t[base].rename(
+                base_cols = [x for x in paid.index.str.replace("_paid_off", "") if x in df_t.columns]
+                df_t.loc[:, pd.Index(base_cols) + "_paid_off"] = df_t[base_cols].rename(
                     columns=lambda x: x + "_paid_off"
                 )
 
