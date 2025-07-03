@@ -3,9 +3,12 @@
 from os.path import join
 
 scenario_ph = {"planning_horizons": config["scenario"]["planning_horizons"]}
-scenario_wildcards = {k: v for k, v in config["scenario"].items() if k != "planning_horizons"}
+scenario_wildcards = {
+    k: v for k, v in config["scenario"].items() if k != "planning_horizons"
+}
 
 COSTS_DATA = path_manager.costs_dir()
+
 
 rule plot_input_costs:
     input:

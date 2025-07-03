@@ -712,6 +712,10 @@ if __name__ == "__main__":
     add_co2_constraints_prices(network, co2_opts)
     sanitize_carriers(network, snakemake.config)
 
-    network.export_to_netcdf(snakemake.output.network_name)
+    outp = snakemake.output.network_name
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    network.export_to_netcdf(outp, compression=compression)
 
-    logger.info(f"Network prepared and saved to {snakemake.output.network_name}")
+    logger.info(f"Network prepared and saved to {outp}")

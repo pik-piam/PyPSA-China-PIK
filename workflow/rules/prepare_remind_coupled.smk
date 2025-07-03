@@ -10,7 +10,7 @@ rule build_run_config:
     Build the run config for the pypsa-coupled run
     # TODO: output per remind run & snakemake run?
     Example:
-        snakemake resources/derived_data/tmp/remind_coupled.yaml --cores 1
+        snakemake resources/tmp/remind_coupled.yaml --cores 1 --configfile=config/templates/remind_cpled.yml
     """
     params:
         remind_region=REMIND_REGION,

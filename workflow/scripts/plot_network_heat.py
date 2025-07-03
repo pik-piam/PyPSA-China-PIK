@@ -1,6 +1,4 @@
-"""Legacy functions that are not currently included in the workflow
-
-"""
+"""Legacy functions that are not currently included in the workflow"""
 
 import logging
 

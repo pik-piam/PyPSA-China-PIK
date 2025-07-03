@@ -1,4 +1,4 @@
-""" 
+"""
 Functions associated with the build_temperature_profiles rule.
 
 """

@@ -380,7 +380,11 @@ if __name__ == "__main__":
 
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
-    n.export_to_netcdf(snakemake.output.network_name)
+    outp = snakemake.output.network_name
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    n.export_to_netcdf(outp, compression=compression)
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
 

@@ -9,6 +9,8 @@ Associated with the `solve_networks` rule in the Snakefile.
 import logging
 import numpy as np
 import pypsa
+import xarray as xr
+import pandas as pd
 from pandas import DatetimeIndex
 
 
@@ -25,9 +27,9 @@ def prepare_network(
 ) -> pypsa.Network:
     """prepare the network for the solver
     Args:
-        n (pypsa.Network): the pypsa network to optimize
-        solve_opts (dict): solver options
-        config (dict): the snakemake configuration
+        n (pypsa.Network): the network object to optimize
+        solve_opts (dict): solving options
+        config (dict): the snakemake configuration dictionary
         plan_year (int): planning horizon year for which network is solved
 
     Returns:
@@ -210,6 +212,94 @@ def add_transimission_constraints(n: pypsa.Network):
     n.model.add_constraints(lhs == rhs, name="Link-transimission")
 
 
+def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
+    """
+    Paid-off components can be placed wherever PyPSA wants but have a total limit.
+
+    Add constraints to ensure that the paid off capacity from REMIND is not
+    exceeded across the network & that it does not exceed the technical potential.
+
+    Args:
+        n (pypsa.Network): the network object to which's model the constraints are added
+    """
+
+    if not n.config["run"].get("is_remind_coupled", False):
+        logger.info("Skipping paid off constraints as REMIND is not coupled")
+        return
+
+    # In coupled-mode components (Generators, Links,..) have limits p/e_nom_rcl & a tech_group
+    # These columns are added by `add_existing_baseyear.add_paid_off_capacity`. 
+    # p/e_nom_rcl is the availale paid-off capacity per tech group and is nan for non paid-off (usual) generators. 
+    # rcl is a legacy name from Aodenweller
+    for component in ["Generator", "Link", "Store"]:
+
+        prefix = "e" if component == "Store" else "p"
+        paid_off_col = f"{prefix}_nom_max_rcl"
+
+        paid_off = getattr(n, component.lower() + "s").copy()
+        # if there are no paid_off components
+        if paid_off_col not in paid_off.columns:
+            continue
+        else:
+            paid_off.dropna(subset=[paid_off_col], inplace=True)
+
+        paid_off_totals = paid_off.set_index("tech_group")[paid_off_col].drop_duplicates()
+
+        # LHS: p_nom per technology grp < totals
+        groupers = [paid_off["tech_group"]]
+        grouper_lhs = xr.DataArray(pd.MultiIndex.from_arrays(groupers), dims=[f"{component}-ext"])
+        p_nom_groups = (
+            n.model[f"{component}-{prefix}_nom"].loc[paid_off.index].groupby(grouper_lhs).sum()
+        )
+
+        # get indices to sort RHS. the grouper is multi-indexed (legacy from PyPSA-Eur)
+        idx = p_nom_groups.indexes["group"]
+        idx = [x[0] for x in idx]
+
+        # Add constraint
+        if not p_nom_groups.empty():
+            n.model.add_constraints(
+                p_nom_groups <= paid_off_totals[idx].values,
+                name=f"paidoff_cap_totals_{component.lower()}",
+            )
+
+    # === ensure normal e/p_nom_max is respected for paid_off + normal generators
+    for component in ["Generator", "Link", "Store"]:
+        paidoff_comp = getattr(n, component.lower() + "s").copy()
+
+        prefix = "e" if component == "Store" else "p"
+        paid_off_col = f"{prefix}_nom_max_rcl"
+        # if there are no paid_off components
+        if paid_off_col not in paidoff_comp.columns:
+            continue
+        else:
+            paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
+
+        if paidoff_comp.empty:
+            continue
+
+        # find equivalent usual (not paid-off) components
+        usual_comps_idx = paidoff_comp.index.str.replace("_paid_off", "")
+        usual_comps = getattr(n, component.lower() + "s").loc[usual_comps_idx].copy()
+        usual_comps = usual_comps[~usual_comps.p_nom_max.isin([np.inf, np.nan])]
+
+        to_constrain = pd.concat([usual_comps, paidoff_comp], axis=0)
+        to_constrain.rename_axis(index=f"{component}-ext", inplace=True)
+        to_constrain["grouper"] = to_constrain.index.str.replace("_paid_off", "")
+
+        grouper = xr.DataArray(to_constrain.grouper, dims=[f"{component}-ext"])
+
+        lhs = n.model[f"{component}-{prefix}_nom"].loc[to_constrain.index].groupby(grouper).sum()
+        # RHS
+        idx = lhs.indexes["grouper"]
+
+        if not lhs.empty():
+            n.model.add_constraints(
+                lhs <= usual_comps.loc[idx].p_nom_max.values,
+                name=f"constrain_paidoff&usual_{component}_potential",
+            )
+
+
 def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
     """
     Add supplementary constraints to the network model. ``pypsa.linopf.network_lopf``.
@@ -221,10 +311,12 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
         snapshots (DatetimeIndex): the time index of the network
         config (dict): the configuration dictionary
     """
-
+    config = n.config
     add_battery_constraints(n)
     add_transimission_constraints(n)
     add_chp_constraints(n)
+    if config["run"].get("is_remind_coupled", False):
+        add_remind_paid_off_constraints(n)
 
 
 def solve_network(
@@ -287,8 +379,8 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            planning_horizons=2030,
-            co2_pathway="remind_ssp2NPI",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
+            planning_horizons="2080",
             topology="current+FCG",
             heating_demand="positive",
         )
@@ -335,7 +427,10 @@ if __name__ == "__main__":
         n.links_t.p2 = n.links_t.p2.astype(float)
 
     n.meta.update(dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards))))
-    n.export_to_netcdf(snakemake.output[0])
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    n.export_to_netcdf(snakemake.output.network_name, compression=compression)
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
 

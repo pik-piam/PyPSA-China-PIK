@@ -701,6 +701,10 @@ def add_wind_and_solar(
                 raise ValueError("Mismatch in profile and network timestamps " + err)
             ds = ds.stack(bus_bin=["bus", "bin"])
 
+        # remove low potential bins
+        cutoff = config.get("renewable_potential_cutoff", 0)
+        ds = ds.where(ds["p_nom_max"] > 200, drop=True)
+
         # bins represent renewable generation grades
         flatten = lambda t: " grade".join(map(str, t))
         buses = ds.indexes["bus_bin"].get_level_values("bus")
@@ -1534,8 +1538,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_networks",
             topology="current+FCG",
-            co2_pathway="exp175default",
-            # co2_pathway="remind_ssp2NPI",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             planning_horizons=2040,
             heating_demand="positive",
         )
@@ -1587,7 +1591,10 @@ if __name__ == "__main__":
     sanitize_carriers(network, snakemake.config)
 
     outp = snakemake.output.network_name
-    network.export_to_netcdf(outp)
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    network.export_to_netcdf(outp, compression=compression)
 
     logger.info(f"Network for {yr} prepared and saved to {outp}")
 

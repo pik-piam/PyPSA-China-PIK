@@ -577,6 +577,32 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
         fig.savefig(fig_name, transparent=config["transparent"])
 
 
+def plot_co2_prices(co2_prices: dict, config: dict, fig_name=None):
+    """Plot the CO2 prices
+    Args:
+        co2_prices (dict): the CO2 prices per year (from the config)
+        config (dict): the plotting configuration
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+    """
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    ax.plot(
+        co2_prices.keys(),
+        np.abs(list(co2_prices.values())),
+        marker="o",
+        color="black",
+        lw=2,
+    )
+    ax.set_ylabel("CO2 price")
+    ax.set_xlabel("Year")
+    ax.plot(co2_prices.keys(), co2_prices.values(), marker="o", color="black", lw=2)
+
+    fig.tight_layout()
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=config["transparent"])
+
+
 def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
     """plot the co2 price
 
@@ -670,11 +696,13 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_summary",
             topology="current+FCG",
-            co2_pathway="exp175default",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             heating_demand="positive",
+            configfiles=["resources/tmp/remind_coupled.yaml"],
             planning_horizons=[
-                2020,
-                2025,
+                # 2020,
+                # 2025,
                 2030,
                 2035,
                 2040,
@@ -699,6 +727,12 @@ if __name__ == "__main__":
     logs = snakemake.log
     output_paths = snakemake.output
     paths = snakemake.input
+
+    co2_pathway = config["co2_scenarios"][wildcards.co2_pathway]
+    if co2_pathway["control"] == "price":
+        co2_prices = co2_pathway["pathway"]
+    else:
+        co2_prices = None
 
     plot_heat = config.get("heat_coupling", False)
     plot_h2 = config["add_H2"]
@@ -752,6 +786,13 @@ if __name__ == "__main__":
         config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/co2_shadow_prices.png",
     )
+
+    if co2_prices is not None:
+        plot_co2_prices(
+            co2_prices,
+            config["plotting"],
+            fig_name=os.path.dirname(output_paths.costs) + "/co2_prices.png",
+        )
 
     plot_pathway_co2(
         data_paths["co2_balance"],

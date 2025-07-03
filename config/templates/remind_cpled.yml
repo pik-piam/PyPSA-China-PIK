@@ -15,8 +15,10 @@ scenario:
 
 # TODO
 paths:
-  remind_outpt_dir: "/home/ivanra/downloads/output_REMIND/SSP2-Budg1000-PyPSAxprt_2025-05-09/pypsa_export"
+  remind_outpt_dir: /p/tmp/ivanra/REMIND/output/SSP2-PkBudg1000-PyPSAxprt_2025-05-09_19.01.34/pypsa_export
   costs_dir: null
+  yearly_regional_load: 
+    ac: null
 heat_coupling: False
 add_biomass: True
 add_hydro: True
@@ -83,6 +85,8 @@ remind_etl:
         fuel_costs: "region == @region"
         co2_intensity: "region == @region"
         weights_gen: "region == @region"
+      kwargs:
+        currency_conversion: 1.1 # approx EUR2015 to USD2017
   disagg:
     - name: disagg_load
       method: "disagg_acload_ref"

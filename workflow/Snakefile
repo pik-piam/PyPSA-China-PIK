@@ -17,6 +17,9 @@ configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
 
+# for dev of remind with mocksnakemake, activate this
+# configfile: "resources/tmp/remind_coupled.yaml"
+
 
 # ====== make paths =======
 config_manager = ConfigManager(config)
@@ -72,8 +75,7 @@ elif config["foresight"] in ["overnight", "myopic"]:
                 **config["scenario"]
             ),
             expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"]),
-            expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"])
-
+            expand(RESULTS_DIR + "/plots/snapshots_{planning_horizons}/", **config["scenario"]),
 else:
     raise ValueError("Invalid scenario config: {}".format(config["foresight"]))
 
@@ -275,6 +277,9 @@ if config["foresight"] in ["overnight"]:
         resources: mem_mb=10000
         script: "scripts/prepare_network.py"
 
+    paidoff_caps = DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv"
+    if not config["run"].get("is_remind_coupled", False):
+        paidoff_caps = directory(path_manager.infrastructure()) # dummy path if not coupled
     rule add_existing_baseyear:
         params:
             baseyear = config["scenario"]["planning_horizons"][0],
@@ -283,8 +288,9 @@ if config["foresight"] in ["overnight"]:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
-            # TODO REMIND couplong
             installed_capacities = path_manager.infrastructure() + '/capacities_{planning_horizons}.csv',
+            # else is a dummy
+            paid_off_capacities_remind = paidoff_caps,
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         threads: 1
         resources: mem_mb=2000
