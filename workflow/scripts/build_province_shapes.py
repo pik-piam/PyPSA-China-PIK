@@ -33,7 +33,9 @@ def fetch_natural_earth_records(country_iso2_code="CN") -> object:
     """
 
     shpfilename = shpreader.natural_earth(
-        resolution=NATURAL_EARTH_RESOLUTION, category="cultural", name=NATURAL_EARTH_DATA_SET
+        resolution=NATURAL_EARTH_RESOLUTION,
+        category="cultural",
+        name=NATURAL_EARTH_DATA_SET,
     )
     reader = shpreader.Reader(shpfilename)
     logger.info("Succesfully downloaded natural earth shapefiles")

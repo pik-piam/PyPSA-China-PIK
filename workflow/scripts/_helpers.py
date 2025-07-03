@@ -17,9 +17,9 @@ import importlib
 from pathlib import Path
 from copy import deepcopy
 
-import pypsa
 import gurobipy
 import multiprocessing
+import functools
 
 # get root logger
 logger = logging.getLogger()
@@ -63,11 +63,17 @@ class ConfigManager:
             dict: the pathway
         """
         scenario = self.config["co2_scenarios"][pthw_name]
-        return {"co2_pr_or_limit": scenario["pathway"][year], "control": scenario["control"]}
+        return {
+            "co2_pr_or_limit": scenario["pathway"][year],
+            "control": scenario["control"],
+        }
 
     def make_wildcards(self) -> list:
         """Expand wildcards in config"""
         raise NotImplementedError
+
+
+# TODO add dataclass for Config
 
 
 class GHGConfigHandler:
@@ -84,12 +90,16 @@ class GHGConfigHandler:
         Returns:
             dict: validated and parsed
         """
-        # TODO add to _raw_config, move into CO2Scenario.__init__
-        if self.config["heat_coupling"]:
+        # HACK for snakemake access
+        scripts_dir = os.path.abspath(os.path.dirname(__file__))
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+
+        if self.config.get("heat_coupling", False):
             # HACK import here for snakemake access
-            from scripts.constants import CO2_BASEYEAR_EM as base_year_ems
+            from constants import CO2_BASEYEAR_EM as base_year_ems
         else:
-            from scripts.constants import CO2_EL_2020 as base_year_ems
+            from constants import CO2_EL_2020 as base_year_ems
 
         for name, co2_scen in self.config["co2_scenarios"].items():
             co2_scen["pathway"] = {int(k): v for k, v in co2_scen.get("pathway", {}).items()}
@@ -126,7 +136,7 @@ class GHGConfigHandler:
         for name, scen in self._raw_config["co2_scenarios"].items():
 
             # do not validate if not selected
-            if not name in self.config["scenario"]["co2_pathway"]:
+            if name not in self.config["scenario"]["co2_pathway"]:
                 continue
 
             # check type
@@ -142,8 +152,9 @@ class GHGConfigHandler:
                 raise ValueError(f"Scenario {scen} must contain 'control' and 'pathway'")
 
             ALLOWED = ["price", "reduction", "budget", None]
+        
             if not scen["control"] in ALLOWED:
-                err = f"Control must be {','.join(ALLOWED)} but was {name}:{scen['control']}"
+                err = f"Control must be {','.join([str(x) for x in ALLOWED])} but was {name}:{scen.get('control', "missing")}"
                 raise ValueError(err)
 
             years_int = set(map(int, self.config["scenario"]["planning_horizons"]))
@@ -153,6 +164,7 @@ class GHGConfigHandler:
 
 
 # TODO return pathlib objects? so can just use / to combine paths?
+# TODO unit tests for path manager
 class PathManager:
     """A class to manage paths for the snakemake workflow and return paths based on the wildcard
 
@@ -164,6 +176,8 @@ class PathManager:
         # HACK for pytests CI, should really be a patch but not possible
         self._is_test_run = self.config["run"].get("is_test", False)
 
+        self.root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
     def _get_version(self) -> str:
         """HACK to get version from workflow pseudo-package"""
         spec = importlib.util.spec_from_file_location(
@@ -173,6 +187,7 @@ class PathManager:
         spec.loader.exec_module(workflow)
         return workflow.__version__
 
+    @functools.lru_cache
     def _join_scenario_vars(self) -> str:
         """Join scenario variables into a human readable string
 
@@ -187,6 +202,12 @@ class PathManager:
             "co2_pathway": "co2pw",
             "heating_demand": "proj",
         }
+
+        # remove heating wildcards if not needed
+        if not self.config.get("heat_coupling", False):
+            if "heating_demand" in self.config["scenario"]:
+                _ = self.config["scenario"].pop("heating_demand")
+
         # remember need place holders for snakemake
         return "_".join(
             [
@@ -212,31 +233,6 @@ class PathManager:
             sub_dir += "_" + "".join(extra_opts.values())
         return os.path.join(self.config["paths"]["results_dir"], base_dir, sub_dir)
 
-    def costs_dir(self) -> os.PathLike:
-
-        # backward compat
-        default = "resources/data/costs"
-        costs_dir = self.config["paths"].get("costs_dir", default)
-        # if not absolute path & rel not recognised by snakemake
-        if not os.path.exists(costs_dir):
-            # if relative path, make it absolute
-            costs_dir = os.path.abspath(costs_dir)
-
-        return os.path.dirname(costs_dir)
-
-    def elec_load(self) -> os.PathLike:
-
-        #
-        default = "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
-        loads = self.config["paths"].get("yearly_regional_load", {"ac": default})
-        elec_load = loads["ac"]
-        # if not absolute path and rel not recognised by snakemake
-        if not os.path.exists(elec_load):
-            # if relative path, make it absolute
-            elec_load = os.path.abspath(elec_load)
-
-        return elec_load
-
     def derived_data_dir(self, shared=False) -> os.PathLike:
         """Generate the derived data directory path.
 
@@ -249,6 +245,7 @@ class PathManager:
         """
 
         base_path = "tests" if self._is_test_run else "resources"
+        base_path = os.path.abspath(os.path.join(self.root_dir, base_path))
 
         foresight = self.config["foresight"]
         if not shared:
@@ -307,6 +304,83 @@ class PathManager:
 
         return base_p + rsrc
 
+    def costs_dir(self, ignore_remind=False) -> os.PathLike:
+        """Get the costs directory path.
+        In case a path was specified in the config, it will be used.
+        Otherwise, a default path will be used.
+
+        Args:
+            ignore_remind (bool, optional): do not return the remind default,
+                even if remind coupling is enabled. Defaults to False.
+        Returns:
+            os.PathLike: the dirname
+        """
+
+        default = "resources/data/costs"
+        if self.config["run"].get("is_remind_coupled", False) and not ignore_remind:
+            default = self.derived_data_dir() + "/remind/costs"
+
+        costs_dir = self.config["paths"].get("costs_dir", default)
+        # if not absolute path & rel not recognised by snakemake
+        if not costs_dir:
+            costs_dir = default
+        elif not os.path.exists(costs_dir):
+            # if relative path, make it absolute
+            costs_dir = os.path.abspath(costs_dir)
+
+        if costs_dir.endswith("/"):
+            costs_dir = costs_dir[:-1]
+        return costs_dir
+
+    def elec_load(self, ignore_remind=False) -> os.PathLike:
+        """Determine the path to the electric load data. If a path
+         is specified in the config, it will be used, otherwise the defaukt
+        The default path is different for remind coupled & standalone runs.
+        
+        Args:
+            ignore_remind (bool, optional): use the non-remind default regardless
+                of coupling
+        """
+
+        default = "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+        # if remind coupling is enabled, use the remind data
+        if self.config["run"].get("is_remind_coupled", False) and not ignore_remind:
+            default = self.derived_data_dir() + "/remind/ac_load_disagg.csv"
+
+        loads = self.config["paths"].get("yearly_regional_load", {"ac": default})
+        if not loads["ac"]:
+            loads = {"ac": default}
+        elec_load = loads["ac"]
+        # if not absolute path and rel not recognised by snakemake
+        if not os.path.exists(elec_load):
+            # if relative path, make it absolute
+            elec_load = os.path.abspath(elec_load)
+
+        return elec_load
+
+    def infrastructure(self, ignore_remind=False) -> os.PathLike:
+        """Determine the path to the existing insrastructure data. If a path
+         is specified in the config, it will be used, otherwise the defaukt
+        The default path is different for remind coupled & standalone runs.
+        
+        Args:
+            ignore_remind (bool, optional): use the non-remind default regardless
+                of coupling
+        """
+        default = self.derived_data_dir() + "/existing_infrastructure"
+        if self.config["run"].get("is_remind_coupled", False) and not ignore_remind:
+            default = self.derived_data_dir() + "/remind/harmonized_capacities"
+
+        infra_dir = self.config["paths"].get("existing_infra", default)
+        # if not absolute path & rel not recognised by snakemake
+        if not infra_dir:
+            infra_dir = default
+        elif not os.path.exists(infra_dir):
+            # if relative path, make it absolute
+            infra_dir = os.path.abspath(infra_dir)
+
+        return infra_dir
+
 
 # ============== HPC helpers ==================
 
@@ -337,7 +411,10 @@ def setup_gurobi_tunnel_and_env(
     logger.info(f"Attempting ssh tunnel to login node {login_node}")
     # Run SSH in the background to establish the tunnel
     socks_proc = subprocess.Popen(
-        pipe_err + ssh_command, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        pipe_err + ssh_command,
+        shell=True,
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
     )
 
     try:
@@ -350,7 +427,7 @@ def setup_gurobi_tunnel_and_env(
         else:
             logger.info("Gurobi Environment variables & tunnel set up successfully at attempt {i}.")
     except subprocess.TimeoutExpired:
-        logger.error(f"SSH tunnel communication timed out.")
+        logger.error("SSH tunnel communication timed out.")
 
     os.environ["https_proxy"] = f"socks5://127.0.0.1:{port}"
     os.environ["SSL_CERT_FILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
@@ -359,7 +436,8 @@ def setup_gurobi_tunnel_and_env(
     # Set up Gurobi environment variables
     os.environ["GUROBI_HOME"] = "/p/projects/rd3mod/gurobi1103/linux64"
     os.environ["PATH"] += f":{os.environ['GUROBI_HOME']}/bin"
-    os.environ["LD_LIBRARY_PATH"] += f":{os.environ['GUROBI_HOME']}/lib"
+    if "LD_LIBRARY_PATH" in os.environ:
+        os.environ["LD_LIBRARY_PATH"] += f":{os.environ['GUROBI_HOME']}/lib"
     os.environ["GRB_LICENSE_FILE"] = "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
     os.environ["GRB_CURLVERBOSE"] = "1"
     os.environ["GRB_SERVER_TIMEOUT"] = "10"
@@ -410,7 +488,7 @@ def check_gurobi_license(attempts=1, timeout=10) -> bool:
             # If the process is still alive after the timeout, terminate it
             process.terminate()
             process.join()  # Ensure it is properly joined to clean up
-            logger.warning(f"License check timeout. Retrying...")
+            logger.warning("License check timeout. Retrying...")
         else:
             # If the process completed, check the result
             if process.exitcode == 0:
@@ -546,6 +624,7 @@ def mock_snakemake(
 
     # horrible hack
     curr_path = os.getcwd()
+
     if snakefile_path:
         os.chdir(os.path.dirname(snakefile_path))
     try:
@@ -617,19 +696,6 @@ def mock_snakemake(
         os.chdir(curr_path)
 
     return snakemake
-
-
-def mock_solve(n: pypsa.Network) -> pypsa.Network:
-    """Mock the solving step for tests
-
-    Args:
-        n (pypsa.Network): the network object
-    """
-    for c in n.iterate_components(components=["Generator", "Link", "Store", "LineType"]):
-        opt_cols = [col for col in c.df.columns if col.endswith("opt")]
-        base_cols = [col.split("_opt")[0] for col in opt_cols]
-        c.df[opt_cols] = c.df[base_cols]
-    return n
 
 
 def set_plot_test_backend(config: dict):

@@ -11,7 +11,9 @@ from _helpers import configure_logging, mock_snakemake
 logger = logging.getLogger(__name__)
 
 
-def build_solar_thermal_profiles(pop_map: pd.DataFrame, cutout: atlite.Cutout, outp_path: os.PathLike) -> None:
+def build_solar_thermal_profiles(
+    pop_map: pd.DataFrame, cutout: atlite.Cutout, outp_path: os.PathLike
+) -> None:
     """build per unit solar thermal time availability profiles and save them to a file
 
     Args:
@@ -23,7 +25,10 @@ def build_solar_thermal_profiles(pop_map: pd.DataFrame, cutout: atlite.Cutout, o
     index.name = "provinces"
 
     st = cutout.solar_thermal(
-        orientation={"slope": float(snakemake.config["solar_thermal_angle"]), "azimuth": 180.0},
+        orientation={
+            "slope": float(snakemake.config["solar_thermal_angle"]),
+            "azimuth": 180.0,
+        },
         matrix=pop_matrix,
         index=index,
     )

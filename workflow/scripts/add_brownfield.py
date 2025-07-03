@@ -3,7 +3,7 @@
 """
 Functions for myopic pathway network generation snakemake rules
 
-Add assets from previous planning horizon network solution to 
+Add assets from previous planning horizon network solution to
 network to solve for the current planning horizon.
 
 Usage:
@@ -70,7 +70,8 @@ def add_brownfield(n: pypsa.Network, n_p: pypsa.Network, year: int):
                 threshold * c.df.loc[chp_heat].efficiency2 / c.df.loc[chp_heat].efficiency
             )
             n_p.mremove(
-                c.name, chp_heat[c.df.loc[chp_heat, attr + "_nom_opt"] < threshold_chp_heat]
+                c.name,
+                chp_heat[c.df.loc[chp_heat, attr + "_nom_opt"] < threshold_chp_heat],
             )
 
         n_p.mremove(
@@ -161,7 +162,10 @@ if __name__ == "__main__":
 
     add_brownfield(n, n_p, year)
 
-    n.export_to_netcdf(snakemake.output.network_name)
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    n.export_to_netcdf(snakemake.output.network_name, compression=compression)
 
     logger.info(
         f"Brownfield extension successfully added for {snakemake.wildcards.planning_horizons}"

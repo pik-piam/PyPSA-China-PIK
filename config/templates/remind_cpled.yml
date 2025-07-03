@@ -1,0 +1,100 @@
+# template config for remind coupling 
+# will be filled by scripts/remind_coupling/make_pypsa_config.py
+
+run:
+  is_remind_coupled: True
+  remind: 
+    version: null
+    coupling: 1way
+    run_name: null
+    region: "CHA"
+
+scenario:
+  planning_horizons:
+    - 2025
+
+# TODO
+paths:
+  remind_outpt_dir: /p/tmp/ivanra/REMIND/output/SSP2-PkBudg1000-PyPSAxprt_2025-05-09_19.01.34/pypsa_export
+  costs_dir: null
+  yearly_regional_load: 
+    ac: null
+heat_coupling: False
+add_biomass: True
+add_hydro: True
+add_H2: True
+add_methanation: False
+line_losses: True
+no_lines: False
+
+Techs:
+  ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
+  vre_techs: [ "onwind","offwind","solar","hydroelectricity", "nuclear","biomass","H2 CHP"]
+  conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
+  store_techs: ["H2","battery","water tanks","PHS"]
+  coal_cc: true # currently myopic pathway only.  CC = co2 cap 
+  hydrogen_lines: true # currently myopic pathway only
+
+# ETL from remind, shared
+remind_etl:
+  use_gdx: false
+  data:
+    tech_mapping: config/templates/techmapping_remind.csv
+    
+  # == step-wise ETL (remind-pypsa-coupling tools) ==
+  # Steps must correspond to the Transformation Data class
+  # name: str, method: Optional, frames: Dict, params: Dict, filters: Dict, kwargs: Dict
+  # order matters!
+  etl_steps:
+    - name: loads
+      method: "convert_load"
+      frames:
+        ac_load: p32_load
+        h2_el_load: null
+        heat_el_load: null
+    # using mapping table to assign tech groups to remind techs
+    - name: tech_groups
+      method: build_tech_map
+      kwargs:
+        map_param: investment
+    - name: caps
+      method: "convert_capacities"
+      frames:
+        capacities: p32_cap
+      kwargs:
+        cutoff: 500
+      filters:
+        capacities: "region == @region"
+      dependencies:
+        - tech_groups
+    - name: technoeconomic_data
+      frames:
+        tech_data: pm_data
+        capex: p32_capCost
+        eta: pm_dataeta
+        # TODO better name ?
+        eta_part2: pm_eta_conv
+        fuel_costs: p32_PEPriceAvg
+        discount_r: p32_discountRate
+        co2_intensity: pm_emifac
+        weights_gen: p32_weightGen
+      filters:
+        tech_data: "region == @region"
+        capex: "region == @region"
+        eta: "region == @region"
+        fuel_costs: "region == @region"
+        co2_intensity: "region == @region"
+        weights_gen: "region == @region"
+      kwargs:
+        currency_conversion: 1.1 # approx EUR2015 to USD2017
+  disagg:
+    - name: disagg_load
+      method: "disagg_acload_ref"
+    - name: harmonize_model_caps
+      method: harmonize_capacities
+    - name: available_cap
+      method: "calc_paid_off_capacity"
+      dependencies:
+        - harmonize_model_caps
+  
+

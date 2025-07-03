@@ -3,24 +3,29 @@
 # SPDX-License-Identifier: CC0-1.0
 
 run:
-  name: unamed_run
+  name: existinginfra_chp_converted_05x_cheaperwind
 foresight: "overnight"
 
 paths:
   results_dir: "results/"
   summary_dir: "summary/" # TODO useless?
-  costs_dir: "resources/data/costs/"
+  costs_dir: "resources/data/costs/EUR_wind_2x_cheaper"
   yearly_regional_load: 
     ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
     # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
 
+io:
+  nc_compression:
+    level: 4
+    zlib: True
+    
 scenario: 
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
-    - 2020
-    - 2025
+    # - 2020
+    # - 2025
     - 2030
     - 2035
     - 2040
@@ -130,7 +135,7 @@ renewable:
     natura: false
     clip_p_max_pu: 1.e-2
     min_p_nom_max: 1.e-2
-
+renewable_potential_cutoff: 200 # MW, skip low potentials
 
 heat_demand:
   start_day : "01-04" # dd-mm
@@ -222,9 +227,9 @@ solving:
     options: gurobi-default
   gurobi_hpc_tunnel:
     use_tunnel: True
-    tunnel_port: 1082
+    tunnel_port: 27000
     timeout_s: 15
-    login_node: "01"
+    login_node: "03"
 
   solver_options:
     highs-default:
@@ -292,11 +297,10 @@ line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max
 line_cost_factor: 1
 
 existing_capacities:
-  add: False 
+  add: True 
   grouping_years: [1980,1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
   threshold_capacity: 1 # TODO UNIT
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
-
 
 fetch_regions:
   simplify_tol: 0.5

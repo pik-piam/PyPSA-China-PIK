@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
+#
+# SPDX-License-Identifier: MIT
+
+# REMIND coupling environment
+
+name: remind-coupling
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - python>=3.12
+  - snakemake-minimal=8
+  - snakemake-storage-plugin-http
+  - pip
+  
+  - pip:
+    - gurobipy==11.0.3
+  - pip:
+    - --index-url=https://test.pypi.org/simple/
+    - --extra-index-url=https://pypi.org/simple/
+    - --no-isolation
+    - REMIND-PyPSA-coupling 

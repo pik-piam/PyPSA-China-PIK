@@ -39,7 +39,7 @@ cluster-generic-submit-cmd:
     --job-name={rule}-{wildcards}-smk
     --output=logs_slurm/{rule}/%j-{rule}-{wildcards}.out
     --parsable
-    --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME
+    --export=PATH,LD_LIBRARY_PATH,GUROBI_HOME,HOME
 cluster-generic-status-cmd: "python config/pik_hpc_profile/status-check.py"
 cluster-generic-cancel-cmd: scancel
 # --error=logs_slurm/{rule}/%j-{rule}-{wildcards}.out
@@ -49,16 +49,16 @@ default-resources:
   partition: priority
   qos: priority
   mem_mb: 2000
+  time : 10
   threads: 4
+
 set-resources:
   solve_network_myopic:
     mem_mb: 80000
     time: 80
   solve_networks:
-    mem_mb: 80000
-    # qos: priority
-    # partition: priority
-    time : 80
+    mem_mb: 60000
+    time : 10
     threads: 6
   build_cutout:
     time: 9000
@@ -69,6 +69,7 @@ set-resources:
   build_availability_matrix:
     threads: 8
     mem_mb: 30000
+    time: 300
   build_renewable_potential:
     time: 300
     threads: 4
@@ -80,6 +81,16 @@ set-resources:
   plot_network:
     mem_mb: 8000
     threads: 2
+  fetch_region_shapes:
+    time: 10
+    threads: 1
+    partition: io # login
+    qos: io
+  fetch_rasters:
+    time: 10
+    threads: 1
+    partition: io # login
+    qos: io
   retrieve_build_up_raster:
     time: 300
     threads: 1

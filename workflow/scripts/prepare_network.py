@@ -32,7 +32,7 @@ from _pypsa_helpers import (
 from build_biomass_potential import estimate_co2_intensity_xing
 from functions import haversine, HVAC_cost_curve
 from add_electricity import load_costs, sanitize_carriers
-from readers import read_province_shapes
+from readers_geospatial import read_province_shapes
 
 from constants import (
     PROV_NAMES,
@@ -48,7 +48,7 @@ from constants import (
 logger = logging.getLogger(__name__)
 
 # TODO add a heat bus that can absorb heat for free in non-coupled mode
-#  (e.g. Hydrogen electrolysis, sabatier)
+#   (e.g. Hydrogen electrolysis, sabatier)
 # TODO add heat disipator?
 
 
@@ -166,7 +166,7 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
     """
 
     network.add("Carrier", "AC")
-    if config["heat_coupling"]:
+    if config.get("heat_coupling", False):
         network.add("Carrier", "heat")
     for carrier in config["Techs"]["vre_techs"]:
         network.add("Carrier", carrier)
@@ -387,7 +387,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
         costs (pd.DataFrame): the cost database
     """
     # TODO, does it make sense?
-    if config["heat_coupling"]:
+    if config.get("heat_coupling", False):
         network.add(
             "Link",
             name=nodes + " H2 Electrolysis",
@@ -663,7 +663,7 @@ def add_wind_and_solar(
 
     Args:
         network (pypsa.Network): The PyPSA network to which the generators will be added
-        techs (list): A list of renewable energy technologies to add
+        techs (list): A list of renewable energy technologies to add.
             (e.g., ["solar", "onwind", "offwind"])
         paths (os.PathLike): file paths containing renewable profiles (snakemake.input)
         year (int): planning year
@@ -697,11 +697,13 @@ def add_wind_and_solar(
             ds = ds.sel(time=mask)
 
             if not len(ds.time) == len(network.snapshots):
-                raise ValueError(
-                    f"Mismatch in profile and network timestamps {len(ds.time)}"
-                    f" and {len(network.snapshots)}"
-                )
+                err = f"{len(ds.time)} and {len(network.snapshots)}"
+                raise ValueError("Mismatch in profile and network timestamps " + err)
             ds = ds.stack(bus_bin=["bus", "bin"])
+
+        # remove low potential bins
+        cutoff = config.get("renewable_potential_cutoff", 0)
+        ds = ds.where(ds["p_nom_max"] > 200, drop=True)
 
         # bins represent renewable generation grades
         flatten = lambda t: " grade".join(map(str, t))
@@ -911,7 +913,11 @@ def add_heat_coupling(
                 lifetime=costs.at[cat.lstrip() + "resistive heater", "lifetime"],
             )
 
-    if "H2 CHP" in config["Techs"]["vre_techs"] and config["add_H2"] and config["heat_coupling"]:
+    if (
+        "H2 CHP" in config["Techs"]["vre_techs"]
+        and config["add_H2"]
+        and config.get("heat_coupling", False)
+    ):
         network.add(
             "Bus",
             nodes,
@@ -1261,7 +1267,8 @@ def add_hydro(
     hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"]).loc[nodes]
     hydro_p_max_pu = (
         pd.read_hdf(
-            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+            config["hydro_dams"]["p_max_pu_path"],
+            key=config["hydro_dams"]["p_max_pu_key"],
         ).tz_localize(None)
     )[nodes]
 
@@ -1441,7 +1448,7 @@ def prepare_network(
             location=nodes,
         )
 
-    if config["heat_coupling"]:
+    if config.get("heat_coupling", False):
         logger.info("Adding heat and CHP to the network")
         add_heat_coupling(network, config, nodes, prov_centroids, costs, planning_horizons, paths)
 
@@ -1531,8 +1538,8 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_networks",
             topology="current+FCG",
-            co2_pathway="exp175default",
-            # co2_pathway="remind_ssp2NPI",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             planning_horizons=2040,
             heating_demand="positive",
         )
@@ -1584,7 +1591,10 @@ if __name__ == "__main__":
     sanitize_carriers(network, snakemake.config)
 
     outp = snakemake.output.network_name
-    network.export_to_netcdf(outp)
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    network.export_to_netcdf(outp, compression=compression)
 
     logger.info(f"Network for {yr} prepared and saved to {outp}")
 
