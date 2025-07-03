@@ -133,7 +133,7 @@ if __name__ == "__main__":
         original_p_nom_opt = n.links.p_nom_opt.copy()
         
         # Get configuration from snakemake
-        adjust_link_capacities = snakemake.config.get("reporting", {}).get("adjust_link_capacities_by_efficiency", True)
+        adjust_link_capacities = snakemake.config.get("reporting", {}).get("adjust_link_capacities_by_efficiency", False)
         
         # Drop reversed links & report AC capacities for links from X to AC
         if adjust_link_capacities:
@@ -141,12 +141,17 @@ if __name__ == "__main__":
             ac_links = n.links[n.links.bus1.map(n.buses.carrier) == "AC"].index
             n.links.loc[ac_links, "p_nom_opt"] *= n.links.loc[ac_links, "efficiency"]
 
-        # ignore lossy link dummies
-        pseudo_links = n.links.query("Link.str.contains('reversed') & capital_cost ==0 ").index
-        n.links.loc[pseudo_links, "p_nom_opt"] = 0
+            # ignore lossy link dummies
+            pseudo_links = n.links.query("Link.str.contains('reversed') & capital_cost ==0 ").index
+            n.links.loc[pseudo_links, "p_nom_opt"] = 0
         
         # Calculate optimal capacity for all components
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+        
+        # Restore original link capacities to avoid modifying the network object
+        n.links.p_nom_opt = original_p_nom_opt
+        
+        # Handle battery components correctly
         ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
         ds.drop(index=("Link", "battery"), inplace=True)
         ds.drop("stations", level=1, inplace=True)
