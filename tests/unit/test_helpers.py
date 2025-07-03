@@ -89,7 +89,7 @@ def test_ghg_handler_missing_keys(sample_config):
 def test_path_manager_costs_dir_default(sample_config):
     pm = PathManager(sample_config)
     with mock.patch("os.path.exists", return_value=True):
-        assert pm.costs_dir() == "resources/data/costs"
+        assert pm.costs_dir() == "resources/data/costs/default"
         assert not pm.costs_dir().endswith("/")
 
 

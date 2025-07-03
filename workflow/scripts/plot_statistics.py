@@ -60,11 +60,12 @@ if __name__ == "__main__":
             "plot_statistics",
             carrier="AC",
             planning_horizons="2035",
-            co2_pathway="exp175default",
+            # co2_pathway="exp175default",
             # planning_horizons="2130",
-            # co2_pathway="remind_ssp2NPI",
+            co2_pathway="SSP2-PkBudg1000-PyPS",
             topology="current+FCG",
-            heating_demand="positive",
+            # heating_demand="positive",
+            configfiles="resources/tmp/remind_coupled.yaml",
         )
     configure_logging(snakemake)
     set_plot_test_backend(snakemake.config)
@@ -100,6 +101,8 @@ if __name__ == "__main__":
     if "capacity_factor" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.capacity_factor(groupby=["carrier"]).dropna()
+        ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
+        ds.drop(index=("Link", "battery"), inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
@@ -144,10 +147,8 @@ if __name__ == "__main__":
         
         # Calculate optimal capacity for all components
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
-        
-        # Restore original link capacities to avoid modifying the network object
-        n.links.p_nom_opt = original_p_nom_opt
-        
+        ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
+        ds.drop(index=("Link", "battery"), inplace=True)
         ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
@@ -173,7 +174,6 @@ if __name__ == "__main__":
 
     if "operational_expenditure" in stats_list:
         fig, ax = plt.subplots()
-        attached_carriers = filter_carriers(n, carrier)
         ds = n.statistics.opex(groupby=["carrier"]).dropna()
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
