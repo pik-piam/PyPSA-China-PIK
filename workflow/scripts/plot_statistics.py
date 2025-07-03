@@ -12,6 +12,7 @@ import seaborn as sns
 import os
 import logging
 from pandas import DataFrame
+import pandas as pd
 import numpy as np
 
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
@@ -127,7 +128,30 @@ if __name__ == "__main__":
 
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
+        
+        # Temporarily save original link capacities
+        original_p_nom_opt = n.links.p_nom_opt.copy()
+        
+        # Get configuration from snakemake
+        adjust_link_capacities = snakemake.config.get("reporting", {}).get("adjust_link_capacities_by_efficiency", False)
+        
+        # Drop reversed links & report AC capacities for links from X to AC
+        if adjust_link_capacities:
+            # For links where bus1 is AC, multiply capacity by efficiency coefficient to get AC side capacity
+            ac_links = n.links[n.links.bus1.map(n.buses.carrier) == "AC"].index
+            n.links.loc[ac_links, "p_nom_opt"] *= n.links.loc[ac_links, "efficiency"]
+
+            # ignore lossy link dummies
+            pseudo_links = n.links.query("Link.str.contains('reversed') & capital_cost ==0 ").index
+            n.links.loc[pseudo_links, "p_nom_opt"] = 0
+        
+        # Calculate optimal capacity for all components
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+        
+        # Restore original link capacities to avoid modifying the network object
+        n.links.p_nom_opt = original_p_nom_opt
+        
+        # Handle battery components correctly
         ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
         ds.drop(index=("Link", "battery"), inplace=True)
         ds.drop("stations", level=1, inplace=True)
