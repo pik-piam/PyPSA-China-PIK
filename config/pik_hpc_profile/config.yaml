@@ -46,11 +46,11 @@ cluster-generic-cancel-cmd: scancel
 
 # now define the resources
 default-resources:
-  partition: priority
-  qos: priority
+  partition: standard
+  qos: short
   mem_mb: 2000
   time : 10
-  threads: 4
+  threads: 1
 
 set-resources:
   solve_network_myopic:
@@ -58,7 +58,7 @@ set-resources:
     time: 80
   solve_networks:
     mem_mb: 60000
-    time : 10
+    time : 80
     threads: 6
   build_cutout:
     time: 9000
@@ -111,3 +111,20 @@ set-resources:
     threads: 1
     partition: io
     qos: io
+
+# GROUPS
+
+groups: 
+  plot_network: plot
+  plot_statistics: plot
+  plot_snapshots: plot
+  build_load_profiles: build_load
+  prepare_networks: prep_network
+  add_existing_baseyear: prep_network2
+  make_summary: summary
+group-components:
+  plot: 3
+  build_load: 3
+  prep_network: 3
+  prep_network2: 3
+  summary: 3

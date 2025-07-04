@@ -126,9 +126,10 @@ plotting:
     biomass to liquid: '#32CD32'
     BioSNG: '#123456'
     # coal
-
     coal carbon capture: '#8487e8'
+    coal-CCS: '#8487e8'
     coal cc: '#8487e8'
+    coal ccs: '#8487e8'
     coal power plant retrofit: '#8487e8'
     # gas
     gas: '#e0986c'
@@ -404,7 +405,9 @@ plotting:
     # generatord
     battery: "Battery Storage"
     coal: "Coal Power Plant"
-    coal cc: "coal carbon capture"
+    coal cc: "Coal with carbon capture"
+    coal ccs: "Coal with carbon capture"
+    coal-CCS: "Coal with Carbon Capture"
     coal-heat: "Coal Boiler"
     hydro: "Reservoir & Dam"
     H2 fuel cell: "H2 Fuel Cell"
@@ -437,9 +440,12 @@ plotting:
   - Nuclear
   - Coal
   - coal
-  - coal carbon capture
   - coal power plant
   - coal power plant retrofit
+  - coal carbon capture
+  - coal ccs
+  - coal-CCS
+  - Coal with Carbon Capture
   - coal boiler
   - coal boiler decentral
   - coal boiler central

@@ -183,6 +183,8 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         network.add("Carrier", "coal", co2_emissions=costs.at["coal", "co2_emissions"])
     if "CCGT-CCS" in config["Techs"]["conv_techs"]:
         network.add("Carrier", "gas ccs", co2_emissions=costs.at["gas ccs", "co2_emissions"])
+    if "coal-CCS" in config["Techs"]["conv_techs"]:
+        network.add("Carrier", "coal ccs", co2_emissions=costs.at["coal ccs", "co2_emissions"])
 
 
 def add_co2_capture_support(
@@ -435,6 +437,22 @@ def add_conventional_generators(
             ramp_limit_down=ramps["ramp_limit_down"],
             p_max_pu=0.9,  # planned and forced outages
         )
+
+        if "coal-CCS" in config["Techs"]["conv_techs"]:
+            network.add(
+                "Generator",
+                nodes,
+                suffix=" coal-CCS",
+                bus=nodes,
+                carrier="coal ccs",
+                p_nom_extendable=True,
+                efficiency=costs.at["coal ccs", "efficiency"],
+                marginal_cost=costs.at["coal ccs", "marginal_cost"],
+                capital_cost=costs.at["coal ccs", "efficiency"]
+                * costs.at["coal ccs", "capital_cost"],  # NB: capital cost is per MWel
+                lifetime=costs.at["coal ccs", "lifetime"],
+                p_max_pu=0.9,  # planned and forced outages
+            )
 
 
 def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_co2=False):

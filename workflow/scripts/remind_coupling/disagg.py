@@ -115,6 +115,11 @@ if __name__ == "__main__":
     pypsa_tech_groups = (
         data["remind_tech_groups"].set_index("PyPSA_tech")["group"].drop_duplicates()
     )
+    if not pypsa_tech_groups.index.is_unique:
+        raise ValueError(
+            "PyPSA tech groups are not unique. Check the remind_tech_groups.csv"
+            " file for remind techs that appear in multiple pypsa techs"
+        )
     for cap_df in data["pypsa_capacities"].values():
         cap_df["tech_group"] = cap_df.Tech.map(pypsa_tech_groups)
         cap_df.fillna({"tech_group": ""}, inplace=True)
