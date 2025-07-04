@@ -177,7 +177,7 @@ def add_cost_pannel(
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
     colors = {k.lower(): v for k, v in tech_colors.items()}
-    
+
     # Create color list with default color for missing carriers
     color_list = []
     for k in reordered:
@@ -185,7 +185,7 @@ def add_cost_pannel(
             color_list.append(colors[k.lower()])
         else:
             color_list.append("lightgrey")  # Default color for missing carriers
-    
+
     df.loc[reordered, df.columns].T.plot(
         kind="bar",
         ax=ax3,
@@ -305,7 +305,7 @@ def plot_cost_map(
     # Add the total costs
     bus_size_factor = opts["cost_map"]["bus_size_factor"]
     linewidth_factor = opts["cost_map"]["linewidth_factor"]
-    
+
     plot_map(
         network,
         tech_colors=tech_colors,
@@ -632,10 +632,10 @@ if __name__ == "__main__":
             "plot_network",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2060",
+            co2_pathway="SSP2-PkBudg1000_CHAb",
+            planning_horizons="2030",
             # heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled.yaml"],
+            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
     set_plot_test_backend(snakemake.config)
     configure_logging(snakemake, logger=logger)

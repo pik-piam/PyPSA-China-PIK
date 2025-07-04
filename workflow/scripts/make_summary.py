@@ -227,24 +227,26 @@ def calculate_nodal_capacities(
         pd.DataFrame: updated nodal_capacities"""
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide
     #  (e.g. fossil gas/oil) stuff
-    
+
     # Filter out reversed links to avoid double-counting transmission capacity
     # Only include positive links since positive and reversed links have the same capacity
     positive_links_mask = n.links.index.str.contains("positive")
-    
+
     # Create a temporary network with only positive links for capacity calculation
     n_temp = n.copy()
     reversed_links = n.links.index[~positive_links_mask]
     n_temp.links = n_temp.links.drop(reversed_links)
-    
+
     nodal_cap = n_temp.statistics.optimal_capacity(groupby=pypsa.statistics.get_bus_and_carrier)
     nodal_capacities[label] = nodal_cap.sort_index(level=0)
     return nodal_capacities
 
 
-def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame, adjust_link_capacities=None) -> pd.DataFrame:
+def calculate_capacities(
+    n: pypsa.Network, label: str, capacities: pd.DataFrame, adjust_link_capacities=None
+) -> pd.DataFrame:
     """Calculate the optimal capacities by carrier and bus carrier
-    
+
     For links that connect to AC buses (bus1=AC), the capacity can be multiplied by efficiency
     to report the actual capacity available at the AC side rather than the input side.
     This ensures consistent capacity reporting across the network.
@@ -253,7 +255,7 @@ def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame,
         n (pypsa.Network): the network object
         label (str): the label used by make summaries
         capacities (pd.DataFrame): the dataframe to fill/update
-        adjust_link_capacities (bool, optional): Whether to adjust link capacities by efficiency. 
+        adjust_link_capacities (bool, optional): Whether to adjust link capacities by efficiency.
             If None, reads from config. Defaults to None.
 
     Returns:
@@ -277,11 +279,12 @@ def calculate_capacities(n: pypsa.Network, label: str, capacities: pd.DataFrame,
     caps = n.statistics.optimal_capacity(
         groupby=pypsa.statistics.get_carrier_and_bus_carrier, nice_names=False
     )
-    
+
     # Restore original link capacities to avoid modifying the network object
     n.links.p_nom_opt = original_p_nom_opt
-    
-    caps.drop("load shedding", level=1, inplace=True)
+
+    if "load shedding" in caps.index.get_level_values(1):
+        caps.drop("load shedding", level=1, inplace=True)
     caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
 
     # track links that feed into AC
@@ -313,8 +316,9 @@ def calculate_expanded_capacities(
     caps = n.statistics.expanded_capacity(
         groupby=pypsa.statistics.get_carrier_and_bus_carrier, nice_names=False
     )
-    caps.drop("load shedding", level=1, inplace=True)
-    caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
+
+    if "load shedding" in caps.index.get_level_values(1):
+        caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
 
     # track links that feed into AC
     mask = (n.links.bus1.map(n.buses.carrier) == "AC") & (n.links.carrier != "stations")
@@ -640,8 +644,10 @@ def calculate_market_values(
 
 
 # TODO improve netwroks_dict arg
-def make_summaries(networks_dict: dict[tuple, os.PathLike], opts: dict = None)->dict[str, pd.DataFrame]:
-    """ Make summary tables for the given network
+def make_summaries(
+    networks_dict: dict[tuple, os.PathLike], opts: dict = None
+) -> dict[str, pd.DataFrame]:
+    """Make summary tables for the given network
     Args:
         networks_dict (dict): a dictionary of (pathway, time):network_path used in the run
         opts (dict): options for each summary function
@@ -651,7 +657,7 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike], opts: dict = None)->
     """
     if opts is None:
         opts = {}
-        
+
     output_funcs = {
         "nodal_costs": calculate_nodal_costs,
         "nodal_capacities": calculate_nodal_capacities,
@@ -690,7 +696,9 @@ def make_summaries(networks_dict: dict[tuple, os.PathLike], opts: dict = None)->
 
         for output, output_fn in output_funcs.items():
             if output in opts:
-                dataframes_dict[output] = output_fn(n, label, dataframes_dict[output], **opts[output])
+                dataframes_dict[output] = output_fn(
+                    n, label, dataframes_dict[output], **opts[output]
+                )
             else:
                 dataframes_dict[output] = output_fn(n, label, dataframes_dict[output])
 
@@ -718,9 +726,9 @@ if __name__ == "__main__":
             topology="current+FCG",
             # co2_pathway="exp175default",
             planning_horizons="2060",
-            co2_pathway="SSP2-PkBudg1000-freeze",
+            co2_pathway="SSP2-PkBudg1000_CHAb",
             # heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled.yaml"],
+            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
 
     configure_logging(snakemake)
@@ -748,7 +756,13 @@ if __name__ == "__main__":
 
     # Access snakemake config only in main
     reporting_cfg = snakemake.config.get("reporting", {})
-    summary_cfg = {"capacities": {"adjust_link_capacities": reporting_cfg.get("adjust_link_capacities_by_efficiency", False)}}
+    summary_cfg = {
+        "capacities": {
+            "adjust_link_capacities": reporting_cfg.get(
+                "adjust_link_capacities_by_efficiency", False
+            )
+        }
+    }
 
     df = make_summaries(networks_dict, opts=summary_cfg)
     df["metrics"].loc["total costs"] = df["costs"].sum()

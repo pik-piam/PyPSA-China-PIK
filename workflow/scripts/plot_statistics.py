@@ -62,10 +62,10 @@ if __name__ == "__main__":
             planning_horizons="2025",
             # co2_pathway="exp175default",
             # planning_horizons="2130",
-            co2_pathway="SSP2-PkBudg1000-freeze",
+            co2_pathway="SSP2-PkBudg1000_CHAb",
             topology="current+FCG",
             # heating_demand="positive",
-            configfiles="resources/tmp/remind_coupled.yaml",
+            configfiles="resources/tmp/remind_coupled_cg.yaml",
         )
     configure_logging(snakemake)
     set_plot_test_backend(snakemake.config)
@@ -122,13 +122,15 @@ if __name__ == "__main__":
 
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
-        
+
         # Temporarily save original link capacities
         original_p_nom_opt = n.links.p_nom_opt.copy()
-        
+
         # Get configuration from snakemake
-        adjust_link_capacities = snakemake.config.get("reporting", {}).get("adjust_link_capacities_by_efficiency", False)
-        
+        adjust_link_capacities = snakemake.config.get("reporting", {}).get(
+            "adjust_link_capacities_by_efficiency", False
+        )
+
         # Drop reversed links & report AC capacities for links from X to AC
         if adjust_link_capacities:
             # For links where bus1 is AC, multiply capacity by efficiency coefficient to get AC side capacity
@@ -138,19 +140,20 @@ if __name__ == "__main__":
             # ignore lossy link dummies
             pseudo_links = n.links.query("Link.str.contains('reversed') & capital_cost ==0 ").index
             n.links.loc[pseudo_links, "p_nom_opt"] = 0
-        
+
         # Calculate optimal capacity for all components
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
-        
+
         # Restore original link capacities to avoid modifying the network object
         n.links.p_nom_opt = original_p_nom_opt
-        
+
         # Handle battery components correctly
         if ("Link", "battery") in ds.index:
             ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
             ds.drop(index=("Link", "battery"), inplace=True)
         ds.drop("stations", level=1, inplace=True)
-        ds.drop("load shedding", level=1, inplace=True)
+        if "load shedding" in ds.index.get_level_values(1):
+            ds.drop("load shedding", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
@@ -222,8 +225,10 @@ if __name__ == "__main__":
     if "lcoe" in stats_list:
         rev_costs = calc_lcoe(n, groupby=None)
         ds = rev_costs["LCOE"]
-        ds.drop("load shedding", level=1, inplace=True)
-        ds.drop("H2", level=1, inplace=True)
+        if "load shedding" in ds.index.get_level_values(1):
+            ds.drop("load shedding", level=1, inplace=True)
+        if "H2" in ds.index.get_level_values(1):
+            ds.drop("H2", level=1, inplace=True)
         ds.attrs = {"name": "LCOE", "unit": "€/MWh"}
         fig, ax = plt.subplots()
         plot_static_per_carrier(ds, ax, colors=colors)
