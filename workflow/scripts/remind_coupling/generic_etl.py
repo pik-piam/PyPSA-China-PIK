@@ -35,6 +35,7 @@ from rpycpl.etl import ETL_REGISTRY, Transformation
 
 logger = logging.getLogger(__name__)
 
+
 class RemindLoader:
     """Load Remind symbol tables from csvs or gdx"""
 
@@ -176,9 +177,9 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
             "transform_remind_data",
-            co2_pathway="SSP2-PkBudg1000-freeze",
+            co2_pathway="SSP2-PkBudg1000_CHA_adjcost",
             topology="current+FCG",
-            configfiles="resources/tmp/remind_coupled.yaml",
+            configfiles="resources/tmp/remind_coupled_cg.yaml",
             heating_demand="positive",
         )
 
