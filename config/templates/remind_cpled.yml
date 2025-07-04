@@ -17,9 +17,10 @@ scenario:
 existing_capacities:
   remind_only_tech_groups: ["biomass"]
   
-# TODO
+# TODO make remind output dir configurable
 paths:
-  remind_outpt_dir: /p/tmp/ivanra/REMIND/output/SSP2-PkBudg1000-PyPSAxprt_2025-05-09_19.01.34/pypsa_export
+  # remind_outpt_dir: /p/tmp/ivanra/REMIND/output/SSP2-PkBudg1000-PyPSAxprt_2025-05-09_19.01.34/pypsa_export
+  remind_outpt_dir: /p/tmp/ivanra/formatted_remind_outputs/pypsa_export_chris_CHA
   costs_dir: null
   yearly_regional_load: 
     ac: null
@@ -100,5 +101,19 @@ remind_etl:
       method: "calc_paid_off_capacity"
       dependencies:
         - harmonize_model_caps
-  
 
+# TODO make an argument
+existing_capacities:
+  remind_only_tech_groups: ["biomass"]
+  freeze_new: true
+
+electricity:
+  min_charge:
+    battery: 0.15 # fraction of e_nom
+
+nuclear_reactors:
+  p_max_pu: 0.83 # fraction of p_nom
+  
+lines:
+  expansion:
+    transmission_limit: c1.05
