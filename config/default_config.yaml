@@ -156,6 +156,12 @@ Technique:
 #   existing_nuclear: False
 #   existing_PHS: False
 
+reporting:
+  # Whether to adjust link capacities by efficiency for AC-side reporting
+  # pypsa links capacity defined by input but nameplate capacity often AC
+  # This ensures consistent capacity reporting across the network
+  adjust_link_capacities_by_efficiency: true
+
 bus_suffix: [""," central heat"," decentral heat"," gas"," coal"]
 bus_carrier: {
     "": "AC",

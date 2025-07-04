@@ -30,7 +30,6 @@ rule build_run_config:
         "../scripts/remind_coupling/make_pypsa_config.py"
 
 
-# TODO how to pass config?
 rule transform_remind_data:
     """
     Import the remind data from the remind output & transform it to the pypsa-china format using 
@@ -58,7 +57,7 @@ rule transform_remind_data:
         "../scripts/remind_coupling/generic_etl.py"
 
 
-rule disaggregate_data:
+rule disaggregate_remind_data:
     """
     Disaggregate the data from the remind output to the network time and spatial resolutions
     """
@@ -91,4 +90,4 @@ rule disaggregate_data:
     conda:
         "remind-coupling"
     script:
-        "../scripts/remind_coupling/disagg.py"
+        "../scripts/remind_coupling/disaggregate_data.py"

@@ -32,7 +32,7 @@ def plot_map(
     network: pypsa.Network,
     tech_colors: dict,
     edge_widths: pd.Series,
-    bus_colors: pd.Series,
+    bus_colors: dict | pd.Series,
     bus_sizes: pd.Series,
     edge_colors: pd.Series | str = "black",
     add_ref_edge_sizes=True,
@@ -88,7 +88,13 @@ def plot_map(
 
     if add_legend:
         carriers = bus_sizes.index.get_level_values(1).unique()
-        colors = carriers.intersection(tech_colors).map(tech_colors).to_list()
+        # Ensure all carriers have colors, use default color for missing ones
+        colors = []
+        for carrier in carriers:
+            if carrier in tech_colors:
+                colors.append(tech_colors[carrier])
+            else:
+                colors.append("lightgrey")  # Default color for missing carriers
 
         if isinstance(edge_colors, str):
             colors += [edge_colors]
@@ -171,11 +177,20 @@ def add_cost_pannel(
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
     colors = {k.lower(): v for k, v in tech_colors.items()}
+    
+    # Create color list with default color for missing carriers
+    color_list = []
+    for k in reordered:
+        if k.lower() in colors:
+            color_list.append(colors[k.lower()])
+        else:
+            color_list.append("lightgrey")  # Default color for missing carriers
+    
     df.loc[reordered, df.columns].T.plot(
         kind="bar",
         ax=ax3,
         stacked=True,
-        color=[colors[k.lower()] for k in reordered],
+        color=color_list,
     )
     ax3.legend().remove()
     ax3.set_ylabel("annualized system cost bEUR/a")
@@ -290,6 +305,7 @@ def plot_cost_map(
     # Add the total costs
     bus_size_factor = opts["cost_map"]["bus_size_factor"]
     linewidth_factor = opts["cost_map"]["linewidth_factor"]
+    
     plot_map(
         network,
         tech_colors=tech_colors,

@@ -95,6 +95,7 @@ plotting:
     battery storage: '#ace37f'
     battery charger: '#88a75b'
     battery discharger: "#ace37f" #'#5d4e29'
+    Battery Discharger: "#ace37f"
     home battery: '#80c944'
     home battery storage: '#80c944'
     home battery charger: '#5e8032'
@@ -161,6 +162,7 @@ plotting:
     biogas to gas: '#e36311'
     CCGT: '#a85522'
     CCGT marginal: '#a85522'
+    gas CCGT: '#a85522'
     allam: '#B98F76'
     gas for industry co2 to atmosphere: '#692e0a'
     gas for industry co2 to stored: '#8a3400'
@@ -404,6 +406,7 @@ plotting:
     AC-heat: "Heat Pump"
     # generatord
     battery: "Battery Storage"
+    battery discharger: "Battery Discharger"
     coal: "Coal Power Plant"
     coal cc: "Coal with carbon capture"
     coal ccs: "Coal with carbon capture"
