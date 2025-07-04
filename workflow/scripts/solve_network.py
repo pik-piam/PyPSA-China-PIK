@@ -228,8 +228,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         return
 
     # In coupled-mode components (Generators, Links,..) have limits p/e_nom_rcl & a tech_group
-    # These columns are added by `add_existing_baseyear.add_paid_off_capacity`. 
-    # p/e_nom_rcl is the availale paid-off capacity per tech group and is nan for non paid-off (usual) generators. 
+    # These columns are added by `add_existing_baseyear.add_paid_off_capacity`.
+    # p/e_nom_rcl is the availale paid-off capacity per tech group and is nan for non paid-off (usual) generators.
     # rcl is a legacy name from Aodenweller
     for component in ["Generator", "Link", "Store"]:
 
@@ -288,7 +288,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         usual_comps = getattr(n, component.lower() + "s").loc[usual_comps_idx].copy()
         usual_comps = usual_comps[~usual_comps.p_nom_max.isin([np.inf, np.nan])]
 
-        to_constrain = pd.concat([usual_comps, paidoff_comp], axis=0)
+        paid_off_wlimits = paidoff_comp.loc[usual_comps.index + "_paid_off"]
+        to_constrain = pd.concat([usual_comps, paid_off_wlimits], axis=0)
         to_constrain.rename_axis(index=f"{component}-ext", inplace=True)
         # otherwise n.model query will fail. This is needed in case freeze_compoents was used
         # it is fine so long as p_nom is zero for the frozen components
@@ -389,10 +390,10 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "solve_networks",
             co2_pathway="SSP2-PkBudg1000-freeze",
-            planning_horizons="2020",
+            planning_horizons="2025",
             topology="current+FCG",
             # heating_demand="positive",
-            configfiles="resources/tmp/remind_coupled.yaml",
+            configfiles="resources/tmp/remind_coupled_cg.yaml",
         )
     configure_logging(snakemake)
 
