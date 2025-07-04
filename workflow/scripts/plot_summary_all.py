@@ -189,7 +189,11 @@ def plot_pathway_capacities(
     )
     # loop over each year result
     for results_file in file_list:
-        cap_df = pd.read_csv(results_file, index_col=list(range(4)), header=[2])
+        cap_df = pd.read_csv(results_file, index_col=list(range(4)), header=[1, 2])
+        # format table
+        cap_df.index.names = ["component", "carrier", "bus_carrier", "end_carrier"]
+        year = cap_df.columns.get_level_values(0)[0]
+        cap_df = cap_df.droplevel(0, axis=1).rename(columns={"Unnamed: 4_level_1": year})
         cap_df /= PLOT_CAP_UNITS
 
         # get stores relevant for reporting according to config, use later
@@ -217,24 +221,33 @@ def plot_pathway_capacities(
         cap_ac = cap_df.reset_index().query(
             "bus_carrier == 'AC' | carrier =='AC' | end_carrier =='AC'"
         )
-        cap_ac = cap_ac.groupby("carrier").sum()["Unnamed: 4"]
+        cap_ac = cap_ac.groupby("carrier").sum()[year]
 
         if plot_h2:
             cap_h2 = cap_df.reset_index().query(
                 "bus_carrier == 'H2' | carrier =='H2' | end_carrier =='H2'"
             )
-            cap_h2 = cap_h2.groupby("carrier").sum()["Unnamed: 4"]
-            caps_h2 = pd.concat([cap_h2, caps_h2], axis=1)
+            cap_h2 = cap_h2.groupby("carrier").sum()[year]
+            if caps_h2.empty:
+                caps_h2 = cap_h2
+            else:
+                caps_h2 = pd.concat([caps_h2, cap_h2], axis=1).fillna(0)
         if plot_heat:
             # TODO issue for CHP in case of several end buses. Bus2 will not be caught
             cap_heat = cap_df.reset_index().query(
                 "bus_carrier == 'heat' | carrier =='heat' | end_carrier =='heat'"
             )
-            cap_heat = cap_heat.groupby("carrier").sum()["Unnamed: 4"]
-            caps_heat = pd.concat([cap_heat, caps_heat], axis=1)
+            cap_heat = cap_heat.groupby("carrier").sum()[year]
+            if caps_heat.empty:
+                caps_heat = cap_heat
+            else:
+                caps_heat = pd.concat([caps_heat, cap_h2], axis=1).fillna(0)
 
-        caps_stores = pd.concat([stores, caps_stores], axis=1)
-        caps_ac = pd.concat([cap_ac, caps_ac], axis=1)
+        caps_stores = pd.concat([stores, caps_stores], axis=1).fillna(0)
+        if caps_ac.empty:
+            caps_ac = cap_ac
+        else:
+            caps_ac = pd.concat([cap_ac, caps_ac], axis=1).fillna(0)
 
     fig, axes = plt.subplots(2, 2)
     fig.set_size_inches((14, 15))
@@ -900,7 +913,18 @@ if __name__ == "__main__":
     plot_capacity_factors(
         data_paths["capacity_factors"],
         config["plotting"],
-        techs=["solar", "onwind", "offwind", "battery", "coal", "CCGT", "OCGT", "H2 Electrolysis"],
+        techs=[
+            "solar",
+            "onwind",
+            "offwind",
+            "battery",
+            "coal",
+            "coal-CCS",
+            "CCGT",
+            "OCGT",
+            "CCGT-CCS",
+            "H2 Electrolysis",
+        ],
         fig_name=os.path.dirname(output_paths.costs) + "/capacity_factors.png",
     )
     plot_pathway_costs(
