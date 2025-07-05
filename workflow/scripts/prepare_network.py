@@ -230,69 +230,6 @@ def add_co2_capture_support(
 
 
 # TODO move to solve_network.py
-def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1):
-    """
-    Set global transimission limit constraints - adapted from pypsa-eur
-
-    Args:
-        n (pypsa.Network): the network object
-        kind (str): the kind of limit to set, either 'c' for cost or 'v' for volume or l for length
-        factor (float or str): the factor to apply to the base year quantity, per year
-        n_years (int, optional): the number of years to consider for the limit. Defaults to 1.
-    """
-    logger.info(
-        f"Setting global transmission limit for {kind} with factor {factor}/year and {n_years} years"
-    )
-    links_dc = n.links.query("carrier in ['AC','DC']").index
-    # links_dc_rev = n.links.query("carrier in ['AC','DC'] & Link.str.contains('reverse')").index
-
-    _lines_s_nom = (
-        np.sqrt(3)
-        * n.lines.type.map(n.line_types.i_nom)
-        * n.lines.num_parallel
-        * n.lines.bus0.map(n.buses.v_nom)
-    )
-    lines_s_nom = n.lines.s_nom.where(n.lines.type == "", _lines_s_nom)
-
-    col = "capital_cost" if kind == "c" else "length"
-    ref = lines_s_nom @ n.lines[col] + n.links.loc[links_dc, "p_nom"] @ n.links.loc[links_dc, col]
-
-    if factor == "opt" or float(factor) ** n_years > 1.0:
-        n.lines["s_nom_min"] = lines_s_nom
-        n.lines["s_nom_extendable"] = True
-
-        n.links.loc[links_dc, "p_nom_extendable"] = True
-
-    elif float(factor) ** n_years == 1.0:
-        # if factor is 1.0, then we do not need to extend
-        n.lines["s_nom_min"] = lines_s_nom
-        n.lines["s_nom_extendable"] = False
-        n.links.loc[links_dc, "p_nom_extendable"] = False
-
-        # factor = 1 + 1e-7  # to avoid numerical issues with the constraints
-
-    elif float(factor) ** n_years < 1.0:
-        n.lines["s_nom_min"] = 0
-        n.links.loc[links_dc, "p_nom_min"] = 0
-        # n.links.loc[links_dc_rev, "p_nom_min"] = 0
-
-    if factor != "opt":
-        con_type = "expansion_cost" if kind == "c" else "volume_expansion"
-        rhs = float(factor) ** n_years * ref
-        logger.info(
-            f"Setting global transmission limit for {kind} to {float(factor) ** n_years} current value"
-        )
-        n.add(
-            "GlobalConstraint",
-            f"l{kind}_limit",
-            type=f"transmission_{con_type}_limit",
-            sense="<=",
-            constant=rhs,
-            carrier_attribute="AC, DC",
-        )
-
-
-# TODO move to solve_network.py
 def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
     """Add co2 constraints or prices
 
@@ -1725,18 +1662,6 @@ if __name__ == "__main__":
     if not snakemake.params.get("skip_co2_constraints", False) and co2_opts["control"] == "price":
         co2_opts["control"] = None
     add_co2_constraints_prices(network, co2_opts)
-
-    line_exp_limits = config["lines"].get(
-        "expansion", {"transmission_limit": "copt", "base_year": 2020}
-    )
-    # TODO make separate entries. This pypsaeur option is bad
-    transmission_limit = line_exp_limits.get("transmission_limit", "copt")
-    exp_years = int(snakemake.wildcards.planning_horizons) - int(
-        line_exp_limits.get("base_year", 2020)
-    )
-    set_transmission_limit(
-        network, kind=transmission_limit[0], factor=transmission_limit[1:], n_years=exp_years
-    )
 
     outp = snakemake.output.network_name
     compression = snakemake.config.get("io", None)

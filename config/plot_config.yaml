@@ -401,6 +401,7 @@ plotting:
     gas CCGT: "Combined-Cycle Gas"
     gas ccs: "Gas with Carbon Capture"
     CCGT gas: "Combined-Cycle Gas"
+    gas: Gas
     heat pump: "Heat Pump"
     stations-AC: "Reservoir & Dam"
     AC-heat: "Heat Pump"

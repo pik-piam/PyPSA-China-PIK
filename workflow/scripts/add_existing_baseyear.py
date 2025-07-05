@@ -680,7 +680,7 @@ def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_
     logger.info(f"\tEmission prices: {emission_prices}")
 
 
-def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["OCGT"]):
+def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbine"]):
     """Set p_nom_extendable=False for the components in the network.
     Applies to vre_techs and conventional technologies not in the exclude list.
 
@@ -693,8 +693,19 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["OCGT"]):
     # Freeze VRE and conventional techs
     freeze = config["Techs"]["vre_techs"] + config["Techs"]["conv_techs"]
     freeze = [f for f in freeze if not f in exclude]
-    # very ugly
-    to_fix = {"OCGT": "gas OCGT", "CCGT": "gas CCGT", "CCGT-CCS": "gas cc"}
+    if "coal boiler" in freeze:
+        freeze += ["coal boiler central", "coal boiler decentral"]
+    if "gas boiler" in freeze:
+        freeze += ["gas boiler central", "gas boiler decentral"]
+
+    # very ugly -> how to make more robust?
+    to_fix = {
+        "OCGT": "gas OCGT",
+        "CCGT": "gas CCGT",
+        "CCGT-CCS": "gas ccs",
+        "coal power plant": "coal",
+        "coal-CCS": "coal ccs",
+    }
     freeze += [to_fix[k] for k in to_fix if k in freeze]
 
     for comp in ["generators", "links"]:
@@ -711,8 +722,8 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["OCGT"]):
     # http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full
     n.add("Carrier", "load shedding", color="#dd2e23", nice_name="Load shedding")
     buses_i = n.buses.query("carrier == 'AC'").index
-    # TODO: do not scale via sign attribute (use Eur/MWh instead of Eur/kWh)
-    load_shedding = 1e5  # Eur/MWh
+    # TODO: make this a config option
+    load_shedding = 1e4  # Eur/MWh
 
     n.add(
         "Generator",
@@ -721,6 +732,7 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["OCGT"]):
         bus=buses_i,
         carrier="load shedding",
         marginal_cost=load_shedding,  # Eur/Wh
+        capital_cost=20,  # low value for numerical stab?
         p_nom_extendable=True,
     )
 
@@ -731,9 +743,9 @@ if __name__ == "__main__":
             "add_existing_baseyear",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-freeze",
-            planning_horizons="2025",
-            configfiles="resources/tmp/remind_coupled.yaml",
+            co2_pathway="SSP2-PkBudg1000_CHA_adjcost",
+            planning_horizons="2040",
+            configfiles="resources/tmp/remind_coupled_cg.yaml",
             # heating_demand="positive",
         )
 
@@ -791,7 +803,9 @@ if __name__ == "__main__":
     if config["run"].get("is_remind_coupled", False) & (
         config["existing_capacities"].get("freeze_new", False)
     ):
-        freeze_components(n, config, exclude=["H2 fuel cell", "H2 Electrolysis"])
+        freeze_components(
+            n, config, exclude=["H2 fuel cell", "H2 turbine", "H2 Electrolysis", "H2"]
+        )
 
     compression = snakemake.config.get("io", None)
     if compression:

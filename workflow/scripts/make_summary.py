@@ -318,7 +318,9 @@ def calculate_expanded_capacities(
     )
 
     if "load shedding" in caps.index.get_level_values(1):
-        caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
+        caps.drop("load shedding", level=1, inplace=True)
+
+    caps.rename(index={"AC": "Transmission Lines"}, inplace=True, level=1)
 
     # track links that feed into AC
     mask = (n.links.bus1.map(n.buses.carrier) == "AC") & (n.links.carrier != "stations")
@@ -725,8 +727,8 @@ if __name__ == "__main__":
             "make_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            planning_horizons="2060",
-            co2_pathway="SSP2-PkBudg1000_CHAb",
+            planning_horizons="2050",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             # heating_demand="positive",
             configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
