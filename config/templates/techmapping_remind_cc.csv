@@ -47,10 +47,10 @@ coal ccs,investment,use_remind,igccc,USD/MW,
 coal ccs,lifetime,use_remind,igccc,years,
 coal ccs,VOM,use_remind,igccc,USD/MWh,
 electrolysis,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
-electrolysis,efficiency,use_remind,elh2,,
+electrolysis,efficiency,use_remind,elh2,p.u.,
 electrolysis,FOM,use_remind,elh2,%,
 electrolysis,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
-electrolysis,investment,use_remind,elh2,USD/MW,
+electrolysis,investment,use_pypsa,elh2,USD/MW,
 electrolysis,lifetime,use_remind,elh2,years,
 electrolysis,VOM,use_remind,elh2,,
 H2 turbine,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
