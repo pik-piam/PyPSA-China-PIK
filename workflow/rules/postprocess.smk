@@ -85,6 +85,7 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
         script:
             "../scripts/plot_statistics.py"
 
+    # TODO auto search expesnive weeks like in notebooks
     rule plot_snapshots:
         input:
             network=join(
@@ -96,6 +97,8 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
             winter_day2="12-17 12:00",  # mm-dd HH:MM
             spring_day1="04-01 21:00",  # mm-dd HH:MM
             spring_day2="04-07 12:00",  # mm-dd HH:MM
+            summer_day1="07-15 21:00",  # mm-dd HH:MM
+            summer_day2="07-22 12:00",  # mm-dd HH:MM
         output:
             outp_dir=directory(RESULTS_DIR + "/plots/snapshots_{planning_horizons}"),
         log:
@@ -109,6 +112,7 @@ else:
     )
 
 
+# TODO fix
 rule plot_heatmap:
     input:
         network=RESULTS_DIR + "/postnetworks/ntwk_{planning_horizons}.nc",

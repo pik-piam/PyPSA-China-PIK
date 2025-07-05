@@ -412,14 +412,16 @@ if __name__ == "__main__":
             "plot_snapshots",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled_heat.yaml"],
-            planning_horizons="2020",
+            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            planning_horizons="2055",
             winter_day1="12-10 21:00",  # mm-dd HH:MM
             winter_day2="12-17 12:00",  # mm-dd HH:MM
             spring_day1="03-31 21:00",  # mm-dd HH:MM
             spring_day2="04-06 12:00",  # mm-dd HH:MM
+            summer_day1="07-15 21:00",  # mm-dd HH:MM
+            summer_day2="07-22 12:00",  # mm-dd HH:MM
         )
 
     YEAR = snakemake.wildcards.planning_horizons
@@ -466,6 +468,17 @@ if __name__ == "__main__":
             ax=ax,
         )
         outp = os.path.join(snakemake.output.outp_dir, f"balance_winter_{carrier}.png")
+        fig.savefig(outp)
+
+        plot_energy_balance(
+            n,
+            config["plotting"],
+            bus_carrier=carrier,
+            start_date=f"{YEAR}-{snakemake.params.summer_day1}",
+            end_date=f"{YEAR}-{snakemake.params.summer_day2}",
+            ax=ax,
+        )
+        outp = os.path.join(snakemake.output.outp_dir, f"balance_summer_{carrier}.png")
         fig.savefig(outp)
 
     logger.info(f"Successfully plotted time series for carriers: {", ".join(carriers)}")
