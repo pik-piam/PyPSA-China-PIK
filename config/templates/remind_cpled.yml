@@ -35,7 +35,7 @@ no_lines: False
 Techs:
   ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
   vre_techs: [ "onwind","offwind","solar","hydroelectricity", "nuclear","biomass","H2 CHP", "H2 turbine"]
-  conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
+  conv_techs: ["OCGT", "CCGT","coal power plant","CHP coal", "coal-CCS","CCGT-CCS","CHP gas", "gas boiler","coal boiler"]
   store_techs: ["H2","battery","water tanks","PHS"]
   coal_cc: true # currently myopic pathway only.  CC = co2 cap 
   hydrogen_lines: true # currently myopic pathway only
