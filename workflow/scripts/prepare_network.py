@@ -229,40 +229,6 @@ def add_co2_capture_support(
     )
 
 
-# TODO move to solve_network.py
-def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
-    """Add co2 constraints or prices
-
-    Args:
-        network (pypsa.Network): the network to which prices or constraints are to be added
-        co2_control (dict): the config
-
-    Raises:
-        ValueError: unrecognised co2 control option
-    """
-
-    if co2_control["control"] is None:
-        pass
-    elif co2_control["control"] == "price":
-        logger.info("Adding CO2 price to marginal costs of generators and storage units")
-        add_emission_prices(network, emission_prices={"co2": co2_control["co2_pr_or_limit"]})
-
-    elif co2_control["control"].startswith("budget"):
-        co2_limit = co2_control["co2_pr_or_limit"]
-        logger.info("Adding CO2 constraint based on scenario {co2_limit}")
-        network.add(
-            "GlobalConstraint",
-            "co2_limit",
-            type="primary_energy",
-            carrier_attribute="co2_emissions",
-            sense="<=",
-            constant=co2_limit,
-        )
-    else:
-        logger.error(f"Unhandled CO2 control config {co2_control} due to unknown control.")
-        raise ValueError(f"Unhandled CO2 config {config['scenario']['co2_reduction']}")
-
-
 def add_conventional_generators(
     network: pypsa.Network,
     nodes: pd.Index,
@@ -390,35 +356,6 @@ def add_conventional_generators(
                 lifetime=costs.at["coal ccs", "lifetime"],
                 p_max_pu=0.9,  # planned and forced outages
             )
-
-
-def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_co2=False):
-    """from pypsa-eur: add GHG price to marginal costs of generators and storage units
-
-    Args:
-        n (pypsa.Network): the pypsa network
-        emission_prices (dict, optional): emission prices per GHG. Defaults to {"co2": 0.0}.
-        exclude_co2 (bool, optional): do not charge for CO2 emissions. Defaults to False.
-    """
-    if exclude_co2:
-        emission_prices.pop("co2")
-    em_price = (
-        pd.Series(emission_prices).rename(lambda x: x + "_emissions")
-        * n.carriers.filter(like="_emissions")
-    ).sum(axis=1)
-
-    n.meta.update({"emission_prices": emission_prices})
-
-    gen_em_price = n.generators.carrier.map(em_price) / n.generators.efficiency
-
-    n.generators["marginal_cost"] += gen_em_price
-    n.generators_t["marginal_cost"] += gen_em_price[n.generators_t["marginal_cost"].columns]
-    # storage units su
-    su_em_price = n.storage_units.carrier.map(em_price) / n.storage_units.efficiency_dispatch
-    n.storage_units["marginal_cost"] += su_em_price
-
-    logger.info("Added emission prices to marginal costs of generators and storage units")
-    logger.info(f"\tEmission prices: {emission_prices}")
 
 
 def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.DataFrame):
@@ -1656,12 +1593,6 @@ if __name__ == "__main__":
         snakemake.config, costs, snapshots, biomass_potential, paths=input_paths
     )
     sanitize_carriers(network, snakemake.config)
-
-    # for brownfield skip co2 Prices this in add_baseyear
-    # TODO move this to solve_network & solve_network myopic
-    if not snakemake.params.get("skip_co2_constraints", False) and co2_opts["control"] == "price":
-        co2_opts["control"] = None
-    add_co2_constraints_prices(network, co2_opts)
 
     outp = snakemake.output.network_name
     compression = snakemake.config.get("io", None)
