@@ -18,7 +18,7 @@ configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
 
 # for dev of remind with mocksnakemake, activate this
-# configfile: "resources/tmp/remind_coupled.yaml"
+# configfile: "resources/tmp/remind_coupled_cg.yaml"
 
 
 # ====== make paths =======
@@ -264,8 +264,6 @@ if config["foresight"] in ["overnight"]:
     add_brownfield = "-brownfield" if config["existing_capacities"].get("add", False) else ""
 
     rule prepare_networks:
-        params:
-            skip_co2_constraints = not add_brownfield
         input:
             heat_demand_profile=DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
