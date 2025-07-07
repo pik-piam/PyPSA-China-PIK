@@ -14,7 +14,7 @@ import pandas as pd
 from pandas import DatetimeIndex
 
 
-from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env
+from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, ConfigManager
 from _pypsa_helpers import mock_solve
 from constants import YEAR_HRS
 
@@ -84,28 +84,95 @@ def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1
         )
 
 
+def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_co2=False):
+    """from pypsa-eur: add GHG price to marginal costs of generators and storage units
+
+    Args:
+        n (pypsa.Network): the pypsa network
+        emission_prices (dict, optional): emission prices per GHG. Defaults to {"co2": 0.0}.
+        exclude_co2 (bool, optional): do not charge for CO2 emissions. Defaults to False.
+    """
+    if exclude_co2:
+        emission_prices.pop("co2")
+    em_price = (
+        pd.Series(emission_prices).rename(lambda x: x + "_emissions")
+        * n.carriers.filter(like="_emissions")
+    ).sum(axis=1)
+
+    n.meta.update({"emission_prices": emission_prices})
+
+    gen_em_price = n.generators.carrier.map(em_price) / n.generators.efficiency
+
+    n.generators["marginal_cost"] += gen_em_price
+    n.generators_t["marginal_cost"] += gen_em_price[n.generators_t["marginal_cost"].columns]
+    # storage units su
+    su_em_price = n.storage_units.carrier.map(em_price) / n.storage_units.efficiency_dispatch
+    n.storage_units["marginal_cost"] += su_em_price
+
+    logger.info("Added emission prices to marginal costs of generators and storage units")
+    logger.info(f"\tEmission prices: {emission_prices}")
+
+
+def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
+    """Add co2 constraints or prices
+
+    Args:
+        network (pypsa.Network): the network to which prices or constraints are to be added
+        co2_control (dict): the config
+
+    Raises:
+        ValueError: unrecognised co2 control option
+    """
+
+    if co2_control["control"] is None:
+        pass
+    elif co2_control["control"] == "price":
+        logger.info("Adding CO2 price to marginal costs of generators and storage units")
+        add_emission_prices(network, emission_prices={"co2": co2_control["co2_pr_or_limit"]})
+
+    elif co2_control["control"].startswith("budget"):
+        co2_limit = co2_control["co2_pr_or_limit"]
+        logger.info("Adding CO2 constraint based on scenario {co2_limit}")
+        network.add(
+            "GlobalConstraint",
+            "co2_limit",
+            type="primary_energy",
+            carrier_attribute="co2_emissions",
+            sense="<=",
+            constant=co2_limit,
+        )
+    else:
+        logger.error(f"Unhandled CO2 control config {co2_control} due to unknown control.")
+        raise ValueError(f"Unhandled CO2 config {config['scenario']['co2_reduction']}")
+
+
 def prepare_network(
-    n: pypsa.Network, solve_opts: dict, config: dict, plan_year: int
+    n: pypsa.Network, solve_opts: dict, config: dict, plan_year: int, co2_pathway: str
 ) -> pypsa.Network:
-    """prepare the network for the solver
+    """prepare the network for the solver,
     Args:
         n (pypsa.Network): the network object to optimize
         solve_opts (dict): solving options
         config (dict): the snakemake configuration dictionary
         plan_year (int): planning horizon year for which network is solved
+        co2_pathway (str): the CO2 pathway name to use
 
     Returns:
         pypsa.Network: network object with additional constraints
     """
 
+    co2_opts = ConfigManager(config).fetch_co2_restriction(co2_pathway, int(plan_year))
+    add_co2_constraints_prices(n, co2_opts)
+
     if "clip_p_max_pu" in solve_opts:
         for df in (n.generators_t.p_max_pu, n.storage_units_t.inflow):
             df.where(df > solve_opts["clip_p_max_pu"], other=0.0, inplace=True)
 
+    # TODO duplicated with freeze components
     if solve_opts.get("load_shedding"):
         n.add("Carrier", "Load")
         buses_i = n.buses.query("carrier == 'AC'").index
-        n.madd(
+        n.add(
             "Generator",
             buses_i,
             " load",
@@ -451,13 +518,20 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000_CHA_adjcost",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             planning_horizons="2025",
             topology="current+FCG",
             # heating_demand="positive",
             configfiles="resources/tmp/remind_coupled_cg.yaml",
         )
     configure_logging(snakemake)
+
+    opts = snakemake.wildcards.get("opts", "")
+    if "sector_opts" in snakemake.wildcards.keys():
+        opts += "-" + snakemake.wildcards.sector_opts
+    opts = [o for o in opts.split("-") if o != ""]
+    solve_opts = snakemake.params.solving["options"]
+    co2_pathway = snakemake.wildcards.co2_pathway
 
     # deal with the gurobi license activation, which requires a tunnel to the login nodes
     solver_config = snakemake.config["solving"]["solver"]
@@ -469,15 +543,11 @@ if __name__ == "__main__":
     else:
         tunnel = None
 
-    opts = snakemake.wildcards.get("opts", "")
-    if "sector_opts" in snakemake.wildcards.keys():
-        opts += "-" + snakemake.wildcards.sector_opts
-    opts = [o for o in opts.split("-") if o != ""]
-    solve_opts = snakemake.params.solving["options"]
-
     n = pypsa.Network(snakemake.input.network_name)
 
-    n = prepare_network(n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons)
+    n = prepare_network(
+        n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons, co2_pathway
+    )
 
     line_exp_limits = snakemake.config["lines"].get(
         "expansion", {"transmission_limit": "copt", "base_year": 2020}

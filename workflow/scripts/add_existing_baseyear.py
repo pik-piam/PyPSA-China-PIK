@@ -547,7 +547,7 @@ def _add_paidoff_biomass(
     n.add(
         "Generator",
         n.buses.query("carrier == 'AC'").index,
-        suffix="biomass paidoff",
+        suffix=" biomass paidoff",
         bus=n.buses.query("carrier == 'AC'").index,
         carrier="biomass",
         capital_cost=0,
@@ -649,37 +649,7 @@ def add_paid_off_capacity(
         )
 
 
-def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_co2=False):
-    """from pypsa-eur: add GHG price to marginal costs of generators and storage units
-    COPY OF PREPARE NETWORK BUT FOR BROWNFIEL GENE
-
-    Args:
-        n (pypsa.Network): the pypsa network
-        emission_prices (dict, optional): emission prices per GHG. Defaults to {"co2": 0.0}.
-        exclude_co2 (bool, optional): do not charge for CO2 emissions. Defaults to False.
-    """
-    if exclude_co2:
-        emission_prices.pop("co2")
-    em_price = (
-        pd.Series(emission_prices).rename(lambda x: x + "_emissions")
-        * n.carriers.filter(like="_emissions")
-    ).sum(axis=1)
-
-    n.meta.update({"emission_prices": emission_prices})
-
-    # emisions are in tCO2/MWh_th
-    gen_em_price = n.generators.carrier.map(em_price) / n.generators.efficiency
-
-    n.generators["marginal_cost"] += gen_em_price
-    n.generators_t["marginal_cost"] += gen_em_price[n.generators_t["marginal_cost"].columns]
-    # storage units su
-    su_em_price = n.storage_units.carrier.map(em_price) / n.storage_units.efficiency_dispatch
-    n.storage_units["marginal_cost"] += su_em_price
-
-    logger.info("Added emission prices to marginal costs of generators and storage units")
-    logger.info(f"\tEmission prices: {emission_prices}")
-
-
+# TODO move to solve?
 def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbine"]):
     """Set p_nom_extendable=False for the components in the network.
     Applies to vre_techs and conventional technologies not in the exclude list.
@@ -794,17 +764,13 @@ if __name__ == "__main__":
         # add to network
         add_paid_off_capacity(n, paid_off_caps, costs)
 
-    # do this now instead of in prepare_networks
-    pathway = snakemake.wildcards.co2_pathway
-    co2_opts = ConfigManager(config).fetch_co2_restriction(pathway, yr)
-    if co2_opts["control"] == "price":
-        add_emission_prices(n, emission_prices={"co2": co2_opts["co2_pr_or_limit"]})
-
     if config["run"].get("is_remind_coupled", False) & (
         config["existing_capacities"].get("freeze_new", False)
     ):
         freeze_components(
-            n, config, exclude=["H2 fuel cell", "H2 turbine", "H2 Electrolysis", "H2"]
+            n,
+            config,
+            exclude=["H2 fuel cell", "H2 turbine", "H2 Electrolysis", "H2", "CCGT-CCS", "OCGT"],
         )
 
     compression = snakemake.config.get("io", None)
