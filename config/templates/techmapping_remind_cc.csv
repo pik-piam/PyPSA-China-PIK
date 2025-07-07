@@ -137,13 +137,7 @@ H2 (g) pipeline,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing
 H2 (g) pipeline,investment,use_pypsa,,EUR/MW/km,
 H2 (g) pipeline,lifetime,use_pypsa,,,
 H2 (g) pipeline,VOM,set_value,0,USD/MWh,"No VOM for pipeline yet"  
-lignite,CO2 intensity,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
-lignite,efficiency,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
-lignite,FOM,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
-lignite,fuel,use_remind,pecoal,USD/MWh_th,
-lignite,investment,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",USD/MW,
-lignite,lifetime,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
-lignite,VOM,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
+,CO2 intensity,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
 nuclear,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
 nuclear,efficiency,weigh_remind_by_gen,"[fnrs, tnrs]",,
 nuclear,FOM,weigh_remind_by_gen,"[fnrs, tnrs]",,
@@ -158,7 +152,7 @@ OCGT,investment,use_remind,ngt,USD/MW,
 OCGT,lifetime,use_remind,ngt,years,
 OCGT,VOM,use_remind,ngt,USD/MWh,
 offwind,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
-offwind,efficiency,use_remind,windoff,p.u.,dummy
+oligniteffwind,efficiency,use_remind,windoff,p.u.,dummy
 offwind,FOM,use_remind,windoff,%,
 offwind,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing an error
 offwind,investment,use_remind,windoff,USD/MW,

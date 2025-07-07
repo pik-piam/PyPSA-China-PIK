@@ -468,17 +468,16 @@ plotting:
   - heat pump
   - Heat Pump
   - methanation
-  - H2
   - Hydrogen Storage
   - H2 fuel cell
   - H2 CHP
-  - H2
   - H2 Electrolysis
   - Hydrogen Storage
+  - H2 turbine
   - H2 fuel cell
   - H2 CHP
   - CO2 capture
-  - H2 pipeline
+
   - hot water storage
   - hydrogen storage
   - solar thermal
@@ -498,4 +497,6 @@ plotting:
   - battery
   - Battery
   - resistive heater
+  - H2
+  - H2 pipeline
   - Other
