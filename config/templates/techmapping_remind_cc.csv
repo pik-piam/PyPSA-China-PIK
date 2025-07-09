@@ -137,7 +137,6 @@ H2 (g) pipeline,fuel,set_value,0,USD/MWh,Dummy value to avoid PyPSA-EUR throwing
 H2 (g) pipeline,investment,use_pypsa,,EUR/MW/km,
 H2 (g) pipeline,lifetime,use_pypsa,,,
 H2 (g) pipeline,VOM,set_value,0,USD/MWh,"No VOM for pipeline yet"  
-,CO2 intensity,weigh_remind_by_gen,"[igcc, igccc, pc, coalchp]",,
 nuclear,CO2 intensity,set_value,0,tCO2/MWh_th,Process without direct emissions
 nuclear,efficiency,weigh_remind_by_gen,"[fnrs, tnrs]",,
 nuclear,FOM,weigh_remind_by_gen,"[fnrs, tnrs]",,
