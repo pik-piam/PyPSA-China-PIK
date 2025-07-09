@@ -102,10 +102,11 @@ remind_etl:
       dependencies:
         - harmonize_model_caps
 
-# TODO make an argument
+# TODO move to solve instead of baseyear
 existing_capacities:
   remind_only_tech_groups: ["biomass"]
   freeze_new: true
+  never_freeze: ["H2 fuel cell", "H2 turbine", "H2 Electrolysis", "H2", "CCGT-CCS", "OCGT"]
 
 electricity:
   min_charge:

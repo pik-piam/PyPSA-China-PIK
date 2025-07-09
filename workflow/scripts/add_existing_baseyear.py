@@ -770,7 +770,7 @@ if __name__ == "__main__":
         freeze_components(
             n,
             config,
-            exclude=["H2 fuel cell", "H2 turbine", "H2 Electrolysis", "H2", "CCGT-CCS", "OCGT"],
+            exclude=config["existing_capacities"].get("never_freeze", []),
         )
 
     compression = snakemake.config.get("io", None)
