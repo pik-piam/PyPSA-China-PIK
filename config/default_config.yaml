@@ -213,6 +213,7 @@ solving:
 #    seed: 123
     formulation: kirchhoff
     load_shedding: false
+    voll: 1e5 # EUR/MWh
     noisy_costs: false
     min_iterations: 4
     max_iterations: 6
