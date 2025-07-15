@@ -9,6 +9,7 @@ import logging
 import numpy as np
 from os import PathLike
 from pandas import DataFrame
+import zipfile
 
 from constants import (
     CRS,
@@ -224,6 +225,46 @@ def fetch_county_shapes(
             mask = gdf.query(f"{col} == '{old_name}'").index
             gdf.loc[mask, col] = new_name
     return gdf
+
+
+def split_inner_mongolia(
+    gdf: gpd.GeoDataFrame,
+    east_prefs=["Hulunbuir", "Xing'an", "Tongliao", "Chifeng", "Xilin Gol"],
+    west_prefs=[
+        "Alxa",
+        "Baotou",
+        "Baynnur",
+        "Chifeng",
+        "Hohhot",
+        "Ordos",
+        "Tongliao",
+        "Ulaan Chab",
+        "Wuhai",
+    ],
+) -> gpd.GeoDataFrame:
+    """
+    Split Inner Mongolia into East and West regions based on predefined prefectures.
+
+    Args:
+        gdf (gpd.GeoDataFrame): GeoDataFrame containing Inner Mongolia data.
+        east_prefs (list, optional): List of prefectures in Inner Mongolia East.
+        west_prefs (list, optional): List of prefectures in Inner Mongolia West.
+    Returns:
+        gpd.GeoDataFrame: Updated GeoDataFrame with Inner Mongolia split EAST/WEST.
+    """
+
+    all_prefs = sorted(east_prefs + west_prefs)
+    if not all_prefs == sorted(gdf.query("NAME_1 == 'InnerMongolia'").NAME_2.unique().tolist()):
+        raise ValueError(
+            f"Inner Mongolia prefectures do not match expected: {all_prefs} vs {gdf.query('NAME_1 == \"InnerMongolia\"').NAME_2.unique().tolist()}"
+        )
+    split = {
+        prefecture: "InnerMongoliaEast" if prefecture in east_prefs else "InnerMongoliaWest"
+        for prefecture in gdf.query("NAME_1 == 'InnerMongolia'").NAME_2
+    }
+    mask = gdf.query("NAME_1 == 'InnerMongolia'").index
+    gdf.loc[mask, "NAME_1"] = gdf.loc[mask, "NAME_2"].map(split)
+    return gdf.dissolve(by="NAME_1", aggfunc="sum")
 
 
 def cut_smaller_from_larger(
