@@ -199,8 +199,9 @@ def fetch_gadm(country_code="CHN", level=2):
         if level_filename not in z.namelist():
             raise ValueError(f"Level {level} shapefile not found for {country_code}.")
 
-        z.extractall("gadm_temp")  # Temporary directory
-        gdf = gpd.read_file(f"gadm_temp/{level_filename}")
+        shp_dir = "resources/data/province_shapes"
+        z.extractall(shp_dir)
+        gdf = gpd.read_file(f"{shp_dir}/{level_filename}")
         return gdf
 
 
