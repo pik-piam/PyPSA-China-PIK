@@ -169,6 +169,63 @@ def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
     return eez.set_crs(epsg=crs)
 
 
+def fetch_gadm(country_code="CHN", level=2):
+    """
+    fetch GADM shapefile for a given country and administrative level.
+    https://gadm.org/download_country.html
+
+    Parameters:
+        country_code (str): ISO3 country code (e.g., 'CHN', 'USA').
+        level (int): Administrative level (0=country, 1=region, etc.).
+
+    Returns:
+        geopandas.GeoDataFrame: Loaded shapefile as GeoDataFrame.
+    """
+    # Construct the URL
+    url = f"https://geodata.ucdavis.edu/gadm/gadm4.1/shp/gadm41_{country_code}_shp.zip"
+
+    # Download the zip file
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise ValueError(
+            f"Failed to download data for {country_code} - Status code: {response.status_code}"
+        )
+
+    # Extract the zip file in memory
+    with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+        # Filter to the desired level shapefile
+        level_filename = f"gadm41_{country_code}_{level}.shp"
+        if level_filename not in z.namelist():
+            raise ValueError(f"Level {level} shapefile not found for {country_code}.")
+
+        z.extractall("gadm_temp")  # Temporary directory
+        gdf = gpd.read_file(f"gadm_temp/{level_filename}")
+        return gdf
+
+
+def fetch_county_shapes(
+    fixes={
+        "NAME_1": {
+            "Nei Mongol": "InnerMongolia",
+            "Xinjiang Uygur": "Xinjiang",
+            "Hong Kong": "HongKong",
+        }
+    }
+):
+    """
+    Fetch county-level shapefiles for China.
+
+    Args:
+        fixes (dict, Optional): Dictionary mapping old names to new names for specific columns.
+    """
+    gdf = fetch_gadm(country_code="CHN", level=2)
+    for col, fix_dict in fixes.items():
+        for old_name, new_name in fix_dict.items():
+            mask = gdf.query(f"{col} == '{old_name}'").index
+            gdf.loc[mask, col] = new_name
+    return gdf
+
+
 def cut_smaller_from_larger(
     row: gpd.GeoSeries, gdf: gpd.GeoDataFrame, overlaps: DataFrame
 ) -> gpd.GeoSeries:
