@@ -94,7 +94,8 @@ def plot_energy_balance(
         {"Battery Discharger": "Battery", "Battery Storage": "Battery"},
         inplace=True,
     )
-    color_series = color_series.drop_duplicates()
+    # Deduplicate color_series
+    color_series = color_series[~color_series.index.duplicated(keep="first")]
 
     preferred_order = plot_config["preferred_order"]
     plot_order = (
@@ -114,7 +115,7 @@ def plot_energy_balance(
     supply.plot.area(
         ax=ax,
         linewidth=0,
-        color=color_series.loc[supply.columns],
+        color=color_series.loc[supply.columns].values,
     )
     if add_load_line:
         charge["load_pos"] = charge["Load"] * -1
@@ -410,13 +411,17 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_snapshots",
             topology="current+FCG",
-            co2_pathway="exp175default",
-            planning_horizons="2025",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
+            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            planning_horizons="2035",
             winter_day1="12-10 21:00",  # mm-dd HH:MM
             winter_day2="12-17 12:00",  # mm-dd HH:MM
             spring_day1="03-31 21:00",  # mm-dd HH:MM
             spring_day2="04-06 12:00",  # mm-dd HH:MM
+            summer_day1="07-15 21:00",  # mm-dd HH:MM
+            summer_day2="07-22 12:00",  # mm-dd HH:MM
         )
 
     YEAR = snakemake.wildcards.planning_horizons
@@ -464,5 +469,26 @@ if __name__ == "__main__":
         )
         outp = os.path.join(snakemake.output.outp_dir, f"balance_winter_{carrier}.png")
         fig.savefig(outp)
+
+        fig, ax = plt.subplots(figsize=(16, 8))
+        plot_energy_balance(
+            n,
+            config["plotting"],
+            bus_carrier=carrier,
+            start_date=f"{YEAR}-{snakemake.params.summer_day1}",
+            end_date=f"{YEAR}-{snakemake.params.summer_day2}",
+            ax=ax,
+        )
+        outp = os.path.join(snakemake.output.outp_dir, f"balance_summer_{carrier}.png")
+        fig.savefig(outp)
+
+    ldc_ax = plot_load_duration_curve(n, carrier="AC", ax=None)
+    ldc_ax.get_figure().savefig(os.path.join(snakemake.output.outp_dir, "load_duration_curve.png"))
+
+    rldc_ax = plot_residual_load_duration_curve(n, ax=None)
+    rldc_ax.get_figure().savefig(os.path.join(snakemake.output.outp_dir, "rldc.png"))
+
+    pdc = plot_price_duration_curve(n, carrier="AC", ax=None)
+    pdc.get_figure().savefig(os.path.join(snakemake.output.outp_dir, "price_duration_curve.png"))
 
     logger.info(f"Successfully plotted time series for carriers: {", ".join(carriers)}")

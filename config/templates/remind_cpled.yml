@@ -9,13 +9,18 @@ run:
     run_name: null
     region: "CHA"
 
+
 scenario:
   planning_horizons:
     - 2025
 
-# TODO
+existing_capacities:
+  remind_only_tech_groups: ["biomass"]
+  
+# TODO make remind output dir configurable
 paths:
-  remind_outpt_dir: /p/tmp/ivanra/REMIND/output/SSP2-PkBudg1000-PyPSAxprt_2025-05-09_19.01.34/pypsa_export
+  # remind_outpt_dir: /p/tmp/ivanra/REMIND/output/SSP2-PkBudg1000-PyPSAxprt_2025-05-09_19.01.34/pypsa_export
+  remind_outpt_dir: /p/tmp/ivanra/formatted_remind_outputs/pypsa_export_chris_CHA
   costs_dir: null
   yearly_regional_load: 
     ac: null
@@ -29,8 +34,8 @@ no_lines: False
 
 Techs:
   ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
-  vre_techs: [ "onwind","offwind","solar","hydroelectricity", "nuclear","biomass","H2 CHP"]
-  conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
+  vre_techs: [ "onwind","offwind","solar","hydroelectricity", "nuclear","biomass","H2 CHP", "H2 turbine"]
+  conv_techs: ["OCGT", "CCGT","coal power plant","CHP coal", "coal-CCS","CCGT-CCS","CHP gas", "gas boiler","coal boiler"]
   store_techs: ["H2","battery","water tanks","PHS"]
   coal_cc: true # currently myopic pathway only.  CC = co2 cap 
   hydrogen_lines: true # currently myopic pathway only
@@ -86,7 +91,7 @@ remind_etl:
         co2_intensity: "region == @region"
         weights_gen: "region == @region"
       kwargs:
-        currency_conversion: 1.1 # approx EUR2015 to USD2017
+        currency_conversion: 0.9 # approx USD2017 to EUR2015
   disagg:
     - name: disagg_load
       method: "disagg_acload_ref"
@@ -96,5 +101,20 @@ remind_etl:
       method: "calc_paid_off_capacity"
       dependencies:
         - harmonize_model_caps
-  
 
+# TODO move to solve instead of baseyear
+existing_capacities:
+  remind_only_tech_groups: ["biomass"]
+  freeze_new: true
+  never_freeze: ["H2 fuel cell", "H2 turbine", "H2 Electrolysis", "H2", "CCGT-CCS", "OCGT"]
+
+electricity:
+  min_charge:
+    battery: 0.15 # fraction of e_nom
+
+nuclear_reactors:
+  p_max_pu: 0.83 # fraction of p_nom
+  
+lines:
+  expansion:
+    transmission_limit: c1.05

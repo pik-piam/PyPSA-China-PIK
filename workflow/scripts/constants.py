@@ -15,7 +15,7 @@ PLOT_CO2_UNITS = 1e6  # tCO2->MtCO2
 PLOT_CO2_LABEL = "Mt CO2"
 COST_UNIT = 1
 
-CURRENCY = "Eur"
+CURRENCY = "Eur"  # 2015
 
 # ==== data inputs ====
 # TODO move to config

@@ -1,4 +1,19 @@
-"""generic etl development, to be rebalanced with the remind_coupling package"""
+"""generic etl development, to be rebalanced with the remind_coupling package
+
+The ETL operations are governed by the config file. Allowed fields are defined by the
+rpycpl.etl.Transformation class and are
+    name: str
+    method: Optional[str]
+    frames: Dict[str, Any]
+    params: Dict[str, Any]
+    filters: Dict[str, Any
+    kwargs: Dict[str, Any]
+    dependencies: Dict[str, Any]
+
+The sequence of operations matters: Dependencies represents previous step outputs.
+
+
+"""
 
 from typing import Any
 import logging
@@ -9,14 +24,17 @@ from os import PathLike
 
 import sys
 
-import setup  # setsup paths
+import setup  # sets up paths
 from _helpers import configure_logging
+
+# remind pypsa coupling package
 import rpycpl.utils as coupl_utils
 from rpycpl.utils import read_remind_csv
 from rpycpl.etl import ETL_REGISTRY, Transformation
 
 
 logger = logging.getLogger(__name__)
+
 
 class RemindLoader:
     """Load Remind symbol tables from csvs or gdx"""
@@ -159,10 +177,10 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
             "transform_remind_data",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
+            co2_pathway="SSP2-PkBudg1000_CHA_adjcost",
             topology="current+FCG",
-            configfiles="resources/tmp/remind_coupled.yaml",
-            # heating_demand="positive",
+            configfiles="resources/tmp/remind_coupled_cg.yaml",
+            heating_demand="positive",
         )
 
     configure_logging(snakemake)
@@ -176,6 +194,7 @@ if __name__ == "__main__":
         raise ValueError("Aborting: No REMIND data ETL config provided")
 
     # load anscilliary data
+    logger.info(f"Loading PyPSA costs from {snakemake.input.pypsa_costs}")
     pypsa_cost_files = [
         os.path.join(snakemake.input.pypsa_costs, f)
         for f in os.listdir(snakemake.input.pypsa_costs)
@@ -207,6 +226,7 @@ if __name__ == "__main__":
                 frames,
                 mappings=aux_data["tech_mapping"],
                 pypsa_costs=aux_data["pypsa_costs"],
+                years=snakemake.config["scenario"]["planning_horizons"],
             )
             result = {k: v for k, v in result.groupby("year")}
         elif step.name == "tech_groups":

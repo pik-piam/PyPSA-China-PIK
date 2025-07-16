@@ -14,7 +14,7 @@ import pandas as pd
 from pandas import DatetimeIndex
 
 
-from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env
+from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, ConfigManager
 from _pypsa_helpers import mock_solve
 from constants import YEAR_HRS
 
@@ -22,39 +22,204 @@ pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
+def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1):
+    """
+    Set global transimission limit constraints - adapted from pypsa-eur
+
+    Args:
+        n (pypsa.Network): the network object
+        kind (str): the kind of limit to set, either 'c' for cost or 'v' for volume or l for length
+        factor (float or str): the factor to apply to the base year quantity, per year
+        n_years (int, optional): the number of years to consider for the limit. Defaults to 1.
+    """
+    logger.info(
+        f"Setting global transmission limit for {kind} with factor {factor}/year and {n_years} years"
+    )
+    links_dc = n.links.query("carrier in ['AC','DC']").index
+    # links_dc_rev = n.links.query("carrier in ['AC','DC'] & Link.str.contains('reverse')").index
+
+    _lines_s_nom = (
+        np.sqrt(3)
+        * n.lines.type.map(n.line_types.i_nom)
+        * n.lines.num_parallel
+        * n.lines.bus0.map(n.buses.v_nom)
+    )
+    lines_s_nom = n.lines.s_nom.where(n.lines.type == "", _lines_s_nom)
+
+    col = "capital_cost" if kind == "c" else "length"
+    ref = lines_s_nom @ n.lines[col] + n.links.loc[links_dc, "p_nom"] @ n.links.loc[links_dc, col]
+
+    if factor == "opt" or float(factor) ** n_years > 1.0:
+        n.lines["s_nom_min"] = lines_s_nom
+        n.lines["s_nom_extendable"] = True
+
+        n.links.loc[links_dc, "p_nom_extendable"] = True
+
+    elif float(factor) ** n_years == 1.0:
+        # if factor is 1.0, then we do not need to extend
+        n.lines["s_nom_min"] = lines_s_nom
+        n.lines["s_nom_extendable"] = False
+        n.links.loc[links_dc, "p_nom_extendable"] = False
+
+        # factor = 1 + 1e-7  # to avoid numerical issues with the constraints
+
+    elif float(factor) ** n_years < 1.0:
+        n.lines["s_nom_min"] = 0
+        n.links.loc[links_dc, "p_nom_min"] = 0
+        # n.links.loc[links_dc_rev, "p_nom_min"] = 0
+
+    if factor != "opt":
+        con_type = "expansion_cost" if kind == "c" else "volume_expansion"
+        rhs = float(factor) ** n_years * ref
+        logger.info(
+            f"Setting global transmission limit for {kind} to {float(factor) ** n_years} current value"
+        )
+        n.add(
+            "GlobalConstraint",
+            f"l{kind}_limit",
+            type=f"transmission_{con_type}_limit",
+            sense="<=",
+            constant=rhs,
+            carrier_attribute="AC, DC",
+        )
+
+
+def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_co2=False):
+    """from pypsa-eur: add GHG price to marginal costs of generators and storage units
+
+    Args:
+        n (pypsa.Network): the pypsa network
+        emission_prices (dict, optional): emission prices per GHG. Defaults to {"co2": 0.0}.
+        exclude_co2 (bool, optional): do not charge for CO2 emissions. Defaults to False.
+    """
+    if exclude_co2:
+        emission_prices.pop("co2")
+    em_price = (
+        pd.Series(emission_prices).rename(lambda x: x + "_emissions")
+        * n.carriers.filter(like="_emissions")
+    ).sum(axis=1)
+
+    n.meta.update({"emission_prices": emission_prices})
+
+    gen_em_price = n.generators.carrier.map(em_price) / n.generators.efficiency
+
+    n.generators["marginal_cost"] += gen_em_price
+    n.generators_t["marginal_cost"] += gen_em_price[n.generators_t["marginal_cost"].columns]
+    # storage units su
+    su_em_price = n.storage_units.carrier.map(em_price) / n.storage_units.efficiency_dispatch
+    n.storage_units["marginal_cost"] += su_em_price
+
+    logger.info("Added emission prices to marginal costs of generators and storage units")
+    logger.info(f"\tEmission prices: {emission_prices}")
+
+
+def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
+    """Add co2 constraints or prices
+
+    Args:
+        network (pypsa.Network): the network to which prices or constraints are to be added
+        co2_control (dict): the config
+
+    Raises:
+        ValueError: unrecognised co2 control option
+    """
+
+    if co2_control["control"] is None:
+        pass
+    elif co2_control["control"] == "price":
+        logger.info("Adding CO2 price to marginal costs of generators and storage units")
+        add_emission_prices(network, emission_prices={"co2": co2_control["co2_pr_or_limit"]})
+
+    elif co2_control["control"].startswith("budget"):
+        co2_limit = co2_control["co2_pr_or_limit"]
+        logger.info("Adding CO2 constraint based on scenario {co2_limit}")
+        network.add(
+            "GlobalConstraint",
+            "co2_limit",
+            type="primary_energy",
+            carrier_attribute="co2_emissions",
+            sense="<=",
+            constant=co2_limit,
+        )
+    else:
+        logger.error(f"Unhandled CO2 control config {co2_control} due to unknown control.")
+        raise ValueError(f"Unhandled CO2 config {config['scenario']['co2_reduction']}")
+
+def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbine"]):
+    """Set p_nom_extendable=False for the components in the network.
+    Applies to vre_techs and conventional technologies not in the exclude list.
+
+    Args:
+        n (pypsa.Network): the network object
+        config (dict): the configuration dictionary
+        exclude (list, optional): list of technologies to exclude from freezing. Defaults to ["OCGT"]
+    """
+
+    # Freeze VRE and conventional techs
+    freeze = config["Techs"]["vre_techs"] + config["Techs"]["conv_techs"]
+    freeze = [f for f in freeze if not f in exclude]
+    if "coal boiler" in freeze:
+        freeze += ["coal boiler central", "coal boiler decentral"]
+    if "gas boiler" in freeze:
+        freeze += ["gas boiler central", "gas boiler decentral"]
+
+    # very ugly -> how to make more robust?
+    to_fix = {
+        "OCGT": "gas OCGT",
+        "CCGT": "gas CCGT",
+        "CCGT-CCS": "gas ccs",
+        "coal power plant": "coal",
+        "coal-CCS": "coal ccs",
+    }
+    freeze += [to_fix[k] for k in to_fix if k in freeze]
+
+    for comp in ["generators", "links"]:
+        query = "carrier in @freeze & p_nom_extendable == True"
+        components = getattr(n, comp)
+        # p_nom_max_rcl.isna(): exclude paid_off as needed
+        if "p_nom_max_rcl" in components.columns:
+            query += " & p_nom_max_rcl.isna()"
+        mask = components.query(query).index
+        components.loc[mask, "p_nom_extendable"] = False
+
+
 def prepare_network(
-    n: pypsa.Network, solve_opts: dict, config: dict, plan_year: int
+    n: pypsa.Network, solve_opts: dict, config: dict, plan_year: int, co2_pathway: str
 ) -> pypsa.Network:
-    """prepare the network for the solver
+    """prepare the network for the solver,
     Args:
         n (pypsa.Network): the network object to optimize
         solve_opts (dict): solving options
         config (dict): the snakemake configuration dictionary
         plan_year (int): planning horizon year for which network is solved
+        co2_pathway (str): the CO2 pathway name to use
 
     Returns:
         pypsa.Network: network object with additional constraints
     """
 
+    co2_opts = ConfigManager(config).fetch_co2_restriction(co2_pathway, int(plan_year))
+    add_co2_constraints_prices(n, co2_opts)
+
     if "clip_p_max_pu" in solve_opts:
         for df in (n.generators_t.p_max_pu, n.storage_units_t.inflow):
             df.where(df > solve_opts["clip_p_max_pu"], other=0.0, inplace=True)
 
+    # TODO duplicated with freeze components
     if solve_opts.get("load_shedding"):
-        n.add("Carrier", "Load")
+        n.add("Carrier", "Load Shedding")
         buses_i = n.buses.query("carrier == 'AC'").index
-        n.madd(
+        n.add(
             "Generator",
             buses_i,
             " load",
             bus=buses_i,
-            carrier="load",
-            sign=1e-3,  # Adjust sign to measure p and p_nom in kW instead of MW
-            marginal_cost=1e2,  # Eur/kWh
+            carrier="Load Shedding",
+            marginal_cost=solve_opts.get("voll", 1e5),  # EUR/MWh
             # intersect between macroeconomic and surveybased
             # willingness to pay
             # http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full
-            p_nom=1e9,  # kW
+            p_nom=1e6,  # MW
         )
 
     if solve_opts.get("noisy_costs"):
@@ -69,6 +234,15 @@ def prepare_network(
                 "length"
             ]
 
+    if config["run"].get("is_remind_coupled", False) & (
+        config["existing_capacities"].get("freeze_new", False)
+    ):
+        freeze_components(
+            n,
+            config,
+            exclude=config["existing_capacities"].get("never_freeze", []),
+        )
+        
     if solve_opts.get("nhours"):
         nhours = solve_opts["nhours"]
         n.set_snapshots(n.snapshots[:nhours])
@@ -188,7 +362,7 @@ def add_land_use_constraint(n: pypsa.Network, planning_horizons: str | int) -> N
     n.generators["p_nom_max"] = n.generators["p_nom_max"].clip(lower=0)
 
 
-def add_transimission_constraints(n: pypsa.Network):
+def add_transmission_constraints(n: pypsa.Network):
     """
     Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
     p_nom positive = p_nom negative
@@ -209,7 +383,7 @@ def add_transimission_constraints(n: pypsa.Network):
     lhs = n.model["Link-p_nom"].loc[positive_ext]
     rhs = n.model["Link-p_nom"].loc[negative_ext]
 
-    n.model.add_constraints(lhs == rhs, name="Link-transimission")
+    n.model.add_constraints(lhs == rhs, name="Link-transmission")
 
 
 def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
@@ -228,8 +402,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         return
 
     # In coupled-mode components (Generators, Links,..) have limits p/e_nom_rcl & a tech_group
-    # These columns are added by `add_existing_baseyear.add_paid_off_capacity`. 
-    # p/e_nom_rcl is the availale paid-off capacity per tech group and is nan for non paid-off (usual) generators. 
+    # These columns are added by `add_existing_baseyear.add_paid_off_capacity`.
+    # p/e_nom_rcl is the availale paid-off capacity per tech group and is nan for non paid-off (usual) generators.
     # rcl is a legacy name from Aodenweller
     for component in ["Generator", "Link", "Store"]:
 
@@ -263,7 +437,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
                 name=f"paidoff_cap_totals_{component.lower()}",
             )
 
-    # === ensure normal e/p_nom_max is respected for paid_off + normal generators
+    # === ensure normal e/p_nom_max is respected for (paid_off + normal) components
+    # e.g. if PV has 100MW tech potential at nodeA, paid_off+normal p_nom_opt <100MW
     for component in ["Generator", "Link", "Store"]:
         paidoff_comp = getattr(n, component.lower() + "s").copy()
 
@@ -275,6 +450,10 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         else:
             paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
 
+        # techs that only exist as paid-off don't have usual counterparts
+        remind_only_techs = n.config["existing_capacities"].get("remind_only_tech_groups", [])
+        paidoff_comp = paidoff_comp.query("tech_group not in @remind_only_techs")
+
         if paidoff_comp.empty:
             continue
 
@@ -283,8 +462,12 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         usual_comps = getattr(n, component.lower() + "s").loc[usual_comps_idx].copy()
         usual_comps = usual_comps[~usual_comps.p_nom_max.isin([np.inf, np.nan])]
 
-        to_constrain = pd.concat([usual_comps, paidoff_comp], axis=0)
+        paid_off_wlimits = paidoff_comp.loc[usual_comps.index + "_paid_off"]
+        to_constrain = pd.concat([usual_comps, paid_off_wlimits], axis=0)
         to_constrain.rename_axis(index=f"{component}-ext", inplace=True)
+        # otherwise n.model query will fail. This is needed in case freeze_compoents was used
+        # it is fine so long as p_nom is zero for the frozen components
+        to_constrain = to_constrain.query("p_nom_extendable==True")
         to_constrain["grouper"] = to_constrain.index.str.replace("_paid_off", "")
 
         grouper = xr.DataArray(to_constrain.grouper, dims=[f"{component}-ext"])
@@ -313,9 +496,10 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
     """
     config = n.config
     add_battery_constraints(n)
-    add_transimission_constraints(n)
+    add_transmission_constraints(n)
     add_chp_constraints(n)
     if config["run"].get("is_remind_coupled", False):
+        logger.info("Adding remind paid off constraints")
         add_remind_paid_off_constraints(n)
 
 
@@ -379,12 +563,20 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-PyPS",
-            planning_horizons="2080",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            planning_horizons="2025",
             topology="current+FCG",
-            heating_demand="positive",
+            # heating_demand="positive",
+            configfiles="resources/tmp/remind_coupled_cg.yaml",
         )
     configure_logging(snakemake)
+
+    opts = snakemake.wildcards.get("opts", "")
+    if "sector_opts" in snakemake.wildcards.keys():
+        opts += "-" + snakemake.wildcards.sector_opts
+    opts = [o for o in opts.split("-") if o != ""]
+    solve_opts = snakemake.params.solving["options"]
+    co2_pathway = snakemake.wildcards.co2_pathway
 
     # deal with the gurobi license activation, which requires a tunnel to the login nodes
     solver_config = snakemake.config["solving"]["solver"]
@@ -396,15 +588,26 @@ if __name__ == "__main__":
     else:
         tunnel = None
 
-    opts = snakemake.wildcards.get("opts", "")
-    if "sector_opts" in snakemake.wildcards.keys():
-        opts += "-" + snakemake.wildcards.sector_opts
-    opts = [o for o in opts.split("-") if o != ""]
-    solve_opts = snakemake.params.solving["options"]
-
     n = pypsa.Network(snakemake.input.network_name)
 
-    n = prepare_network(n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons)
+    n = prepare_network(
+        n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons, co2_pathway
+    )
+
+    line_exp_limits = snakemake.config["lines"].get(
+        "expansion", {"transmission_limit": "copt", "base_year": 2020}
+    )
+    transmission_limit = line_exp_limits.get("transmission_limit", "copt")
+    exp_years = int(snakemake.wildcards.planning_horizons) - int(
+        line_exp_limits.get("base_year", 2020)
+    )
+    # TODO split copt, c1.05 into c , opt etc
+    set_transmission_limit(
+        n, kind=transmission_limit[0], factor=transmission_limit[1:], n_years=exp_years
+    )
+    # # TODO: remove ugly hack
+    # n.storage_units.p_nom_max = n.storage_units.p_nom * 1.05**exp_years
+
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
 

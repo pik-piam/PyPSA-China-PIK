@@ -47,7 +47,12 @@ def calculate_annuity(lifetime: int, discount_rate: float) -> float:
 
 # TODO fix docstring and change file + IO
 def load_costs(
-    tech_costs: PathLike, cost_config: dict, elec_config: dict, cost_year: int, n_years: int
+    tech_costs: PathLike,
+    cost_config: dict,
+    elec_config: dict,
+    cost_year: int,
+    n_years: int,
+    econ_lifetime=40,
 ) -> pd.DataFrame:
     """Calculate the anualised capex costs and OM costs for the technologies based on the input data
 
@@ -56,7 +61,8 @@ def load_costs(
         cost_config (dict): the snakemake pypsa-china cost config
         elec_config (dict): the snakemake pypsa-china electricity config
         cost_year (int): the year for which the costs are retrived
-        n_years (int): the # of years over which the investment is annuitised
+        n_years (int): the # of years represented by the snapshots/investment period
+        econ_lifetime (int, optional): the max lifetime over which to discount. Defaults to 40.
 
     Returns:
         pd.DataFrame: costs dataframe in [CURRENCY] per MW_ ... or per MWh_ ...
@@ -94,14 +100,16 @@ def load_costs(
         }
     )
 
+    discount_period = costs["lifetime"].apply(lambda x: min(x, econ_lifetime))
     costs["capital_cost"] = (
-        (calculate_annuity(costs["lifetime"], costs["discount rate"]) + costs["FOM"] / 100.0)
+        (calculate_annuity(discount_period, costs["discount rate"]) + costs["FOM"] / 100.0)
         * costs["investment"]
         * n_years
     )
 
     costs.at["OCGT", "fuel"] = costs.at["gas", "fuel"]
     costs.at["CCGT", "fuel"] = costs.at["gas", "fuel"]
+    costs.at["CCGT-CCS", "fuel"] = costs.at["gas", "fuel"]
 
     costs["marginal_cost"] = costs["VOM"] + costs["fuel"] / costs["efficiency"]
 
@@ -109,14 +117,6 @@ def load_costs(
 
     costs.at["OCGT", "co2_emissions"] = costs.at["gas", "co2_emissions"]
     costs.at["CCGT", "co2_emissions"] = costs.at["gas", "co2_emissions"]
-
-    if not 0 <= cost_config["pv_utility_fraction"] <= 1:
-        raise ValueError("pv_utility_fraction must be between 0 and 1 in cost config")
-    # f_util = cost_config["pv_utility_fraction"]
-    # costs.at["solar", "capital_cost"] = (
-    #     f_util * costs.at["solar-utility", "capital_cost"]
-    #     + (1 - f_util) * costs.at["solar-rooftop", "capital_cost"]
-    # )
 
     def costs_for_storage(store, link1, link2=None, max_hours=1.0):
         capital_cost = link1["capital_cost"] + max_hours * store["capital_cost"]
@@ -127,12 +127,6 @@ def load_costs(
     max_hours = elec_config["max_hours"]
     costs.loc["battery"] = costs_for_storage(
         costs.loc["battery storage"], costs.loc["battery inverter"], max_hours=max_hours["battery"]
-    )
-    costs.loc["H2"] = costs_for_storage(
-        costs.loc["hydrogen storage tank type 1"],
-        costs.loc["fuel cell"],
-        costs.loc["electrolysis"],
-        max_hours=max_hours["H2"],
     )
 
     for attr in ("marginal_cost", "capital_cost"):
