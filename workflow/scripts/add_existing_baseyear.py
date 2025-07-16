@@ -728,15 +728,6 @@ if __name__ == "__main__":
         # add to network
         add_paid_off_capacity(n, paid_off_caps, costs)
 
-    if config["run"].get("is_remind_coupled", False) & (
-        config["existing_capacities"].get("freeze_new", False)
-    ):
-        freeze_components(
-            n,
-            config,
-            exclude=config["existing_capacities"].get("never_freeze", []),
-        )
-
     compression = snakemake.config.get("io", None)
     if compression:
         compression = compression.get("nc_compression", None)
