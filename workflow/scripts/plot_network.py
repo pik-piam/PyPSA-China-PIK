@@ -247,7 +247,9 @@ def plot_cost_map(
     # ============ === Stats by bus ===
     # calc costs & sum over component types to keep bus & carrier (remove no loc)
     costs = network.statistics.capex(groupby=["location", "carrier"])
-    costs = costs.groupby(level=[1, 2]).sum().drop("")
+    costs = costs.groupby(level=[1, 2]).sum()
+    if "" in costs.index:
+        costs.drop("", inplace=True)
     # we miss some buses by grouping epr location, fill w 0s
     bus_idx = pd.MultiIndex.from_product([network.buses.index, ["AC"]])
     costs = costs.reindex(bus_idx.union(costs.index), fill_value=0)
@@ -632,7 +634,7 @@ if __name__ == "__main__":
             "plot_network",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000_CHAb",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             planning_horizons="2030",
             # heating_demand="positive",
             configfiles=["resources/tmp/remind_coupled_cg.yaml"],

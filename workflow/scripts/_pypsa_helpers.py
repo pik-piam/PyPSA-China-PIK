@@ -107,9 +107,12 @@ def calc_lcoe(
     capex = n.statistics.expanded_capex(groupby=grouper, **kwargs)
     tot_capex = n.statistics.capex(groupby=grouper, **kwargs)
     supply = n.statistics.supply(groupby=grouper, **kwargs)
-
     # restore original marginal costs
     n.links.marginal_cost = original_marginal_costs
+
+    # incase no grouper was specified, get different levels
+    if grouper is None:
+        supply = supply.groupby(level=[0, 1]).sum()
 
     outputs = pd.concat(
         [opex, capex, tot_capex, rev, supply],

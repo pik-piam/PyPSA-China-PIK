@@ -62,7 +62,7 @@ if __name__ == "__main__":
             planning_horizons="2025",
             # co2_pathway="exp175default",
             # planning_horizons="2130",
-            co2_pathway="SSP2-PkBudg1000_CHAb",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             topology="current+FCG",
             # heating_demand="positive",
             configfiles="resources/tmp/remind_coupled_cg.yaml",
