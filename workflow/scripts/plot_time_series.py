@@ -415,7 +415,7 @@ if __name__ == "__main__":
             co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
             configfiles=["resources/tmp/remind_coupled_cg.yaml"],
-            planning_horizons="2035",
+            planning_horizons="2050",
             winter_day1="12-10 21:00",  # mm-dd HH:MM
             winter_day2="12-17 12:00",  # mm-dd HH:MM
             spring_day1="03-31 21:00",  # mm-dd HH:MM

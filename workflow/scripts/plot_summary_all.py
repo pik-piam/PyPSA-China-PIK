@@ -195,6 +195,7 @@ def plot_pathway_capacities(
         year = cap_df.columns.get_level_values(0)[0]
         cap_df = cap_df.droplevel(0, axis=1).rename(columns={"Unnamed: 4_level_1": year})
         cap_df /= PLOT_CAP_UNITS
+        cap_df.drop("Load Shedding", level="carrier", inplace=True)
 
         # get stores relevant for reporting according to config, use later
         stores = (
@@ -278,7 +279,7 @@ def plot_pathway_capacities(
         labels.reverse()
 
         if capacity_df.index.difference(caps_stores.index).empty:
-            ax.set_ylabel(f"Installed Capacity [{PLOT_CAP_LABEL}h]")
+            ax.set_ylabel(f"Installed Storage Capacity [{PLOT_CAP_LABEL}h]")
         else:
             ax.set_ylabel(f"Installed Capacity [{PLOT_CAP_LABEL}]")
         ax.set_ylim([0, capacity_df.sum(axis=0).max() * 1.1])
@@ -807,6 +808,10 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
         fig.savefig(fig_name, transparent=config["transparent"])
 
 
+def plot_investments(file_list: list, config: dict, fig_name=None, ax: object = None):
+    pass
+
+
 # TODO move to a separate rule
 def write_data(data_paths: dict, outp_dir: os.PathLike):
     """Write some selected data
@@ -856,20 +861,9 @@ if __name__ == "__main__":
             "plot_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-freeze",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled.yaml"],
-            planning_horizons=[
-                2020,
-                2025,
-                2030,
-                # 2035,
-                # 2040,
-                # 2045,
-                # 2050,
-                # 2055,
-                # 2060,
-            ],
+            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
 
     configure_logging(snakemake)
@@ -920,8 +914,8 @@ if __name__ == "__main__":
             "battery",
             "coal",
             "coal-CCS",
-            "CCGT",
-            "OCGT",
+            "gas CCGT",
+            "gas OCGT",
             "CCGT-CCS",
             "H2 Electrolysis",
         ],
