@@ -650,61 +650,25 @@ def add_paid_off_capacity(
 
 
 # TODO move to solve?
-def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbine"]):
-    """Set p_nom_extendable=False for the components in the network.
-    Applies to vre_techs and conventional technologies not in the exclude list.
 
-    Args:
-        n (pypsa.Network): the network object
-        config (dict): the configuration dictionary
-        exclude (list, optional): list of technologies to exclude from freezing. Defaults to ["OCGT"]
-    """
+    # # add load shedding
+    # # intersect between macroeconomic and surveybased willingness to pay
+    # # http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full
+    # n.add("Carrier", "load shedding", color="#dd2e23", nice_name="Load shedding")
+    # buses_i = n.buses.query("carrier == 'AC'").index
+    # # TODO: make this a config option
+    # load_shedding = 1e4  # Eur/MWh
 
-    # Freeze VRE and conventional techs
-    freeze = config["Techs"]["vre_techs"] + config["Techs"]["conv_techs"]
-    freeze = [f for f in freeze if not f in exclude]
-    if "coal boiler" in freeze:
-        freeze += ["coal boiler central", "coal boiler decentral"]
-    if "gas boiler" in freeze:
-        freeze += ["gas boiler central", "gas boiler decentral"]
-
-    # very ugly -> how to make more robust?
-    to_fix = {
-        "OCGT": "gas OCGT",
-        "CCGT": "gas CCGT",
-        "CCGT-CCS": "gas ccs",
-        "coal power plant": "coal",
-        "coal-CCS": "coal ccs",
-    }
-    freeze += [to_fix[k] for k in to_fix if k in freeze]
-
-    for comp in ["generators", "links"]:
-        query = "carrier in @freeze & p_nom_extendable == True"
-        components = getattr(n, comp)
-        # p_nom_max_rcl.isna(): exclude paid_off as needed
-        if "p_nom_max_rcl" in components.columns:
-            query += " & p_nom_max_rcl.isna()"
-        mask = components.query(query).index
-        components.loc[mask, "p_nom_extendable"] = False
-
-    # add load shedding
-    # intersect between macroeconomic and surveybased willingness to pay
-    # http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full
-    n.add("Carrier", "load shedding", color="#dd2e23", nice_name="Load shedding")
-    buses_i = n.buses.query("carrier == 'AC'").index
-    # TODO: make this a config option
-    load_shedding = 1e4  # Eur/MWh
-
-    n.add(
-        "Generator",
-        buses_i,
-        " load shedding",
-        bus=buses_i,
-        carrier="load shedding",
-        marginal_cost=load_shedding,  # Eur/Wh
-        capital_cost=20,  # low value for numerical stab?
-        p_nom_extendable=True,
-    )
+    # n.add(
+    #     "Generator",
+    #     buses_i,
+    #     " load shedding",
+    #     bus=buses_i,
+    #     carrier="load shedding",
+    #     marginal_cost=load_shedding,  # Eur/Wh
+    #     capital_cost=20,  # low value for numerical stab?
+    #     p_nom_extendable=True,
+    # )
 
 
 if __name__ == "__main__":
@@ -763,15 +727,6 @@ if __name__ == "__main__":
         paid_off_caps = paid_off_caps.query("year == @yr")
         # add to network
         add_paid_off_capacity(n, paid_off_caps, costs)
-
-    if config["run"].get("is_remind_coupled", False) & (
-        config["existing_capacities"].get("freeze_new", False)
-    ):
-        freeze_components(
-            n,
-            config,
-            exclude=config["existing_capacities"].get("never_freeze", []),
-        )
 
     compression = snakemake.config.get("io", None)
     if compression:
