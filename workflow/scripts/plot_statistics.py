@@ -53,6 +53,184 @@ def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, dro
     ax.grid(axis="y")
 
 
+def plot_enhanced_market_value(n: pypsa.Network, ax: axes.Axes, colors: DataFrame, carrier="AC", show_mv_text=False, min_gen_share=0.01):
+    """
+    Plot market value (MV) per technology, optionally showing MV as text,
+    and filter out technologies with too low generation share.
+
+    Args:
+        n (pypsa.Network): The network object.
+        ax (matplotlib.axes.Axes): The axis to plot on.
+        colors (DataFrame): Color mapping for technologies.
+        carrier (str): Bus carrier to filter.
+        show_mv_text (bool): Whether to show MV value as text on bars.
+        min_gen_share (float): Minimum generation share (%) to show a technology.
+    """
+    # Get market value, generation share, and LCOE data
+    mv_data = n.statistics.market_value(bus_carrier=carrier, comps="Generator").dropna()
+    supply_data = n.statistics.supply(bus_carrier=carrier, comps="Generator")
+    total_supply = supply_data.sum()
+    gen_shares = (supply_data / total_supply * 100).dropna()
+    lcoe_data = calc_lcoe(n, groupby=["carrier"], comps="Generator")["LCOE"].dropna()
+    lcoe_data.index = lcoe_data.index.map(
+        lambda idx: next(
+            (row["nice_name"] for c, row in n.carriers.iterrows() if c.lower() == idx.lower()),
+            idx
+        )
+    )
+
+    # Merge into a DataFrame and drop incomplete rows
+    df = pd.DataFrame({
+        "MV": mv_data,
+        "LCOE": lcoe_data,
+        "GenShare": gen_shares
+    }).dropna()
+
+    # Keep only the row with the largest generation share for each technology
+    df = df.sort_values("GenShare", ascending=False)
+    df = df.loc[~df.index.duplicated(keep='first')]
+
+    # Filter out technologies with too low generation share
+    if min_gen_share > 0:
+        df = df[df["GenShare"] >= min_gen_share]
+
+    # Sort by MV for plotting
+    df = df.sort_values("MV")
+    y_pos = range(len(df))
+
+    # Draw horizontal bar for MV
+    bars = ax.barh(
+        y_pos,
+        df["MV"],
+        color=[colors.get(tech, "lightgrey") for tech in df.index],
+        alpha=0.7,
+        label="Market Value"
+    )
+
+    # Optionally show MV value as text
+    if show_mv_text:
+        for i, val in enumerate(df["MV"]):
+            ax.text(val + 0.5, i, f'{val:.1f}', color='black', va='center', ha='left', fontsize=9)
+
+    # Draw generation share as red dots on a twin x-axis
+    ax2 = ax.twiny()
+    ax2.plot(
+        df["GenShare"],
+        y_pos,
+        color='red',
+        marker='o',
+        linestyle='',
+        label='Generation Share (%)',
+        markersize=10,
+        lw=0
+    )
+    for i, val in enumerate(df["GenShare"]):
+        ax2.text(val + 0.5, i, f'{val:.1f}%', color='red', va='center', ha='left', fontsize=9)
+
+    # Set axis labels and ticks
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(df.index)
+    ax.set_xlabel("Market Value [€/MWh]")
+    ax2.set_xlabel("Generation Share [%]")
+    ax.grid(False)
+    ax2.grid(False)
+    ax2.set_xlim(left=0)
+    ax.set_xlim(left=0)
+
+    # Legend
+    lines, labels = ax2.get_legend_handles_labels()
+    bars_legend = ax.barh([], [], color="lightgrey", alpha=0.7, label="Market Value")
+    ax.legend([bars_legend, lines[0]], ["Market Value", "Generation Share (%)"], loc='best')
+
+    return ax, ax2
+
+
+def plot_enhanced_capacity_factor(n: pypsa.Network, ax: axes.Axes, colors: DataFrame, carrier="AC"):
+    """
+    Plot actual and theoretical capacity factors for each technology.
+    Args:
+        n (pypsa.Network): The network object.
+        ax (matplotlib.axes.Axes): The axis to plot on.
+        colors (DataFrame): Color mapping for technologies.
+        carrier (str): Bus carrier to filter.
+    Returns:
+        matplotlib.axes.Axes: The axis with the plot.
+    """
+    # Special mapping for some carrier names
+    special_map = {
+        "battery charger": "Battery Storage",
+        "battery discharger": "Battery Discharger",
+        "battery": "Battery Storage"
+    }
+    # Actual capacity factor
+    cf_data = n.statistics.capacity_factor(groupby=["carrier"]).dropna()
+    if ("Link", "battery") in cf_data.index:
+        cf_data.loc[("Link", "battery discharger")] = cf_data.loc[("Link", "battery")]
+        cf_data.drop(index=("Link", "battery"), inplace=True)
+    cf_data = cf_data.groupby(level=1).sum()
+    cf_data.index = cf_data.index.map(lambda idx: n.carriers["nice_name"].get(idx, special_map.get(idx, idx)))
+
+    # Theoretical capacity factor (prefer p_nom_opt)
+    gen = n.generators.copy()
+    gen["theo_cf"] = n.generators_t.p_max_pu.mean(axis=0)
+    gen["nice_name"] = gen["carrier"].map(lambda idx: n.carriers["nice_name"].get(idx, special_map.get(idx, idx)))
+    gen["p_nom_used"] = gen["p_nom_opt"].where(~gen["p_nom_opt"].isna(), gen["p_nom"])
+    gen = gen[(gen["p_nom_used"] > 0) & (~gen["theo_cf"].isna())]
+    gen["theoretical_energy"] = gen["theo_cf"] * gen["p_nom_used"]
+    theoretical_energy = gen.groupby("nice_name")["theoretical_energy"].sum()
+    total_p_nom = gen.groupby("nice_name")["p_nom_used"].sum()
+    theoretical_cf_auto = theoretical_energy / total_p_nom
+
+    # Manual calculation for hydro actual CF (for comparison)
+    hydro = gen[gen["nice_name"] == "Hydroelectricity"]
+    manual_actual_cf = None
+    if not hydro.empty:
+        actual_energy = n.generators_t.p[hydro.index].sum().sum()
+        total_p_nom = hydro["p_nom_used"].sum()
+        hours = len(n.snapshots)
+        manual_actual_cf = actual_energy / (total_p_nom * hours)
+        print(f"Manual hydro actual CF: {manual_actual_cf:.4f}")
+        try:
+            pypsa_cf = cf_data.loc["Hydroelectricity"]
+            print(f"PyPSA hydro actual CF: {pypsa_cf:.4f}")
+        except Exception as e:
+            print("PyPSA hydro actual CF not found:", e)
+
+    # Only plot technologies present in both actual and theoretical CF
+    common_techs = cf_data.index.intersection(theoretical_cf_auto.index)
+    cf_filtered = cf_data.loc[common_techs]
+    theo_cf_filtered = theoretical_cf_auto.loc[cf_filtered.index]
+    cf_filtered = cf_filtered.sort_values(ascending=True)
+    theo_cf_filtered = theo_cf_filtered.loc[cf_filtered.index]
+
+    # Replace hydro actual CF with manual value if available
+    if manual_actual_cf is not None and "Hydroelectricity" in cf_filtered.index:
+        cf_filtered.loc["Hydroelectricity"] = manual_actual_cf
+
+    # Plotting
+    x_pos = range(len(cf_filtered))
+    width = 0.35
+    bars1 = ax.barh([i - width/2 for i in x_pos], cf_filtered.values,
+                    width, color=[colors.get(tech, "lightgrey") for tech in cf_filtered.index],
+                    alpha=0.8, label='Actual CF')
+    bars2 = ax.barh([i + width/2 for i in x_pos], theo_cf_filtered.values,
+                    width, color=[colors.get(tech, "lightgrey") for tech in theo_cf_filtered.index],
+                    alpha=0.4, label='Theoretical CF')
+    for i, (tech, cf_val) in enumerate(cf_filtered.items()):
+        ax.text(cf_val + 0.01, i - width/2, f'{cf_val:.2f}', va='center', ha='left', fontsize=8,
+                bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.8))
+        theo_val = theo_cf_filtered[tech]
+        ax.text(theo_val + 0.01, i + width/2, f'{theo_val:.2f}', va='center', ha='left', fontsize=8,
+                bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.5))
+    ax.set_yticks(x_pos)
+    ax.set_yticklabels(cf_filtered.index)
+    ax.set_xlabel("Capacity Factor")
+    ax.set_xlim(0, max(cf_filtered.max(), theo_cf_filtered.max()) * 1.1)
+    ax.grid(False)
+    ax.legend()
+    return ax
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
 
@@ -216,9 +394,10 @@ if __name__ == "__main__":
         fig.savefig(os.path.join(outp_dir, "withdrawal.png"))
 
     if "market_value" in stats_list:
-        fig, ax = plt.subplots()
-        ds = n.statistics.market_value(bus_carrier=carrier)
-        plot_static_per_carrier(ds, ax, colors=colors)
+        fig, ax = plt.subplots(figsize=(12, 8))
+        # Read min_gen_share from config if available
+        min_gen_share = snakemake.config.get("MV_map", {}).get("min_gen_share", 0.01)
+        plot_enhanced_market_value(n, ax, colors, carrier, show_mv_text=True, min_gen_share=min_gen_share)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "market_value.png"))
 
