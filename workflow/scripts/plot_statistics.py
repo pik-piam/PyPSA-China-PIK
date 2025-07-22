@@ -217,7 +217,7 @@ def prepare_capacity_factor_data(n, carrier):
     # Actual capacity factor
     cf_data = n.statistics.capacity_factor(groupby=["carrier"]).dropna()
     if ("Link", "battery") in cf_data.index:
-        cf_data.loc[("Link", "battery discharger")] = cf_data.loc[("Link", "battery")]
+        cf_data.loc[("Link", "battery charger")] = cf_data.loc[("Link", "battery")]
         cf_data.drop(index=("Link", "battery"), inplace=True)
     cf_data = cf_data.groupby(level=1).sum()
     cf_data.index = cf_data.index.map(lambda idx: n.carriers["nice_name"].get(idx, special_map.get(idx, idx)))
@@ -291,6 +291,95 @@ def plot_enhanced_capacity_factor(n: pypsa.Network, ax: axes.Axes, colors: DataF
     return ax
 
 
+def prepare_province_peakload_capacity_data(n, attached_carriers=None):
+    """
+    Prepare DataFrame for province peak load and installed capacity by technology.
+    Returns:
+        df_plot: DataFrame with provinces as index, columns as technologies and 'Peak Load'.
+        bar_cols: List of technology columns to plot as bars.
+        color_list: List of colors for each technology.
+    """
+    # Calculate peak load per province
+    load = n.loads.copy()
+    load["province"] = load["bus"].map(n.buses["location"])
+    peak_load = n.loads_t.p_set.groupby(load["province"], axis=1).sum().max()
+    peak_load = peak_load / PLOT_CAP_UNITS  # ensure peak load is in GW
+
+    # Calculate installed capacity per province and technology using optimal_capacity
+    ds = n.statistics.optimal_capacity(groupby=["location", "carrier"]).dropna()
+    valid_components = ["Generator", "StorageUnit", "Link"]
+    ds = ds.loc[ds.index.get_level_values(0).isin(valid_components)]
+    if ("Link", "battery") in ds.index:
+        ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
+        ds = ds.drop(index=("Link", "battery"))
+    if "stations" in ds.index.get_level_values(2):
+        ds = ds.drop("stations", level=2)
+    if "load shedding" in ds.index.get_level_values(2):
+        ds = ds.drop("load shedding", level=2)
+    ds = ds.groupby(level=[1, 2]).sum()
+    ds.index = pd.MultiIndex.from_tuples(
+        [
+            (prov, n.carriers.loc[carrier, "nice_name"] if carrier in n.carriers.index else carrier)
+            for prov, carrier in ds.index
+        ],
+        names=["province", "nice_name"]
+    )
+    cap_by_prov_tech = ds.unstack(level=-1).fillna(0)
+    cap_by_prov_tech = cap_by_prov_tech.abs() / PLOT_CAP_UNITS
+
+    if "Battery Discharger" in cap_by_prov_tech.columns:
+        cap_by_prov_tech = cap_by_prov_tech.drop(columns="Battery Discharger")
+    if "AC" in cap_by_prov_tech.columns:
+        cap_by_prov_tech = cap_by_prov_tech.drop(columns="AC")
+    # Only keep columns in attached_carriers if provided
+    if attached_carriers is not None:
+        # Ensure nice_name mapping for attached_carriers
+        attached_nice_names = [n.carriers.loc[c, "nice_name"] if c in n.carriers.index else c for c in attached_carriers]
+        cap_by_prov_tech = cap_by_prov_tech[[c for c in cap_by_prov_tech.columns if c in attached_nice_names]]
+
+    # Merge peak load and capacity
+    df_plot = cap_by_prov_tech.copy()
+    df_plot["Peak Load"] = peak_load
+
+    # Bar columns: exclude Peak Load, only keep nonzero
+    bar_cols = [c for c in df_plot.columns if c != "Peak Load"]
+    bar_cols = [c for c in bar_cols if df_plot[c].sum() > 0]
+    color_list = [n.carriers.set_index("nice_name").color.get(tech, "lightgrey") for tech in bar_cols]
+    return df_plot, bar_cols, color_list
+
+
+def plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir):
+    """
+    Plot province peak load vs installed capacity by technology.
+    Args:
+        df_plot: DataFrame with provinces as index, columns as technologies and 'Peak Load'.
+        bar_cols: List of technology columns to plot as bars.
+        color_list: List of colors for each technology.
+        outp_dir: Output directory for saving the figure.
+    """
+    fig, ax = plt.subplots(figsize=(14, 8))
+    df_plot[bar_cols].plot(kind="barh", stacked=True, ax=ax, color=color_list, alpha=0.8)
+    # Plot peak load as red vertical line
+    for i, prov in enumerate(df_plot.index):
+        ax.plot(df_plot.loc[prov, "Peak Load"], i, "r|", markersize=18, label="Peak Load" if i==0 else "")
+    ax.set_xlabel("Capacity [GW]")
+    ax.set_ylabel("Province")
+    ax.set_title("Peak Load vs Installed Capacity by Province")
+    ax.grid(False)
+    # Only keep one Peak Load legend
+    handles, labels = ax.get_legend_handles_labels()
+    seen = set()
+    new_handles, new_labels = [], []
+    for h, l in zip(handles, labels):
+        if l not in seen:
+            new_handles.append(h)
+            new_labels.append(l)
+            seen.add(l)
+    ax.legend(new_handles, new_labels, loc="best")
+    fig.tight_layout()
+    fig.savefig(os.path.join(outp_dir, "province_peakload_capacity.png"))
+
+
 if __name__ == "__main__":
     if "snakemake" not in globals():
 
@@ -346,7 +435,7 @@ if __name__ == "__main__":
         ds = ds.drop(("Generator", "Load"), errors="ignore")
         ds = ds.abs() / PLOT_CAP_UNITS
         ds.attrs["unit"] = PLOT_CAP_LABEL
-        plot_static_per_carrier(ds.abs(), ax, colors=colors)
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "installed_capacity.png"))
 
@@ -506,3 +595,6 @@ if __name__ == "__main__":
         plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "MV_minus_LCOE.png"))
+    if "province_peakload_capacity" in stats_list:
+        df_plot, bar_cols, color_list = prepare_province_peakload_capacity_data(n, attached_carriers=attached_carriers)
+        plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir)
