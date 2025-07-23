@@ -454,6 +454,7 @@ def plot_vre_heatmap(
             tech_avail = np.log(tech_avail.clip(lower=10))
         fig, ax = plt.subplots()
         sns.heatmap(tech_avail.T, ax=ax, cmap=color_map)
+        ax.set_title(f"{tech} generation by province")
 
 
 def plot_vre_timemap(
