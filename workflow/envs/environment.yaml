@@ -10,8 +10,8 @@ dependencies:
   - python>=3.12
   - pip
 
-  - pypsa=0.31
-  - atlite>=0.2.6
+  - pypsa=0.35.1
+  - atlite>=0.4.0
   - dask
   - snakemake-storage-plugin-http
   # - pyasyncore
@@ -23,7 +23,7 @@ dependencies:
   - openpyxl
   - pycountry
   - seaborn
-  - snakemake-minimal>=8.0
+  - snakemake-minimal>=9.0
   - memory_profiler
   - yaml
   - pytables
