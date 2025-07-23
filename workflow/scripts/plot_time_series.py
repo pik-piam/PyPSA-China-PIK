@@ -409,12 +409,87 @@ def plot_price_heatmap(
     else:
         ax.set_title("Heatmap of Nodal Prices")
 
-
     ax.set_xlabel("Time")
     ax.set_ylabel("Nodes")
     fig.tight_layout()
 
     return ax
+
+
+def plot_vre_heatmap(
+    n: pypsa.Network, color_map="magma", log_values=True, time_range: pd.Index = None
+):
+    """plot the VRE generation per hour and day as a heatmap
+
+    Args:
+        network (pypsa.Network): the pypsa network object
+        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).
+        log_values (bool, optional): whether to use log scale for the values. Defaults to True.
+
+    """
+
+    vres = ["offwind", "onwind", "solar"]
+    vre_avail = (
+        n.statistics.supply(
+            comps="Generator",
+            aggregate_time=False,
+            bus_carrier="AC",
+            nice_names=False,
+            groupby=["location", "carrier"],
+        )
+        .query("carrier in @vres")
+        .T.fillna(0)
+    )
+
+    if time_range is not None:
+        vre_avail = vre_avail.loc[time_range]
+
+    for tech in vres[::-1]:
+        tech_avail = vre_avail.T.query("carrier == @tech")
+        tech_avail.index = tech_avail.index.droplevel(1)
+        tech_avail = tech_avail.T
+        tech_avail.index = tech_avail.index.strftime("%m-%d %H:%M")
+        if log_values:
+            # Avoid log(0) by clipping values to a minimum of 10
+            tech_avail = np.log(tech_avail.clip(lower=10))
+        fig, ax = plt.subplots()
+        sns.heatmap(tech_avail.T, ax=ax, cmap=color_map)
+
+
+def plot_vre_timemap(
+    network: pypsa.Network,
+    color_map="viridis",
+    time_range: pd.Index = None,
+):
+    """plot the VRE generation per hour and day as a heatmap
+
+    Args:
+        network (pypsa.Network): the pypsa network object
+        color_map (str, optional): the color map to use. Defaults to "viridis".
+        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).
+    """
+
+    vres = ["offwind", "onwind", "solar"]
+    vre_avail = (
+        network.statistics.supply(
+            comps="Generator", aggregate_time=False, bus_carrier="AC", nice_names=False
+        )
+        .query("carrier in @vres")
+        .T.fillna(0)
+    )
+    if time_range is not None:
+        vre_avail = vre_avail.loc[time_range]
+
+    vre_avail["day"] = vre_avail.index.strftime("%d-%m")
+    vre_avail["hour"] = vre_avail.index.hour
+
+    for tech in vres:
+        solar_pivot = vre_avail.pivot_table(index="hour", columns="day", values=tech)
+        fig, ax = plt.subplots(figsize=(12, 6))
+        sns.heatmap(solar_pivot.sort_index(ascending=False), cmap=color_map, ax=ax)
+        ax.set_title(f"{tech} generation by hour and day")
+
+        fig.tight_layout()
 
 
 if __name__ == "__main__":
