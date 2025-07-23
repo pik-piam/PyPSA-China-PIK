@@ -357,6 +357,7 @@ def plot_price_heatmap(
     carrier="AC",
     log_values=False,
     color_map="viridis",
+    time_range: pd.Index = None,
     ax: plt.Axes = None,
 ) -> plt.Axes:
     """plot the price heat map (region vs time) for the given carrier
@@ -366,6 +367,7 @@ def plot_price_heatmap(
         carrier (str, optional): the carrier for which to get the price. Defaults to "AC".
         log_values (bool, optional): whether to use log scale for the prices. Defaults to False.
         color_map (str, optional): the color map to use. Defaults to "viridis".
+        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).
         ax (plt.Axes, optional): the plotting axis. Defaults to None (new fig).
 
     Returns:
@@ -379,6 +381,10 @@ def plot_price_heatmap(
 
     carrier_buses = network.buses.carrier[network.buses.carrier == carrier].index.values
     nodal_prices = network.buses_t.marginal_price[carrier_buses]
+
+    if time_range is not None:
+        # Filter nodal_prices by the given time range
+        nodal_prices = nodal_prices.loc[time_range]
     # Normalize nodal_prices with log transformation
     if log_values:
         # Avoid log(0) by clipping values to a minimum of 0.1
@@ -388,15 +394,22 @@ def plot_price_heatmap(
         normalized_prices = nodal_prices
         label = "Price [€/MWh]"
     # Create a heatmap of normalized nodal_prices
+    plot_index = normalized_prices.index.strftime("%m-%d %H:%M").to_list()
+    normalized_prices.index = plot_index
     sns.heatmap(
-        normalized_prices.reset_index(drop=True).T,
+        normalized_prices.T,
         cmap=color_map,
         cbar_kws={"label": label},
         ax=ax,
     )
 
     # Customize the plot
-    ax.set_title("Heatmap of Log-Transformed Nodal Prices")
+    if log_values:
+        ax.set_title("Heatmap of Log-Transformed Nodal Prices")
+    else:
+        ax.set_title("Heatmap of Nodal Prices")
+
+
     ax.set_xlabel("Time")
     ax.set_ylabel("Nodes")
     fig.tight_layout()
