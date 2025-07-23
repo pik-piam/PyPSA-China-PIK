@@ -10,6 +10,7 @@ import numpy as np
 from os import PathLike
 from pandas import DataFrame
 import zipfile
+import io
 
 from constants import (
     CRS,
@@ -205,7 +206,7 @@ def fetch_gadm(country_code="CHN", level=2):
         return gdf
 
 
-def fetch_county_shapes(
+def fetch_prefecture_shapes(
     fixes={
         "NAME_1": {
             "Nei Mongol": "InnerMongolia",
