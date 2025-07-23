@@ -18,7 +18,7 @@ plotting:
     bus_size_factor_heat: 5.e+4
     linewidth_factor_heat: 5.e+4
     min_edge_capacity : 1.e+4
-    ref_edge_sizes : [5.e+3,10.e+3,30.e+3] # MW
+    ref_edge_sizes : [5.e+3,30.e+3,100.e+3] # MW
     ref_bus_sizes : [20.e+9, 10.e+9, 5.e+9] # eur/currnecy
     ref_bus_unit: "bn €/a"
     edge_color: "indigo"
@@ -32,10 +32,10 @@ plotting:
     bus_size_factor_demand: 2.e+7
     min_edge_capacity : 5.e+2 # MW
     ref_bus_unit: "TWh"
-    ref_edge_sizes : [5.e+3,10.e+3,30.e+3] # MW
+    ref_edge_sizes : [10.e+3,50.e+3,150.e+3] # MW
     ref_edge_sizes_heat : [1.e+3,10.e+3,50.e+3]  # in MW
-    ref_bus_sizes : [5.e+7, 1.e+8, 2.e+9] # MWh
-    ref_bus_sizes_heat : [10.e+6, 100.e+6, 500.e+6] # MWh
+    ref_bus_sizes : [ 2.e+9, 5.e+8,] # MWh
+    ref_bus_sizes_heat : [500.e+6, 100.e+6, 10.e+6] # MWh
     bus_ref_title : "Electricity supply"
     edge_color: "indigo"
   price_map:
@@ -129,6 +129,7 @@ plotting:
     # coal
     coal carbon capture: '#8c8dad'
     coal-CCS: '#8c8dad'
+    coal CCS: '#8c8dad'
     coal cc: '#8c8dad'
     coal ccs: '#8c8dad'
     coal power plant retrofit: '#8c8dad'
@@ -450,6 +451,7 @@ plotting:
   - coal carbon capture
   - coal ccs
   - coal-CCS
+  - coal CCS
   - Coal with Carbon Capture
   - coal boiler
   - coal boiler decentral
@@ -459,6 +461,7 @@ plotting:
   - gas CCGT
   - CCGT-CCS
   - gas CCGT-CCS 
+  - gas
   - Combined-Cycle Gas
   - gas boiler
   - gas boiler decentral
@@ -478,7 +481,6 @@ plotting:
   - H2 fuel cell
   - H2 CHP
   - CO2 capture
-
   - hot water storage
   - hydrogen storage
   - solar thermal
@@ -491,9 +493,9 @@ plotting:
   - solar PV
   - Solar
   - solar
-  - battery storage
   - OCGT
   - gas OCGT
+  - battery storage
   - battery discharger
   - battery
   - Battery

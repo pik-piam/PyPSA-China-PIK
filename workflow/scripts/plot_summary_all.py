@@ -26,7 +26,7 @@ from constants import (
     PLOT_CAP_UNITS,
     PLOT_CAP_LABEL,
 )
-from _plot_utilities import set_plot_style
+from _plot_utilities import set_plot_style, label_stacked_bars
 
 logger = logging.getLogger(__name__)
 
@@ -195,7 +195,9 @@ def plot_pathway_capacities(
         year = cap_df.columns.get_level_values(0)[0]
         cap_df = cap_df.droplevel(0, axis=1).rename(columns={"Unnamed: 4_level_1": year})
         cap_df /= PLOT_CAP_UNITS
-        cap_df.drop("Load Shedding", level="carrier", inplace=True)
+
+        if "Load Shedding" in cap_df.index.get_level_values("carrier"):
+            cap_df.drop("Load Shedding", level="carrier", inplace=True)
 
         # get stores relevant for reporting according to config, use later
         stores = (
@@ -484,6 +486,10 @@ def plot_electricty_heat_balance(
         bbox_to_anchor=[1, 1],
         loc="upper left",
     )
+
+    if config.get("add_bar_labels", False):
+        label_stacked_bars(ax, len(el_gen.columns))
+
     fig.tight_layout()
 
     if fig_dir is not None:
@@ -548,6 +554,10 @@ def plot_capacity_factors(
     for results_file in file_list:
         df_year = pd.read_csv(results_file, index_col=list(range(2)), header=[1]).T
         capfacs_df = pd.concat([df_year, capfacs_df])
+
+    if ("links", "battery") in capfacs_df.columns:
+        capfacs_df.loc[:, ("links", "battery charger")] = capfacs_df.loc[:, ("links", "battery")]
+        capfacs_df.drop(columns=("links", "battery"), inplace=True)
 
     capfacs_df = capfacs_df.droplevel(0, axis=1).fillna(0)
     capfacs_df.sort_index(axis=0, inplace=True)
@@ -861,7 +871,7 @@ if __name__ == "__main__":
             "plot_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
             heating_demand="positive",
             configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
@@ -912,6 +922,7 @@ if __name__ == "__main__":
             "onwind",
             "offwind",
             "battery",
+            "battery discharger",
             "coal",
             "coal-CCS",
             "gas CCGT",
