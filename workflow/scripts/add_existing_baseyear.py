@@ -606,7 +606,7 @@ def add_paid_off_capacity(
         },
     }
 
-    # TODO make a centralised setting
+    # TODO make a centralised setting or update cpl config
     rename_carriers = {"OCGT": "gas OCGT", "CCGT": "gas CCGT"}
     paid_off.rename(rename_carriers, inplace=True)
 
@@ -623,6 +623,10 @@ def add_paid_off_capacity(
         paid = paid.loc[paid.index.dropna()]
         if paid.empty:
             continue
+
+        # REMIND cap is in output, PyPSA link in input
+        if component == "Link":
+            paid.loc[:, "p_nom_max_rcl"] /= paid.loc[:, "efficiency"]
 
         paid.index += "_paid_off"
         # set permissive options for the paid-off capacities (constraint per group added to model later)
