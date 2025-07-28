@@ -5,6 +5,7 @@
 __pycache__
 
 **.log
+**.pdf
 **.out
 **.er
 **.DS_Store
@@ -18,6 +19,7 @@ __pycache__
 /resources/derived_data/
 /resources/data/province_shapes
 /resources/data/landuse_availability/World_EEZ/*eez*
+/workflow/scripts/*.pdf
 /results
 !/results/.gitkeep
 /cutouts

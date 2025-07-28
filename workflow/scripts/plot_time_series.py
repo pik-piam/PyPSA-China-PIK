@@ -2,12 +2,11 @@ import pypsa
 import logging
 import matplotlib.pyplot as plt
 import os.path
-<<<<<<< HEAD
+
 import seaborn as sns
 import numpy as np
+import pandas as pd
 
-=======
->>>>>>> parent of 3c6753b (add heatmaps)
 from os import makedirs
 
 from _plot_utilities import (
@@ -83,7 +82,7 @@ def plot_energy_balance(
     p.rename(columns={k: k.title() for k in p.columns}, inplace=True)
     color_series.index = color_series.index.str.strip()
     # split into supply and wothdrawal
-    supply = p.where(p >= 0).dropna(axis=1, how="all")
+    supply = p.where(p > 0).dropna(axis=1, how="all")
     charge = p.where(p < 0).dropna(how="all", axis=1)
 
     # fix names and order
@@ -95,6 +94,8 @@ def plot_energy_balance(
         {"Battery Discharger": "Battery", "Battery Storage": "Battery"},
         inplace=True,
     )
+    # Deduplicate color_series
+    color_series = color_series[~color_series.index.duplicated(keep="first")]
 
     preferred_order = plot_config["preferred_order"]
     plot_order = (
@@ -114,7 +115,7 @@ def plot_energy_balance(
     supply.plot.area(
         ax=ax,
         linewidth=0,
-        color=color_series.loc[supply.columns],
+        color=color_series.loc[supply.columns].values,
     )
     if add_load_line:
         charge["load_pos"] = charge["Load"] * -1
@@ -185,11 +186,17 @@ def plot_regional_load_durations(
         fig = ax.get_figure()
 
     loads_all = network.statistics.withdrawal(
-        groupby=get_location_and_carrier, aggregate_time=False, bus_carrier=carrier, comps="Load"
+        groupby=get_location_and_carrier,
+        aggregate_time=False,
+        bus_carrier=carrier,
+        comps="Load",
     ).sum()
     load_curve_all = loads_all.sort_values(ascending=False) / PLOT_CAP_UNITS
     regio = network.statistics.withdrawal(
-        groupby=get_location_and_carrier, aggregate_time=False, bus_carrier=carrier, comps="Load"
+        groupby=get_location_and_carrier,
+        aggregate_time=False,
+        bus_carrier=carrier,
+        comps="Load",
     )
     regio = regio.droplevel(1).T
     load_curve_regio = regio.loc[load_curve_all.index] / PLOT_CAP_UNITS
@@ -256,26 +263,46 @@ def plot_residual_load_duration_curve(
     return ax
 
 
-def plot_price_duration_curve(network: pypsa.Network, ax: plt.Axes = None) -> plt.Axes:
+def plot_price_duration_curve(
+    network: pypsa.Network, carrier="AC", ax: plt.Axes = None, figsize=(8, 8)
+) -> plt.Axes:
     """plot the price duration curve for the given carrier
 
     Args:
         network (pypsa.Network): the pypasa network object
+        carrier (str, optional): the load carrier, defaults to AC
         ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
-
+        figsize (tuple, optional): size of the figure (if no ax given), defaults to (8, 8)
     Returns:
         plt.Axes: the plotting axes
     """
     if not ax:
-        fig, ax = plt.subplots(figsize=(16, 8))
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig = ax.get_figure()
 
-    raise NotImplementedError("Price duration curve not implemented yet")
+    ntwk_el_price = (
+        -1
+        * network.statistics.revenue(bus_carrier=carrier, aggregate_time=False, comps="Load")
+        / network.statistics.withdrawal(bus_carrier=carrier, aggregate_time=False, comps="Load")
+    ).T
+    ntwk_el_price.rename(columns={"-": "Load"}, inplace=True)
+    ntwk_el_price.Load.sort_values(ascending=False).reset_index(drop=True).plot(
+        title="Price Duration Curve", ax=ax, lw=2
+    )
+    fig.tight_layout()
+
+    return ax
 
 
-def plot_load_duration_by_node(
-    network: pypsa.Network, carrier: str = "AC", logy=True, y_lower=1e-3, fig_shape=(8, 4)
+def plot_price_duration_by_node(
+    network: pypsa.Network,
+    carrier: str = "AC",
+    logy=True,
+    y_lower=1e-3,
+    fig_shape=(8, 4),
 ) -> plt.Axes:
-    """Plot the load duration curve for the given carrier by node
+    """Plot the price duration curve for the given carrier by node
     Args:
         network (pypsa.Network): the pypsa network object
         carrier (str, optional): the load carrier, defaults to AC (bus suffix)
@@ -292,7 +319,7 @@ def plot_load_duration_by_node(
     else:
         suffix = f" {carrier}"
 
-    nodal_prices = n.buses_t.marginal_price[pd.Index(PROV_NAMES) + suffix]
+    nodal_prices = network.buses_t.marginal_price[pd.Index(PROV_NAMES) + suffix]
 
     if fig_shape[0] * fig_shape[1] < len(nodal_prices.columns):
         raise ValueError(
@@ -325,8 +352,12 @@ def plot_load_duration_by_node(
     return ax
 
 
-def plot_price_map(
-    network: pypsa.Network, carrier="AC", log_values=False, color_map="viridis", ax: plt.Axes = None
+def plot_price_heatmap(
+    network: pypsa.Network,
+    carrier="AC",
+    log_values=False,
+    color_map="viridis",
+    ax: plt.Axes = None,
 ) -> plt.Axes:
     """plot the price heat map (region vs time) for the given carrier
 
@@ -370,7 +401,7 @@ def plot_price_map(
     ax.set_ylabel("Nodes")
     fig.tight_layout()
 
-    return
+    return ax
 
 
 if __name__ == "__main__":
@@ -380,13 +411,17 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_snapshots",
             topology="current+FCG",
-            co2_pathway="exp175default",
-            planning_horizons="2060",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
+            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            planning_horizons="2050",
             winter_day1="12-10 21:00",  # mm-dd HH:MM
             winter_day2="12-17 12:00",  # mm-dd HH:MM
             spring_day1="03-31 21:00",  # mm-dd HH:MM
             spring_day2="04-06 12:00",  # mm-dd HH:MM
+            summer_day1="07-15 21:00",  # mm-dd HH:MM
+            summer_day2="07-22 12:00",  # mm-dd HH:MM
         )
 
     YEAR = snakemake.wildcards.planning_horizons
@@ -401,7 +436,7 @@ if __name__ == "__main__":
 
     config = snakemake.config
     carriers = ["AC"]
-    if config["heat_coupling"]:
+    if config.get("heat_coupling", False):
         carriers.append("heat")
 
     if not os.path.isdir(snakemake.output.outp_dir):
@@ -434,5 +469,26 @@ if __name__ == "__main__":
         )
         outp = os.path.join(snakemake.output.outp_dir, f"balance_winter_{carrier}.png")
         fig.savefig(outp)
+
+        fig, ax = plt.subplots(figsize=(16, 8))
+        plot_energy_balance(
+            n,
+            config["plotting"],
+            bus_carrier=carrier,
+            start_date=f"{YEAR}-{snakemake.params.summer_day1}",
+            end_date=f"{YEAR}-{snakemake.params.summer_day2}",
+            ax=ax,
+        )
+        outp = os.path.join(snakemake.output.outp_dir, f"balance_summer_{carrier}.png")
+        fig.savefig(outp)
+
+    ldc_ax = plot_load_duration_curve(n, carrier="AC", ax=None)
+    ldc_ax.get_figure().savefig(os.path.join(snakemake.output.outp_dir, "load_duration_curve.png"))
+
+    rldc_ax = plot_residual_load_duration_curve(n, ax=None)
+    rldc_ax.get_figure().savefig(os.path.join(snakemake.output.outp_dir, "rldc.png"))
+
+    pdc = plot_price_duration_curve(n, carrier="AC", ax=None)
+    pdc.get_figure().savefig(os.path.join(snakemake.output.outp_dir, "price_duration_curve.png"))
 
     logger.info(f"Successfully plotted time series for carriers: {", ".join(carriers)}")

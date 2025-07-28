@@ -27,7 +27,11 @@ def prepare_network(
     config: dict,
     solve_opts=None,
 ):
-
+    """prepare the network for the solver
+    Args:
+        n (pypsa.Network): the pypsa network object
+        solve_opts (dict): the solving options
+    """
     if "clip_p_max_pu" in solve_opts:
         for df in (
             n.generators_t.p_max_pu,
@@ -143,6 +147,12 @@ def add_battery_constraints(n):
 
 
 def add_chp_constraints(n):
+    """Add constraints to couple the heat and electricity output of CHP plants
+         (using the cb and cv parameter). See the DEA technology cataloge
+
+    Args:
+        n (pypsa.Network): the pypsa network object to which's model the constraints are added
+    """
     electric = n.links.index.str.contains("CHP") & n.links.index.str.contains("generator")
     heat = n.links.index.str.contains("CHP") & n.links.index.str.contains("boiler")
 
@@ -184,7 +194,7 @@ def add_chp_constraints(n):
         n.model.add_constraints(lhs <= 0, name="chplink-backpressure")
 
 
-def add_transimission_constraints(n):
+def add_transmission_constraints(n):
     """
     Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
     p_nom positive = p_nom negative
@@ -204,6 +214,11 @@ def add_transimission_constraints(n):
 
 
 def add_retrofit_constraints(n):
+    """
+    Add constraints to ensure retrofit capacity is linked to the original capacity
+    Args:
+        n (pypsa.Network): the pypsa network object to which's model the constraints are added
+    """
     p_nom_max = pd.read_csv("resources/data/p_nom/p_nom_max_cc.csv", index_col=0)
     p_nom_max = pd.read_csv("resources/data/p_nom/p_nom_max_cc.csv", index_col=0)
     planning_horizon = snakemake.wildcards.planning_horizons
@@ -264,12 +279,19 @@ def extra_functionality(n, snapshots):
 
     add_chp_constraints(n)
     add_battery_constraints(n)
-    add_transimission_constraints(n)
+    add_transmission_constraints(n)
     if snakemake.wildcards.planning_horizons != "2020":
         add_retrofit_constraints(n)
 
 
 def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
+    """perform the optimisation
+    Args:
+        n (pypsa.Network): the pypsa network object
+        config (dict): the configuration dictionary
+        solving (dict): the solving configuration dictionary
+        opts (str): optional wildcards such as ll (not used in pypsa-china)
+    """
     set_of_options = solving["solver"]["options"]
     solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
     solver_name = solving["solver"]["name"]
@@ -320,7 +342,6 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_network_myopic",
-            # opts="ll",
             topology="current+Neighbor",
             co2_pathway="exp175default",
             co2_reduction="0.0",
@@ -359,7 +380,11 @@ if __name__ == "__main__":
 
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
-    n.export_to_netcdf(snakemake.output.network_name)
+    outp = snakemake.output.network_name
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    n.export_to_netcdf(outp, compression=compression)
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
 

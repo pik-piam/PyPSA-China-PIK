@@ -32,7 +32,7 @@ def plot_map(
     network: pypsa.Network,
     tech_colors: dict,
     edge_widths: pd.Series,
-    bus_colors: pd.Series,
+    bus_colors: dict | pd.Series,
     bus_sizes: pd.Series,
     edge_colors: pd.Series | str = "black",
     add_ref_edge_sizes=True,
@@ -78,14 +78,23 @@ def plot_map(
 
     ax.add_feature(cfeature.BORDERS, linewidth=0.5, edgecolor="gray")
     states_provinces = cfeature.NaturalEarthFeature(
-        category="cultural", name="admin_1_states_provinces_lines", scale="50m", facecolor="none"
+        category="cultural",
+        name="admin_1_states_provinces_lines",
+        scale="50m",
+        facecolor="none",
     )
     # Add our states feature.
     ax.add_feature(states_provinces, edgecolor="lightgray", alpha=0.7)
 
     if add_legend:
         carriers = bus_sizes.index.get_level_values(1).unique()
-        colors = carriers.intersection(tech_colors).map(tech_colors).to_list()
+        # Ensure all carriers have colors, use default color for missing ones
+        colors = []
+        for carrier in carriers:
+            if carrier in tech_colors:
+                colors.append(tech_colors[carrier])
+            else:
+                colors.append("lightgrey")  # Default color for missing carriers
 
         if isinstance(edge_colors, str):
             colors += [edge_colors]
@@ -168,11 +177,20 @@ def add_cost_pannel(
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
     colors = {k.lower(): v for k, v in tech_colors.items()}
+
+    # Create color list with default color for missing carriers
+    color_list = []
+    for k in reordered:
+        if k.lower() in colors:
+            color_list.append(colors[k.lower()])
+        else:
+            color_list.append("lightgrey")  # Default color for missing carriers
+
     df.loc[reordered, df.columns].T.plot(
         kind="bar",
         ax=ax3,
         stacked=True,
-        color=[colors[k.lower()] for k in reordered],
+        color=color_list,
     )
     ax3.legend().remove()
     ax3.set_ylabel("annualized system cost bEUR/a")
@@ -229,7 +247,9 @@ def plot_cost_map(
     # ============ === Stats by bus ===
     # calc costs & sum over component types to keep bus & carrier (remove no loc)
     costs = network.statistics.capex(groupby=["location", "carrier"])
-    costs = costs.groupby(level=[1, 2]).sum().drop("")
+    costs = costs.groupby(level=[1, 2]).sum()
+    if "" in costs.index:
+        costs.drop("", inplace=True)
     # we miss some buses by grouping epr location, fill w 0s
     bus_idx = pd.MultiIndex.from_product([network.buses.index, ["AC"]])
     costs = costs.reindex(bus_idx.union(costs.index), fill_value=0)
@@ -287,6 +307,7 @@ def plot_cost_map(
     # Add the total costs
     bus_size_factor = opts["cost_map"]["bus_size_factor"]
     linewidth_factor = opts["cost_map"]["linewidth_factor"]
+
     plot_map(
         network,
         tech_colors=tech_colors,
@@ -334,7 +355,12 @@ def plot_cost_map(
         # TODO decide discount
         # df = df / (1 + discount_rate) ** (int(planning_horizon) - base_year)
         add_cost_pannel(
-            df, fig, preferred_order, tech_colors, plot_additions, ax_loc=[-0.09, 0.28, 0.09, 0.45]
+            df,
+            fig,
+            preferred_order,
+            tech_colors,
+            plot_additions,
+            ax_loc=[-0.09, 0.28, 0.09, 0.45],
         )
 
     fig.set_size_inches(opts["cost_map"][f"figsize{'_w_additions' if plot_additions else ''}"])
@@ -350,6 +376,7 @@ def plot_energy_map(
     save_path: os.PathLike = None,
     carrier="AC",
     plot_ac_imports=False,
+    exclude_batteries=True,
     components=["Generator", "Link"],
 ):
     """A map plot of energy, either AC or heat
@@ -361,6 +388,7 @@ def plot_energy_map(
         save_path (os.PathLike, optional): Fig outp path. Defaults to None (no save).
         carrier (str, optional): the energy carrier. Defaults to "AC".
         plot_ac_imports (bool, optional): plot electricity imports. Defaults to False.
+        exclude_batteries (bool, optional): exclude battery dischargers from the supply pie.
         components (list, optional): the components to plot. Defaults to ["Generator", "Link"].
     raises:
         ValueError: if carrier is not AC or heat
@@ -433,12 +461,20 @@ def plot_energy_map(
         opts_plot["ref_edge_sizes"] = opts_plot["ref_edge_sizes_heat"]
         opts_plot["linewidth_factor"] = opts_plot["linewidth_factor_heat"]
         opts_plot["bus_size_factor"] = opts_plot["bus_size_factor_heat"]
+    # exclude battery dischargers from bus sizes
+    if exclude_batteries:
+        bus_sizes = (
+            supply_pies.loc[~supply_pies.index.get_level_values(1).str.contains("battery")]
+            / opts_plot["bus_size_factor"]
+        )
+    else:
+        bus_sizes = supply_pies / opts_plot["bus_size_factor"]
     plot_map(
         network,
         tech_colors=tech_colors,  # colors.to_dict(),
         edge_widths=edge_widths / opts_plot["linewidth_factor"],
         bus_colors=bus_colors.loc[reordered],
-        bus_sizes=supply_pies / opts_plot["bus_size_factor"],
+        bus_sizes=bus_sizes,
         edge_colors=opts_plot["edge_color"],
         ax=ax,
         edge_unit_conv=PLOT_CAP_UNITS,
@@ -597,9 +633,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_network",
             topology="current+FCG",
-            co2_pathway="exp175default",
-            planning_horizons="2060",
-            heating_demand="positive",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            planning_horizons="2030",
+            # heating_demand="positive",
+            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
     set_plot_test_backend(snakemake.config)
     configure_logging(snakemake, logger=logger)
@@ -653,7 +691,7 @@ if __name__ == "__main__":
         components=["Generator", "Link"],
     )
 
-    if config["heat_coupling"]:
+    if config.get("heat_coupling"):
         p = snakemake.output.cost_map.replace("el_supply.png", "heat_supply.png")
         plot_energy_map(
             n,

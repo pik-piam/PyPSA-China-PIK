@@ -32,13 +32,23 @@ logger = logging.getLogger(__name__)
 
 
 # consolidate and rename
-def rename_techs(label):
+def rename_techs(label: pd.Index) -> pd.Index:
+    """rename techs into grouped categories
+
+    Args:
+        label (pd.Index | iterable): the index techs to rename
+    Returns:
+        pd.Index | iterable: the renamed index / iterable"""
     prefix_to_remove = [
         "central ",
         "decentral ",
     ]
 
-    rename_if_contains_dict = {"water tanks": "hot water storage", "H2": "H2", "coal cc": "CC"}
+    rename_if_contains_dict = {
+        "water tanks": "hot water storage",
+        "H2": "H2",
+        "coal cc": "CC",
+    }
     rename_if_contains = ["gas", "coal"]
     rename = {
         "solar": "solar PV",
@@ -47,7 +57,7 @@ def rename_techs(label):
         "onwind": "onshore wind",
         "ror": "hydroelectricity",
         "hydro": "hydroelectricity",
-        "PHS": "hydroelectricity",
+        "PHS": "pumped hydro storage",
         "hydro_inflow": "hydroelectricity",
         "stations": "hydroelectricity",
         "AC": "transmission lines",
@@ -75,7 +85,10 @@ def rename_techs(label):
 
 
 def plot_pathway_costs(
-    file_list: list, config: dict, social_discount_rate=0.0, fig_name: os.PathLike = None
+    file_list: list,
+    config: dict,
+    social_discount_rate=0.0,
+    fig_name: os.PathLike = None,
 ):
     """plot the costs
 
@@ -105,7 +118,10 @@ def plot_pathway_costs(
     # apply social discount rate
     if social_discount_rate > 0:
         base_year = min([int(y) for y in df.columns])
-        df = df.apply(lambda x: x / (1 + social_discount_rate) ** (int(x.name) - base_year), axis=0)
+        df = df.apply(
+            lambda x: x / (1 + social_discount_rate) ** (int(x.name) - base_year),
+            axis=0,
+        )
     elif social_discount_rate < 0:
         raise ValueError("Social discount rate must be positive")
 
@@ -138,7 +154,13 @@ def plot_pathway_costs(
         va="top",
     )
 
-    ax.legend(handles, [l.title() for l in labels], ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    ax.legend(
+        handles,
+        [l.title() for l in labels],
+        ncol=1,
+        bbox_to_anchor=[1, 1],
+        loc="upper left",
+    )
 
     fig.tight_layout()
 
@@ -165,12 +187,17 @@ def plot_pathway_capacities(
         pd.DataFrame(),
         pd.DataFrame(),
     )
+    # loop over each year result
     for results_file in file_list:
-        cap_df = pd.read_csv(results_file, index_col=list(range(3)), header=[1])
-        # cap_df.drop(index="component", level=0, inplace=True)
+        cap_df = pd.read_csv(results_file, index_col=list(range(4)), header=[1, 2])
+        # format table
+        cap_df.index.names = ["component", "carrier", "bus_carrier", "end_carrier"]
+        year = cap_df.columns.get_level_values(0)[0]
+        cap_df = cap_df.droplevel(0, axis=1).rename(columns={"Unnamed: 4_level_1": year})
         cap_df /= PLOT_CAP_UNITS
+        cap_df.drop("Load Shedding", level="carrier", inplace=True)
 
-        # get relevant stores
+        # get stores relevant for reporting according to config, use later
         stores = (
             cap_df[
                 (cap_df.index.get_level_values(0) == "Store")
@@ -179,7 +206,8 @@ def plot_pathway_capacities(
             .groupby(level=1)
             .sum()
         )
-        # drop storesfor rest
+
+        # drop stores from cap df
         cap_df.drop(cap_df[cap_df.index.get_level_values(0) == "Store"].index, inplace=True)
         # drop charger/dischargers for stores
         cap_df.drop(
@@ -190,18 +218,37 @@ def plot_pathway_capacities(
             inplace=True,
         )
 
-        # sum identical
-        cap_ac = cap_df.loc[cap_df.index.get_level_values(2) == "AC"].groupby(level=1).sum()
+        # select AC (important for links) and group
+        cap_ac = cap_df.reset_index().query(
+            "bus_carrier == 'AC' | carrier =='AC' | end_carrier =='AC'"
+        )
+        cap_ac = cap_ac.groupby("carrier").sum()[year]
 
         if plot_h2:
-            cap_h2 = cap_df.loc[cap_df.index.get_level_values(2) == "H2"].groupby(level=1).sum()
-            caps_h2 = pd.concat([cap_h2, caps_h2], axis=1)
+            cap_h2 = cap_df.reset_index().query(
+                "bus_carrier == 'H2' | carrier =='H2' | end_carrier =='H2'"
+            )
+            cap_h2 = cap_h2.groupby("carrier").sum()[year]
+            if caps_h2.empty:
+                caps_h2 = cap_h2
+            else:
+                caps_h2 = pd.concat([caps_h2, cap_h2], axis=1).fillna(0)
         if plot_heat:
-            cap_heat = cap_df.loc[cap_df.index.get_level_values(2) == "heat"].groupby(level=1).sum()
-            caps_heat = pd.concat([cap_heat, caps_heat], axis=1)
+            # TODO issue for CHP in case of several end buses. Bus2 will not be caught
+            cap_heat = cap_df.reset_index().query(
+                "bus_carrier == 'heat' | carrier =='heat' | end_carrier =='heat'"
+            )
+            cap_heat = cap_heat.groupby("carrier").sum()[year]
+            if caps_heat.empty:
+                caps_heat = cap_heat
+            else:
+                caps_heat = pd.concat([caps_heat, cap_h2], axis=1).fillna(0)
 
-        caps_stores = pd.concat([stores, caps_stores], axis=1)
-        caps_ac = pd.concat([cap_ac, caps_ac], axis=1)
+        caps_stores = pd.concat([stores, caps_stores], axis=1).fillna(0)
+        if caps_ac.empty:
+            caps_ac = cap_ac
+        else:
+            caps_ac = pd.concat([cap_ac, caps_ac], axis=1).fillna(0)
 
     fig, axes = plt.subplots(2, 2)
     fig.set_size_inches((14, 15))
@@ -232,7 +279,7 @@ def plot_pathway_capacities(
         labels.reverse()
 
         if capacity_df.index.difference(caps_stores.index).empty:
-            ax.set_ylabel(f"Installed Capacity [{PLOT_CAP_LABEL}h]")
+            ax.set_ylabel(f"Installed Storage Capacity [{PLOT_CAP_LABEL}h]")
         else:
             ax.set_ylabel(f"Installed Capacity [{PLOT_CAP_LABEL}]")
         ax.set_ylim([0, capacity_df.sum(axis=0).max() * 1.1])
@@ -242,6 +289,31 @@ def plot_pathway_capacities(
         ax.legend(handles, labels, ncol=2, bbox_to_anchor=(0.5, -0.15), loc="upper center")
     fig.tight_layout()
     fig.subplots_adjust(wspace=0.42)
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=config["transparent"])
+
+    return fig, axes
+
+
+def plot_expanded_capacities(
+    file_list: list, config: dict, plot_heat=False, plot_h2=True, fig_name=None
+):
+    """plot the expanded capacities
+
+    Args:
+        file_list (list): the input csvs from make_summary
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+        plot_heat (bool, optional): plot heat capacities. Defaults to True.
+        plot_h2 (bool, optional): plot hydrogen capacities. Defaults to True.
+    """
+
+    fig, axes = plot_pathway_capacities(file_list, config, plot_heat, plot_h2, fig_name=None)
+    for i, ax in enumerate(axes.flat):
+        ylabel = ax.get_ylabel()
+        if "Installed" in ylabel:
+            ax.set_ylabel(ylabel.replace("Installed", "Additional"))
 
     if fig_name is not None:
         fig.savefig(fig_name, transparent=config["transparent"])
@@ -405,7 +477,13 @@ def plot_electricty_heat_balance(
     ax.set_ylabel("Energy [TWh/a]")
     ax.set_xlabel("")
     ax.grid(axis="y")
-    ax.legend(handles, [l.title() for l in labels], ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    ax.legend(
+        handles,
+        [l.title() for l in labels],
+        ncol=1,
+        bbox_to_anchor=[1, 1],
+        loc="upper left",
+    )
     fig.tight_layout()
 
     if fig_dir is not None:
@@ -448,8 +526,70 @@ def plot_electricty_heat_balance(
 
         if fig_dir is not None:
             fig.savefig(
-                os.path.join(fig_dir, "heat_balance.png"), transparent=config["transparent"]
+                os.path.join(fig_dir, "heat_balance.png"),
+                transparent=config["transparent"],
             )
+
+
+def plot_capacity_factors(
+    file_list: list, config: dict, techs: list, fig_name=None, ax: object = None
+):
+    """Plot evolution of capacity factors for the given technologies
+
+    Args:
+        file_list (list): the input csvs from make_summary
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
+        techs (list): the technologies to plot
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+        ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
+    """
+
+    capfacs_df = pd.DataFrame()
+    for results_file in file_list:
+        df_year = pd.read_csv(results_file, index_col=list(range(2)), header=[1]).T
+        capfacs_df = pd.concat([df_year, capfacs_df])
+
+    capfacs_df = capfacs_df.droplevel(0, axis=1).fillna(0)
+    capfacs_df.sort_index(axis=0, inplace=True)
+
+    invalid = [t for t in techs if t not in capfacs_df.columns]
+    logger.warning(f"Technologies {invalid} not found in capacity factors data. Skipping them.")
+    valid_techs = [t for t in techs if t in capfacs_df.columns]
+    capfacs_df = capfacs_df[valid_techs]
+
+    if not ax:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    fig.set_size_inches((12, 8))
+
+    colors = pd.Series(config["tech_colors"], index=capfacs_df.columns)
+    # missing color may have had nice name, else NAN default
+    nice_name_colors = pd.Series(
+        config["tech_colors"], index=capfacs_df.columns.map(config["nice_names"])
+    ).dropna()
+    colors = colors.fillna(nice_name_colors).fillna(NAN_COLOR)
+
+    capfacs_df.plot(
+        ax=ax,
+        kind="line",
+        color=colors,
+        linewidth=3,
+        marker="o",
+    )
+    ax.set_ylim([0, capfacs_df.max().max() * 1.1])
+    ax.set_ylabel("capacity factor")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+
+    handles, labels = ax.get_legend_handles_labels()
+    handles.reverse()
+    labels.reverse()
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=False)
 
 
 def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax: object = None):
@@ -542,6 +682,81 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    ax.set_ylim([0, co2_balance_df.sum(axis=1).max() * 1.1])
+    fig.tight_layout()
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=config["transparent"])
+
+
+def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax: object = None):
+    """plot the prices
+
+    Args:
+        file_list (list): the input csvs from make_summary
+        config (dict): the configuration for plotting (snakemake.config["plotting"])
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+        absolute (bool, optional): plot absolute prices. Defaults to False.
+        ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
+    """
+    prices_df = pd.DataFrame()
+    for results_file in file_list:
+        df_year = pd.read_csv(results_file, index_col=list(range(1)), header=[1]).T
+
+        prices_df = pd.concat([df_year, prices_df])
+    prices_df.sort_index(axis=0, inplace=True)
+    if not ax:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    fig.set_size_inches((12, 8))
+
+    colors = config["tech_colors"]
+
+    if absolute:
+        prices_df = prices_df.abs()
+
+    prices_df.plot(
+        ax=ax,
+        kind="line",
+        color=[colors[k] if k in colors else "k" for k in prices_df.columns],
+        linewidth=3,
+    )
+    ax.set_ylim([prices_df.min().min() * 1.1, prices_df.max().max() * 1.1])
+    ax.set_ylabel("prices [X/UNIT]")
+    ax.set_xlabel("")
+    ax.grid(axis="y")
+
+    handles, labels = ax.get_legend_handles_labels()
+
+    handles.reverse()
+    labels.reverse()
+    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
+    fig.tight_layout()
+
+    if fig_name is not None:
+        fig.savefig(fig_name, transparent=False)
+
+
+def plot_co2_prices(co2_prices: dict, config: dict, fig_name=None):
+    """Plot the CO2 prices
+    Args:
+        co2_prices (dict): the CO2 prices per year (from the config)
+        config (dict): the plotting configuration
+        fig_name (os.PathLike, optional): the figure name. Defaults to None.
+    """
+    fig, ax = plt.subplots()
+    fig.set_size_inches((12, 8))
+
+    ax.plot(
+        co2_prices.keys(),
+        np.abs(list(co2_prices.values())),
+        marker="o",
+        color="black",
+        lw=2,
+    )
+    ax.set_ylabel("CO2 price")
+    ax.set_xlabel("Year")
+    ax.plot(co2_prices.keys(), co2_prices.values(), marker="o", color="black", lw=2)
 
     fig.tight_layout()
     if fig_name is not None:
@@ -566,7 +781,13 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
     fig, ax = plt.subplots()
     fig.set_size_inches((12, 8))
 
-    ax.plot(co2_prices.keys(), np.abs(list(co2_prices.values())), marker="o", color="black", lw=2)
+    ax.plot(
+        co2_prices.keys(),
+        np.abs(list(co2_prices.values())),
+        marker="o",
+        color="black",
+        lw=2,
+    )
     ax.set_ylabel("CO2 Shadow price")
     ax.set_xlabel("Year")
 
@@ -585,6 +806,10 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
 
     if fig_name is not None:
         fig.savefig(fig_name, transparent=config["transparent"])
+
+
+def plot_investments(file_list: list, config: dict, fig_name=None, ax: object = None):
+    pass
 
 
 # TODO move to a separate rule
@@ -635,19 +860,10 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_summary",
             topology="current+FCG",
-            co2_pathway="exp175default",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
-            planning_horizons=[
-                2020,
-                2025,
-                2030,
-                2035,
-                2040,
-                2045,
-                2050,
-                2055,
-                2060,
-            ],
+            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
 
     configure_logging(snakemake)
@@ -665,7 +881,13 @@ if __name__ == "__main__":
     output_paths = snakemake.output
     paths = snakemake.input
 
-    plot_heat = config["heat_coupling"]
+    co2_pathway = config["co2_scenarios"][wildcards.co2_pathway]
+    if co2_pathway["control"] == "price":
+        co2_prices = co2_pathway["pathway"]
+    else:
+        co2_prices = None
+
+    plot_heat = config.get("heat_coupling", False)
     plot_h2 = config["add_H2"]
     NAN_COLOR = config["plotting"]["nan_color"]
     data_paths = {
@@ -677,9 +899,28 @@ if __name__ == "__main__":
         "co2_balance": [os.path.join(p, "co2_balance.csv") for p in paths],
         "energy_supply": [os.path.join(p, "supply_energy.csv") for p in paths],
         "capacity": [os.path.join(p, "capacities.csv") for p in paths],
+        "expanded_capacity": [os.path.join(p, "capacities_expanded.csv") for p in paths],
+        "capacity_factors": [os.path.join(p, "cfs.csv") for p in paths],
     }
 
     sdr = float(config["costs"]["social_discount_rate"])
+    plot_capacity_factors(
+        data_paths["capacity_factors"],
+        config["plotting"],
+        techs=[
+            "solar",
+            "onwind",
+            "offwind",
+            "battery",
+            "coal",
+            "coal-CCS",
+            "gas CCGT",
+            "gas OCGT",
+            "CCGT-CCS",
+            "H2 Electrolysis",
+        ],
+        fig_name=os.path.dirname(output_paths.costs) + "/capacity_factors.png",
+    )
     plot_pathway_costs(
         data_paths["costs"],
         config["plotting"],
@@ -693,7 +934,14 @@ if __name__ == "__main__":
         plot_heat=plot_heat,
         plot_h2=plot_h2,
     )
-    plot_energy(data_paths["energy"], config["plotting"], fig_name=output_paths.energy)
+    plot_expanded_capacities(
+        data_paths["expanded_capacity"],
+        config["plotting"],
+        fig_name=os.path.dirname(output_paths.costs) + "/capacities_expanded.png",
+        plot_heat=plot_heat,
+        plot_h2=plot_h2,
+    )
+    # plot_energy(data_paths["energy"], config["plotting"], fig_name=output_paths.energy)
     plot_electricty_heat_balance(
         data_paths["energy_supply"],
         config["plotting"],
@@ -717,6 +965,13 @@ if __name__ == "__main__":
         config["plotting"],
         fig_name=os.path.dirname(output_paths.costs) + "/co2_shadow_prices.png",
     )
+
+    if co2_prices is not None:
+        plot_co2_prices(
+            {k: v for k, v in co2_prices.items() if k in config["scenario"]["planning_horizons"]},
+            config["plotting"],
+            fig_name=os.path.dirname(output_paths.costs) + "/co2_prices.png",
+        )
 
     plot_pathway_co2(
         data_paths["co2_balance"],

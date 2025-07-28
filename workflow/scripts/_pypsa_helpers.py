@@ -87,33 +87,46 @@ def calc_lcoe(
                 Defaults to pypsa.statistics.get_carrier_and_bus_carrier.
         **kwargs: other arguments to be passed to network.statistics
     Returns:
-        pd.DataFrame: The LCOE for the network  with or without brownfield CAPEX. MV and delta
+        pd.DataFrame: The LCOE for the network with or without brownfield CAPEX, MV and delta
 
     """
     if "groupby" in kwargs:
         grouper = kwargs.pop("groupby")
+
+    # store marginal costs we will manipulate to merge gas costs
+    original_marginal_costs = n.links.marginal_cost.copy()
+    # TODO remve the != Inner Mongolia gas, there for backward compat with a bug
+    gas_links = n.links.query("carrier.str.contains('gas') & bus0 != 'Inner Mongolia gas'").index
+    fuel_costs = n.generators.loc[n.links.loc[gas_links, "bus0"] + " fuel"].marginal_cost.values
+    # eta is applied by statistics
+    n.links.loc[gas_links, "marginal_cost"] += fuel_costs
+    # TODO same with BECCS? & other links?
 
     rev = n.statistics.revenue(groupby=grouper, **kwargs)
     opex = n.statistics.opex(groupby=grouper, **kwargs)
     capex = n.statistics.expanded_capex(groupby=grouper, **kwargs)
     tot_capex = n.statistics.capex(groupby=grouper, **kwargs)
     supply = n.statistics.supply(groupby=grouper, **kwargs)
+    # restore original marginal costs
+    n.links.marginal_cost = original_marginal_costs
 
-    profits = pd.concat(
+    # incase no grouper was specified, get different levels
+    if grouper is None:
+        supply = supply.groupby(level=[0, 1]).sum()
+
+    outputs = pd.concat(
         [opex, capex, tot_capex, rev, supply],
         axis=1,
         keys=["OPEX", "CAPEX", "CAPEX_wBROWN", "Revenue", "supply"],
     ).fillna(0)
-    profits["rev-costs"] = profits.apply(lambda row: row.Revenue - row.CAPEX - row.OPEX, axis=1)
-    profits["LCOE"] = profits.apply(lambda row: (row.CAPEX + row.OPEX) / row.supply, axis=1)
-    profits["LCOE_wbrownfield"] = profits.apply(
-        lambda row: (row.CAPEX_wBROWN + row.OPEX) / row.supply, axis=1
-    )
-    profits["MV"] = profits.apply(lambda row: row.Revenue / row.supply, axis=1)
-    profits["profit_pu"] = profits["rev-costs"] / profits.supply
-    profits.sort_values("profit_pu", ascending=False, inplace=True)
+    outputs["rev-costs"] = outputs.apply(lambda row: row.Revenue - row.CAPEX - row.OPEX, axis=1)
+    outputs["LCOE"] = (outputs.CAPEX + outputs.OPEX) / outputs.supply
+    outputs["LCOE_wbrownfield"] = (outputs.CAPEX_wBROWN + outputs.OPEX) / outputs.supply
+    outputs["MV"] = outputs.apply(lambda row: row.Revenue / row.supply, axis=1)
+    outputs["profit_pu"] = outputs["rev-costs"] / outputs.supply
+    outputs.sort_values("profit_pu", ascending=False, inplace=True)
 
-    return profits[profits.supply > 0]
+    return outputs[outputs.supply > 0]
 
 
 # TODO is thsi really good? useful?
@@ -192,6 +205,13 @@ def aggregate_costs(
     opts: dict = None,
     existing_only=False,
 ) -> pd.Series | pd.DataFrame:
+    """LEGACY FUNCTION used in pypsa heating plots - unclear what it does
+
+    Args:
+        n (pypsa.Network): the network object
+        flatten (bool, optional):merge capex and marginal ? Defaults to False.
+        opts (dict, optional): options for the function. Defaults to None.
+        existing_only (bool, optional): use _nom instead of nom_opt. Defaults to False."""
 
     components = dict(
         Link=("p_nom", "p0"),
@@ -224,7 +244,8 @@ def aggregate_costs(
 
         costs = costs.reset_index(level=0, drop=True)
         costs = costs["capital"].add(
-            costs["marginal"].rename({t: t + " marginal" for t in conv_techs}), fill_value=0.0
+            costs["marginal"].rename({t: t + " marginal" for t in conv_techs}),
+            fill_value=0.0,
         )
 
     return costs
@@ -267,7 +288,7 @@ def load_network_for_plots(
     cost_year: int,
     combine_hydro_ps=True,
 ) -> pypsa.Network:
-    """load network object
+    """load network object (LEGACY FUNCTION for heat plot)
 
     Args:
         network_file (os.PathLike): the path to the network file
@@ -305,6 +326,19 @@ def load_network_for_plots(
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, Nyears)
     update_transmission_costs(n, costs)
 
+    return n
+
+
+def mock_solve(n: pypsa.Network) -> pypsa.Network:
+    """Mock the solving step for tests
+
+    Args:
+        n (pypsa.Network): the network object
+    """
+    for c in n.iterate_components(components=["Generator", "Link", "Store", "LineType"]):
+        opt_cols = [col for col in c.df.columns if col.endswith("opt")]
+        base_cols = [col.split("_opt")[0] for col in opt_cols]
+        c.df[opt_cols] = c.df[base_cols]
     return n
 
 

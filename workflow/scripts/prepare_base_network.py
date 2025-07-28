@@ -36,7 +36,7 @@ from _pypsa_helpers import (
 )
 from add_electricity import load_costs, sanitize_carriers
 from functions import haversine
-from readers import read_province_shapes
+from readers_geospatial import read_province_shapes
 
 logger = getLogger(__name__)
 logger.setLevel("INFO")
@@ -209,7 +209,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
     Args:
         config (dict): the snakemake config
         costs (pd.DataFrame): the costs dataframe (anualised capex and marginal costs)
-        biomass_potential (Optional, pd.DataFrame): biomass potential dataframe. Defaults to None.
+        paths (dict): dictionary of paths to input data
 
     Returns:
         pypsa.Network: the pypsa network object
@@ -267,7 +267,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
     # ===== add load demand data =======
     demand_path = snakemake.input.elec_load.replace("{planning_horizons}", cost_year)
     with pd.HDFStore(demand_path, mode="r") as store:
-        load = store["load"].loc[network.snapshots] # MWh !!
+        load = store["load"].loc[network.snapshots]  # MWh !!
 
     load.columns = PROV_NAMES
 
@@ -687,8 +687,50 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         )
 
         # add rivers to link station to station
-        bus0s = [0, 21, 11, 19, 22, 29, 8, 40, 25, 1, 7, 4, 10, 15, 12, 20, 26, 6, 3, 39]
-        bus1s = [5, 11, 19, 22, 32, 8, 40, 25, 35, 2, 4, 10, 9, 12, 20, 23, 6, 17, 14, 16]
+        bus0s = [
+            0,
+            21,
+            11,
+            19,
+            22,
+            29,
+            8,
+            40,
+            25,
+            1,
+            7,
+            4,
+            10,
+            15,
+            12,
+            20,
+            26,
+            6,
+            3,
+            39,
+        ]
+        bus1s = [
+            5,
+            11,
+            19,
+            22,
+            32,
+            8,
+            40,
+            25,
+            35,
+            2,
+            4,
+            10,
+            9,
+            12,
+            20,
+            23,
+            6,
+            17,
+            14,
+            16,
+        ]
 
         for bus0, bus2 in list(zip(dams.index[bus0s], dam_buses.iloc[bus1s].index)):
 
@@ -748,7 +790,8 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         # ======= add other existing hydro power
         hydro_p_nom = pd.read_hdf(config["hydro_dams"]["p_nom_path"])
         hydro_p_max_pu = pd.read_hdf(
-            config["hydro_dams"]["p_max_pu_path"], key=config["hydro_dams"]["p_max_pu_key"]
+            config["hydro_dams"]["p_max_pu_path"],
+            key=config["hydro_dams"]["p_max_pu_key"],
         ).tz_localize(None)
 
         hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
@@ -774,7 +817,12 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
     if config["add_H2"]:
 
         network.add(
-            "Bus", nodes, suffix=" H2", x=prov_centroids.x, y=prov_centroids.y, carrier="H2"
+            "Bus",
+            nodes,
+            suffix=" H2",
+            x=prov_centroids.x,
+            y=prov_centroids.y,
+            carrier="H2",
         )
 
         network.add(
@@ -1252,9 +1300,12 @@ if __name__ == "__main__":
     sanitize_carriers(network, snakemake.config)
 
     outp = snakemake.output.network_name
-    network.export_to_netcdf(snakemake.output.network_name)
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    network.export_to_netcdf(outp, compression=compression)
 
-    msg = f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {snakemake.output.network_name}"
+    msg = f"Network for {snakemake.wildcards.planning_horizons} prepared and saved to {outp}"
     logger.info(msg)
 
     costs_outp = os.path.dirname(outp) + f"/costs_{yr}.csv"

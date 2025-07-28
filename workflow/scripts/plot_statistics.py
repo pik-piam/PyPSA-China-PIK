@@ -12,11 +12,18 @@ import seaborn as sns
 import os
 import logging
 from pandas import DataFrame
+import pandas as pd
+import numpy as np
 
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import rename_index, fix_network_names_colors, filter_carriers
 from _pypsa_helpers import calc_lcoe
-from constants import PLOT_CAP_LABEL, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, PLOT_SUPPLY_LABEL
+from constants import (
+    PLOT_CAP_LABEL,
+    PLOT_CAP_UNITS,
+    PLOT_SUPPLY_UNITS,
+    PLOT_SUPPLY_LABEL,
+)
 
 sns.set_theme("paper", style="whitegrid")
 logger = logging.getLogger(__name__)
@@ -52,12 +59,13 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_statistics",
             carrier="AC",
-            # planning_horizons="2055",
+            planning_horizons="2025",
             # co2_pathway="exp175default",
-            planning_horizons="2130",
-            co2_pathway="remind_ssp2NPI",
+            # planning_horizons="2130",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             topology="current+FCG",
-            heating_demand="positive",
+            # heating_demand="positive",
+            configfiles="resources/tmp/remind_coupled_cg.yaml",
         )
     configure_logging(snakemake)
     set_plot_test_backend(snakemake.config)
@@ -72,6 +80,7 @@ if __name__ == "__main__":
         "Load",
         snakemake.config["plotting"]["tech_colors"]["electric load"],
     )
+
     colors = n.carriers.set_index("nice_name").color.where(lambda s: s != "", "lightgrey")
 
     outp_dir = snakemake.output.stats_dir
@@ -84,6 +93,10 @@ if __name__ == "__main__":
     if "capacity_factor" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.capacity_factor(groupby=["carrier"]).dropna()
+        # avoid grouping battery uif same name
+        if ("Link", "battery") in ds.index:
+            ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
+            ds.drop(index=("Link", "battery"), inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
@@ -109,8 +122,38 @@ if __name__ == "__main__":
 
     if "optimal_capacity" in stats_list:
         fig, ax = plt.subplots()
+
+        # Temporarily save original link capacities
+        original_p_nom_opt = n.links.p_nom_opt.copy()
+
+        # Get configuration from snakemake
+        adjust_link_capacities = snakemake.config.get("reporting", {}).get(
+            "adjust_link_capacities_by_efficiency", False
+        )
+
+        # Drop reversed links & report AC capacities for links from X to AC
+        if adjust_link_capacities:
+            # For links where bus1 is AC, multiply capacity by efficiency coefficient to get AC side capacity
+            ac_links = n.links[n.links.bus1.map(n.buses.carrier) == "AC"].index
+            n.links.loc[ac_links, "p_nom_opt"] *= n.links.loc[ac_links, "efficiency"]
+
+            # ignore lossy link dummies
+            pseudo_links = n.links.query("Link.str.contains('reversed') & capital_cost ==0 ").index
+            n.links.loc[pseudo_links, "p_nom_opt"] = 0
+
+        # Calculate optimal capacity for all components
         ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+
+        # Restore original link capacities to avoid modifying the network object
+        n.links.p_nom_opt = original_p_nom_opt
+
+        # Handle battery components correctly
+        if ("Link", "battery") in ds.index:
+            ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
+            ds.drop(index=("Link", "battery"), inplace=True)
         ds.drop("stations", level=1, inplace=True)
+        if "load shedding" in ds.index.get_level_values(1):
+            ds.drop("load shedding", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
@@ -135,7 +178,6 @@ if __name__ == "__main__":
 
     if "operational_expenditure" in stats_list:
         fig, ax = plt.subplots()
-        attached_carriers = filter_carriers(n, carrier)
         ds = n.statistics.opex(groupby=["carrier"]).dropna()
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
@@ -183,6 +225,10 @@ if __name__ == "__main__":
     if "lcoe" in stats_list:
         rev_costs = calc_lcoe(n, groupby=None)
         ds = rev_costs["LCOE"]
+        if "load shedding" in ds.index.get_level_values(1):
+            ds.drop("load shedding", level=1, inplace=True)
+        if "H2" in ds.index.get_level_values(1):
+            ds.drop("H2", level=1, inplace=True)
         ds.attrs = {"name": "LCOE", "unit": "€/MWh"}
         fig, ax = plt.subplots()
         plot_static_per_carrier(ds, ax, colors=colors)

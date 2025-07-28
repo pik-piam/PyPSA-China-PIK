@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: CC0-1.0
+# DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
   name: unamed_run
@@ -9,16 +10,21 @@ foresight: "overnight"
 paths:
   results_dir: "results/"
   summary_dir: "summary/" # TODO useless?
-  costs_dir: "resources/data/costs/"
+  costs_dir: "resources/data/costs/default"
   yearly_regional_load: 
     ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+    # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
 
+io:
+  nc_compression:
+    level: 4
+    zlib: True
+    
 scenario: 
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
-    - 2020
     - 2025
     - 2030
     - 2035
@@ -88,6 +94,7 @@ renewable:
     resource:
       method: wind
       turbine: Vestas_V112_3MW
+    # bin by capacity factor
     resource_classes:
       min_cf_delta: 0.05
       n: 3  
@@ -128,7 +135,7 @@ renewable:
     natura: false
     clip_p_max_pu: 1.e-2
     min_p_nom_max: 1.e-2
-
+renewable_potential_cutoff: 200 # MW, skip low potentials
 
 heat_demand:
   start_day : "01-04" # dd-mm
@@ -149,6 +156,12 @@ Technique:
 #   existing_nuclear: False
 #   existing_PHS: False
 
+reporting:
+  # Whether to adjust link capacities by efficiency for AC-side reporting
+  # pypsa links capacity defined by input but nameplate capacity often AC
+  # This ensures consistent capacity reporting across the network
+  adjust_link_capacities_by_efficiency: true
+
 bus_suffix: [""," central heat"," decentral heat"," gas"," coal"]
 bus_carrier: {
     "": "AC",
@@ -160,8 +173,8 @@ bus_carrier: {
 
 Techs:
   ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
-  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","heat pump","resistive heater","Sabatier","H2 CHP"]
-  conv_techs: ["OCGT gas", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
+  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier","H2 CHP", "fuel cell"]
+  conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
   coal_cc: true # currently myopic pathway only.  CC = co2 cap 
   hydrogen_lines: true # currently myopic pathway only
@@ -187,8 +200,6 @@ hydro_dams:
   p_max_pu_path: "resources/data/p_nom/hydro_p_max_pu.h5"
   p_max_pu_key : "hydro_p_max_pu"
   damn_flows_path: "resources/data/hydro/dam_flow_links.csv"
-nuclear_reactors:
-  pp_path: "resources/data/p_nom/nuclear_p_nom.csv"
 H2:
   geo_storage_nodes: [ "Sichuan", "Chongqing", "Hubei", "Jiangxi", "Anhui", "Jiangsu", "Shandong", "Guangdong" ]
 edge_paths:
@@ -202,6 +213,7 @@ solving:
 #    seed: 123
     formulation: kirchhoff
     load_shedding: false
+    voll: 1e5 # EUR/MWh
     noisy_costs: false
     min_iterations: 4
     max_iterations: 6
@@ -214,9 +226,9 @@ solving:
     options: gurobi-default
   gurobi_hpc_tunnel:
     use_tunnel: True
-    tunnel_port: 1082
+    tunnel_port: 27000
     timeout_s: 15
-    login_node: "01"
+    login_node: "03"
 
   solver_options:
     highs-default:
@@ -279,16 +291,21 @@ solving:
 
   mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
 
+lines:
+  line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max
+  line_length_factor: 1.25
+  expansion:
+    transmission_limit: vopt # opt for optimal (unconstrained), v for volume, c for cost. eg. c1.25 limits cost increase to 25% of the base year
+    base_year: 2020 # base step year, the exp limit is relative to this year
 
-line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max
-line_cost_factor: 1
+security:
+  line_margin: 70 # max percent of line capacity
 
 existing_capacities:
-  add: False 
+  add: True 
   grouping_years: [1980,1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
   threshold_capacity: 1 # TODO UNIT
-  techs: ['coal','CHP coal', 'CHP gas', 'OCGT','solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
-
+  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 operational_reserve:
   activate: false
   epsilon_load: 0.02

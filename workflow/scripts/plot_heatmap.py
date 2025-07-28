@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def set_plot_style():
+    """apply plotting style to all figures"""
     plt.style.use(
         [
             "classic",
