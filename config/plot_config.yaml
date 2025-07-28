@@ -58,7 +58,8 @@ plotting:
   costs_threshold: 2.e+6 # Eur
   energy_threshold: 5.e+6 # MWh
   capacity_threshold: 1.e+4 # MW
-
+  market_value:
+      min_gen_share: 0.01
   loads: ['electricity', 'decentral heat', 'central heat']
   vre_techs: [ "onwind", "offwind", "solar"]
   conv_techs: [ "gas", "gas-heat", "gas-AC", "AC-gas", "coal", "coal-AC","solar thermal","AC-heat","AC-AC","stations-AC","uranium", "H2-AC", "H2-gas",]

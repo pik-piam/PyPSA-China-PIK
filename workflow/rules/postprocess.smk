@@ -13,6 +13,7 @@ STATISTICS_BARPLOTS = [
     "withdrawal",
     "market_value",
     "lcoe",
+    "province_peakload_capacity",
 ]
 
 
