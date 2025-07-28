@@ -277,7 +277,7 @@ def fix_network_names_colors(n: pypsa.Network, config: dict):
         t_colors = config["plotting"]["tech_colors"]
         n.carriers.color = n.carriers.index.map(t_colors)
         NAN_COLOR = config["plotting"].get("nan_color", "lightgrey")
-        n.carriers.color.fillna(NAN_COLOR, inplace=True)
+        n.carriers["color"].fillna(NAN_COLOR, inplace=True)
 
 
 def rename_index(ds: pd.DataFrame) -> pd.DataFrame:

@@ -602,7 +602,15 @@ def plot_capacity_factors(
         fig.savefig(fig_name, transparent=False)
 
 
-def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax: object = None):
+def plot_prices(
+    file_list: list,
+    config: dict,
+    fig_name=None,
+    absolute=False,
+    ax: object = None,
+    unit="€/MWh",
+    **kwargs,
+):
     """plot the prices
 
     Args:
@@ -611,6 +619,7 @@ def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
         absolute (bool, optional): plot absolute prices. Defaults to False.
         ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
+        unit (str, optional): the unit of the prices. Defaults to "€/MWh".
     """
     prices_df = pd.DataFrame()
     for results_file in file_list:
@@ -629,14 +638,21 @@ def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax
     if absolute:
         prices_df = prices_df.abs()
 
+    defaults = {"lw": 3, "marker": "o", "markersize": 5, "alpha": 0.8}
+    kwargs.update(kwargs)
     prices_df.plot(
         ax=ax,
         kind="line",
         color=[colors[k] if k in colors else "k" for k in prices_df.columns],
-        linewidth=3,
+        **kwargs,
     )
-    ax.set_ylim([prices_df.min().min() * 1.1, prices_df.max().max() * 1.1])
-    ax.set_ylabel("prices [X/UNIT]")
+    min_ = prices_df.min().min()
+    if np.sign(min_) < 0:
+        min_ *= 1.1
+    else:
+        min_ *= 0.9
+    ax.set_ylim([min_, prices_df.max().max() * 1.1])
+    ax.set_ylabel(f"Prices [{unit}]")
     ax.set_xlabel("")
     ax.grid(axis="y")
 
@@ -696,55 +712,6 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
     fig.tight_layout()
     if fig_name is not None:
         fig.savefig(fig_name, transparent=config["transparent"])
-
-
-def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax: object = None):
-    """plot the prices
-
-    Args:
-        file_list (list): the input csvs from make_summary
-        config (dict): the configuration for plotting (snakemake.config["plotting"])
-        fig_name (os.PathLike, optional): the figure name. Defaults to None.
-        absolute (bool, optional): plot absolute prices. Defaults to False.
-        ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
-    """
-    prices_df = pd.DataFrame()
-    for results_file in file_list:
-        df_year = pd.read_csv(results_file, index_col=list(range(1)), header=[1]).T
-
-        prices_df = pd.concat([df_year, prices_df])
-    prices_df.sort_index(axis=0, inplace=True)
-    if not ax:
-        fig, ax = plt.subplots()
-    else:
-        fig = ax.get_figure()
-    fig.set_size_inches((12, 8))
-
-    colors = config["tech_colors"]
-
-    if absolute:
-        prices_df = prices_df.abs()
-
-    prices_df.plot(
-        ax=ax,
-        kind="line",
-        color=[colors[k] if k in colors else "k" for k in prices_df.columns],
-        linewidth=3,
-    )
-    ax.set_ylim([prices_df.min().min() * 1.1, prices_df.max().max() * 1.1])
-    ax.set_ylabel("prices [X/UNIT]")
-    ax.set_xlabel("")
-    ax.grid(axis="y")
-
-    handles, labels = ax.get_legend_handles_labels()
-
-    handles.reverse()
-    labels.reverse()
-    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
-    fig.tight_layout()
-
-    if fig_name is not None:
-        fig.savefig(fig_name, transparent=False)
 
 
 def plot_co2_prices(co2_prices: dict, config: dict, fig_name=None):
