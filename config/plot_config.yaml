@@ -58,7 +58,7 @@ plotting:
   costs_threshold: 2.e+6 # Eur
   energy_threshold: 5.e+6 # MWh
   capacity_threshold: 1.e+4 # MW
-  MV_map:
+  market_value:
       min_gen_share: 0.01
   loads: ['electricity', 'decentral heat', 'central heat']
   vre_techs: [ "onwind", "offwind", "solar"]

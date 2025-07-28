@@ -15,9 +15,10 @@ from pandas import DataFrame
 import pandas as pd
 import numpy as np
 
+from _plot_utilities import heatmap, annotate_heatmap
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import rename_index, fix_network_names_colors, filter_carriers
-from _pypsa_helpers import calc_lcoe
+from _pypsa_helpers import calc_lcoe, calc_generation_share
 from constants import (
     PLOT_CAP_LABEL,
     PLOT_CAP_UNITS,
@@ -27,64 +28,6 @@ from constants import (
 
 sns.set_theme("paper", style="whitegrid")
 logger = logging.getLogger(__name__)
-
-
-def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **kwargs):
-    """
-    Create a heatmap from a numpy array and two lists of labels.
-    Args:
-        data (np.ndarray): The data to plot.
-        row_labels (list): The labels for the rows.
-        col_labels (list): The labels for the columns.
-        ax (matplotlib.axes.Axes, optional): The axes to plot on. Defaults to None.
-        cbar_kw (dict, optional): Arguments to pass to colorbar. Defaults to {}.
-        cbarlabel (str, optional): The label for the colorbar. Defaults to "".
-        **kwargs: Additional arguments for imshow.
-    Returns:
-        im: The image.
-        cbar: The colorbar.
-    """
-    if not ax:
-        ax = plt.gca()
-    im = ax.imshow(data, aspect='auto', interpolation='none', **kwargs)
-    cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
-    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
-    ax.set_xticks(np.arange(data.shape[1]), labels=col_labels)
-    ax.set_yticks(np.arange(data.shape[0]), labels=row_labels)
-    ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="left", rotation_mode="anchor")
-    for edge, spine in ax.spines.items():
-        spine.set_visible(False)
-    return im, cbar
-
-def annotate_heatmap(im, data=None, valfmt="{x:.1f}", textcolors=("black", "white"), threshold=None, **textkw):
-    """
-    Annotate a heatmap.
-    Args:
-        im: The AxesImage to annotate.
-        data (np.ndarray, optional): Data to annotate. Defaults to im.get_array().
-        valfmt (str, optional): Format for values. Defaults to "{x:.1f}".
-        textcolors (tuple, optional): Colors for values below/above threshold. Defaults to ("black", "white").
-        threshold (float, optional): Value in data units according to which the colors are applied. Defaults to half the max.
-        **textkw: Additional arguments for text.
-    Returns:
-        list: List of text annotations.
-    """
-    if data is None:
-        data = im.get_array()
-    if threshold is not None:
-        threshold = im.norm(threshold)
-    else:
-        threshold = im.norm(data.max())/2.
-    kw = dict(horizontalalignment="center", verticalalignment="center")
-    kw.update(textkw)
-    texts = []
-    for i in range(data.shape[0]):
-        for j in range(data.shape[1]):
-            kw.update(color=textcolors[int(im.norm(data[i, j]) > threshold)])
-            text = im.axes.text(j, i, valfmt.format(x=data[i, j]), **kw)
-            texts.append(text)
-    return texts
 
 
 def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, drop_zero_vals=True):
@@ -99,106 +42,53 @@ def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, dro
     if drop_zero_vals:
         ds = ds[ds != 0]
     ds = ds.dropna()
-    logger.info("debuggin plot stat")
-    logger.info(colors)
     c = colors[ds.index.get_level_values("carrier")]
-    logger.info(c)
-    logger.info(ds.index.get_level_values("carrier"))
-    logger.info(colors.loc[ds.index.get_level_values("carrier")])
     ds = ds.pipe(rename_index)
     label = f"{ds.attrs['name']} [{ds.attrs['unit']}]"
     ds.plot.barh(color=c.values, xlabel=label, ax=ax)
+    for i, (index, value) in enumerate(ds.items()):
+        ax.text(value, i, f"{value:.1f}", va='center', ha='left', fontsize=8)
     ax.grid(axis="y")
 
 
-def prepare_market_value_data(n, carrier, min_gen_share=0.01):
+def add_generation_share(ax, shares, color='red', text_offset=0.5, markersize=8, fontsize=9):
     """
-    Prepare DataFrame for market value plot.
-    Returns: DataFrame with columns ['MV', 'LCOE', 'GenShare'] and nice_name index.
-    """
-    mv_data = n.statistics.market_value(bus_carrier=carrier, comps="Generator").dropna()
-    supply_data = n.statistics.supply(bus_carrier=carrier, comps="Generator")
-    total_supply = supply_data.sum()
-    gen_shares = (supply_data / total_supply * 100).dropna()
-    lcoe_data = calc_lcoe(n, groupby=["carrier"], comps="Generator")["LCOE"].dropna()
-    # Map lcoe_data index to nice_name
-    lcoe_data.index = lcoe_data.index.map(
-        lambda idx: next(
-            (row["nice_name"] for c, row in n.carriers.iterrows() if c.lower() == idx.lower()),
-            idx
-        )
-    )
-    # Merge into DataFrame
-    df = pd.DataFrame({
-        "MV": mv_data,
-        "LCOE": lcoe_data,
-        "GenShare": gen_shares
-    }).dropna()
-    # Keep only the row with the largest generation share for each technology
-    df = df.sort_values("GenShare", ascending=False)
-    df = df.loc[~df.index.duplicated(keep='first')]
-    # Filter out technologies with too low generation share
-    if min_gen_share > 0:
-        df = df[df["GenShare"] >= min_gen_share]
-    # Sort by MV for plotting
-    df = df.sort_values("MV")
-    return df
+    Add generation share markers and percentage text on a twin x-axis.
 
-
-def plot_enhanced_market_value(n: pypsa.Network, ax: axes.Axes, colors: DataFrame, carrier="AC", show_mv_text=False, min_gen_share=0.01):
-    """
-    Plot market value (MV) per technology, optionally showing MV as text,
-    and filter out technologies with too low generation share.
     Args:
-        n (pypsa.Network): The network object.
-        ax (matplotlib.axes.Axes): The axis to plot on.
-        colors (DataFrame): Color mapping for technologies.
-        carrier (str): Bus carrier to filter.
-        show_mv_text (bool): Whether to show MV value as text on bars.
-        min_gen_share (float): Minimum generation share (%) to show a technology.
+        ax (matplotlib.axes.Axes): The main axis where bar chart is drawn.
+        shares (pd.Series): Generation share values (aligned with y-axis labels).
+        color (str): Color of the dots and text.
+        text_offset (float): Horizontal offset for the text labels.
+        markersize (int): Size of the dots.
+        fontsize (int): Font size of the text labels.
+    
+    Returns:
+        ax2 (matplotlib.axes.Axes): The secondary x-axis created for generation share.
     """
-    df = prepare_market_value_data(n, carrier, min_gen_share)
-    y_pos = range(len(df))
-    # Draw horizontal bar for MV
-    bars = ax.barh(
-        y_pos,
-        df["MV"],
-        color=[colors.get(tech, "lightgrey") for tech in df.index],
-        alpha=0.7,
-        label="Market Value"
-    )
-    # Optionally show MV value as text
-    if show_mv_text:
-        for i, val in enumerate(df["MV"]):
-            ax.text(val + 0.5, i, f'{val:.1f}', color='black', va='center', ha='left', fontsize=9)
-    # Draw generation share as red dots on a twin x-axis
     ax2 = ax.twiny()
+    y_pos = range(len(shares))
+
     ax2.plot(
-        df["GenShare"],
+        shares.values,
         y_pos,
-        color='red',
         marker='o',
         linestyle='',
-        label='Generation Share (%)',
-        markersize=10,
-        lw=0
+        color=color,
+        markersize=markersize,
+        label="Generation Share (%)"
     )
-    for i, val in enumerate(df["GenShare"]):
-        ax2.text(val + 0.5, i, f'{val:.1f}%', color='red', va='center', ha='left', fontsize=9)
-    # Set axis labels and ticks
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(df.index)
-    ax.set_xlabel("Market Value [€/MWh]")
-    ax2.set_xlabel("Generation Share [%]")
-    ax.grid(False)
-    ax2.grid(False)
+
+    for i, val in enumerate(shares.values):
+        ax2.text(val + text_offset, i, f"{val:.1f}%", color=color,
+                 va='center', ha='left', fontsize=fontsize)
+
     ax2.set_xlim(left=0)
-    ax.set_xlim(left=0)
-    # Legend
-    lines, labels = ax2.get_legend_handles_labels()
-    bars_legend = ax.barh([], [], color="lightgrey", alpha=0.7, label="Market Value")
-    ax.legend([bars_legend, lines[0]], ["Market Value", "Generation Share (%)"], loc='best')
-    return ax, ax2
+    ax2.set_xlabel("Generation Share [%]")
+    ax2.grid(False)
+    ax2.tick_params(axis='x', labelsize=fontsize)  # Remove color setting for ticks
+
+    return ax2
 
 
 def prepare_capacity_factor_data(n, carrier):
@@ -207,19 +97,19 @@ def prepare_capacity_factor_data(n, carrier):
     Returns:
         cf_filtered: Series of actual capacity factors (index: nice_name)
         theo_cf_filtered: Series of theoretical capacity factors (index: nice_name)
-        manual_actual_cf: float or None, manual hydro actual CF if available
     """
     special_map = {
         "battery charger": "Battery Storage",
         "battery discharger": "Battery Discharger",
         "battery": "Battery Storage"
     }
+
     # Actual capacity factor
     cf_data = n.statistics.capacity_factor(groupby=["carrier"]).dropna()
     if ("Link", "battery") in cf_data.index:
         cf_data.loc[("Link", "battery charger")] = cf_data.loc[("Link", "battery")]
         cf_data.drop(index=("Link", "battery"), inplace=True)
-    cf_data = cf_data.groupby(level=1).sum()
+    cf_data = cf_data.groupby(level=1).mean()  # Use mean instead of sum
     cf_data.index = cf_data.index.map(lambda idx: n.carriers["nice_name"].get(idx, special_map.get(idx, idx)))
 
     # Theoretical capacity factor (prefer p_nom_opt)
@@ -233,30 +123,16 @@ def prepare_capacity_factor_data(n, carrier):
     total_p_nom = gen.groupby("nice_name")["p_nom_used"].sum()
     theoretical_cf_auto = theoretical_energy / total_p_nom
 
-    # Manual calculation for hydro actual CF (for comparison)
-    hydro = gen[gen["nice_name"] == "Hydroelectricity"]
-    manual_actual_cf = None
-    if not hydro.empty:
-        actual_energy = n.generators_t.p[hydro.index].sum().sum()
-        total_p_nom = hydro["p_nom_used"].sum()
-        hours = len(n.snapshots)
-        manual_actual_cf = actual_energy / (total_p_nom * hours)
-
-    # Only plot technologies present in both actual and theoretical CF
+    # Only keep technologies present in both actual and theoretical CF
     common_techs = cf_data.index.intersection(theoretical_cf_auto.index)
     cf_filtered = cf_data.loc[common_techs]
     theo_cf_filtered = theoretical_cf_auto.loc[cf_filtered.index]
     cf_filtered = cf_filtered.sort_values(ascending=True)
     theo_cf_filtered = theo_cf_filtered.loc[cf_filtered.index]
 
-    # Replace hydro actual CF with manual value if available
-    if manual_actual_cf is not None and "Hydroelectricity" in cf_filtered.index:
-        cf_filtered.loc["Hydroelectricity"] = manual_actual_cf
+    return cf_filtered, theo_cf_filtered
 
-    return cf_filtered, theo_cf_filtered, manual_actual_cf
-
-
-def plot_enhanced_capacity_factor(n: pypsa.Network, ax: axes.Axes, colors: DataFrame, carrier="AC"):
+def plot_capacity_factor(n: pypsa.Network, ax: axes.Axes, colors: DataFrame, carrier="AC"):
     """
     Plot actual and theoretical capacity factors for each technology.
     Args:
@@ -267,7 +143,7 @@ def plot_enhanced_capacity_factor(n: pypsa.Network, ax: axes.Axes, colors: DataF
     Returns:
         matplotlib.axes.Axes: The axis with the plot.
     """
-    cf_filtered, theo_cf_filtered, manual_actual_cf = prepare_capacity_factor_data(n, carrier)
+    cf_filtered, theo_cf_filtered = prepare_capacity_factor_data(n, carrier)
     x_pos = range(len(cf_filtered))
     width = 0.35
     bars1 = ax.barh([i - width/2 for i in x_pos], cf_filtered.values,
@@ -419,7 +295,7 @@ if __name__ == "__main__":
     attached_carriers = filter_carriers(n, carrier)
     if "capacity_factor" in stats_list:
         fig, ax = plt.subplots(figsize=(12, 8))
-        plot_enhanced_capacity_factor(n, ax, colors, carrier)
+        plot_capacity_factor(n, ax, colors, carrier)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capacity_factor.png"))
 
@@ -569,9 +445,19 @@ if __name__ == "__main__":
 
     if "market_value" in stats_list:
         fig, ax = plt.subplots(figsize=(12, 8))
-        # Read min_gen_share from config if available
-        min_gen_share = snakemake.config.get("MV_map", {}).get("min_gen_share", 0.01)
-        plot_enhanced_market_value(n, ax, colors, carrier, show_mv_text=True, min_gen_share=min_gen_share)
+        min_gen_share = snakemake.config.get("market_value", {}).get("min_gen_share", 0.01)
+        ds = n.statistics.market_value(bus_carrier=carrier, comps="Generator")
+        ds.attrs = {"name": "Market Value", "unit": "€/MWh"}
+        df = pd.DataFrame({"MV": ds})
+        df = calc_generation_share(df, n, carrier)
+        df = df.dropna()
+        df = df[df["GenShare"] >= min_gen_share]
+        df = df.sort_values("MV")
+        # Restore attrs to the series after DataFrame operations
+        mv_series = df["MV"]
+        mv_series.attrs = {"name": "Market Value", "unit": "€/MWh"}
+        plot_static_per_carrier(mv_series, ax=ax, colors=colors)
+        add_generation_share(ax, df["GenShare"])
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "market_value.png"))
 
@@ -595,6 +481,7 @@ if __name__ == "__main__":
         plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "MV_minus_LCOE.png"))
+
     if "province_peakload_capacity" in stats_list:
         df_plot, bar_cols, color_list = prepare_province_peakload_capacity_data(n, attached_carriers=attached_carriers)
         plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir)
