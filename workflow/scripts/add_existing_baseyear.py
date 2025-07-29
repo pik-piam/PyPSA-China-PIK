@@ -606,6 +606,10 @@ def add_paid_off_capacity(
         },
     }
 
+    # TODO make a centralised setting or update cpl config
+    rename_carriers = {"OCGT": "gas OCGT", "CCGT": "gas CCGT"}
+    paid_off.rename(rename_carriers, inplace=True)
+
     for component, settings in component_settings.items():
         prefix = "e" if component == "Store" else "p"
         paid_off_comp = paid_off.rename(columns={"p_nom_max": f"{prefix}_nom_max"})
@@ -619,6 +623,10 @@ def add_paid_off_capacity(
         paid = paid.loc[paid.index.dropna()]
         if paid.empty:
             continue
+
+        # REMIND cap is in output, PyPSA link in input
+        if component == "Link":
+            paid.loc[:, "p_nom_max_rcl"] /= paid.loc[:, "efficiency"]
 
         paid.index += "_paid_off"
         # set permissive options for the paid-off capacities (constraint per group added to model later)
@@ -649,35 +657,13 @@ def add_paid_off_capacity(
         )
 
 
-# TODO move to solve?
-
-    # # add load shedding
-    # # intersect between macroeconomic and surveybased willingness to pay
-    # # http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full
-    # n.add("Carrier", "load shedding", color="#dd2e23", nice_name="Load shedding")
-    # buses_i = n.buses.query("carrier == 'AC'").index
-    # # TODO: make this a config option
-    # load_shedding = 1e4  # Eur/MWh
-
-    # n.add(
-    #     "Generator",
-    #     buses_i,
-    #     " load shedding",
-    #     bus=buses_i,
-    #     carrier="load shedding",
-    #     marginal_cost=load_shedding,  # Eur/Wh
-    #     capital_cost=20,  # low value for numerical stab?
-    #     p_nom_extendable=True,
-    # )
-
-
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "add_existing_baseyear",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000_CHA_adjcost",
+            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
             planning_horizons="2040",
             configfiles="resources/tmp/remind_coupled_cg.yaml",
             # heating_demand="positive",

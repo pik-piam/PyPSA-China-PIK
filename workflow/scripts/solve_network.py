@@ -149,6 +149,7 @@ def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
         logger.error(f"Unhandled CO2 control config {co2_control} due to unknown control.")
         raise ValueError(f"Unhandled CO2 config {config['scenario']['co2_reduction']}")
 
+
 def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbine"]):
     """Set p_nom_extendable=False for the components in the network.
     Applies to vre_techs and conventional technologies not in the exclude list.
@@ -246,7 +247,7 @@ def prepare_network(
             config,
             exclude=config["existing_capacities"].get("never_freeze", []),
         )
-        
+
     if solve_opts.get("nhours"):
         nhours = solve_opts["nhours"]
         n.set_snapshots(n.snapshots[:nhours])
@@ -435,7 +436,7 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         idx = [x[0] for x in idx]
 
         # Add constraint
-        if not p_nom_groups.empty():
+        if not p_nom_groups.empty:
             n.model.add_constraints(
                 p_nom_groups <= paid_off_totals[idx].values,
                 name=f"paidoff_cap_totals_{component.lower()}",
@@ -468,6 +469,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
 
         paid_off_wlimits = paidoff_comp.loc[usual_comps.index + "_paid_off"]
         to_constrain = pd.concat([usual_comps, paid_off_wlimits], axis=0)
+        if to_constrain.empty:
+            continue
         to_constrain.rename_axis(index=f"{component}-ext", inplace=True)
         # otherwise n.model query will fail. This is needed in case freeze_compoents was used
         # it is fine so long as p_nom is zero for the frozen components
@@ -480,7 +483,7 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
         # RHS
         idx = lhs.indexes["grouper"]
 
-        if not lhs.empty():
+        if not lhs.empty:
             n.model.add_constraints(
                 lhs <= usual_comps.loc[idx].p_nom_max.values,
                 name=f"constrain_paidoff&usual_{component}_potential",
@@ -648,7 +651,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
             planning_horizons="2025",
             topology="current+FCG",
             # heating_demand="positive",

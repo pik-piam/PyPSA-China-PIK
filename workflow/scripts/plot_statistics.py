@@ -62,7 +62,7 @@ if __name__ == "__main__":
             planning_horizons="2025",
             # co2_pathway="exp175default",
             # planning_horizons="2130",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
             topology="current+FCG",
             # heating_demand="positive",
             configfiles="resources/tmp/remind_coupled_cg.yaml",
@@ -92,12 +92,12 @@ if __name__ == "__main__":
     attached_carriers = filter_carriers(n, carrier)
     if "capacity_factor" in stats_list:
         fig, ax = plt.subplots()
-        ds = n.statistics.capacity_factor(groupby=["carrier"]).dropna()
+        ds = n.statistics.capacity_factor(groupby=["carrier"], nice_names = False).dropna()
         # avoid grouping battery uif same name
         if ("Link", "battery") in ds.index:
             ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
             ds.drop(index=("Link", "battery"), inplace=True)
-        ds = ds.groupby(level=1).sum()
+        ds = ds.groupby(level=1).first()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
         plot_static_per_carrier(ds, ax, colors=colors)
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     if "installed_capacity" in stats_list:
         fig, ax = plt.subplots()
-        ds = n.statistics.installed_capacity(groupby=["carrier"]).dropna()
+        ds = n.statistics.installed_capacity(groupby=["carrier"], nice_names=False).dropna()
         ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
@@ -142,7 +142,7 @@ if __name__ == "__main__":
             n.links.loc[pseudo_links, "p_nom_opt"] = 0
 
         # Calculate optimal capacity for all components
-        ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+        ds = n.statistics.optimal_capacity(groupby=["carrier"], nice_names = False).dropna()
 
         # Restore original link capacities to avoid modifying the network object
         n.links.p_nom_opt = original_p_nom_opt
@@ -152,8 +152,8 @@ if __name__ == "__main__":
             ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
             ds.drop(index=("Link", "battery"), inplace=True)
         ds.drop("stations", level=1, inplace=True)
-        if "load shedding" in ds.index.get_level_values(1):
-            ds.drop("load shedding", level=1, inplace=True)
+        if "Load Shedding" in ds.index.get_level_values(1):
+            ds.drop("Load Shedding", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
@@ -189,6 +189,12 @@ if __name__ == "__main__":
     if "curtailment" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.curtailment(bus_carrier=carrier)
+        # curtailment definition only makes sense for VREs
+        vres = ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential']
+        vres = [v for v in vres if v in ds.index.get_level_values("carrier")]
+        attrs = ds.attrs.copy()
+        ds = ds.unstack()[vres].stack()
+        ds.attrs = attrs
         plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "curtailment.png"))
