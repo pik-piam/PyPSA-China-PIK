@@ -511,7 +511,7 @@ def add_operational_reserve_margin(n: pypsa.network, config):
             epsilon_vres: 0.02 # percentage of VRES at each snapshot
             contingency: 400000 # MW
     """
-    reserve_config = config["electricity"]["operational_reserve"]
+    reserve_config = config["operational_reserve"]
     EPSILON_LOAD = reserve_config["epsilon_load"]
     EPSILON_VRES = reserve_config["epsilon_vres"]
     CONTINGENCY = reserve_config["contingency"]
@@ -570,7 +570,7 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     n.model.add_constraints(lhs <= rhs, name="Generator-p-reserve-upper")
 
 
-def extra_functionality(n: pypsa.Network, config: dict) -> None:
+def extra_functionality(n: pypsa.Network, _) -> None:
     """
     Add supplementary constraints to the network model. ``pypsa.linopf.network_lopf``.
     If you want to enforce additional custom constraints, this is a good location to add them.
@@ -578,7 +578,6 @@ def extra_functionality(n: pypsa.Network, config: dict) -> None:
 
     Args:
         n (pypsa.Network): the network object to optimize
-        config (dict): the configuration dictionary
     """
     config = n.config
     add_battery_constraints(n)
@@ -590,6 +589,7 @@ def extra_functionality(n: pypsa.Network, config: dict) -> None:
 
     reserve = config["electricity"].get("operational_reserve", {})
     if reserve.get("activate"):
+        logger.info("Adding operational reserve margin constraints")
         add_operational_reserve_margin(n, config)
 
 
@@ -625,7 +625,7 @@ def solve_network(
         status, condition = n.optimize(
             solver_name=solver_name,
             transmission_losses=transmission_losses,
-            extra_functionality=partial(extra_functionality, config=config),
+            extra_functionality=extra_functionality,
             **solver_options,
             **kwargs,
         )
@@ -636,7 +636,7 @@ def solve_network(
             min_iterations=min_iterations,
             max_iterations=max_iterations,
             transmission_losses=transmission_losses,
-            extra_functionality=partial(extra_functionality, config=config),
+            extra_functionality=extra_functionality,
             **solver_options,
             **kwargs,
         )
@@ -653,11 +653,11 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
-            planning_horizons="2025",
+            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
+            planning_horizons="2040",
             topology="current+FCG",
             # heating_demand="positive",
-            configfiles="resources/tmp/remind_coupled_cg.yaml",
+            configfiles="resources/tmp/pseudo_coupled.yml",
         )
     configure_logging(snakemake)
 
