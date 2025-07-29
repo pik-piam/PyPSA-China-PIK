@@ -497,6 +497,8 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     Build operational reserve margin constraints based on the formulation given in
     https://genxproject.github.io/GenX.jl/stable/Model_Reference/core/#GenX.operational_reserves_core!-Tuple{JuMP.Model,%20Dict,%20Dict}
 
+    The constraint is network wide and not at each node!
+
     Args:
         n (pypsa.Network): the network object to optimize
         config (dict): the configuration dictionary
