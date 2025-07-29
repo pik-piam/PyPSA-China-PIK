@@ -525,13 +525,13 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     ext_i = n.generators.query("p_nom_extendable").index
     vres_i = n.generators_t.p_max_pu.columns
     if not ext_i.empty and not vres_i.empty:
-        capacity_factor = n.generators_t.p_max_pu[vres_i.intersection(ext_i)]
+        avail_factor = n.generators_t.p_max_pu[vres_i.intersection(ext_i)]
         p_nom_vres = (
             n.model["Generator-p_nom"]
             .loc[vres_i.intersection(ext_i)]
             .rename({"Generator-ext": "Generator"})
         )
-        lhs = summed_reserve + (p_nom_vres * (-EPSILON_VRES * xr.DataArray(capacity_factor))).sum(
+        lhs = summed_reserve + (p_nom_vres * (-EPSILON_VRES * xr.DataArray(avail_factor))).sum(
             "Generator"
         )
 
@@ -539,12 +539,12 @@ def add_operational_reserve_margin(n: pypsa.network, config):
         demand = get_as_dense(n, "Load", "p_set").sum(axis=1)
 
         # VRES potential of non extendable generators
-        capacity_factor = n.generators_t.p_max_pu[vres_i.difference(ext_i)]
+        avail_factor = n.generators_t.p_max_pu[vres_i.difference(ext_i)]
         renewable_capacity = n.generators.p_nom[vres_i.difference(ext_i)]
-        potential = (capacity_factor * renewable_capacity).sum(axis=1)
+        vre_avail = (avail_factor * renewable_capacity).sum(axis=1)
 
         # Right-hand-side
-        rhs = EPSILON_LOAD * demand + EPSILON_VRES * potential + CONTINGENCY
+        rhs = EPSILON_LOAD * demand + EPSILON_VRES * vre_avail + CONTINGENCY
 
         n.model.add_constraints(lhs >= rhs, name="reserve_margin")
 
