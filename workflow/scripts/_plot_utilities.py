@@ -60,9 +60,15 @@ def find_weeks_of_interest(
 
     summer = prices_w.query("snapshot > @summer_start and snapshot < @summer_end")
     summer_peak = summer.idxmax().iloc[0]
-    summer_peak_w = n.snapshots[(n.snapshots >= summer_peak - pd.Timedelta(days=3.5)) & (n.snapshots <= summer_peak + pd.Timedelta(days=3.5))]
+    summer_peak_w = n.snapshots[
+        (n.snapshots >= summer_peak - pd.Timedelta(days=3.5))
+        & (n.snapshots <= summer_peak + pd.Timedelta(days=3.5))
+    ]
     winter_peak = prices_w.loc[~prices_w.index.isin(summer.index)].idxmax().iloc[0]
-    winter_peak_w = n.snapshots[(n.snapshots >= winter_peak - pd.Timedelta(days=3.5)) & (n.snapshots <= winter_peak + pd.Timedelta(days=3.5))]
+    winter_peak_w = n.snapshots[
+        (n.snapshots >= winter_peak - pd.Timedelta(days=3.5))
+        & (n.snapshots <= winter_peak + pd.Timedelta(days=3.5))
+    ]
 
     return winter_peak_w, summer_peak_w
 
@@ -355,30 +361,6 @@ def set_plot_style(
     # plt.style.use only overwrites the specified parts of the previous style -> possible to combine
     plt.style.use(base_styles)
     plt.style.use(style_config_file)
-
-
-def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Link"]) -> list:
-    """filter carriers for links that attach to a bus of the target carrier
-
-    Args:
-        n (pypsa.Network): the pypsa network object
-        bus_carrier (str, optional): the bus carrier. Defaults to "AC".
-        comps (list, optional): the components to check. Defaults to ["Generator", "Link"].
-
-    Returns:
-        list: list of carriers that are attached to the bus carrier
-    """
-    carriers = []
-    for c in comps:
-        comp = n.static(c)
-        ports = [c for c in comp.columns if c.startswith("bus")]
-        comp_df = comp[ports + ["carrier"]]
-        is_attached = comp_df[ports].apply(lambda x: x.map(n.buses.carrier) == bus_carrier).T.any()
-        carriers += comp_df.loc[is_attached].carrier.unique().tolist()
-
-    if bus_carrier not in carriers:
-        carriers += [bus_carrier]
-    return carriers
 
 
 def aggregate_small_pie_vals(pie: pd.Series, threshold: float) -> pd.Series:
