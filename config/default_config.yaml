@@ -54,9 +54,9 @@ snapshots:
   start: "01-01 00:00"
   end: "12-31 23:00"
   bounds: 'both'
-  freq: '5h'
+  freq: '1h'
   # test weighings -> to be improved
-  frequency: 5.
+  frequency: 1.
   # in case snapshots cross the planning horizon year
   end_year_plus1: false
 
@@ -176,8 +176,9 @@ Techs:
   vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier","H2 CHP", "fuel cell"]
   conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
-  coal_cc: true # currently myopic pathway only.  CC = co2 cap 
-  hydrogen_lines: true # currently myopic pathway only
+  non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
+  hydrogen_lines: true
+  coal_ccs_retrofit: true # currently myopic pathway only.  CC = co2 cap 
 
 ## add components (overwrites vre tech choice)
 heat_coupling: false
@@ -310,7 +311,7 @@ operational_reserve:
   activate: false
   epsilon_load: 0.02
   epsilon_vres: 0.02
-  contingency: 4000
+  contingency: 300000 # MW
 
 fetch_regions:
   simplify_tol: 0.5
