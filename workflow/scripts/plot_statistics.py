@@ -16,8 +16,8 @@ import pandas as pd
 import numpy as np
 
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
-from _plot_utilities import rename_index, fix_network_names_colors, filter_carriers
-from _pypsa_helpers import calc_lcoe
+from _plot_utilities import rename_index, fix_network_names_colors
+from _pypsa_helpers import calc_lcoe, filter_carriers
 from constants import (
     PLOT_CAP_LABEL,
     PLOT_CAP_UNITS,
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     attached_carriers = filter_carriers(n, carrier)
     if "capacity_factor" in stats_list:
         fig, ax = plt.subplots()
-        ds = n.statistics.capacity_factor(groupby=["carrier"], nice_names = False).dropna()
+        ds = n.statistics.capacity_factor(groupby=["carrier"], nice_names=False).dropna()
         # avoid grouping battery uif same name
         if ("Link", "battery") in ds.index:
             ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
@@ -142,7 +142,7 @@ if __name__ == "__main__":
             n.links.loc[pseudo_links, "p_nom_opt"] = 0
 
         # Calculate optimal capacity for all components
-        ds = n.statistics.optimal_capacity(groupby=["carrier"], nice_names = False).dropna()
+        ds = n.statistics.optimal_capacity(groupby=["carrier"], nice_names=False).dropna()
 
         # Restore original link capacities to avoid modifying the network object
         n.links.p_nom_opt = original_p_nom_opt
@@ -190,7 +190,7 @@ if __name__ == "__main__":
         fig, ax = plt.subplots()
         ds = n.statistics.curtailment(bus_carrier=carrier)
         # curtailment definition only makes sense for VREs
-        vres = ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential']
+        vres = ["Offshore Wind", "Onshore Wind", "Solar", "Solar Residential"]
         vres = [v for v in vres if v in ds.index.get_level_values("carrier")]
         attrs = ds.attrs.copy()
         ds = ds.unstack()[vres].stack()
