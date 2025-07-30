@@ -498,6 +498,7 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     https://genxproject.github.io/GenX.jl/stable/Model_Reference/core/#GenX.operational_reserves_core!-Tuple{JuMP.Model,%20Dict,%20Dict}
 
     The constraint is network wide and not at each node!
+    Strong limitations: the availability of VRES is used not the actual forecast dispatch.
 
     Args:
         n (pypsa.Network): the network object to optimize
@@ -514,7 +515,7 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     reserve_config = config["operational_reserve"]
     EPSILON_LOAD = reserve_config["epsilon_load"]
     EPSILON_VRES = reserve_config["epsilon_vres"]
-    CONTINGENCY = reserve_config["contingency"]
+    CONTINGENCY = float(reserve_config["contingency"])
 
     snaps = n.snapshots
 
@@ -587,8 +588,8 @@ def extra_functionality(n: pypsa.Network, _) -> None:
         logger.info("Adding remind paid off constraints")
         add_remind_paid_off_constraints(n)
 
-    reserve = config["electricity"].get("operational_reserve", {})
-    if reserve.get("activate"):
+    reserve = config.get("operational_reserve", {})
+    if reserve.get("activate", False):
         logger.info("Adding operational reserve margin constraints")
         add_operational_reserve_margin(n, config)
 
