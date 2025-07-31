@@ -90,7 +90,7 @@ def label_stacked_bars(ax: object, nbars: int, fontsize=8, small_values=350):
                 continue
             if 0 < value < small_values:
                 yoffset -= 20
-            elif -1 * small_values < value < 0 & (prev < -1 * small_values or prev > 0):
+            elif -1 * small_values < value < 0 and (prev < -1 * small_values or prev > 0):
                 yoffset += 50
             ax.text(
                 # Put the text in the middle of each bar. get_x returns the start

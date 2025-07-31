@@ -417,7 +417,7 @@ def plot_price_heatmap(
 
 
 def plot_vre_heatmap(
-    n: pypsa.Network, color_map="magma", log_values=True, time_range: pd.Index = None
+    n: pypsa.Network, color_map="magma", config: dict, log_values=True, time_range: pd.Index = None,
 ):
     """plot the VRE generation per hour and day as a heatmap
 
@@ -425,10 +425,11 @@ def plot_vre_heatmap(
         network (pypsa.Network): the pypsa network object
         time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).
         log_values (bool, optional): whether to use log scale for the values. Defaults to True.
+        config (dict, optional): the run config (snakemake.config).
 
     """
 
-    vres = ["offwind", "onwind", "solar"]
+    vres = config["Techs"].get("non_dispatchable", ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential'])
     vre_avail = (
         n.statistics.supply(
             comps="Generator",
@@ -485,9 +486,9 @@ def plot_vre_timemap(
     vre_avail["hour"] = vre_avail.index.hour
 
     for tech in vres:
-        solar_pivot = vre_avail.pivot_table(index="hour", columns="day", values=tech)
+        pivot_ = vre_avail.pivot_table(index="hour", columns="day", values=tech)
         fig, ax = plt.subplots(figsize=(12, 6))
-        sns.heatmap(solar_pivot.sort_index(ascending=False), cmap=color_map, ax=ax)
+        sns.heatmap(pivot_.sort_index(ascending=False), cmap=color_map, ax=ax)
         ax.set_title(f"{tech} generation by hour and day")
 
         fig.tight_layout()
