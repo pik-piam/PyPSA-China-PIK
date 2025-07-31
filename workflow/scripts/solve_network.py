@@ -490,8 +490,6 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             )
 
 
-# TODO understand if this is per region or network wide
-# TODO can we remove the - capacity and add + 1 to the reserves?
 def add_operational_reserve_margin(n: pypsa.network, config):
     """
     Build operational reserve margin constraints based on the formulation given in
@@ -516,90 +514,81 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     EPSILON_LOAD, EPSILON_VRES = reserve_config["epsilon_load"], reserve_config["epsilon_vres"]
     CONTINGENCY = float(reserve_config["contingency"])
 
-    # Reserve Variables
+    # AC producers
     ac_mask = n.generators.bus.map(n.buses.carrier) == "AC"
     ac_buses = n.buses.query("carrier =='AC'").index
     attached_carriers = filter_carriers(n, "AC")
-
     # conceivably a link could have a negative efficiency and flow towards bus0 - don't consider
-    producer_links = n.links.query("carrier in @attached_carriers & not bus0 in @ac_buses")
-    producers_gen = n.generators.loc[ac_mask]
-    vres_gen = producers_gen.query("carrier in @VRE_TECHS")
-    producers_all = producer_links.index.append(producers_gen.index)
+    prod_links = n.links.query("carrier in @attached_carriers & not bus0 in @ac_buses")
+    prod_gen = n.generators.loc[ac_mask]
+    producers_all = prod_links.index.append(prod_gen.index)
     producers_all.name = "Producers-p"
 
+    # RSERVES
     n.model.add_variables(0, np.inf, coords=[n.snapshots, producers_all], name="Producer-r")
-
     reserve = n.model["Producer-r"]
 
     # Define Reserve and weigh VRES by their mean availability ("capacity credit")
+    vres_gen = prod_gen.query("carrier in @VRE_TECHS")
     non_vre = producers_all.difference(vres_gen.index)
-    mean_avail = n.generators_t.p_max_pu.loc[:, vres_gen.index].mean().rename_axis("Producers-p")
-    vre_reserve_score = (reserve.loc[:, vres_gen.index] * mean_avail).sum("Producers-p")
-    summed_reserve = reserve.loc[:, non_vre].sum("Producers-p") + vre_reserve_score
+    # full capacity credit for non-VRE producers (questionable, maybe should be weighted by availability)
+    summed_reserve = reserve.loc[:, non_vre].sum("Producers-p")
 
+    # VRE capacity credit & margin reqs
     ext_idx = vres_gen.query("p_nom_extendable").index
-    vres_idx = n.generators_t.p_max_pu.loc[:, vres_gen.index].columns
+    avail = n.generators_t.p_max_pu.loc[:, vres_gen.index].rename_axis("Producers-p", axis=1)
+    vres_idx = avail.columns
     if not ext_idx.empty and not vres_idx.empty:
-        # fixed VRE generators
+        # Reserve score based on a mean availability factor not actual avail (lack of foresight)
+        vre_reserve_score = (reserve.loc[:, vres_gen.index] * avail.mean()).sum("Producers-p")
+        summed_reserve += vre_reserve_score
+
+        # reqs from brownfield VRE generators. epsilon is the margin for VRES forecast error
         avail_factor = n.generators_t.p_max_pu[ext_idx]
         p_nom_vres = n.model["Generator-p_nom"].loc[ext_idx].rename({"Generator-ext": "Generator"})
-        # epsilon is the margin for VRES forecast error
         vre_req_fixed = (p_nom_vres * (EPSILON_VRES * xr.DataArray(avail_factor))).sum("Generator")
-        # extendable VRE generators
+
+        # reqs extendable VRE generators
         avail_factor = n.generators_t.p_max_pu[vres_idx.difference(ext_idx)]
         renewable_capacity = n.generators.p_nom[vres_idx.difference(ext_idx)]
-        vre_avail = (avail_factor * renewable_capacity).sum(axis=1)
+        vre_ext_p = (avail_factor * renewable_capacity).sum(axis=1)
     else:
         vre_req_fixed = 0
-        vre_avail = 0
+        vre_ext_p = 0
 
     lhs = summed_reserve - vre_req_fixed
 
-    # Total demand per t
-    demand = get_as_dense(n, "Load", "p_set").sum(axis=1)
-
     # Right-hand-side
-    rhs = EPSILON_LOAD * demand + EPSILON_VRES * vre_avail + CONTINGENCY
+    demand = get_as_dense(n, "Load", "p_set").sum(axis=1)
+    rhs = EPSILON_LOAD * demand + EPSILON_VRES * vre_ext_p + CONTINGENCY
 
     n.model.add_constraints(lhs >= rhs, name="Reserve-margin")
 
-    # above Defined new non-standard variable Producer-r
-    # Need additional constraint: gen_r + gen_p <= gen_p_nom (capacity)
-    logger.info("adding secondary constraint")
-
-    to_constrain = {"Link": producer_links, "Generator": producers_gen}
+    # Need additional constraints (reserve + dispatch <= p_nom): gen_r + gen_p <= gen_p_nom (capacity)
+    to_constrain = {"Link": prod_links, "Generator": prod_gen}
     for component, producer in to_constrain.items():
-        # split into extendable and not extendable
-        ext_idx = producer.query("p_nom_extendable==True").index
-        fix_idx = producer.index.difference(ext_idx)
-        all_idx = ext_idx.append(fix_idx)
-        all_idx.name = component
+        logger.info(f"adding secondary reserve constraint for {component}s")
+
+        fix_i = producer.query("p_nom_extendable==False").index
+        ext_i = producer.query("p_nom_extendable==True").index
 
         dispatch = n.model[f"{component}-p"].loc[:, producer.index]
-        reserve = n.model["Producer-r"].loc[:, producer.index].rename({"Producers-p": component})
+        reserve = n.model[f"Producer-r"].loc[:, ext_i.union(fix_i)]
 
-        capacity_variable = (
-            n.model[f"{component}-p_nom"].loc[ext_idx].rename({f"{component}-ext": f"{component}"})
+        capacity_variable = n.model[f"{component}-p_nom"].loc[ext_i]
+        capacity_variable = capacity_variable.rename({f"{component}-ext": f"{component}"})
+        capacity_fixed = getattr(n, component.lower() + "s").p_nom[fix_i]
+
+        p_max_pu = get_as_dense(n, f"{component}", "p_max_pu")
+
+        lhs = dispatch + reserve.rename({"Producers-p": component})
+        # MAY have to check what happens in case pmaxpu is not defined for all items
+        rhs = capacity_variable * p_max_pu[ext_i] + (p_max_pu[fix_i] * capacity_fixed)
+        n.model.add_constraints(
+            lhs - rhs.loc[lhs.indexes] <= 0, name=f"{component}-p-reserve-upper"
         )
-        capacity_fixed = producer.p_nom.loc[fix_idx]
-
-        logger.info("Evaluating pmax_pu for {component} to reserve margin")
-        p_max_pu = n.get_switchable_as_dense(component, "p_max_pu", inds=all_idx)
-
-        logger.info("calculating LHS constraint for {component} to reserve margin")
-        lhs = dispatch + reserve - capacity_variable * xr.DataArray(p_max_pu[ext_idx])
-        logger.info("calculating RHS constraint for {component} to reserve margin")
-
-        rhs = (p_max_pu[fix_idx] * capacity_fixed).reindex(columns=all_idx, fill_value=0)
-        logger.info("adding secondary constraint for {component} to reserve margin")
-
-        n.model.add_constraints(lhs <= rhs, name=f"{component}-p-reserve-upper")
-    #     logger.info("added secondary constraint for {component} to reserve margin")
 
 
-# TODO understand if this is per region or network wide
-# TODO can we remove the - capacity and add + 1 to the reserves?
 def add_operational_reserve_margin_simpler(n: pypsa.network, config):
     """
     Build operational reserve margin constraints based on the formulation given in
@@ -634,13 +623,14 @@ def add_operational_reserve_margin_simpler(n: pypsa.network, config):
     # lhs = reserve.sum("Generator")#
     vres_gen = gen_ac.query("carrier in @VRE_TECHS")
     non_vre = gen_ac.index.difference(vres_gen.index)
-    mean_avail = n.generators_t.p_max_pu.loc[:, vres_gen.index].mean()
-    vre_reserve_score = (reserve.loc[:, vres_gen.index] * mean_avail).sum("Generator")
+    avail = n.generators_t.p_max_pu.loc[:, vres_gen.index]
+    vre_reserve_score = (reserve.loc[:, vres_gen.index] * avail).sum("Generator")
     lhs = reserve.loc[:, non_vre].sum("Generator") + vre_reserve_score
+    # lhs = reserve.sum("Generator")
 
     # Share of extendable renewable capacities
-    ext_i = n.generators.query("p_nom_extendable").index
-    vres_i = n.generators_t.p_max_pu.columns
+    ext_i = vres_gen.query("p_nom_extendable").index
+    vres_i = n.generators_t.p_max_pu.loc[:, vres_gen.index].columns
     if not ext_i.empty and not vres_i.empty:
         capacity_factor = n.generators_t.p_max_pu[vres_i.intersection(ext_i)]
         p_nom_vres = (
@@ -672,16 +662,15 @@ def add_operational_reserve_margin_simpler(n: pypsa.network, config):
     reserve = n.model["Generator-r"]
 
     capacity_variable = n.model["Generator-p_nom"].loc[ext_i]
-    capacity_variable = capacity_variable  # .rename({"Generator-ext": "Generator"})
+    capacity_variable = capacity_variable.rename({"Generator-ext": "Generator"})
     capacity_fixed = n.generators.p_nom[fix_i]
 
     p_max_pu = get_as_dense(n, "Generator", "p_max_pu")
 
-    lhs = dispatch + reserve - capacity_variable * xr.DataArray(p_max_pu[ext_i])
+    lhs = dispatch + reserve
 
-    rhs = (p_max_pu[fix_i] * capacity_fixed).reindex(columns=gen_ac.index, fill_value=0)
-
-    n.model.add_constraints(lhs <= rhs, name="Generator-p-reserve-upper")
+    rhs = capacity_variable * p_max_pu[ext_i] + (p_max_pu[fix_i] * capacity_fixed)
+    n.model.add_constraints(lhs - rhs.loc[lhs.indexes] <= 0, name="Generator-p-reserve-upper")
 
     # lhs = n.model.constraints["Generator-fix-p-upper"].lhs.loc[:, fix_i]
 
@@ -716,7 +705,7 @@ def extra_functionality(n: pypsa.Network, _) -> None:
     reserve = config.get("operational_reserve", {})
     if reserve.get("activate", False):
         logger.info("Adding operational reserve margin constraints")
-        add_operational_reserve_margin_simpler(n, config)
+        add_operational_reserve_margin(n, config)
 
     logger.info("Added extra functionality to the network model")
 
