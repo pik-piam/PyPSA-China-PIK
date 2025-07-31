@@ -598,6 +598,104 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     #     logger.info("added secondary constraint for {component} to reserve margin")
 
 
+# TODO understand if this is per region or network wide
+# TODO can we remove the - capacity and add + 1 to the reserves?
+def add_operational_reserve_margin_simpler(n: pypsa.network, config):
+    """
+    Build operational reserve margin constraints based on the formulation given in
+    https://genxproject.github.io/GenX.jl/stable/Model_Reference/core/#GenX.operational_reserves_core!-Tuple{JuMP.Model,%20Dict,%20Dict}
+
+    The constraint is network wide and not at each node!
+
+    Args:
+        n (pypsa.Network): the network object to optimize
+        config (dict): the configuration dictionary
+
+    Example:
+        config.yaml requires to specify operational_reserve:
+        operational_reserve:
+            activate: true
+            epsilon_load: 0.02 # percentage of load at each snapshot
+            epsilon_vres: 0.02 # percentage of VRES at each snapshot
+            contingency: 400000 # MW
+    """
+
+    reserve_config = config["operational_reserve"]
+    VRE_TECHS = config["Techs"].get("non_dispatchable", ["onwind", "offwind", "solar"])
+    EPSILON_LOAD, EPSILON_VRES = reserve_config["epsilon_load"], reserve_config["epsilon_vres"]
+    CONTINGENCY = float(reserve_config["contingency"])
+
+    ac_mask = n.generators.bus.map(n.buses.carrier) == "AC"
+    gen_ac = n.generators.loc[ac_mask]
+
+    # Reserve Variables
+    n.model.add_variables(0, np.inf, coords=[n.snapshots, gen_ac.index], name="Generator-r")
+    reserve = n.model["Generator-r"]
+    # lhs = reserve.sum("Generator")#
+    vres_gen = gen_ac.query("carrier in @VRE_TECHS")
+    non_vre = gen_ac.index.difference(vres_gen.index)
+    mean_avail = n.generators_t.p_max_pu.loc[:, vres_gen.index].mean()
+    vre_reserve_score = (reserve.loc[:, vres_gen.index] * mean_avail).sum("Generator")
+    lhs = reserve.loc[:, non_vre].sum("Generator") + vre_reserve_score
+
+    # Share of extendable renewable capacities
+    ext_i = n.generators.query("p_nom_extendable").index
+    vres_i = n.generators_t.p_max_pu.columns
+    if not ext_i.empty and not vres_i.empty:
+        capacity_factor = n.generators_t.p_max_pu[vres_i.intersection(ext_i)]
+        p_nom_vres = (
+            n.model["Generator-p_nom"]
+            .loc[vres_i.intersection(ext_i)]
+            .rename({"Generator-ext": "Generator"})
+        )
+        lhs = lhs - (p_nom_vres * (EPSILON_VRES * capacity_factor)).sum("Generator")
+
+    # Total demand per t
+    demand = n.loads_t.p_set.sum(axis=1)
+
+    # VRES potential of non extendable generators
+    capacity_factor = n.generators_t.p_max_pu[vres_i.difference(ext_i)]
+    renewable_capacity = n.generators.p_nom[vres_i.difference(ext_i)]
+    potential = (capacity_factor * renewable_capacity).sum(axis=1)
+
+    # Right-hand-side
+    rhs = EPSILON_LOAD * demand + EPSILON_VRES * potential + CONTINGENCY
+
+    n.model.add_constraints(lhs >= rhs, name="reserve_margin")
+    logger.info("Added operational reserve margin constraints")
+
+    # additional constraint that capacity is not exceeded (reserve + dispatch <= p_nom)
+    fix_i = gen_ac.query("p_nom_extendable==False").index
+    ext_i = gen_ac.query("p_nom_extendable==True").index
+
+    dispatch = n.model["Generator-p"].loc[:, gen_ac.index]
+    reserve = n.model["Generator-r"]
+
+    capacity_variable = n.model["Generator-p_nom"].loc[ext_i]
+    capacity_variable = capacity_variable  # .rename({"Generator-ext": "Generator"})
+    capacity_fixed = n.generators.p_nom[fix_i]
+
+    p_max_pu = get_as_dense(n, "Generator", "p_max_pu")
+
+    lhs = dispatch + reserve - capacity_variable * xr.DataArray(p_max_pu[ext_i])
+
+    rhs = (p_max_pu[fix_i] * capacity_fixed).reindex(columns=gen_ac.index, fill_value=0)
+
+    n.model.add_constraints(lhs <= rhs, name="Generator-p-reserve-upper")
+
+    # lhs = n.model.constraints["Generator-fix-p-upper"].lhs.loc[:, fix_i]
+
+    # lhs = lhs+ reserve.loc[:, lhs.coords["Generator-fix"]]
+    # rhs = n.model.constraints["Generator-fix-p-upper"].rhs
+    # n.model.add_constraints(lhs.sum("_term") <= rhs, name="Generator-fix-p-upper-reserve")
+
+    # lhs = n.model.constraints["Generator-ext-p-upper"].lhs
+    # lhs = lhs + reserve.loc[:, lhs.coords["Generator-ext"]]
+    # rhs = n.model.constraints["Generator-ext-p-upper"].rhs
+    # n.model.add_constraints(lhs >= rhs, name="Generator-ext-p-upper-reserve")
+    # reserve_config = config["operational_reserve"]
+
+
 def extra_functionality(n: pypsa.Network, _) -> None:
     """
     Add supplementary constraints to the network model. ``pypsa.linopf.network_lopf``.
@@ -618,7 +716,7 @@ def extra_functionality(n: pypsa.Network, _) -> None:
     reserve = config.get("operational_reserve", {})
     if reserve.get("activate", False):
         logger.info("Adding operational reserve margin constraints")
-        add_operational_reserve_margin(n, config)
+        add_operational_reserve_margin_simpler(n, config)
 
     logger.info("Added extra functionality to the network model")
 
