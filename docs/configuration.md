@@ -2,32 +2,42 @@
 
 This is documentation for the PyPSA-China configuration (`config/default_config.yaml` & `config/technology_config.yaml`). The configuration file controls various aspects of the PyPSA-China energy system modeling workflow.
 
-## Table of Contents
+## Table of Contents 
 
 - [Run Configuration](#run-configuration)
 - [File Paths](#file-paths)
-- [Scenario Configuration](#scenario-configuration)
+- [Grid Topology](#grid-topology)
+- [Scenarios](#scenario-configuration)
 - [CO2 Scenarios](#co2-scenarios)
-- [Time Snapshots](#time-snapshots)
+- [Time Snapshots](#snapshots)
 - [Logging](#logging)
-- [Feature Toggles](#feature-toggles)
-- [Atlite Weather Data](#atlite-weather-data)
-- [Renewable Energy Technologies](#renewable-energy-technologies)
+- [Data Fetch Toggles](#data-fetch-toggles)
+- [Atlite Weather Settings](#atlite-weather)
+- [Renewable Energy Technologies](#renewable-energy-technologies-atlite)
 - [Heat Demand](#heat-demand)
-- [Technology Configuration](#technology-configuration)
 - [Reporting](#reporting)
-- [Bus and Carrier Configuration](#bus-and-carrier-configuration)
+- [Bus and Carriers](#bus-and-carrier-configuration)
 - [Technology Categories](#technology-categories)
-- [Component Configuration](#component-configuration)
+- [Sectors & Component](#sector-and-component-switches)
 - [Hydro Dams](#hydro-dams)
 - [Hydrogen Storage](#hydrogen-storage)
-- [Grid Topology](#grid-topology)
-- [Solving Configuration](#solving-configuration)
+- [Solving](#solving-configuration)
 - [Transmission Lines](#transmission-lines)
 - [Security Constraints](#security-constraints)
 - [Existing Capacities](#existing-capacities)
-- [Region Configuration](#region-configuration)
+- [Regions](#region-configuration)
 - [Input/Output Settings](#inputoutput-settings)
+- [Transmission Efficiency](#transmission-efficiency)
+- [Combined Heat and Power (CHP) Parameters](#combined-heat-and-power-chp-parameters)
+- [Solar Technology Parameters](#solar-technology-parameters)
+- [Heat Pump Configuration](#heat-pump-configuration)
+- [Thermal Energy Storage](#thermal-energy-storage)
+- [Electricity Sector Configuration](#electricity-sector-configuration)
+- [Hydroelectric Power](#hydroelectric-power)
+- [Fossil Fuel Ramping Constraints](#fossil-fuel-ramping-constraints)
+- [Nuclear Reactor Parameters](#nuclear-reactor-parameters)
+- [Economic Parameters](#economic-parameters)
+
 
 ## Usage Notes
 
@@ -193,7 +203,7 @@ Configuration for weather data processing:
   - **`dx`/`dy`**: Spatial resolution in degrees
   - **`weather_year`**: weather year to fetch/use
 
-## Renewable Energy Technologies (Atlite)
+## Renewable Energy Technologies Atlite
 
 ### Wind 
 ```yaml
@@ -319,7 +329,7 @@ Technology categorization:
 - **`coal_cc`**: Enable coal with carbon capture retrofit (myopic only). Coal carbon capture new-builds are controled via "vre_techs" for overnight.
 - **`hydrogen_lines`**: Enable hydrogen transmission lines
 
-## Sector & component Switches 
+## Sector and component Switches 
 
 ```yaml
 heat_coupling: false
@@ -466,6 +476,169 @@ Controls compression settings for NetCDF output files:
 - **`level`**: Compression level (0-9, higher = more compression)
 - **`zlib`**: Enable zlib compression
 
-This configuration provides a comprehensive setup for modeling the Chinese power system with PyPSA-China. Adjust parameters according to your specific modeling requirements and computational resources.
+## TECHNOLOGY CONFIG
+The below are in `config/technology_config.yaml`
 
+## Transmission Efficiency
+
+```yaml
+transmission_efficiency:
+  DC:
+    efficiency_static: 0.98
+    efficiency_per_1000km: 0.977
+  H2 pipeline:
+    efficiency_static: 1
+    efficiency_per_1000km: 0.979
+    compression_per_1000km: 0.019
+```
+
+Defines transmission efficiency parameters for different carriers & technologies:
+
+### DC Transmission
+- **`efficiency_static`**: Base efficiency for DC transmission lines (98%)
+- **`efficiency_per_1000km`**: Distance-dependent efficiency factor per 1000 km (97.7% per 1000 km)
+
+### Hydrogen Pipeline
+- **`efficiency_static`**: Base efficiency for hydrogen pipelines (100% - no static losses)
+- **`efficiency_per_1000km`**: Distance-dependent efficiency factor per 1000 km (97.9% per 1000 km)
+- **`compression_per_1000km`**: Energy required for compression per 1000 km (1.9% of transported energy)
+
+The total efficiency for transmission links is calculated as:
+```
+Total efficiency = efficiency_static × (efficiency_per_1000km)^(distance_km/1000)
+```
+
+## Combined Heat and Power (CHP) Parameters
+
+```yaml
+chp_parameters:
+  eff_th: 0.5304
+```
+CHP is treated either as a pre-defined values or using a back pressure coeficient (see DK Energy catalogue). For coal CHP use the back pressure (variable ratio). For gas CHP use pre-defined parameter.
+
+**TODO** this is legacy, check implentation is OK. CHP often runs heat first in China but code seems to maintain electric eff
+
+## Solar Technology Parameters
+
+```yaml
+solar_cf_correction: 0.85
+```
+
+- **`solar_cf_correction`**: Correction factor applied to solar capacity factors (85%)
+
+This factor accounts for various real-world effects that reduce solar Thermal performance compared to theoretical values. **NOT APPLIED TO PV**
+
+## Heat Pump Configuration
+
+```yaml
+time_dep_hp_cop: True
+```
+
+- **`time_dep_hp_cop`**: Enable time-dependent coefficient of performance (COP) for heat pumps
+
+When enabled, heat pump efficiency varies with ambient temperature conditions throughout the year.
+
+## Thermal Energy Storage
+
+```yaml
+water_tanks:
+  tes_tau:
+    decentral: 3. # days
+    central: 180 # days
+```
+
+Standing loss parameters for thermal energy storage (water tanks):
+- **`decentral`**: Time constant for decentralized thermal storage (3 days)
+- **`central`**: Time constant for centralized thermal storage (180 days)
+
+The time constant (tau) determines the rate of thermal losses.
+
+## Electricity Sector Configuration
+Partially legacy and to be revised
+
+```yaml
+electricity:
+  max_hours:
+    battery: 6
+    H2: 168
+  min_charge:
+    battery: 0.1 # fraction of e_nom
+```
+
+### Storage Parameters
+- **`max_hours.battery`**: Maximum storage duration for batteries (6 hours)
+- **`max_hours.H2`**: Maximum storage duration for hydrogen storage (168 hours = 1 week)
+- **`min_charge.battery`**: Minimum state of charge for batteries (10% of nominal energy capacity)
+
+## Hydroelectric Power
+
+```yaml
+hydro:
+  hydro_capital_cost: True
+  marginal_cost:
+    reservoir: 0
+  PHS_max_hours: 24 # hours
+```
+
+- **`hydro_capital_cost`**: Include capital costs for hydroelectric plants
+- **`marginal_cost.reservoir`**: Marginal cost of storage (defaults to zeo)
+- **`PHS_max_hours`**: Maximum storage duration for pumped hydro storage (24 hours)
+
+
+
+## Fossil Fuel Ramping Constraints
+
+Operational ramping constraints for fossil fuel power plants:
+ 
+```yaml
+fossil_ramps:
+  tech:
+    ramp_limit_up: 0.5 # fraction of p_nom per hour
+    ramp_limit_down: 0.5 # fraction of p_nom per hour
+```
+
+- **`ramp_limit_up`**: Maximum upward ramping rate (50% of nominal capacity per hour)
+- **`ramp_limit_down`**: Maximum downward ramping rate (50% of nominal capacity per hour)
+
+
+## Nuclear Reactor Parameters
+Instead of solving unit commitment problem, which is computationally expensive, can stylise baseload generation.
+The upper limit reflects planned and unplanned outages
+
+```yaml
+nuclear_reactors:
+  p_max_pu: 0.88 # fraction of p_nom, after IEAE
+  p_min_pu: 0.7 # fraction of p_nom
+```
+Operational constraints for nuclear power plants:
+- **`p_max_pu`**: Maximum power output (% of nominal capacity)
+- **`p_min_pu`**: Minimum power output (% of nominal capacity)
+
+
+## Economic Parameters
+
+```yaml
+costs:
+  discountrate: 0.06
+  social_discount_rate: 0.02
+  USD2013_to_EUR2013: 0.9189
+  marginal_cost:
+    hydro: 0.
+  pv_utility_fraction: 1
+```
+
+### Discount Rates
+- **`discountrate`**: Financial discount rate for investment decisions (6%)
+- **`social_discount_rate`**: Social discount rate for welfare analysis (2%)
+
+The financial discount rate is used for technology investment decisions, while the social discount rate is applied for broader economic impact assessments.
+
+### Currency Conversion
+- **`USD2013_to_EUR2013`**: Exchange rate from USD to EUR for 2013 prices (0.9189 EUR/USD) - used for technoeconomic conversion. Weakpoint, only one currency.
+Also tech costs are now in Euro2015 from DK EA
+
+### Solar PV Configuration
+- **`pv_utility_fraction`**: Fraction of solar PV that is utility-scale (100%)
+
+This parameter distinguishes between utility-scale and residential/distributed solar installations, affecting cost assumptions and grid integration characteristics.
 

@@ -251,7 +251,7 @@ def prepare_network(config: dict, paths: dict):
             e_nom=effective_capacity,
             e_initial=initial_capacity,
             e_cyclic=True,
-            marginal_cost=config["costs"]["marginal_cost"]["hydro"],
+            marginal_cost=config["hydro"]["marginal_cost"]["reservoir"],
         )
 
         # add hydro turbines to link stations to provinces
