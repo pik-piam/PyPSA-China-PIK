@@ -36,7 +36,7 @@ snakemake -n <additional_options>
 
 ## Snakemake command line options
 
-You can find the full list of options [here](https://snakemake.readthedocs.io/en/stable/executing/cli.html). The most important ones are summarised in the [tricks page](./snakemake_tricks)
+You can find the full list of options [here](https://snakemake.readthedocs.io/en/stable/executing/cli.html). The most important ones are summarised in the [tricks page](../snakemake_tricks)
 
 ## Running a module in standalone
 

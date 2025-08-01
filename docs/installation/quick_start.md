@@ -6,7 +6,7 @@
 
 ## Installation
 
-1. Install the [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) package manager. 
+1. **Install the [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) package manager** 
 
     It may be possible to run the workflow with a better manager such as `uv` but it will not work out of the box
 
@@ -27,15 +27,14 @@
             You can check whether you already have conda with `where anaconda` or `where conda`. Newer condas have a faster dependcy solver - as the package is rather large we strongly recommend you update to `v> 2024.9`.
 
 
-2. Setup the environment 
-    This can take a long time 
+2. **Setup the environment**: This can take a long time 
 
     === "Unix/MacOS/WSL"
         ```bash title="install dependencies"
         cd <workflow_location>
         conda env create --file=workflow/envs/environment.yaml
         ```
-3. Activate environment
+3. **Activate environment**
     === "Unix/MacOS/WSL"
         ```bash title="activate environment"
         source activate pypsa-china
@@ -44,10 +43,10 @@
         ```bash title="activate environment"
         conda activate pypsa-china
         ```
-4. Fetch data
+4. **Fetch data**
     herefore have to run data fetches
-5. Install a Solver: e.g. [gurobi](https://www.gurobi.com/) [HiGHS](https://highs.dev/) or cplex. The current default configuration uses gurobi.
-6. [Run locally](#local_exec)
+5. **Install a Solver**: e.g. [gurobi](https://www.gurobi.com/) [HiGHS](https://highs.dev/) or cplex. The current default configuration uses gurobi.
+6. **[Run locally](#local_exec)**
 
 
 ## Testing the installation

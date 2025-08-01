@@ -9,17 +9,17 @@ foresight: "overnight"
 
 paths:
   results_dir: "results/"
-  summary_dir: "summary/" # TODO useless?
   costs_dir: "resources/data/costs/default"
   yearly_regional_load: 
     ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
     # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
+#TODO merge into paths
+edge_paths:
+  current: "resources/data/grids/edges_current.csv"
+  current+FCG: "resources/data/grids/edges_current_FCG.csv"
+  current+Neighbor: "resources/data/grids/edges_current_neighbor.csv"
 
-io:
-  nc_compression:
-    level: 4
-    zlib: True
     
 scenario: 
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
@@ -145,17 +145,6 @@ heat_demand:
   heating_offet : 0  # linear model offset
 solar_thermal_angle: 45
 
-Technique:
-  solar: true
-  onwind: true
-  offwind: true
-
-# TODO implement consistent accounting 
-# brownfield_capex:
-#   existing_hydro: False
-#   existing_nuclear: False
-#   existing_PHS: False
-
 reporting:
   # Whether to adjust link capacities by efficiency for AC-side reporting
   # pypsa links capacity defined by input but nameplate capacity often AC
@@ -202,10 +191,6 @@ hydro_dams:
   damn_flows_path: "resources/data/hydro/dam_flow_links.csv"
 H2:
   geo_storage_nodes: [ "Sichuan", "Chongqing", "Hubei", "Jiangxi", "Anhui", "Jiangsu", "Shandong", "Guangdong" ]
-edge_paths:
-  current: "resources/data/grids/edges_current.csv"
-  current+FCG: "resources/data/grids/edges_current_FCG.csv"
-  current+Neighbor: "resources/data/grids/edges_current_neighbor.csv"
 
 solving:
   options:
@@ -292,7 +277,6 @@ solving:
   mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
 
 lines:
-  line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max
   line_length_factor: 1.25
   expansion:
     transmission_limit: vopt # opt for optimal (unconstrained), v for volume, c for cost. eg. c1.25 limits cost increase to 25% of the base year
@@ -309,3 +293,9 @@ existing_capacities:
 
 fetch_regions:
   simplify_tol: 0.5
+
+
+io:
+  nc_compression:
+    level: 4
+    zlib: True
