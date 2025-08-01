@@ -21,30 +21,21 @@ water_tanks:
     central: 180 # days
 
 electricity:
-  agg_p_nom_limits: data/agg_p_nom_minmax.csv
-
-  extendable_carriers:
-    Generator: []
-    StorageUnit: [] # battery, H2
-    Store: [battery, H2]
-    Link: []
-
   max_hours:
     battery: 6
     H2: 168
   min_charge:
     battery: 0.1 # fraction of e_nom
-  powerplants_filter: false # use pandas query strings here, e.g. Country not in ['Germany']
-  custom_powerplants: false # use pandas query strings here, e.g. Country in ['Germany']
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
-  renewable_capacities_from_OPSD: [] # onwind, offwind, solar
-
+```
 
 
 # TODO move to brownfield?
 hydro:
   hydro_capital_cost: True
+  marginal_cost: 
+    reservoir: 0. # EUR/MWh
   PHS_max_hours: 24 # hours
+
 fossil_ramps:
   coal:
     ramp_limit_up: 0.5 # fraction of p_nom per hour
@@ -57,6 +48,4 @@ costs:
   discountrate: 0.06
   social_discount_rate: 0.02 # social discountrate
   USD2013_to_EUR2013: 0.9189 # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
-  marginal_cost: # EUR/MWh
-    hydro: 0.
   pv_utility_fraction: 1 # the fraction that will not be residential
