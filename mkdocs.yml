@@ -51,5 +51,14 @@ nav:
 
 extra_css:
   - docs/assets/styles/extra.css
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
 
 copyright: &copy Potsdam Institute for Climate Impact Research (PIK) 2024
