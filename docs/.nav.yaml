@@ -1,0 +1,6 @@
+sort_type: none
+nav:
+  - _home: Overview: overview.md
+  - Getting started: installation
+  - Tutorials: tutorials
+  - Reference: reference

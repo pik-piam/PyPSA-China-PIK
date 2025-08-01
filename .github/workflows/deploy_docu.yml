@@ -30,7 +30,8 @@ jobs:
           pip install mkdocs
           pip install mkdocs_gen_files
           pip install "mkdocstrings[python]"
-          pip install mkdocs-literate-nav
+          # pip install mkdocs-literate-nav
+          pip install mkdocs-awesome-nav
           pip install mkdocs-material
           pip install mkdocs-include-dir-to-nav
       - name: Build with MkDocs
