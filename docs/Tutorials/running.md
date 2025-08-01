@@ -31,7 +31,7 @@ The `-n` flag from snakemake allows to start a "dry run", which is a mock run th
 
 ```
 cd <workflow_root_folder>
-snakemake -n <additional options>
+snakemake -n <additional_options>
 ```
 
 ## Snakemake command line options
@@ -44,12 +44,15 @@ You can run any of the modules as standalone python thanks to the `mock_snakemak
 
 ## Remote/hpc execution with profiles
 
-The `--profile` arg allows you to specify a yaml config file that will control the workflow execution. This profile can include snakemake flags, such as re-run conditions and verbosity.
+The `--profile` arg allows you to specify execution snakemake options via a yaml config file. This is a better alternative to the CLI in many cases. 
 
-The `--profile` is especially useful for specifying and controlling remote execution, for example on an HPC. You will find a slurm HPC example in the config under `pik_hpc_profile/`. This allows you to set the resources per rule. Note that the profile must be called `config.yaml` 
+The `--profile` is especially useful for specifying and controlling remote execution, for example on an HPC. You will find a slurm HPC example in the config under `pik_hpc_profile/`. This allows you to set the compute resources per rule. Note that the profile must be called `config.yaml` 
+
+The profile can also include any other snakemake flag, such as re-run conditions and verbosity.
 
 To execute the workflow on a remote resource, e.g. a slurm cluster you can do the below from a login node:
-```
+
+```bash title="execute remotely`
 cd <workflow_root_folder>
 snakemake --profile=<configs/my_profile_parent_dir> <optional_additional_snakemake_opts>
 ```
@@ -58,18 +61,13 @@ snakemake --profile=<configs/my_profile_parent_dir> <optional_additional_snakema
 
 EXAMPLES ARE CURRENTLY UNAVAILABLE
 
-# Configuration options
-
-Under construction
 
 
 # Development and debugging
-
 It is possible to run each script as standalone using the `mock_snakemake` helper utility. The python file will run the __main__ script, reading the Snakefile.
 
 ### specific settings
 You can edit the wildcards in mocksnakemake. You can also mock passing a configfile ontop of defaults by adding it to the snakefile (add configfile:"my_config" after the default configs)  
-
 
 # Questions?
 Please contact us if needed. Note that pypsa-China-PIK is currently under active development and we recommend waiting until the alpha or first stable release.
