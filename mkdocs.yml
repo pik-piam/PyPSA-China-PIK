@@ -45,7 +45,10 @@ plugins:
         python:
           paths: ["./workflow/scripts"]
   - search
-  - awesome-nav
+  - awesome-nav:
+      keep_order: true
+      collapse_single_pages: false
+      auto_nav: false
 nav:
   - .nav.yaml
 

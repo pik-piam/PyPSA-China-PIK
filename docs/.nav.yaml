@@ -1,6 +1,7 @@
 sort_type: none
 nav:
-  - _home: Overview: overview.md
+  - PyPSA-PIK: index.md
   - Getting started: installation
+  - Configuration: configuration.md
   - Tutorials: tutorials
   - Reference: reference
