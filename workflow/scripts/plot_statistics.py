@@ -190,7 +190,7 @@ if __name__ == "__main__":
         fig, ax = plt.subplots()
         ds = n.statistics.curtailment(bus_carrier=carrier)
         # curtailment definition only makes sense for VREs
-        vres = ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential']
+        vres = snakemake.config["Techs"].get("non_dispatchable", ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential'])
         vres = [v for v in vres if v in ds.index.get_level_values("carrier")]
         attrs = ds.attrs.copy()
         ds = ds.unstack()[vres].stack()

@@ -48,19 +48,23 @@ def find_weeks_of_interest(
         tuple: Index ranges of ±3.5 days around the winter_max and summer_max.
     """
     max_prices = n.buses_t["marginal_price"][PROV_NAMES].T.max()
-    summer = max_prices.loc[summer_start:summer_end].index
+    prices_w = (
+        -1
+        * n.statistics.revenue(comps="Load", bus_carrier="AC", aggregate_time=False)
+        .T.resample("W")
+        .sum()
+        / n.statistics.withdrawal(comps="Load", bus_carrier="AC", aggregate_time=False)
+        .T.resample("W")
+        .sum()
+    )
 
-    winter_max = max_prices.loc[~max_prices.index.isin(summer)].idxmax()
-    summer_max = max_prices.loc[summer].idxmax()
+    summer = prices_w.query("snapshot > @summer_start and snapshot < @summer_end")
+    summer_peak = summer.idxmax().iloc[0]
+    summer_peak_w = n.snapshots[(n.snapshots >= summer_peak - pd.Timedelta(days=3.5)) & (n.snapshots <= summer_peak + pd.Timedelta(days=3.5))]
+    winter_peak = prices_w.loc[~prices_w.index.isin(summer.index)].idxmax().iloc[0]
+    winter_peak_w = n.snapshots[(n.snapshots >= winter_peak - pd.Timedelta(days=3.5)) & (n.snapshots <= winter_peak + pd.Timedelta(days=3.5))]
 
-    winter_range = max_prices.loc[
-        winter_max - pd.Timedelta(days=3.5) : winter_max + pd.Timedelta(days=3.5)
-    ].index
-    summer_range = max_prices.loc[
-        summer_max - pd.Timedelta(days=3.5) : summer_max + pd.Timedelta(days=3.5)
-    ].index
-
-    return winter_range, summer_range
+    return winter_peak_w, summer_peak_w
 
 
 def label_stacked_bars(ax: object, nbars: int, fontsize=8, small_values=350):
@@ -86,7 +90,7 @@ def label_stacked_bars(ax: object, nbars: int, fontsize=8, small_values=350):
                 continue
             if 0 < value < small_values:
                 yoffset -= 20
-            elif -1 * small_values < value < 0 & (prev < -1 * small_values or prev > 0):
+            elif -1 * small_values < value < 0 and (prev < -1 * small_values or prev > 0):
                 yoffset += 50
             ax.text(
                 # Put the text in the middle of each bar. get_x returns the start
