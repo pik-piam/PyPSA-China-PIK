@@ -1,5 +1,6 @@
 
 site_name: PyPSA China (PIK) #(PIK edition) Documentation
+site_url: https://irr-github.github.io/PyPSA-China-PIK/
 
 theme:
   name: "material"
@@ -15,6 +16,7 @@ theme:
     - content.tabs.link
     - content.code.annotation
     - content.code.copy
+    - navigation.footer
   language: en
   palette:
     - scheme: default
@@ -31,6 +33,12 @@ theme:
       accent: amber
 
 docs_dir: "./docs"
+
+# Version configuration
+extra:
+  version:
+    provider: mike
+    default: latest
 
 # Due to snakemake workflow, we need to include the 'scripts' directory in the python path
 plugins:
@@ -49,6 +57,7 @@ plugins:
       keep_order: true
       collapse_single_pages: false
       auto_nav: false
+      ignore_h1_titles: true
 nav:
   - .nav.yaml
 
