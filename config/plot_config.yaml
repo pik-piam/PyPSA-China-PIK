@@ -139,7 +139,9 @@ plotting:
     Gas: '#e0986c'
     OCGT: '#e0986c'
     OCGT gas: '#e0986c'
+    gas ocgt: '#e0986c'
     gas OCGT: '#e0986c'
+    Open-Cycle Gas: '#e0986c'
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
     CCGT: '#a85522'
@@ -401,6 +403,7 @@ plotting:
     CHP: "Combined Heat and Power"
     OCGT: "Open-Cycle Gas"
     gas OCGT: "Open-Cycle Gas"
+    Gas Ocgt: "Open-Cycle Gas"
     CCGT: "Combined-Cycle Gas"
     gas CCGT: "Combined-Cycle Gas"
     gas ccs: "Gas with Carbon Capture"
