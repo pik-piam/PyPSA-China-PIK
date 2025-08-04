@@ -5,9 +5,9 @@ sort:
   sections: last 
   ignore_case: true 
 nav:
-  - PyPSA-PIK: index.md
-  - Getting started: installation
-  - Configuration: configuration.md
-  - Tutorials: tutorials
-  - Reference: reference
+  PyPSA-PIK: index.md
+  Getting started: installation
+  Configuration: configuration.md
+  Tutorials: tutorials
+  Reference: reference
 

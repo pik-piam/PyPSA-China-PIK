@@ -54,10 +54,7 @@ plugins:
           paths: ["./workflow/scripts"]
   - search
   - awesome-nav:
-      keep_order: true
       collapse_single_pages: false
-      auto_nav: false
-      ignore_h1_titles: true
 nav:
   - .nav.yaml
 

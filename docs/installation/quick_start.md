@@ -46,7 +46,7 @@
 4. **Fetch data**
     herefore have to run data fetches
 5. **Install a Solver**: e.g. [gurobi](https://www.gurobi.com/) [HiGHS](https://highs.dev/) or cplex. The current default configuration uses gurobi.
-6. **[Run locally](#local_exec)**
+6. **[Run locally](../../Tutorials/running/#local_exec)**
 
 
 ## Testing the installation
