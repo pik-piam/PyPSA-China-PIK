@@ -229,36 +229,37 @@ def fetch_prefecture_shapes(
     return gdf
 
 
-def split_inner_mongolia(
-    gdf: gpd.GeoDataFrame,
+def build_provinces_with_split_inner_mongolia(
+    prefectures: gpd.GeoDataFrame,
     east_prefs=["Hulunbuir", "Xing'an", "Tongliao", "Chifeng", "Xilin Gol"],
     west_prefs=[
         "Alxa",
         "Baotou",
         "Baynnur",
-        "Chifeng",
         "Hohhot",
         "Ordos",
-        "Tongliao",
         "Ulaan Chab",
         "Wuhai",
     ],
 ) -> gpd.GeoDataFrame:
     """
-    Split Inner Mongolia into East and West regions based on predefined prefectures.
+    Split Inner Mongolia into East and West regions based on prefectures.
 
     Args:
-        gdf (gpd.GeoDataFrame): GeoDataFrame containing Inner Mongolia data.
+        prefectures (gpd.GeoDataFrame): Gall chinese prefectures.
         east_prefs (list, optional): List of prefectures in Inner Mongolia East.
         west_prefs (list, optional): List of prefectures in Inner Mongolia West.
     Returns:
         gpd.GeoDataFrame: Updated GeoDataFrame with Inner Mongolia split EAST/WEST.
     """
-
+    gdf = prefectures.copy()
+    
+    if not (set(east_prefs) & set(west_prefs) == set()):
+        raise ValueError("East and West prefecture lists must not overlap.")
     all_prefs = sorted(east_prefs + west_prefs)
     if not all_prefs == sorted(gdf.query("NAME_1 == 'InnerMongolia'").NAME_2.unique().tolist()):
         raise ValueError(
-            f"Inner Mongolia prefectures do not match expected: {all_prefs} vs {gdf.query('NAME_1 == \"InnerMongolia\"').NAME_2.unique().tolist()}"
+            f"Inner Mongolia prefectures do not match expected: \n{all_prefs}\n vs\n {gdf.query('NAME_1 == \"InnerMongolia\"').NAME_2.unique().tolist()}"
         )
     split = {
         prefecture: "InnerMongoliaEast" if prefecture in east_prefs else "InnerMongoliaWest"
@@ -267,6 +268,7 @@ def split_inner_mongolia(
     mask = gdf.query("NAME_1 == 'InnerMongolia'").index
     gdf.loc[mask, "NAME_1"] = gdf.loc[mask, "NAME_2"].map(split)
     return gdf.dissolve(by="NAME_1", aggfunc="sum")
+
 
 
 def cut_smaller_from_larger(
