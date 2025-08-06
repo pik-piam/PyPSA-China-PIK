@@ -30,7 +30,7 @@ sns.set_theme("paper", style="whitegrid")
 logger = logging.getLogger(__name__)
 
 
-def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, drop_zero_vals=True):
+def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, drop_zero_vals=True, add_labels=True):
     """Generic function to plot different statics
 
     Args:
@@ -38,7 +38,8 @@ def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, dro
         ax (matplotlib.axes.Axes): plotting axes
         colors (DataFrame): colors for the carriers
         drop_zero_vals (bool, optional): Drop zeroes from data. Defaults to True.
-    """
+        add_labels (bool, optional): Add value labels on bars. If None, reads from config. Defaults to None.
+    """    
     if drop_zero_vals:
         ds = ds[ds != 0]
     ds = ds.dropna()
@@ -46,49 +47,50 @@ def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, dro
     ds = ds.pipe(rename_index)
     label = f"{ds.attrs['name']} [{ds.attrs['unit']}]"
     ds.plot.barh(color=c.values, xlabel=label, ax=ax)
-    for i, (index, value) in enumerate(ds.items()):
-        ax.text(value, i, f"{value:.1f}", va='center', ha='left', fontsize=8)
+    if add_labels:
+        for i, (index, value) in enumerate(ds.items()): 
+            ax.text(value, i, f"{value:.1f}", va='center', ha='left', fontsize=8)
     ax.grid(axis="y")
 
 
-def add_generation_share(ax, shares, color='red', text_offset=0.5, markersize=8, fontsize=9):
+def add_second_xaxis(data:pd.Series, ax, label, **kwargs):  
     """
-    Add generation share markers and percentage text on a twin x-axis.
-
+    Add a secondary X-axis to the plot.
     Args:
-        ax (matplotlib.axes.Axes): The main axis where bar chart is drawn.
-        shares (pd.Series): Generation share values (aligned with y-axis labels).
-        color (str): Color of the dots and text.
-        text_offset (float): Horizontal offset for the text labels.
-        markersize (int): Size of the dots.
-        fontsize (int): Font size of the text labels.
-    
-    Returns:
-        ax2 (matplotlib.axes.Axes): The secondary x-axis created for generation share.
+        data (pd.Series): The data to plot. Its values will be plotted on the secondary X-axis.
+        ax (matplotlib.axes.Axes): The main matplotlib Axes object.
+        label (str): The label for the secondary X-axis.
+        **kwargs: Optional keyword arguments for plot styling.
     """
-    ax2 = ax.twiny()
-    y_pos = range(len(shares))
+    defaults = {"color":'red', "text_offset":0.5, "markersize":8, "fontsize":9}  
+    kwargs.update(defaults)  
 
-    ax2.plot(
-        shares.values,
-        y_pos,
-        marker='o',
-        linestyle='',
-        color=color,
-        markersize=markersize,
-        label="Generation Share (%)"
-    )
+    ax2 = ax.twiny()  
+    # # y_pos creates a sequence of integers (e.g., [0, 1, 2, 3]) to serve as distinct vertical positions
+    # for each data point on the shared Y-axis. This is necessary because data.values are plotted
+    # horizontally on the secondary X-axis (ax2), requiring vertical separation for clarity.  
+    y_pos = range(len(data))  
 
-    for i, val in enumerate(shares.values):
-        ax2.text(val + text_offset, i, f"{val:.1f}%", color=color,
-                 va='center', ha='left', fontsize=fontsize)
+    ax2.plot(  
+        data.values,  
+        y_pos,  
+        marker='o',  
+        linestyle='',  
+        color=kwargs["color"],  
+        markersize=kwargs["markersize"],  
+        label="Generation Share (%)"  
+    )  
 
-    ax2.set_xlim(left=0)
-    ax2.set_xlabel("Generation Share [%]")
-    ax2.grid(False)
-    ax2.tick_params(axis='x', labelsize=fontsize)  # Remove color setting for ticks
+    for i, val in enumerate(data.values):  
+        ax2.text(val + kwargs["text_offset"], i, f"{val:.1f}%", color=kwargs["color"],  
+                 va='center', ha='left', fontsize=kwargs["fontsize"])  
 
-    return ax2
+    ax2.set_xlim(left=0)  
+    ax2.set_xlabel(label)  
+    ax2.grid(False)  
+    ax2.tick_params(axis='x', labelsize=kwargs["fontsize"])  # Remove color setting for ticks  
+
+    return ax2  
 
 
 def prepare_capacity_factor_data(n, carrier):
@@ -98,73 +100,81 @@ def prepare_capacity_factor_data(n, carrier):
         cf_filtered: Series of actual capacity factors (index: nice_name)
         theo_cf_filtered: Series of theoretical capacity factors (index: nice_name)
     """
-    special_map = {
-        "battery charger": "Battery Storage",
-        "battery discharger": "Battery Discharger",
-        "battery": "Battery Storage"
-    }
-
-    # Actual capacity factor
     cf_data = n.statistics.capacity_factor(groupby=["carrier"]).dropna()
     if ("Link", "battery") in cf_data.index:
         cf_data.loc[("Link", "battery charger")] = cf_data.loc[("Link", "battery")]
         cf_data.drop(index=("Link", "battery"), inplace=True)
-    cf_data = cf_data.groupby(level=1).mean()  # Use mean instead of sum
-    cf_data.index = cf_data.index.map(lambda idx: n.carriers["nice_name"].get(idx, special_map.get(idx, idx)))
-
-    # Theoretical capacity factor (prefer p_nom_opt)
+    cf_data = cf_data.groupby(level=1).mean()
+    
+    # Theoretical capacity factor
     gen = n.generators.copy()
-    gen["theo_cf"] = n.generators_t.p_max_pu.mean(axis=0)
-    gen["nice_name"] = gen["carrier"].map(lambda idx: n.carriers["nice_name"].get(idx, special_map.get(idx, idx)))
-    gen["p_nom_used"] = gen["p_nom_opt"].where(~gen["p_nom_opt"].isna(), gen["p_nom"])
-    gen = gen[(gen["p_nom_used"] > 0) & (~gen["theo_cf"].isna())]
-    gen["theoretical_energy"] = gen["theo_cf"] * gen["p_nom_used"]
-    theoretical_energy = gen.groupby("nice_name")["theoretical_energy"].sum()
-    total_p_nom = gen.groupby("nice_name")["p_nom_used"].sum()
-    theoretical_cf_auto = theoretical_energy / total_p_nom
+    p_max_pu = n.generators_t.p_max_pu
+    gen["p_nom_used"] = gen["p_nom_opt"].fillna(gen["p_nom"])
+    weighted_energy_per_gen = (p_max_pu * gen["p_nom_used"]).sum()
+    gen["weighted_energy"] = weighted_energy_per_gen
+    
+    gen["nice_name"] = gen["carrier"].map(lambda x: n.carriers.loc[x, "nice_name"] if x in n.carriers.index else x)
+    grouped_energy = gen.groupby("nice_name")["weighted_energy"].sum()
+    grouped_capacity = gen.groupby("nice_name")["p_nom_used"].sum()
+    theoretical_cf_weighted = grouped_energy / grouped_capacity / len(n.snapshots)
 
     # Only keep technologies present in both actual and theoretical CF
-    common_techs = cf_data.index.intersection(theoretical_cf_auto.index)
+    common_techs = cf_data.index.intersection(theoretical_cf_weighted.index)
     cf_filtered = cf_data.loc[common_techs]
-    theo_cf_filtered = theoretical_cf_auto.loc[cf_filtered.index]
+    theo_cf_filtered = theoretical_cf_weighted.loc[cf_filtered.index]
+    # Todo: use config nondispatchable_techs
+    non_zero_mask = (cf_filtered != 0) & (theo_cf_filtered != 0)
+    cf_filtered = cf_filtered[non_zero_mask]
+    theo_cf_filtered = theo_cf_filtered[non_zero_mask]
     cf_filtered = cf_filtered.sort_values(ascending=True)
     theo_cf_filtered = theo_cf_filtered.loc[cf_filtered.index]
 
     return cf_filtered, theo_cf_filtered
 
-def plot_capacity_factor(n: pypsa.Network, ax: axes.Axes, colors: DataFrame, carrier="AC"):
+
+def plot_capacity_factor(cf_filtered: pd.Series, 
+                         theo_cf_filtered: pd.Series, 
+                         ax: axes.Axes, 
+                         colors: dict, 
+                         **kwargs):
     """
     Plot actual and theoretical capacity factors for each technology.
+    
     Args:
-        n (pypsa.Network): The network object.
+        cf_filtered (pd.Series): Actual capacity factors indexed by technology.
+        theo_cf_filtered (pd.Series): Theoretical capacity factors indexed by technology.
         ax (matplotlib.axes.Axes): The axis to plot on.
-        colors (DataFrame): Color mapping for technologies.
-        carrier (str): Bus carrier to filter.
+        colors (dict): Color mapping for technologies.
+    
     Returns:
         matplotlib.axes.Axes: The axis with the plot.
     """
-    cf_filtered, theo_cf_filtered = prepare_capacity_factor_data(n, carrier)
     x_pos = range(len(cf_filtered))
     width = 0.35
-    bars1 = ax.barh([i - width/2 for i in x_pos], cf_filtered.values,
-                    width, color=[colors.get(tech, "lightgrey") for tech in cf_filtered.index],
-                    alpha=0.8, label='Actual CF')
-    bars2 = ax.barh([i + width/2 for i in x_pos], theo_cf_filtered.values,
-                    width, color=[colors.get(tech, "lightgrey") for tech in theo_cf_filtered.index],
-                    alpha=0.4, label='Theoretical CF')
+
+    ax.barh([i - width/2 for i in x_pos], cf_filtered.values,
+            width, color=[colors.get(tech, "lightgrey") for tech in cf_filtered.index],
+            alpha=0.8, label='Actual CF')
+    ax.barh([i + width/2 for i in x_pos], theo_cf_filtered.values,
+            width, color=[colors.get(tech, "lightgrey") for tech in theo_cf_filtered.index],
+            alpha=0.4, label='Theoretical CF')
+
     for i, (tech, cf_val) in enumerate(cf_filtered.items()):
         ax.text(cf_val + 0.01, i - width/2, f'{cf_val:.2f}', va='center', ha='left', fontsize=8,
                 bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.8))
-        theo_val = theo_cf_filtered[tech]
+        theo_val = theo_cf_filtered.get(tech, 0)
         ax.text(theo_val + 0.01, i + width/2, f'{theo_val:.2f}', va='center', ha='left', fontsize=8,
                 bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.5))
-    ax.set_yticks(x_pos)
+
+    ax.set_yticks(list(x_pos))
     ax.set_yticklabels(cf_filtered.index)
     ax.set_xlabel("Capacity Factor")
     ax.set_xlim(0, max(cf_filtered.max(), theo_cf_filtered.max()) * 1.1)
     ax.grid(False)
     ax.legend()
+
     return ax
+
 
 
 def prepare_province_peakload_capacity_data(n, attached_carriers=None):
@@ -294,10 +304,12 @@ if __name__ == "__main__":
 
     attached_carriers = filter_carriers(n, carrier)
     if "capacity_factor" in stats_list:
+        cf_filtered, theo_cf_filtered = prepare_capacity_factor_data(n, carrier)
         fig, ax = plt.subplots(figsize=(12, 8))
-        plot_capacity_factor(n, ax, colors, carrier)
+        plot_capacity_factor(cf_filtered, theo_cf_filtered, ax, colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capacity_factor.png"))
+
 
     if "installed_capacity" in stats_list:
         fig, ax = plt.subplots()
@@ -457,7 +469,7 @@ if __name__ == "__main__":
         mv_series = df["MV"]
         mv_series.attrs = {"name": "Market Value", "unit": "€/MWh"}
         plot_static_per_carrier(mv_series, ax=ax, colors=colors)
-        add_generation_share(ax, df["GenShare"])
+        add_second_xaxis(df["GenShare"], ax, "Generation Share [%]")
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "market_value.png"))
 

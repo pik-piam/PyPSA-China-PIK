@@ -890,7 +890,6 @@ if __name__ == "__main__":
         co2_prices = None
 
     plot_heat = config.get("heat_coupling", False)
-    plot_h2 = config["add_H2"]
     NAN_COLOR = config["plotting"]["nan_color"]
     data_paths = {
         "energy": [os.path.join(p, "energy.csv") for p in paths],
