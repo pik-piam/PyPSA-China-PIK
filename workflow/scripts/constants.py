@@ -4,9 +4,11 @@ Soft coded centalized `constants`
 
 import os
 import re
-import pandas as pd
-from typing import List
 import logging
+import pandas as pd
+import yaml
+from functools import lru_cache
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -69,14 +71,79 @@ REGIONAL_GEO_TIMEZONES_DEFAULT = {
     "Zhejiang": TIMEZONE,
 }
 
+# Cache for province names to avoid repeated file reads
+_province_names_cache = None
 
-def get_province_names() -> List[str]:
-    """Get province names for network construction.
+def load_province_config(config_path: str = None) -> dict:
+    """Load province configuration from YAML file.
     
-    Priority: 1. Environment variable (for testing)
-              2. CSV file (for configuration)
-              3. Default list (fallback)
+    Args:
+        config_path: Path to YAML config file. If None, uses default path.
+        
+    Returns:
+        dict: Province configuration including names and splits
     """
+    if config_path is None:
+        config_path = "config/provinces.yaml"
+    
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+            logger.info(f"Loaded province config from {config_path}")
+            return config
+        except Exception as e:
+            logger.warning(f"Failed to load province config from {config_path}: {e}")
+    
+    # Default configuration
+    return {
+        "provinces": list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys()),
+        "splits": {
+            "Inner Mongolia": ["Inner Mongolia East", "Inner Mongolia West"]
+        }
+    }
+
+def generate_province_names(config: dict = None) -> List[str]:
+    """Generate province names from configuration, including splits.
+    
+    Args:
+        config: Province configuration dict. If None, loads from default.
+        
+    Returns:
+        List[str]: List of province names including splits
+    """
+    if config is None:
+        config = load_province_config()
+    
+    provinces = config.get("provinces", list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys()))
+    splits = config.get("splits", {})
+    
+    # Apply splits
+    final_provinces = []
+    for province in provinces:
+        if province in splits:
+            final_provinces.extend(splits[province])
+        else:
+            final_provinces.append(province)
+    
+    logger.info(f"Generated {len(final_provinces)} province names (including splits)")
+    return final_provinces
+
+@lru_cache(maxsize=1)
+def get_province_names_cached() -> List[str]:
+    """Cached version of get_province_names to avoid repeated calls.
+    
+    Returns:
+        List[str]: List of province names
+    """
+    # Track function calls
+    call_count = getattr(get_province_names_cached, '_call_count', 0) + 1
+    get_province_names_cached._call_count = call_count
+    
+    # Log call count to file
+    with open('get_province_names_calls.txt', 'a') as f:
+        f.write(f"Call #{call_count} at {pd.Timestamp.now()}\n")
+    
     # Try environment variable first (for testing)
     env_provs = os.getenv("PROV_NAMES")
     if env_provs:
@@ -103,6 +170,15 @@ def get_province_names() -> List[str]:
     default_provinces = list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys())
     logger.info(f"Using default province list with {len(default_provinces)} provinces")
     return default_provinces
+
+def get_province_names() -> List[str]:
+    """Get province names for network construction.
+    
+    Priority: 1. Environment variable (HACK for testing)
+              2. CSV file (for configuration)
+              3. Default list (fallback)
+    """
+    return get_province_names_cached()
 
 
 def filter_buses(names) -> list:

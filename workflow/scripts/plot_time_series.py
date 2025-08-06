@@ -240,7 +240,7 @@ def plot_regional_load_durations(
 
 
 def plot_residual_load_duration_curve(
-    network, ax: plt.Axes = None, vre_techs=["Onshore Wind", "Offshore Wind", "Solar"]
+    network: pypsa.Network, ax: plt.Axes = None, vre_techs=["Onshore Wind", "Offshore Wind", "Solar"]
 ) -> plt.Axes:
     """plot the residual load duration curve for the given carrier
 
@@ -436,7 +436,7 @@ def plot_price_heatmap(
 
 
 def plot_vre_heatmap(
-    n: pypsa.Network, color_map="magma", config: dict, log_values=True, time_range: pd.Index = None,
+    n: pypsa.Network, config: dict, color_map="magma", log_values=True, time_range: pd.Index = None,
 ):
     """plot the VRE generation per hour and day as a heatmap
 

@@ -16,7 +16,7 @@ import xarray as xr
 
 import numpy as np
 import pypsa
-from _pypsa_helpers import process_dual_variables, export_duals_to_csv_by_year
+from _pypsa_helpers import process_dual_variables
 from _helpers import (
     configure_logging,
     mock_snakemake,
@@ -289,7 +289,7 @@ def extra_functionality(n, snapshots):
         add_retrofit_constraints(n)
 
 
-def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
+def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs) -> tuple[pypsa.Network, dict]:
     """perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
@@ -343,26 +343,21 @@ def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
 
-    # Check if dual functionality is enabled
-    if export_duals:
-        if hasattr(n, "model") and hasattr(n.model, "dual"):
-            # Process dual variables and add them to network object
-            process_dual_variables(n)
-            
-            # Export dual variables by year
-            if "planning_horizons" in n.meta.get("wildcards", {}):
-                current_year = n.meta["wildcards"]["planning_horizons"]
-                
-                # Build dual output directory path
-                # Infer results directory from snakemake output path
-                results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
-                dual_output_dir = os.path.join(results_dir, 'dual')
-                
-                export_duals_to_csv_by_year(n, current_year, output_base_dir=dual_output_dir)
-        else:
-            logger.warning("Network model does not have dual variables. Dual export will be skipped.")
+    # Collect dual data if enabled
+    dual_data = {}
+    if export_duals and hasattr(n, "model") and hasattr(n.model, "dual"):
+        # Process dual variables and add them to network object
+        process_dual_variables(n)
+        
+        # Collect dual data before model might be destroyed
+        if n.model.dual:
+            dual_data.update(dict(n.model.dual))
+        if hasattr(n, 'duals') and n.duals:
+            dual_data.update(n.duals)
+    elif export_duals:
+        logger.warning("Network model does not have dual variables. Dual export will be skipped.")
 
-    return n
+    return n, dual_data
 
 
 if __name__ == "__main__":
@@ -397,13 +392,23 @@ if __name__ == "__main__":
 
     n = prepare_network(n, solve_opts, snakemake.config)
 
-    n = solve_network(
+    n, dual_data = solve_network(
         n,
         config=snakemake.config,
         solving=snakemake.params.solving,
         opts=opts,
         log_fn=snakemake.log.solver,
     )
+    
+    # Export dual variables in main (not in solve function)
+    if dual_data and snakemake.params.solving["solver_options"].get("export_duals", False):
+        current_year = snakemake.wildcards.planning_horizons
+        results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
+        dual_output_dir = os.path.join(results_dir, 'dual', f"dual_values_raw_{current_year}")
+        
+        from pathlib import Path
+        from _pypsa_helpers import export_duals_simple
+        export_duals_simple(dual_data, Path(dual_output_dir))
 
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)

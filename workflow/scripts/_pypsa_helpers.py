@@ -6,7 +6,7 @@ import numpy as np
 import logging
 import pytz
 import xarray as xr
-from typing import Optional, Any, Union, List
+from typing import Optional, Any, Union
 from pathlib import Path
 
 import pypsa
@@ -17,10 +17,10 @@ logger = logging.getLogger()
 # Type aliases
 ComponentName = str
 ConstraintType = str
-DualValue = Union[float, np.ndarray, xr.DataArray, List[float], Dict[str, float], pd.Series, pd.DataFrame]
+DualValue = float | np.ndarray | xr.DataArray | list[float] | dict[str, float] | pd.Series | pd.DataFrame
 
 # Simplified component mapping - only essential mappings
-COMPONENT_MAPPING: Dict[str, str] = {
+COMPONENT_MAPPING: dict[str, str] = {
     'generator': 'generators',
     'link': 'links',
     'line': 'lines',
@@ -475,7 +475,7 @@ def process_dual_variables(network: pypsa.Network) -> pypsa.Network:
     
     # Get all dual variables
     all_duals = pd.Series(network.model.dual)
-    processed_duals: Dict[str, Any] = {}
+    processed_duals: dict[str, Any] = {}
     
     for dual_name, dual_value in all_duals.items():
         try:
@@ -495,7 +495,7 @@ def _process_single_dual_variable(
     network: pypsa.Network,
     dual_name: str,
     dual_value: DualValue,
-    processed_duals_storage: Dict[str, Any],
+    processed_duals_storage: dict[str, Any],
 ) -> None:
     """Processes a single dual variable and attempts to map it to a network component."""
     
@@ -595,127 +595,43 @@ def _sanitize_filename(filename: str) -> str:
     return safe_name
 
 
-# --- Exporting scalar duals ---
-def _export_scalar_dual(dual_name: str, value: float, filepath: Path) -> None:
-    """Exports a scalar dual variable to CSV."""
-    pd.Series([value], index=[dual_name]).to_csv(filepath, header=False)
-
-
-# --- Exporting xarray duals ---
-def _export_xarray_dual(value: xr.DataArray, filepath: Path) -> None:
-    """Exports an xarray DataArray to CSV, prioritizing pandas conversion."""
-    try:
-        value.to_pandas().to_csv(filepath)
-    except Exception:
-        # Fallback for cases where to_pandas fails, export flattened values
-        pd.Series(value.values.flatten()).to_csv(filepath, header=False)
-
-
-# --- Exporting numpy duals ---
-def _export_numpy_dual(value: np.ndarray, filepath: Path) -> None:
-    """Exports a numpy ndarray to CSV."""
-    if value.ndim == 0:
-        pd.Series([value.item()]).to_csv(filepath, header=False)
-    elif value.ndim == 1:
-        pd.Series(value).to_csv(filepath, header=False)
-    else:
-        pd.Series(value.flatten()).to_csv(filepath, header=False)
-
-
-# --- Generic export for other types ---
-def _export_generic_dual(dual_name: str, value: Any, filepath: Path) -> None:
-    """Exports generic dual values to CSV, attempting pandas Series conversion."""
-    try:
-        # Try to convert to Series with a name for better CSV output
-        pd.Series(value, name=dual_name).to_csv(filepath, header=False)
-    except Exception as e:
-        logger.warning(f"Could not convert dual value (for '{dual_name}') to pandas format: {e}")
-
-
-# --- Main export function for a single dual variable ---
-def _export_single_dual_variable(
-    dual_name: str,  # The original name of the dual variable
-    dual_value: DualValue,
-    output_dir: Path,
-) -> None:
-    """Exports a single dual variable to a CSV file."""
-    safe_name = _sanitize_filename(dual_name)
-    filepath = output_dir / f"{safe_name}.csv"
-    
-    try:
-        if np.isscalar(dual_value):
-            _export_scalar_dual(dual_name, dual_value, filepath)
-        elif isinstance(dual_value, xr.DataArray):
-            _export_xarray_dual(dual_value, filepath)
-        elif isinstance(dual_value, np.ndarray):
-            _export_numpy_dual(dual_value, filepath)
-        elif isinstance(dual_value, (list, tuple)):
-            pd.Series(dual_value, name=dual_name).to_csv(filepath, header=False)
-        elif isinstance(dual_value, dict):
-            pd.Series(dual_value, name=dual_name).to_csv(filepath) # Dict to Series maps keys to index, values to data
-        else:
-            _export_generic_dual(dual_name, dual_value, filepath) # Fallback for other types
-            
-    except Exception as e:
-        logger.warning(f"Failed to export dual variable '{dual_name}': {str(e)}")
-
-
-# --- Determine output directory ---
-def _determine_output_directory(
-    network: pypsa.Network,
-    current_year: int|str,
-    output_base_dir: str|Path|None
-) -> Path:
-    """Determines and creates the output directory for dual variables."""
-    if output_base_dir is None:
-        # Attempt to infer from network path, otherwise use current working directory
-        network_path = getattr(network, '_path', None)
-        if network_path and 'postnetworks' in str(network_path): # Keep original inference logic
-            results_dir = Path(network_path).parent.parent
-        else:
-            results_dir = Path.cwd() / 'results'
-        output_base_dir = results_dir / 'dual'
-    else:
-        output_base_dir = Path(output_base_dir)
-    
-    output_dir = output_base_dir / f"dual_values_raw_{current_year}"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    return output_dir
-
-
-# --- Main export function ---
-def export_duals_to_csv_by_year(
-    network: pypsa.Network,
-    current_year: Union[int, str],
-    output_base_dir: Optional[Union[str, Path]] = None
-) -> None:
+# --- Simple dual export function ---
+def export_duals_simple(dual_data: dict, output_dir: Path) -> None:
     """
-    Exports dual variables to CSV files, organized by year.
-    Exports from both network.model.dual and network.duals.
+    Simple export of dual variables to CSV files.
+    
+    Args:
+        dual_data: Dictionary of dual variables {name: value}
+        output_dir: Directory to save CSV files
     """
-    if not hasattr(network, "model") or not hasattr(network.model, "dual"):
-        raise AttributeError("Network object must have 'model' and 'model.dual' attributes.")
-    
-    # Combine all duals to export
-    dual_data_to_export = {}
-    if network.model.dual:
-        # Ensure model.dual is dict-like for easy updating
-        if isinstance(network.model.dual, (dict, pd.Series)):
-            dual_data_to_export.update(dict(network.model.dual)) # Convert Series to dict
-        else:
-            logger.warning(f"network.model.dual is of unexpected type {type(network.model.dual)}. Skipping export for this source.")
-
-    if hasattr(network, 'duals') and network.duals:
-        dual_data_to_export.update(network.duals) # Add any complex/failed duals
-    
-    if not dual_data_to_export:
-        logger.info("No dual variables found to export.")
+    if not dual_data:
+        logger.info("No dual variables to export.")
         return
     
-    # Determine output directory
-    output_dir = _determine_output_directory(network, current_year, output_base_dir)
-    logger.info(f"Exporting {len(dual_data_to_export)} dual variables to '{output_dir}'")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Exporting {len(dual_data)} dual variables to '{output_dir}'")
     
-    # Export each dual variable
-    for dual_name, dual_value in dual_data_to_export.items():
-        _export_single_dual_variable(dual_name, dual_value, output_dir)
+    for dual_name, dual_value in dual_data.items():
+        safe_name = _sanitize_filename(dual_name)
+        filepath = output_dir / f"{safe_name}.csv"
+        
+        try:
+            # Convert to pandas Series for consistent CSV output
+            if isinstance(dual_value, (dict, pd.Series)):
+                pd.Series(dual_value).to_csv(filepath, header=False)
+            elif isinstance(dual_value, (list, tuple)):
+                pd.Series(dual_value, name=dual_name).to_csv(filepath, header=False)
+            elif np.isscalar(dual_value):
+                pd.Series([dual_value], name=dual_name).to_csv(filepath, header=False)
+            elif isinstance(dual_value, np.ndarray):
+                pd.Series(dual_value.flatten()).to_csv(filepath, header=False)
+            elif isinstance(dual_value, xr.DataArray):
+                pd.Series(dual_value.values.flatten()).to_csv(filepath, header=False)
+            else:
+                # Fallback for other types
+                pd.Series([str(dual_value)], name=dual_name).to_csv(filepath, header=False)
+                
+        except Exception as e:
+            logger.warning(f"Failed to export dual variable '{dual_name}': {str(e)}")
+
+

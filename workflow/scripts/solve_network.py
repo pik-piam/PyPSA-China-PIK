@@ -18,6 +18,7 @@ from pandas import DatetimeIndex
 
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
 from constants import YEAR_HRS
+from _pypsa_helpers import process_dual_variables
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -506,13 +507,16 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
 
 def solve_network(
     n: pypsa.Network, config: dict, solving: dict, opts: str = "", **kwargs
-) -> pypsa.Network:
+) -> tuple[pypsa.Network, dict]:
     """perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
         config (dict): the configuration dictionary
         solving (dict): the solving configuration dictionary
         opts (str): optional wildcards such as ll (not used in pypsa-china)
+        
+    Returns:
+        tuple[pypsa.Network, dict]: network object and dual data dictionary
     """
     set_of_options = solving["solver"]["options"]
     solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
@@ -560,26 +564,21 @@ def solve_network(
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
 
-    # Check if dual functionality is enabled
-    if export_duals:
-        if hasattr(n, "model") and hasattr(n.model, "dual"):
-            # Process dual variables and add them to network object
-            process_dual_variables(n)
-            
-            # Export dual variables by year
-            if "planning_horizons" in n.meta.get("wildcards", {}):
-                current_year = n.meta["wildcards"]["planning_horizons"]
-                
-                # Build dual output directory path
-                # Infer results directory from snakemake output path
-                results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
-                dual_output_dir = os.path.join(results_dir, 'dual')
-                
-                export_duals_to_csv_by_year(n, current_year, output_base_dir=dual_output_dir)
-        else:
-            logger.warning("Network model does not have dual variables. Dual export will be skipped.")
+    # Collect dual data if enabled
+    dual_data = {}
+    if export_duals and hasattr(n, "model") and hasattr(n.model, "dual"):
+        # Process dual variables and add them to network object
+        process_dual_variables(n)
+        
+        # Collect dual data before model might be destroyed
+        if n.model.dual:
+            dual_data.update(dict(n.model.dual))
+        if hasattr(n, 'duals') and n.duals:
+            dual_data.update(n.duals)
+    elif export_duals:
+        logger.warning("Network model does not have dual variables. Dual export will be skipped.")
 
-    return n
+    return n, dual_data
 
 
 if __name__ == "__main__":
@@ -627,16 +626,27 @@ if __name__ == "__main__":
     # which doesn't work as snakemake is a subprocess
     is_test = snakemake.config["run"].get("is_test", False)
     if not is_test:
-        n = solve_network(
+        n, dual_data = solve_network(
             n,
             config=snakemake.config,
             solving=snakemake.params.solving,
             opts=opts,
             log_fn=snakemake.log.solver,
         )
+        
+        # Export dual variables in main (not in solve function)
+        if dual_data and snakemake.params.solving["solver_options"].get("export_duals", False):
+            current_year = snakemake.wildcards.planning_horizons
+            results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
+            dual_output_dir = os.path.join(results_dir, 'dual', f"dual_values_raw_{current_year}")
+            
+            from pathlib import Path
+            from _pypsa_helpers import export_duals_simple
+            export_duals_simple(dual_data, Path(dual_output_dir))
     else:
         logging.info("Mocking the solve step")
         n = mock_solve(n)
+        dual_data = {}
 
     if "p2" in n.links_t:
         n.links_t.p2 = n.links_t.p2.astype(float)
