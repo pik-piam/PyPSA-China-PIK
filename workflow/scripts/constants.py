@@ -96,9 +96,11 @@ def load_province_config(config_path: str = None) -> dict:
             logger.warning(f"Failed to load province config from {config_path}: {e}")
     
     # Default configuration
+    # TODO: Implement province splits
     return {
         "provinces": list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys()),
         "splits": {
+            # example
             "Inner Mongolia": ["Inner Mongolia East", "Inner Mongolia West"]
         }
     }
@@ -118,7 +120,7 @@ def generate_province_names(config: dict = None) -> List[str]:
     provinces = config.get("provinces", list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys()))
     splits = config.get("splits", {})
     
-    # Apply splits
+    # TODO: Implement province splits
     final_provinces = []
     for province in provinces:
         if province in splits:

@@ -20,6 +20,7 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 import os
+
 import logging
 
 from _helpers import configure_logging, mock_snakemake, ConfigManager
@@ -32,12 +33,10 @@ from build_biomass_potential import estimate_co2_intensity_xing
 from functions import haversine
 from add_electricity import load_costs, sanitize_carriers
 from readers_geospatial import read_province_shapes
-from prepare_network_common import calc_renewable_pu_avail
 
 from constants import (
     PROV_NAMES,
     CRS,
-    LOAD_CONVERSION_FACTOR,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
     FOM_LINES,
@@ -778,22 +777,20 @@ def add_heat_coupling(
         location=nodes,
     )
 
-    available_provs = [prov for prov in nodes if prov in heat_demand.columns]
-    if not available_provs:
-        raise ValueError("No province heat demand data available, please check input data!")
     network.add(
         "Load",
-        available_provs,
+        nodes,
         suffix=" decentral heat",
-        bus=[prov + " decentral heat" for prov in available_provs],
-        p_set=heat_demand[available_provs].multiply(1 - central_fraction[available_provs]),
+        bus=nodes + " decentral heat",
+        p_set=heat_demand[nodes].multiply(1 - central_fraction[nodes]),
     )
+
     network.add(
         "Load",
-        available_provs,
+        nodes,
         suffix=" central heat",
-        bus=[prov + " central heat" for prov in available_provs],
-        p_set=heat_demand[available_provs].multiply(central_fraction[available_provs]),
+        bus=nodes + " central heat",
+        p_set=heat_demand[nodes].multiply(central_fraction[nodes]),
     )
 
     if "heat pump" in config["Techs"]["vre_techs"]:
@@ -1355,16 +1352,15 @@ def prepare_network(
     network = pypsa.Network()
     network.set_snapshots(snapshots)
     network.snapshot_weightings[:] = config["snapshots"]["frequency"]
-    
     # load graph
     nodes = pd.Index(PROV_NAMES)
+    # toso soft code
     countries = ["CN"] * len(nodes)
 
     # TODO check crs projection correct
-    # load provinces and align data
+    # load provinces
     prov_shapes = read_province_shapes(paths["province_shape"])
     prov_centroids = prov_shapes.to_crs("+proj=cea").centroid.to_crs(CRS)
-    prov_centroids = prov_centroids.reindex(nodes)
 
     # add AC buses
     network.add(
@@ -1373,93 +1369,16 @@ def prepare_network(
 
     # add carriers
     add_carriers(network, config, costs)
-    
-    # load datasets calculated by build_renewable_profiles
-    ds_solar = xr.open_dataset(snakemake.input.profile_solar)
-    ds_onwind = xr.open_dataset(snakemake.input.profile_onwind)
-    ds_offwind = xr.open_dataset(snakemake.input.profile_offwind)
-
-    # Handle p_nom_max for renewable technologies
-    p_nom_max_onwind = ds_onwind["p_nom_max"]
-    if "bin" in p_nom_max_onwind.dims:
-        p_nom_max_onwind = p_nom_max_onwind.isel(bin=0)
-    p_nom_max_onwind = p_nom_max_onwind.to_pandas()
-
-    p_nom_max_offwind = ds_offwind["p_nom_max"]
-    if "bin" in p_nom_max_offwind.dims:
-        p_nom_max_offwind = p_nom_max_offwind.isel(bin=0)
-    p_nom_max_offwind = p_nom_max_offwind.to_pandas()
-
-    p_nom_max_solar = ds_solar["p_nom_max"]
-    if "bin" in p_nom_max_solar.dims:
-        p_nom_max_solar = p_nom_max_solar.isel(bin=0)
-    p_nom_max_solar = p_nom_max_solar.to_pandas()
-
-    # == shift datasets from reference to planning year, sort columns to match network bus order ==
-    solar_p_max_pu = calc_renewable_pu_avail(ds_solar, planning_horizons, snapshots)
-    onwind_p_max_pu = calc_renewable_pu_avail(ds_onwind, planning_horizons, snapshots)
-    offwind_p_max_pu = calc_renewable_pu_avail(ds_offwind, planning_horizons, snapshots)
 
     # load electricity demand data
-    demand_path = snakemake.input.elec_load.replace("{planning_horizons}", f"{cost_year}")
-    
+    demand_path = paths["elec_load"].replace("{planning_horizons}", f"{cost_year}")
     with pd.HDFStore(demand_path, mode="r") as store:
-        raw_load = store["load"]
-        load = LOAD_CONVERSION_FACTOR * raw_load
-        
-        # Check data availability
-        available_provs = [prov for prov in nodes if prov in load.columns]
-        if not available_provs:
-            raise ValueError("No province data available, please check input data!")
-        load = load.loc[network.snapshots, available_provs]
-    
-    network.add("Load", available_provs, bus=available_provs, p_set=load[available_provs])
-    
-    # add renewables with availability check
-    available_onwind_provs = [prov for prov in nodes if prov in p_nom_max_onwind.index]
-    network.add(
-        "Generator",
-        available_onwind_provs,
-        suffix=" onwind",
-        bus=available_onwind_provs,
-        carrier="onwind",
-        p_nom_extendable=True,
-        p_nom_max=p_nom_max_onwind[available_onwind_provs],
-        capital_cost=costs.at["onwind", "capital_cost"],
-        marginal_cost=costs.at["onwind", "marginal_cost"],
-        p_max_pu=onwind_p_max_pu[available_onwind_provs],
-        lifetime=costs.at["onwind", "lifetime"],
-    )
+        load = store["load"].loc[network.snapshots, PROV_NAMES]  # MWHr
 
-    available_offwind_provs = [prov for prov in nodes if prov in p_nom_max_offwind.index]
-    network.add(
-        "Generator",
-        available_offwind_provs,
-        suffix=" offwind",
-        bus=available_offwind_provs,
-        carrier="offwind",
-        p_nom_extendable=True,
-        p_nom_max=p_nom_max_offwind[available_offwind_provs],
-        capital_cost=costs.at["offwind", "capital_cost"],
-        marginal_cost=costs.at["offwind", "marginal_cost"],
-        p_max_pu=offwind_p_max_pu[available_offwind_provs],
-        lifetime=costs.at["offwind", "lifetime"],
-    )
+    network.add("Load", nodes, bus=nodes, p_set=load[nodes])
 
-    available_solar_provs = [prov for prov in nodes if prov in p_nom_max_solar.index]
-    network.add(
-        "Generator",
-        available_solar_provs,
-        suffix=" solar",
-        bus=available_solar_provs,
-        carrier="solar",
-        p_nom_extendable=True,
-        p_nom_max=p_nom_max_solar[available_solar_provs],
-        capital_cost=costs.at["solar", "capital_cost"],
-        marginal_cost=costs.at["solar", "marginal_cost"],
-        p_max_pu=solar_p_max_pu[available_solar_provs],
-        lifetime=costs.at["solar", "lifetime"],
-    )
+    ws_carriers = [c for c in config["Techs"]["vre_techs"] if c.find("wind") >= 0 or c == "solar"]
+    add_wind_and_solar(network, ws_carriers, paths, planning_horizons, costs)
 
     add_conventional_generators(network, nodes, config, prov_centroids, costs)
 
@@ -1513,13 +1432,8 @@ def prepare_network(
         )
 
     if config["add_hydro"]:
-        # Check if there are hydro dams in selected provinces
-        df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
-        dams = df[df["Province"].isin(nodes)]
-        if not dams.empty:
-            add_hydro(network, config, nodes, prov_centroids, costs, planning_horizons)
-        else:
-            logger.info(f"No hydro dams in selected provinces {nodes.tolist()}, skipping hydro")
+        logger.info("Adding hydro to network")
+        add_hydro(network, config, nodes, prov_centroids, costs, planning_horizons)
 
     if config["add_H2"]:
         logger.info("Adding H2 buses to network")
@@ -1615,21 +1529,7 @@ def prepare_network(
     # TODO make not lossless optional (? - increases computing cost)
 
     if not config["no_lines"]:
-        edge_path = config["edge_paths"].get(config["scenario"]["topology"], None)
-        if edge_path is None:
-            raise ValueError(f"No grid found for topology {config['scenario']['topology']}")
-        else:
-            edges_ = pd.read_csv(
-                edge_path, sep=",", header=None, names=["bus0", "bus1", "p_nom"]
-            ).fillna(0)
-            # Only keep connections between selected provinces
-            edges = edges_[
-                edges_["bus0"].isin(nodes) & edges_["bus1"].isin(nodes)
-            ]
-            if not edges.empty:
-                add_voltage_links(network, config)
-            else:
-                logger.info(f"No transmission lines between selected provinces {nodes.tolist()}, skipping lines")
+        add_voltage_links(network, config)
 
     assign_locations(network)
     return network
