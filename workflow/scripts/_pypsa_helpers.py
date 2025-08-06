@@ -6,7 +6,7 @@ import numpy as np
 import logging
 import pytz
 import xarray as xr
-from typing import Optional, Dict, Any, Union, List
+from typing import Optional, Any, Union, List
 from pathlib import Path
 
 import pypsa
@@ -636,8 +636,8 @@ def _export_single_dual_variable(
 # --- Determine output directory ---
 def _determine_output_directory(
     network: pypsa.Network,
-    current_year: Union[int, str],
-    output_base_dir: Optional[Union[str, Path]]
+    current_year: int|str,
+    output_base_dir: str|Path|None
 ) -> Path:
     """Determines and creates the output directory for dual variables."""
     if output_base_dir is None:
