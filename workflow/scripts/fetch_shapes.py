@@ -300,7 +300,7 @@ if __name__ == "__main__":
     logger.info(f"Fetching maritime zones for EEZ prefix {EEZ_PREFIX}")
     eez_country = fetch_maritime_eez(EEZ_PREFIX)
     logger.info("Breaking by reion")
-    tol = snakemake.config["fetch_regions"]["simplify_tol"]
+    tol = snakemake.config["fetch_regions"]["eez"]["simplify_tol"]
     eez_by_region(eez_country, regions, prov_key="province", simplify_tol=tol).to_file(
         snakemake.output.offshore_shapes, driver="GeoJSON"
     )
