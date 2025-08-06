@@ -8,7 +8,6 @@ from snakemake.utils import min_version
 import logging
 import os.path
 
-from os.path import abspath, getctime
 from scripts._helpers import PathManager, get_cutout_params, ConfigManager
 
 # NB: duplicated parameters will be overwritten by the last read cfg
@@ -16,8 +15,9 @@ from scripts._helpers import PathManager, get_cutout_params, ConfigManager
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
+configfile: "config/global_energy_monitor.yaml"
 
-# for dev of remind with mocksnakemake, activate this
+# for dev of remind with mocksnakemake, can activate this
 # configfile: "resources/tmp/remind_coupled_cg.yaml"
 
 
@@ -123,6 +123,18 @@ rule build_population_gridcell_map:
     resources: mem_mb=35000
     script: "scripts/build_population_gridcell_map.py"
 
+gem_techs = config["existing_capacities"]["techs"]
+rule build_powerplants:
+    # params:
+    input:
+        GEM_plant_tracker="resources/data/existing_infrastructure/gem_data_raw/Global-integrated-Plant-Tracker-July-2025_china.xlsx",
+        nodes=DERIVED_COMMON + "/regions/provinces_onshore.geojson",
+    output:
+        **{tech : DERIVED_COMMON + f"/existing_infrastructure/{tech}_capacity.csv" for tech in gem_techs},
+    log: LOGS_COMMON + "/build_powerplants.log"
+    threads: 2 #TODO 1?
+    script: "scripts/build_powerplants.py"
+
 rule build_solar_thermal_profiles:
     input:
         cutout=CUTOUT_PATH,
@@ -149,7 +161,7 @@ rule build_cop_profiles:
     input:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout=CUTOUT_PATH,
-        temp=DERIVED_CUTOUT + "/heating/temperature.h5"
+        temperature=DERIVED_CUTOUT + "/heating/temperature.h5"
     output:
         cop= DERIVED_CUTOUT + "/heating/hp_cop.h5"
     threads: 8
