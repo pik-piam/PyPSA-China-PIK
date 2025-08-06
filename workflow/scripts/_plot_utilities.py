@@ -22,15 +22,15 @@ def validate_hex_colors(tech_colors: Dict[str, str]) -> Dict[str, str]:
     Returns:
         Dict[str, str]: Dictionary with validated color codes. Invalid colors are replaced with '#999999'.
     """
-    hex_color_pattern = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
+    hex_color_pattern = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
     validated_colors = {}
-    
+
     for tech, color in tech_colors.items():
         if not isinstance(color, str) or not hex_color_pattern.match(color):
             validated_colors[tech] = "#999999"
         else:
             validated_colors[tech] = color.lower()
-            
+
     return validated_colors
 
 
@@ -48,19 +48,67 @@ def find_weeks_of_interest(
         tuple: Index ranges of ±3.5 days around the winter_max and summer_max.
     """
     max_prices = n.buses_t["marginal_price"][PROV_NAMES].T.max()
-    summer = max_prices.loc[summer_start:summer_end].index
+    prices_w = (
+        -1
+        * n.statistics.revenue(comps="Load", bus_carrier="AC", aggregate_time=False)
+        .T.resample("W")
+        .sum()
+        / n.statistics.withdrawal(comps="Load", bus_carrier="AC", aggregate_time=False)
+        .T.resample("W")
+        .sum()
+    )
 
-    winter_max = max_prices.loc[~max_prices.index.isin(summer)].idxmax()
-    summer_max = max_prices.loc[summer].idxmax()
+    summer = prices_w.query("snapshot > @summer_start and snapshot < @summer_end")
+    summer_peak = summer.idxmax().iloc[0]
+    summer_peak_w = n.snapshots[(n.snapshots >= summer_peak - pd.Timedelta(days=3.5)) & (n.snapshots <= summer_peak + pd.Timedelta(days=3.5))]
+    winter_peak = prices_w.loc[~prices_w.index.isin(summer.index)].idxmax().iloc[0]
+    winter_peak_w = n.snapshots[(n.snapshots >= winter_peak - pd.Timedelta(days=3.5)) & (n.snapshots <= winter_peak + pd.Timedelta(days=3.5))]
 
-    winter_range = max_prices.loc[
-        winter_max - pd.Timedelta(days=3.5) : winter_max + pd.Timedelta(days=3.5)
-    ].index
-    summer_range = max_prices.loc[
-        summer_max - pd.Timedelta(days=3.5) : summer_max + pd.Timedelta(days=3.5)
-    ].index
+    return winter_peak_w, summer_peak_w
 
-    return winter_range, summer_range
+
+def label_stacked_bars(ax: object, nbars: int, fontsize=8, small_values=350):
+    """Add value labels to stacked bar charts.
+
+    Args:
+        ax (object): The matplotlib Axes object containing the stacked bar chart.
+        nbars (int): The number of bars in the stacked chart.
+        fontsize (int, optional): Font size for the labels. Defaults to 8.
+        small_values (int, optional): Threshold for small values. Small values
+            adjacent to one another are not printed to avoid overlap. Defaults to 350."""
+
+    # reorganize patches by bar
+    stacked = [ax.patches[i::nbars] for i in range(len(ax.patches) // nbars)]
+    # loop over bars and patches, so we can avoid overlapping labels
+    for stacked_bar in stacked:
+        prev = 0
+        cutoff = 100
+        for bar in stacked_bar:
+            value = round(bar.get_height())
+            yoffset = -1.8 * fontsize * np.sign(value)
+            if abs(value) < cutoff:
+                continue
+            if 0 < value < small_values:
+                yoffset -= 20
+            elif -1 * small_values < value < 0 and (prev < -1 * small_values or prev > 0):
+                yoffset += 50
+            ax.text(
+                # Put the text in the middle of each bar. get_x returns the start
+                # so we add half the width to get to the middle.
+                bar.get_x() + bar.get_width() / 2,
+                # Vertically, add the height of the bar to the start of the bar,
+                # along with the offset.
+                bar.get_height() / 2 + bar.get_y() + yoffset,
+                # This is actual value we'll show.
+                value,
+                # Center the labels and style them a bit.
+                ha="center",
+                color="w",
+                weight="bold",
+                size=fontsize,
+            )
+
+            prev = value
 
 
 def make_nice_tech_colors(tech_colors: dict, nice_names: dict) -> dict:
@@ -161,7 +209,11 @@ def rename_techs(label: list) -> list:
         "decentral ",
     ]
 
-    rename_if_contains_dict = {"water tanks": "hot water storage", "H2": "H2", "coal cc": "CC"}
+    rename_if_contains_dict = {
+        "water tanks": "hot water storage",
+        "H2": "H2",
+        "coal cc": "CC",
+    }
 
     rename_if_contains = ["gas", "coal"]
 
@@ -224,7 +276,7 @@ def fix_network_names_colors(n: pypsa.Network, config: dict):
         n.carriers.nice_name = n.carriers.index.map(nice_names)
         t_colors = config["plotting"]["tech_colors"]
         n.carriers.color = n.carriers.index.map(t_colors)
-        NAN_COLOR = "lightgrey"
+        NAN_COLOR = config["plotting"].get("nan_color", "lightgrey")
         n.carriers.color.fillna(NAN_COLOR, inplace=True)
 
 

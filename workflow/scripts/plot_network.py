@@ -32,7 +32,7 @@ def plot_map(
     network: pypsa.Network,
     tech_colors: dict,
     edge_widths: pd.Series,
-    bus_colors: pd.Series,
+    bus_colors: dict | pd.Series,
     bus_sizes: pd.Series,
     edge_colors: pd.Series | str = "black",
     add_ref_edge_sizes=True,
@@ -78,17 +78,23 @@ def plot_map(
 
     ax.add_feature(cfeature.BORDERS, linewidth=0.5, edgecolor="gray")
     states_provinces = cfeature.NaturalEarthFeature(
-        category="cultural", name="admin_1_states_provinces_lines", scale="50m", facecolor="none"
+        category="cultural",
+        name="admin_1_states_provinces_lines",
+        scale="50m",
+        facecolor="none",
     )
     # Add our states feature.
     ax.add_feature(states_provinces, edgecolor="lightgray", alpha=0.7)
 
     if add_legend:
         carriers = bus_sizes.index.get_level_values(1).unique()
-        # Only select carriers that exist in tech_colors
-        available_carriers = carriers.intersection(tech_colors.keys())
-        colors = available_carriers.map(tech_colors).to_list()
-        labels = available_carriers.to_list()
+        # Ensure all carriers have colors, use default color for missing ones
+        colors = []
+        for carrier in carriers:
+            if carrier in tech_colors:
+                colors.append(tech_colors[carrier])
+            else:
+                colors.append("lightgrey")  # Default color for missing carriers
 
         if isinstance(edge_colors, str):
             colors += [edge_colors]
@@ -156,6 +162,7 @@ def add_cost_pannel(
     tech_colors: dict,
     plot_additions: bool,
     ax_loc=[-0.09, 0.28, 0.09, 0.45],
+    **kwargs: dict,
 ) -> None:
     """Add a cost pannel to the figure
 
@@ -171,11 +178,21 @@ def add_cost_pannel(
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
     colors = {k.lower(): v for k, v in tech_colors.items()}
+
+    # Create color list with default color for missing carriers
+    color_list = []
+    for k in reordered:
+        if k.lower() in colors:
+            color_list.append(colors[k.lower()])
+        else:
+            color_list.append("lightgrey")  # Default color for missing carriers
+
     df.loc[reordered, df.columns].T.plot(
         kind="bar",
         ax=ax3,
         stacked=True,
-        color=[colors[k.lower()] for k in reordered],
+        color=color_list,
+        **kwargs,
     )
     ax3.legend().remove()
     ax3.set_ylabel("annualized system cost bEUR/a")
@@ -188,6 +205,7 @@ def add_cost_pannel(
         ax3.text(0.85, (df.sum()["added"] + 15), str(percent) + "%", color="black")
 
     fig.tight_layout()
+    return ax3
 
 
 # TODO fix args unused
@@ -234,7 +252,7 @@ def plot_cost_map(
     costs = network.statistics.capex(groupby=["location", "carrier"])
     costs = costs.groupby(level=[1, 2]).sum()
     if "" in costs.index:
-        costs = costs.drop("")    
+        costs.drop("", inplace=True)
     # we miss some buses by grouping epr location, fill w 0s
     bus_idx = pd.MultiIndex.from_product([network.buses.index, ["AC"]])
     costs = costs.reindex(bus_idx.union(costs.index), fill_value=0)
@@ -292,12 +310,8 @@ def plot_cost_map(
     # Add the total costs
     bus_size_factor = opts["cost_map"]["bus_size_factor"]
     linewidth_factor = opts["cost_map"]["linewidth_factor"]
-    
-    # Create bus_colors based on carriers in cost_pies
-    carriers_in_cost_pies = cost_pies.index.get_level_values(1).unique()
-    bus_colors = pd.Series({carrier: tech_colors.get(carrier, "lightgrey") for carrier in carriers_in_cost_pies})
-    
-    plot_map(
+
+    ax = plot_map(
         network,
         tech_colors=tech_colors,
         edge_widths=edge_widths / linewidth_factor,
@@ -313,11 +327,7 @@ def plot_cost_map(
     # TODO check edges is working
     # Add the added pathway costs
     if plot_additions:
-        # Create bus_colors based on carriers in cost_pies_additional
-        carriers_in_additions = cost_pies_additional.index.get_level_values(1).unique()
-        bus_colors_additions = pd.Series({carrier: tech_colors.get(carrier, "lightgrey") for carrier in carriers_in_additions})
-        
-        plot_map(
+        ax2 = plot_map(
             network,
             tech_colors=tech_colors,
             edge_widths=edge_widths_added / linewidth_factor,
@@ -347,9 +357,17 @@ def plot_cost_map(
         df = df / PLOT_COST_UNITS
         # TODO decide discount
         # df = df / (1 + discount_rate) ** (int(planning_horizon) - base_year)
-        add_cost_pannel(
-            df, fig, preferred_order, tech_colors, plot_additions, ax_loc=[-0.09, 0.28, 0.09, 0.45]
+        ax3 = add_cost_pannel(
+            df,
+            fig,
+            preferred_order,
+            tech_colors,
+            plot_additions,
+            ax_loc=[-0.09, 0.28, 0.09, 0.45],
         )
+        # Set x-label angle to 45 degrees for better readability
+        for label in ax3.get_xticklabels():
+            label.set_rotation(45)
 
     fig.set_size_inches(opts["cost_map"][f"figsize{'_w_additions' if plot_additions else ''}"])
     fig.tight_layout()
@@ -364,6 +382,7 @@ def plot_energy_map(
     save_path: os.PathLike = None,
     carrier="AC",
     plot_ac_imports=False,
+    exclude_batteries=True,
     components=["Generator", "Link"],
 ):
     """A map plot of energy, either AC or heat
@@ -375,6 +394,7 @@ def plot_energy_map(
         save_path (os.PathLike, optional): Fig outp path. Defaults to None (no save).
         carrier (str, optional): the energy carrier. Defaults to "AC".
         plot_ac_imports (bool, optional): plot electricity imports. Defaults to False.
+        exclude_batteries (bool, optional): exclude battery dischargers from the supply pie.
         components (list, optional): the components to plot. Defaults to ["Generator", "Link"].
     raises:
         ValueError: if carrier is not AC or heat
@@ -447,12 +467,20 @@ def plot_energy_map(
         opts_plot["ref_edge_sizes"] = opts_plot["ref_edge_sizes_heat"]
         opts_plot["linewidth_factor"] = opts_plot["linewidth_factor_heat"]
         opts_plot["bus_size_factor"] = opts_plot["bus_size_factor_heat"]
-    plot_map(
+    # exclude battery dischargers from bus sizes
+    if exclude_batteries:
+        bus_sizes = (
+            supply_pies.loc[~supply_pies.index.get_level_values(1).str.contains("battery")]
+            / opts_plot["bus_size_factor"]
+        )
+    else:
+        bus_sizes = supply_pies / opts_plot["bus_size_factor"]
+    ax = plot_map(
         network,
         tech_colors=tech_colors,  # colors.to_dict(),
         edge_widths=edge_widths / opts_plot["linewidth_factor"],
         bus_colors=bus_colors.loc[reordered],
-        bus_sizes=supply_pies / opts_plot["bus_size_factor"],
+        bus_sizes=bus_sizes,
         edge_colors=opts_plot["edge_color"],
         ax=ax,
         edge_unit_conv=PLOT_CAP_UNITS,
@@ -464,6 +492,7 @@ def plot_energy_map(
     if energy_pannel:
         df = supply_pies.groupby(level=1).sum().to_frame()
         df = df.fillna(0)
+        df.rename(columns={0: ""}, inplace=True)
         add_energy_pannel(df, fig, preferred_order, bus_colors, ax_loc=[-0.09, 0.28, 0.09, 0.45])
 
     handles, labels = ax.get_legend_handles_labels()
@@ -611,9 +640,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_network",
             topology="current+FCG",
-            co2_pathway="exp175default",
-            planning_horizons="2060",
-            heating_demand="positive",
+            # co2_pathway="exp175default",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            planning_horizons="2030",
+            # heating_demand="positive",
+            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
     set_plot_test_backend(snakemake.config)
     configure_logging(snakemake, logger=logger)
@@ -667,7 +698,7 @@ if __name__ == "__main__":
         components=["Generator", "Link"],
     )
 
-    if config["heat_coupling"]:
+    if config.get("heat_coupling"):
         p = snakemake.output.cost_map.replace("el_supply.png", "heat_supply.png")
         plot_energy_map(
             n,

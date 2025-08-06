@@ -5,7 +5,7 @@ plotting:
   network_style_config_file: "config/plotting_styles/network_map.mplstyle"
   transparent: false
   statistics:
-    clip_numerical_zeroes: false
+    clip_numerical_zeroes: true
   cost_panel:
     y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
   cost_map:
@@ -18,7 +18,7 @@ plotting:
     bus_size_factor_heat: 5.e+4
     linewidth_factor_heat: 5.e+4
     min_edge_capacity : 1.e+4
-    ref_edge_sizes : [5.e+3,10.e+3,30.e+3] # MW
+    ref_edge_sizes : [5.e+3,30.e+3,100.e+3] # MW
     ref_bus_sizes : [20.e+9, 10.e+9, 5.e+9] # eur/currnecy
     ref_bus_unit: "bn €/a"
     edge_color: "indigo"
@@ -32,10 +32,10 @@ plotting:
     bus_size_factor_demand: 2.e+7
     min_edge_capacity : 5.e+2 # MW
     ref_bus_unit: "TWh"
-    ref_edge_sizes : [5.e+3,10.e+3,30.e+3] # MW
+    ref_edge_sizes : [10.e+3,50.e+3,150.e+3] # MW
     ref_edge_sizes_heat : [1.e+3,10.e+3,50.e+3]  # in MW
-    ref_bus_sizes : [5.e+7, 1.e+8, 2.e+9] # MWh
-    ref_bus_sizes_heat : [10.e+6, 100.e+6, 500.e+6] # MWh
+    ref_bus_sizes : [ 2.e+9, 5.e+8,] # MWh
+    ref_bus_sizes_heat : [500.e+6, 100.e+6, 10.e+6] # MWh
     bus_ref_title : "Electricity supply"
     edge_color: "indigo"
   price_map:
@@ -64,7 +64,7 @@ plotting:
   conv_techs: [ "gas", "gas-heat", "gas-AC", "AC-gas", "coal", "coal-AC","solar thermal","AC-heat","AC-AC","stations-AC","uranium", "H2-AC", "H2-gas",]
   storage_techs: [ "hydro+PHS", "battery", "AC-battery", "H2", "AC-H2" , "AC-heat"]
 
-  nan_color: "pink"
+  nan_color: "brown"
 
   tech_colors:
     blank: "white"
@@ -95,6 +95,7 @@ plotting:
     battery storage: '#ace37f'
     battery charger: '#88a75b'
     battery discharger: "#ace37f" #'#5d4e29'
+    Battery Discharger: "#ace37f"
     home battery: '#80c944'
     home battery storage: '#80c944'
     home battery charger: '#5e8032'
@@ -126,10 +127,12 @@ plotting:
     biomass to liquid: '#32CD32'
     BioSNG: '#123456'
     # coal
-
-    coal carbon capture: '#8487e8'
-    coal cc: '#8487e8'
-    coal power plant retrofit: '#8487e8'
+    coal carbon capture: '#8c8dad'
+    coal-CCS: '#8c8dad'
+    coal CCS: '#8c8dad'
+    coal cc: '#8c8dad'
+    coal ccs: '#8c8dad'
+    coal power plant retrofit: '#8c8dad'
     # gas
     gas: '#e0986c'
     # gas: '#e05b09'
@@ -139,6 +142,12 @@ plotting:
     gas OCGT: '#e0986c'
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
+    CCGT: '#a85522'
+    CCGT gas: '#a85522'
+    gas CCGT: '#a85522'
+    gas ccs: '#a85522'
+    CCGT-CCS: '#76855B'
+    gas CCGT-CCS: '#76855B'
     gas boiler: '#db6a25'
     gas boiler decentral: '#db6a25'
     gas boiler central: '#db6a25'
@@ -233,8 +242,8 @@ plotting:
     services rural resistive heater: '#a5ed9d'
     services urban decentral resistive heater: '#98e991'
     urban central resistive heater: '#8cdf85'
-    retrofitting: '#8487e8'
-    building retrofitting: '#8487e8'
+    retrofitting: '#8c8dad'
+    building retrofitting: '#8c8dad'
 
     # hydrogen
     H2 for industry: "#f073da"
@@ -264,6 +273,8 @@ plotting:
     run of river: '#3dbfb0'
     hydroelectricity: '#298c81'
     PHS: '#51dbcc'
+    Pumped Hydro Storage: '#51dbcc'
+    pumped hydro storage: '#51dbcc'
     hydro+PHS: "#08ad97"
     wave: '#a7d4cf'
     stations: "pink"
@@ -277,6 +288,7 @@ plotting:
     services urban decentral solar thermal: '#dfb953'
     urban central solar thermal: '#d7b24c'
     solar rooftop: '#ffea80'
+    csp: "#ffe76e"
     # wind
     wind: "#235ebc"
     onwind: "#235ebc"
@@ -322,7 +334,9 @@ plotting:
     industry electricity: '#2d2a66'
     industry new electricity: '#2d2a66'
     agriculture electricity: '#494778'
-
+    load shedding: "#dd2e23"
+    Load shedding: "#dd2e23"
+    Load Shedding: "#dd2e23"
     # syngas
     Sabatier: '#9850ad'
     methanation: '#c44ce6'
@@ -389,13 +403,19 @@ plotting:
     OCGT: "Open-Cycle Gas"
     gas OCGT: "Open-Cycle Gas"
     CCGT: "Combined-Cycle Gas"
+    gas CCGT: "Combined-Cycle Gas"
+    gas ccs: "Gas with Carbon Capture"
+    gas: Gas
     heat pump: "Heat Pump"
     stations-AC: "Reservoir & Dam"
     AC-heat: "Heat Pump"
     # generatord
     battery: "Battery Storage"
+    battery discharger: "Battery Discharger"
     coal: "Coal Power Plant"
-    coal cc: "coal carbon capture"
+    coal cc: "Coal with carbon capture"
+    coal ccs: "Coal with carbon capture"
+    coal-CCS: "Coal with Carbon Capture"
     coal-heat: "Coal Boiler"
     hydro: "Reservoir & Dam"
     H2 fuel cell: "H2 Fuel Cell"
@@ -408,12 +428,11 @@ plotting:
     solar thermal: "Solar Thermal"
     uranium: "Nuclear"
     hydroelectricity: "Hydroelectricity"
-    energy:
-      coal: "Coal"
-      offwind: "Offshore Wind"
-      onwind: "Onshore Wind"
-      solar: "Solar"
-      solar thermal: "Solar Thermal"
+    coal: "Coal"
+    offwind: "Offshore Wind"
+    onwind: "Onshore Wind"
+    solar: "Solar"
+    solar thermal: "Solar Thermal"
 
   preferred_order:
   - electric load
@@ -422,20 +441,29 @@ plotting:
   - Transmission Lines
   - transmission lines
   - transmission losses
-  - nuclear
-  - Nuclear
   - hydroelectricity
   - Hydroelectricity
+  - nuclear
+  - Nuclear
   - Coal
   - coal
-  - coal carbon capture
   - coal power plant
   - coal power plant retrofit
+  - coal carbon capture
+  - coal ccs
+  - coal-CCS
+  - coal CCS
+  - Coal with Carbon Capture
   - coal boiler
   - coal boiler decentral
   - coal boiler central
+  - gas
   - CHP coal
-  - OCGT
+  - gas CCGT
+  - CCGT-CCS
+  - gas CCGT-CCS 
+  - gas
+  - Combined-Cycle Gas
   - gas boiler
   - gas boiler decentral
   - gas boiler central
@@ -445,17 +473,15 @@ plotting:
   - heat pump
   - Heat Pump
   - methanation
-  - H2
   - Hydrogen Storage
   - H2 fuel cell
   - H2 CHP
-  - H2
   - H2 Electrolysis
   - Hydrogen Storage
+  - H2 turbine
   - H2 fuel cell
   - H2 CHP
   - CO2 capture
-  - H2 pipeline
   - hot water storage
   - hydrogen storage
   - solar thermal
@@ -468,11 +494,13 @@ plotting:
   - solar PV
   - Solar
   - solar
-  - battery storage
-  - gas
+  - OCGT
   - gas OCGT
+  - battery storage
   - battery discharger
   - battery
   - Battery
   - resistive heater
+  - H2
+  - H2 pipeline
   - Other
