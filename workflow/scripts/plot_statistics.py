@@ -41,31 +41,16 @@ def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, dro
     if drop_zero_vals:
         ds = ds[ds != 0]
     ds = ds.dropna()
-
-    # Check if data is empty
-    if ds.empty:
-        logger.warning("No data to plot after filtering (dropping zeros and NaN values)")
-        return
-
     logger.info("debuggin plot stat")
-    logger.info("all colors:")
     logger.info(colors)
-
-    carriers = ds.index.get_level_values("carrier")
-    c = colors.reindex(carriers).fillna("lightgrey")
-
-    if c.isnull().all():
-        logger.warning("All carrier colors missing for: %s", list(carriers))
-        c[:] = "lightgrey"
-
-    logger.info("final color mapping:")
+    c = colors[ds.index.get_level_values("carrier")]
     logger.info(c)
-
+    logger.info(ds.index.get_level_values("carrier"))
+    logger.info(colors.loc[ds.index.get_level_values("carrier")])
     ds = ds.pipe(rename_index)
-    label = f"{ds.attrs.get('name', '')} [{ds.attrs.get('unit', '')}]"
+    label = f"{ds.attrs['name']} [{ds.attrs['unit']}]"
     ds.plot.barh(color=c.values, xlabel=label, ax=ax)
     ax.grid(axis="y")
-
 
 
 if __name__ == "__main__":
@@ -121,10 +106,8 @@ if __name__ == "__main__":
 
     if "installed_capacity" in stats_list:
         fig, ax = plt.subplots()
-        ds = n.statistics.installed_capacity(groupby=["carrier"]).dropna()
-        # Avoid error when plotting by region where some areas have no hydro stations
-        if ds.index.names and "stations" in ds.index.names:
-            ds.drop("stations", level=1, inplace=True)
+        ds = n.statistics.installed_capacity(groupby=["carrier"], nice_names=False).dropna()
+        ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])

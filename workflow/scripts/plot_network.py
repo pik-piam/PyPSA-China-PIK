@@ -295,9 +295,6 @@ def plot_cost_map(
 
         # add to carrier types
         carriers = carriers.union(cost_pies_additional.index.get_level_values(1).unique())
-        
-        # Create bus_colors_additions for the additions plot
-        bus_colors_additions = tech_colors
 
     preferred_order = pd.Index(opts["preferred_order"])
     carriers = carriers.tolist()

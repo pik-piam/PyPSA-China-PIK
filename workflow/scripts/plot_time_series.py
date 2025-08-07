@@ -86,22 +86,9 @@ def plot_energy_balance(
     charge = p.where(p < 0).dropna(how="all", axis=1)
 
     # fix names and order
-    battery_names = {
-        "Battery Storage": "Battery",
-        "Battery Discharger": "Battery",
-        "battery": "Battery",
-        "battery storage": "Battery"
-    }
 
-    # Only rename existing columns
-    for old_name, new_name in battery_names.items():
-        if old_name in charge.columns:
-            charge.rename(columns={old_name: new_name}, inplace=True)
-        if old_name in supply.columns:
-            supply.rename(columns={old_name: new_name}, inplace=True)
-        if old_name in color_series.index:
-            color_series.rename({old_name: new_name}, inplace=True)
-
+    charge.rename(columns={"Battery Storage": "Battery"}, inplace=True)
+    supply.rename(columns={"Battery Discharger": "Battery"}, inplace=True)
     color_series = color_series[charge.columns.union(supply.columns)]
     color_series.rename(
         {"Battery Discharger": "Battery", "Battery Storage": "Battery"},
@@ -111,20 +98,14 @@ def plot_energy_balance(
     color_series = color_series[~color_series.index.duplicated(keep="first")]
 
     preferred_order = plot_config["preferred_order"]
-    plot_order = list(dict.fromkeys(
+    plot_order = (
         supply.columns.intersection(preferred_order).to_list()
         + supply.columns.difference(preferred_order).to_list()
-    ))
+    )
 
-    plot_order_charge = list(dict.fromkeys(
-        [name for name in preferred_order if name in charge.columns] 
-        + [name for name in charge.columns if name not in preferred_order]
-    ))
-
-    # Merge duplicate Battery columns if they exist
-    if supply.columns.duplicated().any():
-        # Merge duplicate columns
-        supply = supply.groupby(supply.columns, axis=1).sum()
+    plot_order_charge = [name for name in preferred_order if name in charge.columns] + [
+        name for name in charge.columns if name not in preferred_order
+    ]
 
     supply = supply.reindex(columns=plot_order)
     charge = charge.reindex(columns=plot_order_charge)
@@ -240,7 +221,7 @@ def plot_regional_load_durations(
 
 
 def plot_residual_load_duration_curve(
-    network: pypsa.Network, ax: plt.Axes = None, vre_techs=["Onshore Wind", "Offshore Wind", "Solar"]
+    network, ax: plt.Axes = None, vre_techs=["Onshore Wind", "Offshore Wind", "Solar"]
 ) -> plt.Axes:
     """plot the residual load duration curve for the given carrier
 
