@@ -232,7 +232,7 @@ def fetch_prefecture_shapes(
         for old_name, new_name in fix_dict.items():
             mask = gdf.query(f"{col} == '{old_name}'").index
             gdf.loc[mask, col] = new_name
-    return gdf[["COUNTRY", "NAME_1", "NAME_2"]]
+    return gdf[["COUNTRY", "NAME_1", "NAME_2", "geometry"]]
 
 
 def build_nodes(
@@ -246,10 +246,11 @@ def build_nodes(
     gdf = prefectures.copy()
     if nodes_cfg.get("split_provinces", False):
         validate_split_cfg(nodes_cfg["splits"], gdf)
-        return build_nodes(gdf, nodes_cfg)
+        return split_provinces(gdf, nodes_cfg)
     else:
         provs = provs = gdf.dissolve(GDAM_LV1)
-        return provs.drop(["Macau", "HongKong"]).rename_axis("node")["geometry"]
+        provs = provs.drop([nodes_cfg["exclude_provinces"]])
+        return provs.rename_axis("node")["geometry"]
 
 
 def validate_split_cfg(split_cfg: dict, gdf: gpd.GeoDataFrame):
@@ -271,20 +272,20 @@ def validate_split_cfg(split_cfg: dict, gdf: gpd.GeoDataFrame):
         
         # flatten values
         admin2 = []
-        for v in split_cfg[admin1].values():
+        for names, v in split_cfg[admin1].items():
             admin2 += v
         
-        # check uniqueness
-        duplicated = any([admin2.pop() in admin2 for i in range(len(admin2))])
-        if duplicated:
-            raise ValueError(f"Duplicated prefecture names in {admin1}: {admin2}")
-        
         # check completeness
-        all_admin2 = gdf.query(f'{GDAM_LV1} == \"{admin1}\"')[GDAM_LV2].unique().tolist()
+        all_admin2 = gdf.query(f'{GDAM_LV1} == "{admin1}"')[GDAM_LV2].unique().tolist()
         if not sorted(admin2) == sorted(all_admin2):
             raise ValueError(
                 f"{admin1} prefectures do not match expected:\ngot {admin2}\nvs\n {all_admin2}"
             )
+
+        # check uniqueness (pop -> must be after completeness check)
+        duplicated = any([admin2.pop() in admin2 for i in range(len(admin2))])
+        if duplicated:
+            raise ValueError(f"Duplicated prefecture names in {admin1}: {admin2}")
 
 
 # TODO consider returning country and province
@@ -308,7 +309,7 @@ def split_provinces(
         gdf.loc[mask, GDAM_LV1] = gdf.loc[mask, "NAME_2"].map(splits_inv)
     
     # merge geometries by node
-    gdf.rename({GDAM_LV1: "node"})
+    gdf.rename(columns = {GDAM_LV1: "node"}, inplace=True)
     return gdf[["node", "geometry"]].dissolve(by="node", aggfunc="sum")
 
 
@@ -430,6 +431,7 @@ if __name__ == "__main__":
     configure_logging(snakemake, logger=logger)
 
     nodes_config = snakemake.config.get("nodes", {"split_provinces": False})
+    tol = snakemake.config["fetch_regions"]["simplify_tol"]
 
     logger.info(f"Fetching country shape {COUNTRY_NAME} from cartopy")
     fetch_country_shape(snakemake.output.country_shape)
@@ -440,12 +442,14 @@ if __name__ == "__main__":
     if not nodes_config.get("split_provinces", False):
         regions = fetch_province_shapes()
     else:
+        logger.info("Splitting provinces into user defined nodes")
+        prefectures = fetch_prefecture_shapes()
+        nodes = build_nodes(prefectures, nodes_config)
+        nodes.simplify(tol["land"]).to_file(snakemake.output.province_shapes.replace(".geojson", "_nodestest.geojson"), driver="GeoJSON")
+
         raise NotImplementedError(
             "Province splitting is not implemented accross the whole workflow yet."
         )
-        logger.info("Splitting provinces into user defined nodes")
-        prefectures = fetch_prefecture_shapes()
-        regions = build_nodes(prefectures, nodes_config)
 
     regions.to_file(snakemake.output.province_shapes, driver="GeoJSON")
     regions.to_file(snakemake.output.prov_shpfile)
@@ -454,8 +458,7 @@ if __name__ == "__main__":
     logger.info(f"Fetching maritime zones for EEZ prefix {EEZ_PREFIX}")
     eez_country = fetch_maritime_eez(EEZ_PREFIX)
     logger.info("Breaking by reion")
-    tol = snakemake.config["fetch_regions"]["simplify_tol"]
-    eez_by_region(eez_country, regions, prov_key="province", simplify_tol=tol).to_file(
+    eez_by_region(eez_country, regions, prov_key="province", simplify_tol=tol["eez"]).to_file(
         snakemake.output.offshore_shapes, driver="GeoJSON"
     )
 

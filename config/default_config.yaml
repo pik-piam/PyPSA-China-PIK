@@ -309,7 +309,9 @@ existing_capacities:
 
 # TODO integrate in workflow
 nodes: 
-  split_provinces: True # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
+  split_provinces: False # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
+  # exclude currently only applies if split_provinces is True, will be fixed with integrartion to workflow
+  exclude_provinces: ["Macau", "HongKong"] # list of provinces to exclude from splitting
   splits:
     # adminl2 groups per adminl1. {adminl1: {custom_name: [adminl2_names],..}}
     InnerMongolia:
@@ -329,4 +331,6 @@ nodes:
         - "Wuhai"
 
 fetch_regions:
-  simplify_tol: 0.5
+  simplify_tol: 
+    eez: 0.5
+    land: 0.05
