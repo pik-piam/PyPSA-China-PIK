@@ -639,12 +639,14 @@ def plot_prices(
         prices_df = prices_df.abs()
 
     defaults = {"lw": 3, "marker": "o", "markersize": 5, "alpha": 0.8}
-    kwargs.update(kwargs)
+    if "linewidth" in kwargs:
+        kwargs["lw"] = kwargs.pop("linewidth")
+    defaults.update(kwargs)
     prices_df.plot(
         ax=ax,
         kind="line",
         color=[colors[k] if k in colors else "k" for k in prices_df.columns],
-        **kwargs,
+        **defaults,
     )
     min_ = prices_df.min().min()
     if np.sign(min_) < 0:
@@ -890,7 +892,6 @@ if __name__ == "__main__":
             "offwind",
             "coal",
             "coal-CCS",
-            # "gas CCGT",
             "hydroelectricity",
             "gas OCGT",
             "CCGT-CCS",
