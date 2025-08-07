@@ -359,8 +359,8 @@ if __name__ == "__main__":
             ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
             ds.drop(index=("Link", "battery"), inplace=True)
         ds.drop("stations", level=1, inplace=True)
-        if "load shedding" in ds.index.get_level_values(1):
-            ds.drop("load shedding", level=1, inplace=True)
+        if "Load Shedding" in ds.index.get_level_values(1):
+            ds.drop("Load Shedding", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])

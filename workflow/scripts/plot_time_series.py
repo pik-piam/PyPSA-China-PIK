@@ -32,6 +32,7 @@ def plot_energy_balance(
     bus_carrier="AC",
     start_date="2060-03-31 21:00",
     end_date="2060-04-06 12:00:00",
+    aggregate_fossil=False,
     add_load_line=True,
     ax: plt.Axes = None,
 ):
@@ -43,6 +44,7 @@ def plot_energy_balance(
         bus_carrier (str, optional): the carrier for the energy_balance op. Defaults to "AC".
         start_date (str, optional): the range to plot. Defaults to "2060-03-31 21:00".
         end_date (str, optional): the range to plot. Defaults to "2060-04-06 12:00:00".
+        aggregate_fossil (bool, optional): whether to aggregate fossil fuels. Defaults to False.
         add_load_line (bool, optional): add a dashed line for the load. Defaults to True.
     """
     if not ax:
@@ -64,12 +66,13 @@ def plot_energy_balance(
     p = p.loc[start_date:end_date]
 
     # aggreg fossil
-    coal = p.filter(regex="[C|c]oal")
-    p.drop(columns=coal.columns, inplace=True)
-    p["Coal"] = coal.sum(axis=1)
-    gas = p.filter(regex="[G|g]as")
-    p.drop(columns=gas.columns, inplace=True)
-    p["Gas"] = gas.sum(axis=1)
+    if aggregate_fossil:
+        coal = p.filter(regex="[C|c]oal")
+        p.drop(columns=coal.columns, inplace=True)
+        p["Coal"] = coal.sum(axis=1)
+        gas = p.filter(regex="[G|g]as")
+        p.drop(columns=gas.columns, inplace=True)
+        p["Gas"] = gas.sum(axis=1)
 
     extra_c = {
         "Load": plot_config["tech_colors"]["electric load"],
