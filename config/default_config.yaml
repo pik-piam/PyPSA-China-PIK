@@ -307,29 +307,55 @@ existing_capacities:
   threshold_capacity: 1 # TODO UNIT
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'solar thermal', 'onwind', 'offwind','nuclear'] # 'coal boiler','ground heat pump',
   node_assignment: simple # simple | gps
-  
-# TODO implement
+
+
+# TODO integrate in workflow
 nodes: 
-  split_inner_mongolia: True # split Inner Mongolia into East and West by counties/prefectures
-  inner_mongolia:
-    West: 
-      - "Hulunbuir"
-      - "Xing'an"
-      - "Tongliao"
-      - "Chifeng"
-      - "Xilin Gol"
-    East: 
-      - "Alxa"
-      - "Baotou"
-      - "Baynnur"
-      - "Hohhot"
-      - "Ordos"
-      - "Ulaan Chab"
-      - "Wuhai"
+  split_provinces: False # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
+  # exclude currently only applies if split_provinces is True, will be fixed with integrartion to workflow
+  exclude_provinces: ["Macau", "HongKong"] # list of provinces to exclude from splitting
+  splits:
+    # adminl2 groups per adminl1. {adminl1: {custom_name: [adminl2_names],..}}
+    InnerMongolia:
+      West: 
+        - "Hulunbuir"
+        - "Xing'an"
+        - "Tongliao"
+        - "Chifeng"
+        - "Xilin Gol"
+      East: 
+        - "Alxa"
+        - "Baotou"
+        - "Baynnur"
+        - "Hohhot"
+        - "Ordos"
+        - "Ulaan Chab"
+        - "Wuhai"
+
+# TODO integrate in workflow
+nodes: 
+  split_provinces: False # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
+  # exclude currently only applies if split_provinces is True, will be fixed with integrartion to workflow
+  exclude_provinces: ["Macau", "HongKong"] # list of provinces to exclude from splitting
+  splits:
+    # adminl2 groups per adminl1. {adminl1: {custom_name: [adminl2_names],..}}
+    InnerMongolia:
+      West: 
+        - "Hulunbuir"
+        - "Xing'an"
+        - "Tongliao"
+        - "Chifeng"
+        - "Xilin Gol"
+      East: 
+        - "Alxa"
+        - "Baotou"
+        - "Baynnur"
+        - "Hohhot"
+        - "Ordos"
+        - "Ulaan Chab"
+        - "Wuhai"
 
 fetch_regions:
-  eez: 
-    simplify_tol: 0.5
-  
-  
- 
+  simplify_tol: 
+    eez: 0.5
+    land: 0.05
