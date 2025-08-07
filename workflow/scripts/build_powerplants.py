@@ -70,10 +70,12 @@ def clean_gem_data(gem_data: pd.DataFrame, gem_cfg: dict) -> pd.DataFrame:
     GEM.loc[gas_mask, "Type"] = "gas"
     GEM.Type = GEM.Type.str.replace("bioenergy", "biomass")
 
-    # split CHP
+    # split CHP (potential issue: split before type split. After would be better)
     if gem_cfg["CHP"].get("split", False):
-        aliases = gem_cfg["CHP"]["aliases"]
-        chp_mask = GEM[GEM["Plant name"].str.contains("chp", case=False, na=False)].index
+        GEM.loc[:, "CHP"] = GEM.loc[:, "CHP"].map({"yes": True}).fillna(False)
+        chp_mask = GEM[GEM["CHP"]==True].index
+        
+        aliases = gem_cfg["CHP"].get("aliases", [])
         for alias in aliases:
             chp_mask = chp_mask.append(GEM[GEM["Plant name"].str.contains(alias, case=False, na=False)].index)
         chp_mask = chp_mask.unique()

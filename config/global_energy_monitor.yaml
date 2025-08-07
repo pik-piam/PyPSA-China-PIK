@@ -40,6 +40,7 @@ global_energy_monitor_plants:
     - "Plant name"
     - "Technology"
     - "Fuel"
+    - "CHP"
     - "Capacity (MW)"
     - "Start year"
     - "Retired year"
