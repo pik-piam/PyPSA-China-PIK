@@ -129,6 +129,28 @@ def calc_lcoe(
     return outputs[outputs.supply > 0]
 
 
+def calc_generation_share(df, n, carrier):
+    """
+    Add generation share column to an existing DataFrame.
+    Assumes df has carrier index already.
+
+    Returns: DataFrame with an added 'GenShare' column.
+    """
+    supply_data = n.statistics.supply(bus_carrier=carrier, comps="Generator")
+    total_supply = supply_data.sum()
+    gen_shares = (supply_data / total_supply * 100).dropna()
+    carrier_map = {
+        c.lower(): row["nice_name"]
+        for c, row in n.carriers.iterrows()
+    }
+    gen_shares.index = gen_shares.index.map(
+        lambda idx: carrier_map.get(idx.lower(), idx)
+    )
+    df = df.copy()
+    df["GenShare"] = gen_shares
+    return df
+
+
 # TODO is thsi really good? useful?
 # TODO make a standard apply/str op instead ofmap in add_electricity.sanitize_carriers
 def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
