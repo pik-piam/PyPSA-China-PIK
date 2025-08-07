@@ -84,10 +84,10 @@ if __name__ == "__main__":
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
-            "disaggregate_data",
-            co2_pathway="SSP2-PkBudg1000-freeze",
+            "disaggregate_remind_data",
+            co2_pathway="SSP2-PkBudg1000-CHA-paidoff09",
             topology="current+FCG",
-            config_files="resources/tmp/remind_coupled.yaml",
+            config_files="resources/tmp/remind_coupled_cg.yaml",
             heating_demand="positive",
         )
     configure_logging(snakemake)
