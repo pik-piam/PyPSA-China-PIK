@@ -413,5 +413,3 @@ if __name__ == "__main__":
     n.export_to_netcdf(outp, compression=compression)
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
-
-    logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
