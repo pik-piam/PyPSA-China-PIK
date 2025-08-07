@@ -120,7 +120,6 @@ def calc_lcoe(
     # TODO remve the != Inner Mongolia gas, there for backward compat with a bug
     gas_links = n.links.query("carrier.str.contains('gas') & bus0 != 'Inner Mongolia gas'").index
     if not gas_links.empty:
-        # 检查gas fuel发电机是否存在
         gas_fuel_generators = n.links.loc[gas_links, "bus0"] + " fuel"
         existing_gas_fuel = gas_fuel_generators[gas_fuel_generators.isin(n.generators.index)]
         if not existing_gas_fuel.empty:
@@ -128,7 +127,6 @@ def calc_lcoe(
             # eta is applied by statistics
             n.links.loc[existing_gas_fuel.index.str.replace(" fuel", ""), "marginal_cost"] += fuel_costs
     # TODO same with BECCS? & other links?
-
     rev = n.statistics.revenue(groupby=grouper, **kwargs)
     opex = n.statistics.opex(groupby=grouper, **kwargs)
     capex = n.statistics.expanded_capex(groupby=grouper, **kwargs)
