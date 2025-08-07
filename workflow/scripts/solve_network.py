@@ -14,7 +14,7 @@ import pandas as pd
 import os
 from pandas import DatetimeIndex
 
-
+from _pypsa_helpers import process_dual_variables
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, ConfigManager
 from _pypsa_helpers import mock_solve
 from constants import YEAR_HRS
@@ -505,7 +505,7 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
 
 
 def solve_network(
-    n: pypsa.Network, config: dict, solving: dict, opts: str = "", **kwargs
+    n: pypsa.Network, config: dict, solving: dict, opts: str = "", export_duals: bool = False, **kwargs
 ) -> tuple[pypsa.Network, dict]:
     """perform the optimisation
     Args:
@@ -525,7 +525,7 @@ def solve_network(
     min_iterations = cf_solving.get("min_iterations", 4)
     max_iterations = cf_solving.get("max_iterations", 6)
     transmission_losses = cf_solving.get("transmission_losses", 0)
-    export_duals = cf_solving.get("export_duals", False)
+    # export_duals should be passed as parameter, not extracted here
 
     # add to network for extra_functionality
     n.config = config
@@ -561,48 +561,11 @@ def solve_network(
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
 
-    # Collect dual data if enabled
+    # Collect dual data if enabled (for export in main)
     dual_data = {}
-    logger.info(f"=== DUAL EXPORT DEBUG: export_duals={export_duals} ===")
     if export_duals and hasattr(n, "model") and hasattr(n.model, "dual"):
-        # Process dual variables and add them to network object
-        from _pypsa_helpers import process_dual_variables
         process_dual_variables(n)
-        
-        # Collect dual data before model might be destroyed
-        logger.info(f"Model has dual: {n.model.dual is not None}")
-        
-        # Try different ways to access dual variables
-        if hasattr(n.model, 'dual') and n.model.dual is not None:
-            try:
-                # Try to get dual variables as a dictionary
-                model_duals = dict(n.model.dual)
-                logger.info(f"Model dual has {len(model_duals)} variables")
-                dual_data.update(model_duals)
-            except Exception as e:
-                logger.warning(f"Failed to convert model.dual to dict: {e}")
-                # Try alternative access method
-                try:
-                    if hasattr(n.model.dual, 'to_dict'):
-                        model_duals = n.model.dual.to_dict()
-                        logger.info(f"Model dual (to_dict) has {len(model_duals)} variables")
-                        dual_data.update(model_duals)
-                    else:
-                        logger.warning("Model dual has no to_dict method")
-                except Exception as e2:
-                    logger.warning(f"Failed to access model.dual.to_dict: {e2}")
-        else:
-            logger.warning("Model dual is empty or None")
-            
-        if hasattr(n, 'duals') and n.duals:
-            logger.info(f"Network duals has {len(n.duals)} variables")
-            dual_data.update(n.duals)
-        else:
-            logger.warning("Network duals is empty or None")
-        
-        logger.info(f"Collected {len(dual_data)} dual variables for export")
-    elif export_duals:
-        logger.warning("Network model does not have dual variables. Dual export will be skipped.")
+        dual_data.update(dict(n.model.dual))
 
     return n, dual_data
 
@@ -663,11 +626,15 @@ if __name__ == "__main__":
     # which doesn't work as snakemake is a subprocess
     is_test = snakemake.config["run"].get("is_test", False)
     if not is_test:
+        # Extract export_duals from config in main
+        export_duals = snakemake.params.solving["options"].get("export_duals", False)
+        
         n, dual_data = solve_network(
             n,
             config=snakemake.config,
             solving=snakemake.params.solving,
             opts=opts,
+            export_duals=export_duals,
             log_fn=snakemake.log.solver,
         )
         

@@ -289,7 +289,7 @@ def extra_functionality(n, snapshots):
         add_retrofit_constraints(n)
 
 
-def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs) -> tuple[pypsa.Network, dict]:
+def solve_network(n: pypsa.Network, config: dict, solving, opts="", export_duals: bool = False, **kwargs) -> tuple[pypsa.Network, dict]:
     """perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
@@ -305,9 +305,7 @@ def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs) ->
     min_iterations = cf_solving.get("min_iterations", 4)
     max_iterations = cf_solving.get("max_iterations", 6)
     transmission_losses = cf_solving.get("transmission_losses", 0)
-
-    # Check if dual functionality is enabled and extract the flag
-    export_duals = solver_options.pop("export_duals", False)
+    # export_duals should be passed as parameter, not extracted here
 
     # add to network for extra_functionality
     n.config = config
@@ -343,19 +341,11 @@ def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs) ->
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
 
-    # Collect dual data if enabled
+    # Collect dual data if enabled (for export in main)
     dual_data = {}
     if export_duals and hasattr(n, "model") and hasattr(n.model, "dual"):
-        # Process dual variables and add them to network object
         process_dual_variables(n)
-        
-        # Collect dual data before model might be destroyed
-        if n.model.dual:
-            dual_data.update(dict(n.model.dual))
-        if hasattr(n, 'duals') and n.duals:
-            dual_data.update(n.duals)
-    elif export_duals:
-        logger.warning("Network model does not have dual variables. Dual export will be skipped.")
+        dual_data.update(dict(n.model.dual))
 
     return n, dual_data
 
@@ -392,16 +382,20 @@ if __name__ == "__main__":
 
     n = prepare_network(n, solve_opts, snakemake.config)
 
+    # Extract export_duals from config in main
+    export_duals = snakemake.params.solving["options"].get("export_duals", False)
+    
     n, dual_data = solve_network(
         n,
         config=snakemake.config,
         solving=snakemake.params.solving,
         opts=opts,
+        export_duals=export_duals,
         log_fn=snakemake.log.solver,
     )
     
     # Export dual variables in main (not in solve function)
-    if dual_data and snakemake.params.solving["solver_options"].get("export_duals", False):
+    if dual_data and snakemake.params.solving["options"].get("export_duals", False):
         current_year = snakemake.wildcards.planning_horizons
         results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
         dual_output_dir = os.path.join(results_dir, 'dual', f"dual_values_raw_{current_year}")

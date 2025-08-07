@@ -82,12 +82,10 @@ def read_province_shapes(shape_file: os.PathLike) -> gpd.GeoDataFrame:
     prov_shapes = gpd.GeoDataFrame.from_file(shape_file)
     prov_shapes = prov_shapes.to_crs(CRS)
     prov_shapes.set_index("province", inplace=True)
-    # 检查PROV_NAMES中的省份是否都在shapefile中存在
+    # check if all provinces are in the shapefile
     missing_provinces = set(PROV_NAMES) - set(prov_shapes.index)
     if missing_provinces:
         raise ValueError(f"Missing provinces in shapefile: {missing_provinces}")
-    
-    # 重新索引以确保顺序与PROV_NAMES一致，只保留需要的省份
     prov_shapes = prov_shapes.reindex(PROV_NAMES)
 
     return prov_shapes

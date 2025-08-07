@@ -447,146 +447,51 @@ def update_p_nom_max(n: pypsa.Network) -> None:
 
 
 def process_dual_variables(network: pypsa.Network) -> pypsa.Network:
-    """
-    Process dual variables from network model and add them to network object.
-    
-    This function parses dual variables from the model, maps them to corresponding network components,
-    and adds them as component attributes. Complex dual variables that cannot be directly mapped
-    are stored in the network.duals dictionary.
-    
-    Args:
-        network: PyPSA network object containing model and dual variables
-        
-    Returns:
-        pypsa.Network: Processed network object with dual variable attributes
-        
-    Raises:
-        AttributeError: If network object lacks 'model' or 'dual' attributes
-        ValueError: If dual variable format is incorrect
-        
-    Example:
-        >>> n = pypsa.Network("network.nc")
-        >>> n = process_dual_variables(n)
-        >>> # Now can access dual variables
-        >>> shadow_price = n.generators.mu_p_nom_upper
-        >>> nodal_balance = n.buses.mu_nodal_balance
-    """
+    """Process dual variables from network model and map to components."""
     if not hasattr(network, "model") or not hasattr(network.model, "dual"):
-        raise AttributeError("Network object must have 'model' and 'model.dual' attributes")
-    
-    if network.model.dual is None or len(network.model.dual) == 0:
-        logger.info("No dual variables found in network model")
         return network
     
-    # Get all dual variables
-    all_duals = pd.Series(network.model.dual)
-    processed_duals: dict[str, Any] = {}
+    if network.model.dual is None or len(network.model.dual) == 0:
+        return network
     
-    for dual_name, dual_value in all_duals.items():
+    # Store dual variables in network.duals
+    network.duals = dict(network.model.dual)
+    
+    # Map dual variables to network components
+    for dual_name, dual_value in network.duals.items():
         try:
-            _process_single_dual_variable(network, dual_name, dual_value, processed_duals)
+            # Parse dual name: "ComponentType-constraint_type"
+            if "-" not in dual_name:
+                continue
+                
+            component_type, constraint_type = dual_name.split("-", 1)
+            component_name = COMPONENT_MAPPING.get(component_type.lower())
+            
+            if component_name and hasattr(network, component_name):
+                component_obj = getattr(network, component_name)
+                attr_name = f"mu_{constraint_type.replace('[', '_').replace(']', '')}"
+                
+                # Add dual value to component
+                if np.isscalar(dual_value):
+                    component_obj[attr_name] = float(dual_value)
+                elif isinstance(dual_value, (np.ndarray, xr.DataArray)):
+                    if hasattr(dual_value, 'to_pandas'):
+                        component_obj[attr_name] = dual_value.to_pandas()
+                    else:
+                        component_obj[attr_name] = pd.Series(dual_value.flatten(), index=component_obj.index)
+                        
         except Exception as e:
-            logger.warning(f"Failed to process dual variable '{dual_name}': {str(e)}")
+            logger.debug(f"Failed to map dual '{dual_name}': {e}")
             continue
     
-    # Add processed dual variables to network object
-    network.duals = processed_duals
-    logger.info(f"Successfully processed {len(processed_duals)} dual variables")
-    
+    logger.info(f"Processed {len(network.duals)} dual variables")
     return network
 
 
-def _process_single_dual_variable(
-    network: pypsa.Network,
-    dual_name: str,
-    dual_value: DualValue,
-    processed_duals_storage: dict[str, Any],
-) -> None:
-    """Processes a single dual variable and attempts to map it to a network component."""
-    
-    # Safely partition the dual name into component type and constraint type
-    component_type_raw, _, constraint_type = dual_name.partition("-")
-    
-    if not constraint_type:
-        logger.warning(f"Invalid dual name format (no '-' found): '{dual_name}'. Skipping.")
-        return
-
-    component_type = component_type_raw.lower()
-    component_name = COMPONENT_MAPPING.get(component_type)
-
-    # Fallback to using the raw component type if not found in mapping
-    if component_name is None:
-        component_name = component_type
-        if not hasattr(network, component_name):
-            logger.warning(f"Component type '{component_type}' from '{dual_name}' not mapped and not found as attribute in network. Skipping.")
-            return
-
-    if not hasattr(network, component_name):
-        logger.warning(f"Network attribute '{component_name}' not found for dual '{dual_name}'. Skipping.")
-        return
-    
-    component_obj = getattr(network, component_name)
-    
-    # Generate attribute name, simplifying square brackets
-    attr_name = f"mu_{constraint_type.replace('[', '_').replace(']', '')}"
-    
-    # Process based on dual value type
-    try:
-        if np.isscalar(dual_value):
-            _add_scalar_dual(component_obj, attr_name, float(dual_value))
-        elif isinstance(dual_value, xr.DataArray):
-            _add_xarray_dual(component_obj, attr_name, dual_value)
-        elif isinstance(dual_value, np.ndarray) and dual_value.ndim == 1:
-            _add_1d_numpy_dual(component_obj, attr_name, dual_value)
-        else:
-            # Store complex or unhandled types directly in network.duals
-            processed_duals_storage[dual_name] = dual_value
-            logger.debug(f"Stored complex dual '{dual_name}' (type: {type(dual_value)}) in network.duals.")
-    except Exception as e:
-        # Catch any error during processing and store the original value
-        logger.warning(f"Error processing dual '{dual_name}' (type: {type(dual_value)}): {e}. Storing original value in network.duals.")
-        processed_duals_storage[dual_name] = dual_value
 
 
-def _add_1d_numpy_dual(
-    component_obj: pd.DataFrame,
-    attr_name: str,
-    value: np.ndarray,
-) -> None:
-    """Adds a 1D numpy array dual variable to the component DataFrame."""
-    if len(value) == len(component_obj):
-        component_obj[attr_name] = pd.Series(value, index=component_obj.index)
-        logger.debug(f"Added 1D numpy dual: '{attr_name}'.")
-    else:
-        raise ValueError(f"Index length mismatch for '{attr_name}': data length {len(value)}, component length {len(component_obj)}.")
 
 
-def _add_xarray_dual(
-    component_obj: pd.DataFrame,
-    attr_name: str,
-    value: xr.DataArray,
-) -> None:
-    """Adds an xarray DataArray dual variable, attempting robust alignment."""
-    try:
-        # Attempt to convert to pandas Series, which handles basic index alignment
-        value_series = value.to_pandas()
-        
-        # Reindex to match the component's index, NaNs for mismatches
-        aligned_series = value_series.reindex(component_obj.index)
-        
-        component_obj[attr_name] = aligned_series
-        logger.debug(f"Added aligned xarray dual: '{attr_name}'.")
-        
-    except Exception as e:
-        # If any error occurs during alignment, raise it to be caught by the caller
-        raise ValueError(f"Failed to align xarray dual '{attr_name}': {e}") from e
-
-
-def _add_scalar_dual(component_obj: pd.DataFrame, attr_name: str, value: float) -> None:
-    """Adds a scalar dual variable to the component DataFrame."""
-    # Assign scalar to all rows, ensuring it's a float
-    component_obj[attr_name] = float(value)
-    logger.debug(f"Added scalar dual: '{attr_name}'.")
 
 
 def _sanitize_filename(filename: str) -> str:
@@ -602,15 +507,8 @@ def _sanitize_filename(filename: str) -> str:
 
 # --- Simple dual export function ---
 def export_duals_simple(dual_data: dict, output_dir: Path) -> None:
-    """
-    Simple export of dual variables to CSV files.
-    
-    Args:
-        dual_data: Dictionary of dual variables {name: value}
-        output_dir: Directory to save CSV files
-    """
+    """Export dual variables to CSV files."""
     if not dual_data:
-        logger.info("No dual variables to export.")
         return
     
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -621,7 +519,7 @@ def export_duals_simple(dual_data: dict, output_dir: Path) -> None:
         filepath = output_dir / f"{safe_name}.csv"
         
         try:
-            # Convert to pandas Series for consistent CSV output with proper indexing
+            # Convert to pandas Series for consistent CSV output
             if isinstance(dual_value, (dict, pd.Series)):
                 # Preserve original index if available
                 if hasattr(dual_value, 'index'):
@@ -650,7 +548,6 @@ def export_duals_simple(dual_data: dict, output_dir: Path) -> None:
                 except:
                     pd.Series(dual_value.values.flatten(), name=dual_name).to_csv(filepath, header=True)
             else:
-                # Fallback for other types
                 pd.Series([str(dual_value)], name=dual_name).to_csv(filepath, header=True)
                 
         except Exception as e:

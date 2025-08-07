@@ -715,14 +715,10 @@ def add_wind_and_solar(
         p_max_pu = ds["profile"].to_pandas()
         p_max_pu.columns = p_max_pu.columns.map(flatten)
         
-        # 简单筛选：只保留配置的省份
-        # 筛选bus_bins，只保留配置省份的数据
+        # filter out non-configured provinces
         bus_bins = bus_bins[bus_bins.str.split(" grade").str[0].isin(PROV_NAMES)]
         buses = buses[buses.isin(PROV_NAMES)]
-        
-        # 相应地筛选p_nom_max和p_max_pu
         p_nom_max = p_nom_max.loc[bus_bins]
-        # 筛选p_max_pu的列，只保留配置省份的数据
         p_max_pu = p_max_pu.loc[:, p_max_pu.columns.str.split(" grade").str[0].isin(PROV_NAMES)]
 
         # add renewables
@@ -1164,24 +1160,21 @@ def add_hydro(
     effective_capacity.index = all_dams
     initial_capacity = initial_capacity / water_consumption_factor
     effective_capacity = effective_capacity / water_consumption_factor
-
-    # select relevant dams in nodes
+    # filter dams in nodes
     effective_capacity = effective_capacity.loc[
         effective_capacity.index.map(dam_provinces).isin(nodes)
-    ]
-    initial_capacity = initial_capacity.loc[initial_capacity.index.map(dam_provinces).isin(nodes)]
-
-    # 确保索引对齐
-    effective_capacity_aligned = effective_capacity.reindex(dams.index)
-    initial_capacity_aligned = initial_capacity.reindex(dams.index)
+    ].reindex(dams.index)
+    initial_capacity = initial_capacity.loc[
+        initial_capacity.index.map(dam_provinces).isin(nodes)
+    ].reindex(dams.index)
     
     network.add(
         "Store",
         dams.index,
         suffix=" reservoir",
         bus=dam_buses.index,
-        e_nom=effective_capacity_aligned,
-        e_initial=initial_capacity_aligned,
+        e_nom=effective_capacity,
+        e_initial=initial_capacity,
         e_cyclic=True,
         # TODO fix all config["costs"]
         marginal_cost=config["costs"]["marginal_cost"]["hydro"],
@@ -1328,42 +1321,6 @@ def generate_periodic_profiles(
         week_df[ct] = week_df[ct].map(weekly_profile)
     return week_df
 
-# 清理网络：移除不在配置省份中的组件
-def clean_network_by_provinces(network):
-    """清理网络，移除不在PROV_NAMES中的组件"""
-    if hasattr(network, 'generators') and not network.generators.empty:
-        # 清理发电机
-        for carrier in network.generators.carrier.unique():
-            if carrier == "nuclear":
-                # 核电站：检查省份名
-                nuclear_gens = network.generators[network.generators.carrier == "nuclear"].index
-                invalid_nuclear = []
-                for gen in nuclear_gens:
-                    province = gen.split(" nuclear")[0]
-                    if province not in PROV_NAMES:
-                        invalid_nuclear.append(gen)
-                if invalid_nuclear:
-                    logger.info(f"Removing nuclear generators for non-configured provinces: {invalid_nuclear}")
-                    network.remove("Generator", invalid_nuclear)
-            else:
-                # 其他发电机：检查bus是否在配置省份中
-                gens = network.generators[network.generators.carrier == carrier]
-                invalid_gens = gens[~gens.bus.isin(PROV_NAMES)].index
-                if not invalid_gens.empty:
-                    logger.info(f"Removing {carrier} generators for non-configured provinces: {list(invalid_gens)}")
-                    network.remove("Generator", invalid_gens)
-    
-    # 清理其他组件（Load, Store等）
-    for component in ['Load', 'Store', 'StorageUnit']:
-        if hasattr(network, component.lower() + 's') and not getattr(network, component.lower() + 's').empty:
-            comps = getattr(network, component.lower() + 's')
-            if 'bus' in comps.columns:
-                invalid_comps = comps[~comps.bus.isin(PROV_NAMES)].index
-                if not invalid_comps.empty:
-                    logger.info(f"Removing {component}s for non-configured provinces: {list(invalid_comps)}")
-                    network.remove(component, invalid_comps)
-
-
 
 def prepare_network(
     config: dict,
@@ -1438,13 +1395,7 @@ def prepare_network(
     if "nuclear" in config["Techs"]["vre_techs"]:
 
         nuclear_nodes = pd.Index(NUCLEAR_EXTENDABLE)
-        
-        # 删除已存在的核电站发电机（如果存在）
-        existing_nuclear = network.generators[network.generators.carrier == "nuclear"].index
-        if not existing_nuclear.empty:
-            logger.info(f"Removing existing nuclear generators: {list(existing_nuclear)}")
-            network.remove("Generator", existing_nuclear)
-        
+
         network.add(
             "Generator",
             nuclear_nodes,
@@ -1652,9 +1603,7 @@ if __name__ == "__main__":
     network = prepare_network(
         snakemake.config, costs, snapshots, biomass_potential, paths=input_paths
     )
-    
-    clean_network_by_provinces(network)
-    
+        
     sanitize_carriers(network, snakemake.config)
 
     outp = snakemake.output.network_name
