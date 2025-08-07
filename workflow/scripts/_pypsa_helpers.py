@@ -486,12 +486,6 @@ def process_dual_variables(network: pypsa.Network) -> pypsa.Network:
     return network
 
 
-
-
-
-
-
-
 def _sanitize_filename(filename: str) -> str:
     """Sanitizes a string for use as a filename, replacing invalid characters with underscores."""
     invalid_chars = ['[', ']', '-', '.', ':', '/', '\\', '*', '?', '"', '<', '>', '|']

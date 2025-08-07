@@ -94,7 +94,7 @@ def load_province_config(config_path: str = None) -> dict:
         "splits": {}
     }
 
-
+#  cache the province names to avoid repeated calls
 @lru_cache(maxsize=1)
 def get_province_names_cached() -> List[str]:
     """Cached version of get_province_names to avoid repeated calls."""
