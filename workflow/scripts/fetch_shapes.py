@@ -336,7 +336,7 @@ def cut_smaller_from_larger(
     for idx in ovrlap_idx:
         geom = gdf.iloc[idx].geometry
         if row.geometry.area > geom.area:
-            row.loc[:, "geometry"] = row.loc[:, "geometry"].difference(geom)
+            row["geometry"] = row["geometry"].difference(geom)
         elif row.geometry.area == geom.area:
             raise ValueError(f"Equal area overlap between {row.name} and {idx} - unhandled")
     return row
