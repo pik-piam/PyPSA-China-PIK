@@ -8,17 +8,16 @@ Associated with the `solve_networks` rule in the Snakefile.
 """
 import logging
 import numpy as np
-import pandas as pd
-import xarray as xr
 import pypsa
 import xarray as xr
 import pandas as pd
+import os
 from pandas import DatetimeIndex
 
 
-from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, mock_solve
+from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, ConfigManager
+from _pypsa_helpers import mock_solve
 from constants import YEAR_HRS
-from _pypsa_helpers import process_dual_variables
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -516,7 +515,7 @@ def solve_network(
         opts (str): optional wildcards such as ll (not used in pypsa-china)
         
     Returns:
-        tuple[pypsa.Network, dict]: network object and dual data dictionary
+        tuple: (network, dual_data)
     """
     set_of_options = solving["solver"]["options"]
     solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
@@ -526,9 +525,7 @@ def solve_network(
     min_iterations = cf_solving.get("min_iterations", 4)
     max_iterations = cf_solving.get("max_iterations", 6)
     transmission_losses = cf_solving.get("transmission_losses", 0)
-
-    # Check if dual functionality is enabled and extract the flag
-    export_duals = solver_options.pop("export_duals", False)
+    export_duals = solving["solver_options"].get("export_duals", False)
 
     # add to network for extra_functionality
     n.config = config
@@ -568,6 +565,7 @@ def solve_network(
     dual_data = {}
     if export_duals and hasattr(n, "model") and hasattr(n.model, "dual"):
         # Process dual variables and add them to network object
+        from _pypsa_helpers import process_dual_variables
         process_dual_variables(n)
         
         # Collect dual data before model might be destroyed
@@ -600,25 +598,36 @@ if __name__ == "__main__":
     solve_opts = snakemake.params.solving["options"]
     co2_pathway = snakemake.wildcards.co2_pathway
 
+    # deal with the gurobi license activation, which requires a tunnel to the login nodes
     solver_config = snakemake.config["solving"]["solver"]
     gurobi_tnl_cfg = snakemake.config["solving"].get("gurobi_hpc_tunnel", None)
     logger.info(f"Solver config {solver_config} and license cfg {gurobi_tnl_cfg}")
-    
     if (solver_config["name"] == "gurobi") & (gurobi_tnl_cfg is not None):
         tunnel = setup_gurobi_tunnel_and_env(gurobi_tnl_cfg, logger=logger)
         logger.info(tunnel)
     else:
         tunnel = None
 
-    opts = snakemake.wildcards.get("opts", "")
-    if "sector_opts" in snakemake.wildcards.keys():
-        opts += "-" + snakemake.wildcards.sector_opts
-    opts = [o for o in opts.split("-") if o != ""]
-    solve_opts = snakemake.params.solving["options"]
-
     n = pypsa.Network(snakemake.input.network_name)
 
-    n = prepare_network(n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons)
+    n = prepare_network(
+        n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons, co2_pathway
+    )
+
+    line_exp_limits = snakemake.config["lines"].get(
+        "expansion", {"transmission_limit": "copt", "base_year": 2020}
+    )
+    transmission_limit = line_exp_limits.get("transmission_limit", "copt")
+    exp_years = int(snakemake.wildcards.planning_horizons) - int(
+        line_exp_limits.get("base_year", 2020)
+    )
+    # TODO split copt, c1.05 into c , opt etc
+    set_transmission_limit(
+        n, kind=transmission_limit[0], factor=transmission_limit[1:], n_years=exp_years
+    )
+    # # TODO: remove ugly hack
+    # n.storage_units.p_nom_max = n.storage_units.p_nom * 1.05**exp_years
+
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
 
@@ -652,7 +661,10 @@ if __name__ == "__main__":
         n.links_t.p2 = n.links_t.p2.astype(float)
 
     n.meta.update(dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards))))
-    n.export_to_netcdf(snakemake.output[0])
+    compression = snakemake.config.get("io", None)
+    if compression:
+        compression = compression.get("nc_compression", None)
+    n.export_to_netcdf(snakemake.output.network_name, compression=compression)
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
 

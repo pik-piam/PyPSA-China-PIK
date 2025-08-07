@@ -98,7 +98,7 @@ def plot_map(
 
         if isinstance(edge_colors, str):
             colors += [edge_colors]
-            labels += ["HVDC or HVAC link"]
+            labels = carriers.to_list() + ["HVDC or HVAC link"]
         else:
             colors += edge_colors.values.to_list()
             labels = carriers.to_list() + edge_colors.index.to_list()
@@ -295,6 +295,9 @@ def plot_cost_map(
 
         # add to carrier types
         carriers = carriers.union(cost_pies_additional.index.get_level_values(1).unique())
+        
+        # Create bus_colors_additions for the additions plot
+        bus_colors_additions = tech_colors
 
     preferred_order = pd.Index(opts["preferred_order"])
     carriers = carriers.tolist()
@@ -315,7 +318,7 @@ def plot_cost_map(
         network,
         tech_colors=tech_colors,
         edge_widths=edge_widths / linewidth_factor,
-        bus_colors=bus_colors,
+        bus_colors=tech_colors,
         bus_sizes=cost_pies / bus_size_factor,
         edge_colors=opts["cost_map"]["edge_color"],
         ax=ax1,
@@ -331,7 +334,7 @@ def plot_cost_map(
             network,
             tech_colors=tech_colors,
             edge_widths=edge_widths_added / linewidth_factor,
-            bus_colors=bus_colors_additions,
+            bus_colors=tech_colors,
             bus_sizes=cost_pies_additional / bus_size_factor,
             edge_colors="rosybrown",
             ax=ax2,

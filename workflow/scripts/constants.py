@@ -101,7 +101,7 @@ def load_province_config(config_path: str = None) -> dict:
         "provinces": list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys()),
         "splits": {
             # example
-            "Inner Mongolia": ["Inner Mongolia East", "Inner Mongolia West"]
+            "InnerMongolia": ["InnerMongolia East", "InnerMongolia West"]
         }
     }
 
@@ -146,14 +146,26 @@ def get_province_names_cached() -> List[str]:
     with open('get_province_names_calls.txt', 'a') as f:
         f.write(f"Call #{call_count} at {pd.Timestamp.now()}\n")
     
-    # Try environment variable first (for testing)
-    env_provs = os.getenv("PROV_NAMES")
-    if env_provs:
-        if isinstance(env_provs, str):
-            provinces = re.findall(r"[\w']+", env_provs)
-            if provinces:
-                logger.info(f"Using {len(provinces)} provinces from PROV_NAMES env var")
+    # Try environment variable first (for testing) - DISABLED
+    # env_provs = os.getenv("PROV_NAMES")
+    # if env_provs:
+    #     if isinstance(env_provs, str):
+    #         provinces = re.findall(r"[\w']+", env_provs)
+    #         if provinces:
+    #             logger.info(f"Using {len(provinces)} provinces from PROV_NAMES env var")
+    #             return provinces
+    
+    # Try YAML config file (for configuration)
+    yaml_path = "config/provinces.yaml"
+    if os.path.exists(yaml_path):
+        try:
+            config = load_province_config(yaml_path)
+            if "provinces" in config and config["provinces"]:
+                provinces = config["provinces"]
+                logger.info(f"Using {len(provinces)} provinces from {yaml_path}")
                 return provinces
+        except Exception as e:
+            logger.warning(f"Failed to read {yaml_path}: {e}")
     
     # Try CSV file (for configuration)
     csv_path = "resources/data/regions/province_codes.csv"

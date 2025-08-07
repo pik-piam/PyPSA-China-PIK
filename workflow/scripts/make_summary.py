@@ -412,43 +412,29 @@ def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFram
 # TODO what does this actually do? is it needed?
 def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame) -> pd.DataFrame:
     for c in n.iterate_components(n.one_port_components | n.branch_components):
-        try:
-            if c.name in n.one_port_components:
-                c_energies = (
-                    c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0)
-                    .sum()
-                    .multiply(c.df.sign)
-                    .groupby(c.df.carrier)
-                    .sum()
-                )
-            else:
-                c_energies = pd.Series(0.0, c.df.carrier.unique())
-                for port in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
-                    totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
-                    bus_col = "bus" + port
-                    if bus_col not in c.df.columns:
-                        logger.warning(f"Missing bus column {bus_col} for {c.name}")
-                        continue
+        if c.name in n.one_port_components:
+            c_energies = (
+                c.pnl.p.multiply(n.snapshot_weightings.generators, axis=0)
+                .sum()
+                .multiply(c.df.sign)
+                .groupby(c.df.carrier)
+                .sum()
+            )
+        else:
+            c_energies = pd.Series(0.0, c.df.carrier.unique())
+            for port in [col[3:] for col in c.df.columns if col[:3] == "bus"]:
+                totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
+                # remove values where bus is missing (bug in nomopyomo)
+                no_bus = c.df.index[c.df["bus" + port] == ""]
+                totals.loc[no_bus] = float(n.component_attrs[c.name].loc["p" + port, "default"])
+                c_energies -= totals.groupby(c.df.carrier).sum()
 
-                    totals = c.pnl["p" + port].multiply(n.snapshot_weightings.generators, axis=0).sum()
+        c_energies = pd.concat([c_energies], keys=[c.list_name])
 
-                    # fallback for empty bus entries
-                    no_bus = c.df.index[c.df[bus_col] == ""]
-                    if not no_bus.empty:
-                        default_val = float(n.component_attrs[c.name].loc["p" + port, "default"])
-                        totals.loc[no_bus] = default_val
+        energy = energy.reindex(c_energies.index.union(energy.index))
 
-                    c_energies -= totals.groupby(c.df.carrier).sum()
+        energy.loc[c_energies.index, label] = c_energies
 
-            
-            c_energies = pd.concat([c_energies], keys=[c.list_name])
-            energy = energy.reindex(c_energies.index.union(energy.index))
-            energy.loc[c_energies.index, label] = c_energies
-            
-        except Exception as e:
-            logger.warning(f"Error processing component {c.name}: {str(e)}")
-            continue
-            
     return energy
 
 
@@ -604,7 +590,7 @@ def calculate_market_values(
         pd.DataFrame: updated market_values
     """
     # Warning: doesn't include storage units
-        
+
     carrier = "AC"
 
     buses = n.buses.index[n.buses.carrier == carrier]
@@ -632,6 +618,7 @@ def calculate_market_values(
 
         market_values.at[tech, label] = revenue.sum().sum() / dispatch.sum().sum()
 
+    # === Now do market value of links  ===
     # === Now do market value of links  ===
 
     for i in ["0", "1"]:
@@ -690,7 +677,6 @@ def make_summaries(
         "weighted_prices": calculate_weighted_prices,
         # "price_statistics": calculate_price_statistics,
         "market_values": calculate_market_values,
-        "market_values_by_region": calculate_market_values_by_region,
         "metrics": calculate_metrics,
     }
 
@@ -704,11 +690,11 @@ def make_summaries(
         dataframes_dict[output] = pd.DataFrame(columns=columns, dtype=float)
 
     for label, filename in networks_dict.items():
+        logger.info(f"Make summary for scenario {label}, using {filename}")
+
         n = pypsa.Network(filename)
         assign_carriers(n)
         assign_locations(n)
-        if "name" not in n.buses.columns:
-            n.buses["name"] = n.buses.index.astype(str)
 
         for output, output_fn in output_funcs.items():
             if output in opts:
@@ -736,6 +722,7 @@ def expand_from_wildcard(key, config) -> list:
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
+
         snakemake = mock_snakemake(
             "make_summary",
             topology="current+FCG",
@@ -783,14 +770,8 @@ if __name__ == "__main__":
     df["metrics"].loc["total costs"] = df["costs"].sum()
 
     def to_csv(dfs, dir):
-        if not isinstance(dfs, dict):
-            logger.error(f"Expected dict, got {type(dfs)}")
-            sys.exit(1)
         os.makedirs(dir, exist_ok=True)
         for key, df in dfs.items():
-            if df is None:
-                logger.error(f"DataFrame for key {key} is None")
-                continue
             df.to_csv(os.path.join(dir, f"{key}.csv"))
 
     to_csv(df, snakemake.output[0])

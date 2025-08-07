@@ -224,13 +224,13 @@ def plot_pathway_capacities(
         cap_ac = cap_df.reset_index().query(
             "bus_carrier == 'AC' | carrier =='AC' | end_carrier =='AC'"
         )
-        cap_ac = cap_ac.groupby("carrier").sum()[year]
+        cap_ac = cap_ac.groupby("carrier").sum()[year].to_frame()
 
         if plot_h2:
             cap_h2 = cap_df.reset_index().query(
                 "bus_carrier == 'H2' | carrier =='H2' | end_carrier =='H2'"
             )
-            cap_h2 = cap_h2.groupby("carrier").sum()[year]
+            cap_h2 = cap_h2.groupby("carrier").sum()[year].to_frame()
             if caps_h2.empty:
                 caps_h2 = cap_h2
             else:
@@ -240,11 +240,11 @@ def plot_pathway_capacities(
             cap_heat = cap_df.reset_index().query(
                 "bus_carrier == 'heat' | carrier =='heat' | end_carrier =='heat'"
             )
-            cap_heat = cap_heat.groupby("carrier").sum()[year]
+            cap_heat = cap_heat.groupby("carrier").sum()[year].to_frame()
             if caps_heat.empty:
                 caps_heat = cap_heat
             else:
-                caps_heat = pd.concat([caps_heat, cap_h2], axis=1).fillna(0)
+                caps_heat = pd.concat([caps_heat, cap_heat], axis=1).fillna(0)
 
         caps_stores = pd.concat([stores, caps_stores], axis=1).fillna(0)
         if caps_ac.empty:
