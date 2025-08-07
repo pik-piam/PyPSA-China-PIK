@@ -23,6 +23,8 @@ from constants import (
 from _helpers import mock_snakemake, configure_logging
 
 NATURAL_EARTH_RESOLUTION = "10m"
+GDAM_LV1 = "NAME_1"
+GDAM_LV2 = "NAME_2"
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +41,8 @@ def fetch_natural_earth_shape(
 
     Example:
         china country: build_natural_earth_shape("admin_0_countries", "ADMIN", "China")
-        china provinces: build_natural_earth_shape("admin_1_states_provinces", "iso_a2", "CN", region_key = "name_en")
+        china provinces: build_natural_earth_shape("admin_1_states_provinces", 
+            "iso_a2", "CN", region_key="name_en")
 
     Returns:
         gpd.GeoDataFrame: the filtered records
@@ -123,7 +126,7 @@ def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
 
     def find_record_id(zone_name: str) -> int:
         # get Maritime Gazette record ID for the country
-        # the eez ID is 70: see https://www.marineregions.org/gazetteer.php?p=webservices&type=rest#/
+        # eez ID is 70: see https://www.marineregions.org/gazetteer.php?p=webservices&type=rest#/
         url = f"https://www.marineregions.org/rest/getGazetteerRecordsByName.json/{zone_name}/?like=true&fuzzy=false&typeID=70&offset=0&count=100"
         response = requests.get(url)
         if response.status_code != 200:
@@ -144,13 +147,15 @@ def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
     #  URL of the WFS service
     url = "https://geo.vliz.be/geoserver/wfs"
     # WFS request parameters + record ID filter
+    base_filter_ = "<Filter><PropertyIsEqualTo><PropertyName>mrgid_eez</PropertyName><Literal>"
+    filter_ = base_filter_ + f"{mgrid}</Literal></PropertyIsEqualTo></Filter>"
     params = dict(
         service="WFS",
         version="1.1.0",
         request="GetFeature",
         typeName="MarineRegions:eez",
         outputFormat="json",
-        filter=f"<Filter><PropertyIsEqualTo><PropertyName>mrgid_eez</PropertyName><Literal>{mgrid}</Literal></PropertyIsEqualTo></Filter>",
+        filter=filter_,
     )
 
     # Fetch data from WFS using requests
@@ -208,10 +213,11 @@ def fetch_gadm(country_code="CHN", level=2):
 
 def fetch_prefecture_shapes(
     fixes={
-        "NAME_1": {
+        GDAM_LV1: {
             "Nei Mongol": "InnerMongolia",
             "Xinjiang Uygur": "Xinjiang",
             "Hong Kong": "HongKong",
+            "Ningxia Hui": "Ningxia",
         }
     }
 ):
@@ -226,49 +232,84 @@ def fetch_prefecture_shapes(
         for old_name, new_name in fix_dict.items():
             mask = gdf.query(f"{col} == '{old_name}'").index
             gdf.loc[mask, col] = new_name
-    return gdf
+    return gdf[["COUNTRY", "NAME_1", "NAME_2"]]
 
 
-def build_provinces_with_split_inner_mongolia(
+def build_nodes(
     prefectures: gpd.GeoDataFrame,
-    east_prefs=["Hulunbuir", "Xing'an", "Tongliao", "Chifeng", "Xilin Gol"],
-    west_prefs=[
-        "Alxa",
-        "Baotou",
-        "Baynnur",
-        "Hohhot",
-        "Ordos",
-        "Ulaan Chab",
-        "Wuhai",
-    ],
-) -> gpd.GeoDataFrame:
+    nodes_cfg: dict,
+) -> gpd.GeoSeries:
+    """ Build the nodes, either directly at provincial (admin1) level or from adminlvk2 subregions
+      
+    Args:
+      prefectures:  """
+    gdf = prefectures.copy()
+    if nodes_cfg.get("split_provinces", False):
+        validate_split_cfg(nodes_cfg["splits"], gdf)
+        return build_nodes(gdf, nodes_cfg)
+    else:
+        provs = provs = gdf.dissolve(GDAM_LV1)
+        return provs.drop(["Macau", "HongKong"]).rename_axis("node")["geometry"]
+
+
+def validate_split_cfg(split_cfg: dict, gdf: gpd.GeoDataFrame):
+    """validate the province split configuration. 
+    The province (admin level 1) is split by admin level 2 {subregion: [prefecture names],..}.
+    The prefecture names must be unique and cover all admin2 in the admin1 level.
+
+    Args:
+        split_cfg (dict): the configuration for the prefecture split
+        gdf (gpd.GeoDataFrame): the geodataframe with prefecture shapes
+    Raises:
+        ValueError: if the prefectures are not unique or do not cover all admin2 in the admin1 level
+    """
+    # validate_settings
+    for admin1 in split_cfg:
+        if admin1 not in gdf[GDAM_LV1].unique():
+            err_ = f"Invalid admin1 entry {admin1} not found in provinces {gdf[GDAM_LV1].unique()}"
+            raise ValueError(err_)
+        
+        # flatten values
+        admin2 = []
+        for v in split_cfg[admin1].values():
+            admin2 += v
+        
+        # check uniqueness
+        duplicated = any([admin2.pop() in admin2 for i in range(len(admin2))])
+        if duplicated:
+            raise ValueError(f"Duplicated prefecture names in {admin1}: {admin2}")
+        
+        # check completeness
+        all_admin2 = gdf.query(f'{GDAM_LV1} == \"{admin1}\"')[GDAM_LV2].unique().tolist()
+        if not sorted(admin2) == sorted(all_admin2):
+            raise ValueError(
+                f"{admin1} prefectures do not match expected:\ngot {admin2}\nvs\n {all_admin2}"
+            )
+
+
+# TODO consider returning country and province
+def split_provinces(
+    prefectures: gpd.GeoDataFrame,
+    node_config: dict
+) -> gpd.GeoSeries:
     """
     Split Inner Mongolia into East and West regions based on prefectures.
 
     Args:
         prefectures (gpd.GeoDataFrame): Gall chinese prefectures.
-        east_prefs (list, optional): List of prefectures in Inner Mongolia East.
-        west_prefs (list, optional): List of prefectures in Inner Mongolia West.
+        node_config (dict): the configuration for node build
     Returns:
         gpd.GeoDataFrame: Updated GeoDataFrame with Inner Mongolia split EAST/WEST.
     """
     gdf = prefectures.copy()
+    for admin1, splits in node_config["splits"].items():
+        mask = gdf.query(f"{GDAM_LV1} == '{admin1}'").index
+        splits_inv = {vv: admin1 + "_" + k for k, v in splits.items() for vv in v}
+        gdf.loc[mask, GDAM_LV1] = gdf.loc[mask, "NAME_2"].map(splits_inv)
     
-    if not (set(east_prefs) & set(west_prefs) == set()):
-        raise ValueError("East and West prefecture lists must not overlap.")
-    all_prefs = sorted(east_prefs + west_prefs)
-    if not all_prefs == sorted(gdf.query("NAME_1 == 'InnerMongolia'").NAME_2.unique().tolist()):
-        raise ValueError(
-            f"Inner Mongolia prefectures do not match expected: \n{all_prefs}\n vs\n {gdf.query('NAME_1 == \"InnerMongolia\"').NAME_2.unique().tolist()}"
-        )
-    split = {
-        prefecture: "InnerMongoliaEast" if prefecture in east_prefs else "InnerMongoliaWest"
-        for prefecture in gdf.query("NAME_1 == 'InnerMongolia'").NAME_2
-    }
-    mask = gdf.query("NAME_1 == 'InnerMongolia'").index
-    gdf.loc[mask, "NAME_1"] = gdf.loc[mask, "NAME_2"].map(split)
-    return gdf.dissolve(by="NAME_1", aggfunc="sum")
-
+    # merge geometries by node
+    gdf.rename({GDAM_LV1: "node"})
+    return gdf[["node", "geometry"]].dissolve(by="node", aggfunc="sum")
 
 
 def cut_smaller_from_larger(
@@ -294,7 +335,7 @@ def cut_smaller_from_larger(
     for idx in ovrlap_idx:
         geom = gdf.iloc[idx].geometry
         if row.geometry.area > geom.area:
-            row.geometry = row.geometry.difference(geom)
+            row.loc[:, "geometry"] = row.loc[:, "geometry"].difference(geom)
         elif row.geometry.area == geom.area:
             raise ValueError(f"Equal area overlap between {row.name} and {idx} - unhandled")
     return row
@@ -388,13 +429,24 @@ if __name__ == "__main__":
         snakemake = mock_snakemake("fetch_region_shapes")
     configure_logging(snakemake, logger=logger)
 
+    nodes_config = snakemake.config.get("nodes", {"split_provinces": False})
+
     logger.info(f"Fetching country shape {COUNTRY_NAME} from cartopy")
     fetch_country_shape(snakemake.output.country_shape)
     logger.info(f"Country shape saved to {snakemake.output.country_shape}")
 
     logger.info(f"Fetching province shapes for {COUNTRY_ISO} from cartopy")
     # TODO it would be better to filter by set regions after making the voronoi polygons
-    regions = fetch_province_shapes()
+    if not nodes_config.get("split_provinces", False):
+        regions = fetch_province_shapes()
+    else:
+        raise NotImplementedError(
+            "Province splitting is not implemented accross the whole workflow yet."
+        )
+        logger.info("Splitting provinces into user defined nodes")
+        prefectures = fetch_prefecture_shapes()
+        regions = build_nodes(prefectures, nodes_config)
+
     regions.to_file(snakemake.output.province_shapes, driver="GeoJSON")
     regions.to_file(snakemake.output.prov_shpfile)
     logger.info(f"Province shapes saved to {snakemake.output.province_shapes}")

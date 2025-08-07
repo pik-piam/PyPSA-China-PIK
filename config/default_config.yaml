@@ -307,5 +307,26 @@ existing_capacities:
   threshold_capacity: 1 # TODO UNIT
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
 
+# TODO integrate in workflow
+nodes: 
+  split_provinces: True # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
+  splits:
+    # adminl2 groups per adminl1. {adminl1: {custom_name: [adminl2_names],..}}
+    InnerMongolia:
+      West: 
+        - "Hulunbuir"
+        - "Xing'an"
+        - "Tongliao"
+        - "Chifeng"
+        - "Xilin Gol"
+      East: 
+        - "Alxa"
+        - "Baotou"
+        - "Baynnur"
+        - "Hohhot"
+        - "Ordos"
+        - "Ulaan Chab"
+        - "Wuhai"
+
 fetch_regions:
   simplify_tol: 0.5
