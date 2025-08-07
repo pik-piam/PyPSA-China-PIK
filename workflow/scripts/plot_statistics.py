@@ -275,7 +275,7 @@ if __name__ == "__main__":
             planning_horizons="2025",
             # co2_pathway="exp175default",
             # planning_horizons="2130",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
             topology="current+FCG",
             # heating_demand="positive",
             configfiles="resources/tmp/remind_coupled_cg.yaml",
@@ -303,7 +303,7 @@ if __name__ == "__main__":
     stats_list = snakemake.params.stat_types
 
     attached_carriers = filter_carriers(n, carrier)
-    if "capacity_factor" in stats_list:
+    if "capacity_factor" in stats_list:e
         cf_filtered, theo_cf_filtered = prepare_capacity_factor_data(n, carrier)
         fig, ax = plt.subplots(figsize=(12, 8))
         plot_capacity_factor(cf_filtered, theo_cf_filtered, ax, colors)
@@ -313,7 +313,7 @@ if __name__ == "__main__":
 
     if "installed_capacity" in stats_list:
         fig, ax = plt.subplots()
-        ds = n.statistics.installed_capacity(groupby=["carrier"]).dropna()
+        ds = n.statistics.installed_capacity(groupby=["carrier"], nice_names=False).dropna()
         ds.drop("stations", level=1, inplace=True)
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
@@ -349,7 +349,7 @@ if __name__ == "__main__":
             n.links.loc[pseudo_links, "p_nom_opt"] = 0
 
         # Calculate optimal capacity for all components
-        ds = n.statistics.optimal_capacity(groupby=["carrier"]).dropna()
+        ds = n.statistics.optimal_capacity(groupby=["carrier"], nice_names = False).dropna()
 
         # Restore original link capacities to avoid modifying the network object
         n.links.p_nom_opt = original_p_nom_opt
@@ -396,6 +396,12 @@ if __name__ == "__main__":
     if "curtailment" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.curtailment(bus_carrier=carrier)
+        # curtailment definition only makes sense for VREs
+        vres = snakemake.config["Techs"].get("non_dispatchable", ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential'])
+        vres = [v for v in vres if v in ds.index.get_level_values("carrier")]
+        attrs = ds.attrs.copy()
+        ds = ds.unstack()[vres].stack()
+        ds.attrs = attrs
         plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "curtailment.png"))
