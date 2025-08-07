@@ -525,7 +525,7 @@ def solve_network(
     min_iterations = cf_solving.get("min_iterations", 4)
     max_iterations = cf_solving.get("max_iterations", 6)
     transmission_losses = cf_solving.get("transmission_losses", 0)
-    export_duals = solving["solver_options"].get("export_duals", False)
+    export_duals = cf_solving.get("export_duals", False)
 
     # add to network for extra_functionality
     n.config = config
@@ -563,16 +563,44 @@ def solve_network(
 
     # Collect dual data if enabled
     dual_data = {}
+    logger.info(f"=== DUAL EXPORT DEBUG: export_duals={export_duals} ===")
     if export_duals and hasattr(n, "model") and hasattr(n.model, "dual"):
         # Process dual variables and add them to network object
         from _pypsa_helpers import process_dual_variables
         process_dual_variables(n)
         
         # Collect dual data before model might be destroyed
-        if n.model.dual:
-            dual_data.update(dict(n.model.dual))
+        logger.info(f"Model has dual: {n.model.dual is not None}")
+        
+        # Try different ways to access dual variables
+        if hasattr(n.model, 'dual') and n.model.dual is not None:
+            try:
+                # Try to get dual variables as a dictionary
+                model_duals = dict(n.model.dual)
+                logger.info(f"Model dual has {len(model_duals)} variables")
+                dual_data.update(model_duals)
+            except Exception as e:
+                logger.warning(f"Failed to convert model.dual to dict: {e}")
+                # Try alternative access method
+                try:
+                    if hasattr(n.model.dual, 'to_dict'):
+                        model_duals = n.model.dual.to_dict()
+                        logger.info(f"Model dual (to_dict) has {len(model_duals)} variables")
+                        dual_data.update(model_duals)
+                    else:
+                        logger.warning("Model dual has no to_dict method")
+                except Exception as e2:
+                    logger.warning(f"Failed to access model.dual.to_dict: {e2}")
+        else:
+            logger.warning("Model dual is empty or None")
+            
         if hasattr(n, 'duals') and n.duals:
+            logger.info(f"Network duals has {len(n.duals)} variables")
             dual_data.update(n.duals)
+        else:
+            logger.warning("Network duals is empty or None")
+        
+        logger.info(f"Collected {len(dual_data)} dual variables for export")
     elif export_duals:
         logger.warning("Network model does not have dual variables. Dual export will be skipped.")
 
@@ -644,7 +672,7 @@ if __name__ == "__main__":
         )
         
         # Export dual variables in main (not in solve function)
-        if dual_data and snakemake.params.solving["solver_options"].get("export_duals", False):
+        if dual_data and snakemake.params.solving["options"].get("export_duals", False):
             current_year = snakemake.wildcards.planning_horizons
             results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
             dual_output_dir = os.path.join(results_dir, 'dual', f"dual_values_raw_{current_year}")

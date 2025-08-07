@@ -621,20 +621,37 @@ def export_duals_simple(dual_data: dict, output_dir: Path) -> None:
         filepath = output_dir / f"{safe_name}.csv"
         
         try:
-            # Convert to pandas Series for consistent CSV output
+            # Convert to pandas Series for consistent CSV output with proper indexing
             if isinstance(dual_value, (dict, pd.Series)):
-                pd.Series(dual_value).to_csv(filepath, header=False)
+                # Preserve original index if available
+                if hasattr(dual_value, 'index'):
+                    pd.Series(dual_value).to_csv(filepath, header=True)
+                else:
+                    pd.Series(dual_value).to_csv(filepath, header=True)
             elif isinstance(dual_value, (list, tuple)):
-                pd.Series(dual_value, name=dual_name).to_csv(filepath, header=False)
+                pd.Series(dual_value, name=dual_name).to_csv(filepath, header=True)
             elif np.isscalar(dual_value):
-                pd.Series([dual_value], name=dual_name).to_csv(filepath, header=False)
+                pd.Series([dual_value], name=dual_name).to_csv(filepath, header=True)
             elif isinstance(dual_value, np.ndarray):
-                pd.Series(dual_value.flatten()).to_csv(filepath, header=False)
+                # Try to preserve original shape and create meaningful index
+                if dual_value.ndim == 1:
+                    pd.Series(dual_value, name=dual_name).to_csv(filepath, header=True)
+                else:
+                    pd.Series(dual_value.flatten(), name=dual_name).to_csv(filepath, header=True)
             elif isinstance(dual_value, xr.DataArray):
-                pd.Series(dual_value.values.flatten()).to_csv(filepath, header=False)
+                # Preserve xarray coordinates as index if possible
+                try:
+                    if hasattr(dual_value, 'coords') and dual_value.coords:
+                        # Try to use coordinates as index
+                        series = dual_value.to_pandas()
+                        series.to_csv(filepath, header=True)
+                    else:
+                        pd.Series(dual_value.values.flatten(), name=dual_name).to_csv(filepath, header=True)
+                except:
+                    pd.Series(dual_value.values.flatten(), name=dual_name).to_csv(filepath, header=True)
             else:
                 # Fallback for other types
-                pd.Series([str(dual_value)], name=dual_name).to_csv(filepath, header=False)
+                pd.Series([str(dual_value)], name=dual_name).to_csv(filepath, header=True)
                 
         except Exception as e:
             logger.warning(f"Failed to export dual variable '{dual_name}': {str(e)}")
