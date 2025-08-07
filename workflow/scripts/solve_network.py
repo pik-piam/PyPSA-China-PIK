@@ -542,9 +542,7 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     vres_idx = avail.columns
     if not ext_idx.empty and not vres_idx.empty:
         # Reserve score based on a mean availability factor not actual avail (lack of foresight)
-        vre_reserve_score = (n.model["Generator-r"].loc[:, vres_gen.index] * avail.mean()).sum(
-            "Generator"
-        )
+        vre_reserve_score = (n.model["Generator-r"].loc[:, vres_gen.index] * avail).sum("Generator")
         summed_reserve += vre_reserve_score
 
         # reqs from brownfield VRE generators. epsilon is the margin for VRES forecast error
