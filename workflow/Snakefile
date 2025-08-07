@@ -16,7 +16,6 @@ from scripts._helpers import PathManager, get_cutout_params, ConfigManager
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
-# configfile: "config/remind.yaml"
 
 # for dev of remind with mocksnakemake, activate this
 # configfile: "resources/tmp/remind_coupled_cg.yaml"
@@ -41,30 +40,6 @@ LOG_DIR = path_manager.logs_dir()
 LOGS_COMMON = "logs"
 LU_RASTER = path_manager.landuse_raster_data()
 CUTOUT_PATH = os.path.join(path_manager.cutouts_dir(),CUTOUT_NAME + ".nc")
-
-# ====== generate province configuration once at top level =======
-def get_province_config():
-    """Generate province configuration once at snakefile top level.
-    
-    This avoids repeated calls to get_province_names() and provides
-    a centralized place to handle province splits and configuration.
-    """
-    from scripts.constants import load_province_config, generate_province_names
-    
-    # Load province config from YAML or use defaults
-    province_config = load_province_config()
-    
-    # Generate final province names including splits
-    province_names = generate_province_names(province_config)
-    
-    return {
-        "province_names": province_names,
-        "province_config": province_config
-    }
-
-# Generate province configuration once
-PROVINCE_CONFIG = get_province_config()
-PROVINCE_NAMES = PROVINCE_CONFIG["province_names"]
 
 # ====== include rules ======= (after paths are set!)
 include: "rules/prepare_remind_coupled.smk"
