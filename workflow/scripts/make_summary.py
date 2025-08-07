@@ -16,9 +16,8 @@ import pypsa
 
 from _helpers import mock_snakemake, configure_logging
 from _pypsa_helpers import assign_locations
+from _pypsa_helpers import calc_lcoe
 
-# import numpy as np
-# from add_electricity import load_costs, update_transmission_costs
 
 logger = logging.getLogger(__name__)
 logger = logging.getLogger(__name__)
@@ -212,6 +211,26 @@ def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame) -> pd.Dat
     # costs.loc[("generators", "capital", "ror"),label] = (0.02)*3e6*n.generators.loc[n.generators.group=="ror", "p_nom"].sum()
 
     return costs
+
+
+def calculate_nodal_lcoe(n: pypsa.Network, label: str, nodal_lcoe: pd.DataFrame):
+    """Calculate LCOE by province and technology
+    
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        nodal_lcoe (pd.DataFrame): the dataframe to fill/update
+    Returns:
+        pd.DataFrame: updated nodal_lcoe
+    """
+
+    lcoe_data = calc_lcoe(n, groupby=["location", "carrier"])
+    
+    lcoe_series = lcoe_data["LCOE"]
+    
+    nodal_lcoe[label] = lcoe_series
+    
+    return nodal_lcoe
 
 
 def calculate_nodal_capacities(
@@ -664,6 +683,7 @@ def make_summaries(
         "nodal_costs": calculate_nodal_costs,
         "nodal_capacities": calculate_nodal_capacities,
         "nodal_cfs": calculate_nodal_cfs,
+        "nodal_lcoe": calculate_nodal_lcoe,
         "cfs": calculate_cfs,
         "costs": calculate_costs,
         "co2_balance": calculate_co2_balance,

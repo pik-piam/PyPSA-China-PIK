@@ -4,6 +4,7 @@ Helper/utility functions for plotting, including legacy functions yet to be remo
 
 import pypsa
 import pandas as pd
+import numpy as np
 import os.path
 import matplotlib.pyplot as plt
 from os import PathLike
@@ -398,6 +399,65 @@ def aggregate_small_pie_vals(pie: pd.Series, threshold: float) -> pd.Series:
     )
     pie_df["location"] = pie_df.index.get_level_values(0)
     return pie_df.set_index(["location", "new_carrier"]).groupby(level=[0, 1]).sum().squeeze()
+
+
+def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **kwargs):
+    """
+    Create a heatmap from a numpy array and two lists of labels.
+    Args:
+        data (np.ndarray): The data to plot.
+        row_labels (list): The labels for the rows.
+        col_labels (list): The labels for the columns.
+        ax (matplotlib.axes.Axes, optional): The axes to plot on. Defaults to None.
+        cbar_kw (dict, optional): Arguments to pass to colorbar. Defaults to {}.
+        cbarlabel (str, optional): The label for the colorbar. Defaults to "".
+        **kwargs: Additional arguments for imshow.
+    Returns:
+        im: The image.
+        cbar: The colorbar.
+    """
+    if ax is None:
+        ax = plt.gca()
+    im = ax.imshow(data, aspect='auto', interpolation='none', **kwargs)
+    cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
+    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
+    ax.set_xticks(np.arange(data.shape[1]), labels=col_labels)
+    ax.set_yticks(np.arange(data.shape[0]), labels=row_labels)
+    ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="left", rotation_mode="anchor")
+    for edge, spine in ax.spines.items():
+        spine.set_visible(False)
+    return im, cbar
+
+
+def annotate_heatmap(im, data=None, valfmt="{x:.1f}", textcolors=("black", "white"), threshold=None, **textkw):
+    """
+    Annotate a heatmap.
+    Args:
+        im: The AxesImage to annotate.
+        data (np.ndarray, optional): Data to annotate. Defaults to im.get_array().
+        valfmt (str, optional): Format for values. Defaults to "{x:.1f}".
+        textcolors (tuple, optional): Colors for values below/above threshold. Defaults to ("black", "white").
+        threshold (float, optional): Value in data units according to which the colors are applied. Defaults to half the max.
+        **textkw: Additional arguments for text.
+    Returns:
+        list: List of text annotations.
+    """
+    if data is None:
+        data = im.get_array()
+    if threshold is not None:
+        threshold = im.norm(threshold)
+    else:
+        threshold = im.norm(data.max())/2.
+    kw = dict(horizontalalignment="center", verticalalignment="center")
+    kw.update(textkw)
+    texts = []
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            kw.update(color=textcolors[int(im.norm(data[i, j]) > threshold)])
+            text = im.axes.text(j, i, valfmt.format(x=data[i, j]), **kw)
+            texts.append(text)
+    return texts
 
 
 if __name__ == "__main__":
