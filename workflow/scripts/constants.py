@@ -4,13 +4,6 @@ Soft coded centalized `constants`
 
 import os
 import re
-import logging
-import pandas as pd
-import yaml
-from functools import lru_cache
-from typing import List
-
-logger = logging.getLogger(__name__)
 
 # ======= CONVERSIONS =======
 PLOT_COST_UNITS = 1e9  # bnEur
@@ -36,7 +29,6 @@ TIMEZONE = "Asia/Shanghai"
 # THIS is used to heating demand and is a bit of a problem since currently all are set to
 # the administrative timezone and not the geo timezoones
 
-# Default province names for network construction
 REGIONAL_GEO_TIMEZONES_DEFAULT = {
     "Anhui": TIMEZONE,
     "Beijing": TIMEZONE,
@@ -71,56 +63,36 @@ REGIONAL_GEO_TIMEZONES_DEFAULT = {
     "Zhejiang": TIMEZONE,
 }
 
-# Cache for province names to avoid repeated file reads
-_province_names_cache = None
 
-def load_province_config(config_path: str = None) -> dict:
-    """Load province configuration from YAML file."""
-    if config_path is None:
-        config_path = "config/provinces.yaml"
-    
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, 'r') as f:
-                config = yaml.safe_load(f)
-            logger.info(f"Loaded province config from {config_path}")
-            return config
-        except Exception as e:
-            logger.warning(f"Failed to load province config from {config_path}: {e}")
-    
-    # Default configuration
-    return {
-        "provinces": list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys()),
-        "splits": {}
-    }
+# TODO really ugly, load the REGIONAL_GEO_TIMEZONES_DEFAULT from a file
+# use different file for tests
+def get_province_names() -> list:
+    """HACK to make it possible for pytest to generate a smaller network
 
-#  cache the province names to avoid repeated calls
-@lru_cache(maxsize=1)
-def get_province_names_cached() -> List[str]:
-    """Cached version of get_province_names to avoid repeated calls."""
-    # Try YAML config file first
-    yaml_path = "config/provinces.yaml"
-    if os.path.exists(yaml_path):
-        try:
-            config = load_province_config(yaml_path)
-            if "provinces" in config and config["provinces"]:
-                provinces = config["provinces"]
-                logger.info(f"Using {len(provinces)} provinces from {yaml_path}")
-                return provinces
-        except Exception as e:
-            logger.warning(f"Failed to read {yaml_path}: {e}")
-    
-    # Default fallback
-    default_provinces = list(REGIONAL_GEO_TIMEZONES_DEFAULT.keys())
-    logger.info(f"Using default province list with {len(default_provinces)} provinces")
-    return default_provinces
+    Raises:
+        ValueError: if the PROV_NAMES is not a list or str
+
+    Returns:
+        list: the province node names to build the network
+    """
+    default_prov_names = list(REGIONAL_GEO_TIMEZONES_DEFAULT)
+    _provs = os.getenv("PROV_NAMES", default_prov_names)
+    if isinstance(_provs, str):
+        _provs = re.findall(r"[\w']+", _provs)
+        if not _provs:
+            xpected = '["region1", ...]'
+            err = f"Environment var PROV_NAMES {_provs} for tests did not have expected format: "
+            raise ValueError(err + xpected)
+    elif not isinstance(_provs, list):
+        raise ValueError("PROV_NAMES must be a list or str")
+    return _provs
 
 
 def filter_buses(names) -> list:
     return [name for name in names if name in PROV_NAMES]
 
 
-PROV_NAMES = get_province_names_cached()
+PROV_NAMES = get_province_names()
 REGIONAL_GEO_TIMEZONES = {
     k: v for k, v in REGIONAL_GEO_TIMEZONES_DEFAULT.items() if k in PROV_NAMES
 }

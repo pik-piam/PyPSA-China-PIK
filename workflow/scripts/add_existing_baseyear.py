@@ -15,7 +15,6 @@ from constants import YEAR_HRS
 from add_electricity import load_costs
 from _helpers import mock_snakemake, configure_logging, ConfigManager
 from _pypsa_helpers import shift_profile_to_planning_year
-from constants import PROV_NAMES
 
 # TODO possibly reimplement to have env separation
 from rpycpl.technoecon_etl import to_list
@@ -716,14 +715,6 @@ if __name__ == "__main__":
         axis=0,
     )
 
-    # remove generators from non-configured provinces
-    invalid_generators = installed[~installed['bus'].isin(PROV_NAMES)]
-    if not invalid_generators.empty:
-        for fuel_type in invalid_generators['Fueltype'].unique():
-            fuel_generators = invalid_generators[invalid_generators['Fueltype'] == fuel_type]
-            logger.info(f"Removed {fuel_type} generators from non-configured provinces: {list(fuel_generators['bus'].unique())}")
-        installed = installed.drop(invalid_generators.index)
-    
     # add to the network
     add_power_capacities_installed_before_baseyear(n, costs, config, installed)
     # add paid-off REMIND capacities if requested

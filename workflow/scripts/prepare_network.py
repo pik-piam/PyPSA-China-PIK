@@ -714,12 +714,6 @@ def add_wind_and_solar(
 
         p_max_pu = ds["profile"].to_pandas()
         p_max_pu.columns = p_max_pu.columns.map(flatten)
-        
-        # filter out non-configured provinces
-        bus_bins = bus_bins[bus_bins.str.split(" grade").str[0].isin(PROV_NAMES)]
-        buses = buses[buses.isin(PROV_NAMES)]
-        p_nom_max = p_nom_max.loc[bus_bins]
-        p_max_pu = p_max_pu.loc[:, p_max_pu.columns.str.split(" grade").str[0].isin(PROV_NAMES)]
 
         # add renewables
         network.add(
@@ -1160,14 +1154,13 @@ def add_hydro(
     effective_capacity.index = all_dams
     initial_capacity = initial_capacity / water_consumption_factor
     effective_capacity = effective_capacity / water_consumption_factor
-    # filter dams in nodes
+
+    # select relevant dams in nodes
     effective_capacity = effective_capacity.loc[
         effective_capacity.index.map(dam_provinces).isin(nodes)
-    ].reindex(dams.index)
-    initial_capacity = initial_capacity.loc[
-        initial_capacity.index.map(dam_provinces).isin(nodes)
-    ].reindex(dams.index)
-    
+    ]
+    initial_capacity = initial_capacity.loc[initial_capacity.index.map(dam_provinces).isin(nodes)]
+
     network.add(
         "Store",
         dams.index,
@@ -1278,8 +1271,8 @@ def add_hydro(
     )[nodes]
 
     hydro_p_max_pu = shift_profile_to_planning_year(hydro_p_max_pu, planning_horizons)
-    # 确保列顺序与nodes一致
-    hydro_p_max_pu = hydro_p_max_pu.reindex(columns=nodes)
+    # sort buses (columns) otherwise stuff will break
+    hydro_p_max_pu.sort_index(axis=1, inplace=True)
 
     hydro_p_max_pu = hydro_p_max_pu.loc[snapshots]
     hydro_p_max_pu.index = network.snapshots
@@ -1359,8 +1352,6 @@ def prepare_network(
     network = pypsa.Network()
     network.set_snapshots(snapshots)
     network.snapshot_weightings[:] = config["snapshots"]["frequency"]
-    
-    
     # load graph
     nodes = pd.Index(PROV_NAMES)
     # toso soft code
@@ -1395,7 +1386,6 @@ def prepare_network(
     if "nuclear" in config["Techs"]["vre_techs"]:
 
         nuclear_nodes = pd.Index(NUCLEAR_EXTENDABLE)
-
         network.add(
             "Generator",
             nuclear_nodes,
@@ -1599,11 +1589,9 @@ if __name__ == "__main__":
     else:
         biomass_potential = None
 
-
     network = prepare_network(
         snakemake.config, costs, snapshots, biomass_potential, paths=input_paths
     )
-        
     sanitize_carriers(network, snakemake.config)
 
     outp = snakemake.output.network_name
