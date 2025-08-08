@@ -1,27 +1,73 @@
 
-site_name: PyPSA China Model (PIK edition) Documentation
+site_name: PyPSA China (PIK) #(PIK edition) Documentation
+site_url: https://irr-github.github.io/PyPSA-China-PIK/
 
 theme:
   name: "material"
+  logo: "assets/img/logo_small.png"
+  favicon: "assets/img/pypsa_china.ico"
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+    - navigation.footer
+  language: en
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline 
+        name: Switch to dark mode
+      # primary: deep purple
+      accent: blue 
+    - scheme: slate 
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode    
+      primary: black
+      accent: amber
+
 docs_dir: "./docs"
+
+# Version configuration
+extra:
+  version:
+    provider: mike
+    default: latest
 
 # Due to snakemake workflow, we need to include the 'scripts' directory in the python path
 plugins:
   - gen-files:
       scripts:
       - docs/autogen_ref_pages.py
-  - literate-nav:
-      nav_file: reference_nav.yml
+  # - literate-nav:
+  #     nav_file: reference_nav.yml
   - mkdocstrings:
       default_handler: python
       handlers:
         python:
           paths: ["./workflow/scripts"]
   - search
-
+  - awesome-nav:
+      collapse_single_pages: false
 nav:
-  - Home: index.md
-  - Tutorials: tutorials.md
-  - Reference:
-      - reference.md
+  - .nav.yaml
 
+extra_css:
+  - docs/assets/styles/extra.css
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+copyright: &copy Potsdam Institute for Climate Impact Research (PIK) 2024

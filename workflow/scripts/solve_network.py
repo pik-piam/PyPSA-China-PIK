@@ -495,7 +495,6 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
     Args:
         n (pypsa.Network): the network object to optimize
         snapshots (DatetimeIndex): the time index of the network
-        config (dict): the configuration dictionary
     """
     config = n.config
     add_battery_constraints(n)
