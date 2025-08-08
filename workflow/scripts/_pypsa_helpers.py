@@ -494,7 +494,7 @@ def _sanitize_filename(filename: str) -> str:
 
 
 # --- Simple dual export function ---
-def export_duals_simple(dual_data: dict, output_dir: Path) -> None:
+def export_duals(dual_data: dict, output_dir: Path) -> None:
     """Export dual variables to CSV files."""
     if not dual_data:
         return

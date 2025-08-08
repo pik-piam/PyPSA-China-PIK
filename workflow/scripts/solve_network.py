@@ -18,6 +18,8 @@ from _pypsa_helpers import process_dual_variables
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, ConfigManager
 from _pypsa_helpers import mock_solve
 from constants import YEAR_HRS
+from pathlib import Path
+from _pypsa_helpers import export_duals
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -505,8 +507,8 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
 
 
 def solve_network(
-    n: pypsa.Network, config: dict, solving: dict, opts: str = "", export_duals: bool = False, **kwargs
-) -> tuple[pypsa.Network, dict]:
+    n: pypsa.Network, config: dict, solving: dict, opts: str = "", **kwargs
+) -> pypsa.Network:
     """perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
@@ -515,7 +517,7 @@ def solve_network(
         opts (str): optional wildcards such as ll (not used in pypsa-china)
         
     Returns:
-        tuple: (network, dual_data)
+        pypsa.Network: the optimized network
     """
     set_of_options = solving["solver"]["options"]
     solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
@@ -525,7 +527,6 @@ def solve_network(
     min_iterations = cf_solving.get("min_iterations", 4)
     max_iterations = cf_solving.get("max_iterations", 6)
     transmission_losses = cf_solving.get("transmission_losses", 0)
-    # export_duals should be passed as parameter, not extracted here
 
     # add to network for extra_functionality
     n.config = config
@@ -561,13 +562,7 @@ def solve_network(
     if "infeasible" in condition:
         raise RuntimeError("Solving status 'infeasible'")
 
-    # Collect dual data if enabled (for export in main)
-    dual_data = {}
-    if export_duals and hasattr(n, "model") and hasattr(n.model, "dual"):
-        process_dual_variables(n)
-        dual_data.update(dict(n.model.dual))
-
-    return n, dual_data
+    return n
 
 
 if __name__ == "__main__":
@@ -629,28 +624,27 @@ if __name__ == "__main__":
         # Extract export_duals from config in main
         export_duals = snakemake.params.solving["options"].get("export_duals", False)
         
-        n, dual_data = solve_network(
+        n = solve_network(
             n,
             config=snakemake.config,
             solving=snakemake.params.solving,
             opts=opts,
-            export_duals=export_duals,
             log_fn=snakemake.log.solver,
         )
         
-        # Export dual variables in main (not in solve function)
-        if dual_data and snakemake.params.solving["options"].get("export_duals", False):
-            current_year = snakemake.wildcards.planning_horizons
-            results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
-            dual_output_dir = os.path.join(results_dir, 'dual', f"dual_values_raw_{current_year}")
-            
-            from pathlib import Path
-            from _pypsa_helpers import export_duals_simple
-            export_duals_simple(dual_data, Path(dual_output_dir))
+        # Post-process and export dual variables (outside solve function)
+        if export_duals:
+            # This call safely no-ops if model/dual are missing
+            process_dual_variables(n)
+            dual_data = getattr(n, "duals", {})
+            if dual_data:
+                current_year = snakemake.wildcards.planning_horizons
+                results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
+                dual_output_dir = os.path.join(results_dir, 'dual', f"dual_values_raw_{current_year}")
+                export_duals(dual_data, Path(dual_output_dir))
     else:
         logging.info("Mocking the solve step")
         n = mock_solve(n)
-        dual_data = {}
 
     if "p2" in n.links_t:
         n.links_t.p2 = n.links_t.p2.astype(float)
