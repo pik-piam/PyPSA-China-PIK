@@ -18,26 +18,7 @@ jobs:
     # Step 1: Checkout the repository
     - uses: actions/checkout@v4
 
-    # Step 2: Set up Conda with Mamba and built-in caching
-    - name: Set up Conda
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        miniforge-version: 'latest'
-        environment-file: workflow/envs/environment.yaml
-        activate-environment: pypsa-china
-        auto-activate-base: false
-        use-mamba: true
-        cache-downloads: true  # Enable built-in download caching
-        cache-environment: true  # Enable built-in environment caching
-        condarc: |
-          channels:
-            - conda-forge
-            - bioconda
-          channel_priority: strict
-          pip_interop_enabled: true  # Enable pip/conda interoperability
-          quiet: true  # Reduce output for CI
-
-    # Step 3: Additional manual cache for better control
+    # Step 2: Restore Conda/Mamba caches BEFORE environment setup
     - name: Cache Conda packages
       uses: actions/cache@v4
       with:
@@ -48,12 +29,25 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-conda-pkgs-
 
+    # Step 3: Set up Conda with Mamba (use the cached package dirs)
+    - name: Set up Conda
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        miniforge-version: 'latest'
+        environment-file: workflow/envs/environment.yaml
+        activate-environment: pypsa-china
+        auto-activate-base: false
+        use-mamba: true
+        channels: conda-forge,bioconda
+        channel-priority: strict
+        pkgs-dirs: ~/.conda/pkgs
+
     # Step 4: Show environment info
     - name: Show environment
       shell: bash -el {0}
       run: |
         mamba info
-        mamba list
+        mamba list | head -100
         python -V
         pytest --version
     - name: Run pytest
