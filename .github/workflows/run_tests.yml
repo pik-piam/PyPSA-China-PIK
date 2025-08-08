@@ -49,21 +49,7 @@ jobs:
         conda config --add envs_dirs /home/runner/miniforge3/envs
         mamba env create -n pypsa-china -f workflow/envs/environment.yaml
 
-    # Step 5: Show environment info (limited output to avoid BrokenPipeError)
-    - name: Show environment
-      continue-on-error: true
-      shell: bash -el {0}
-      run: |
-        conda config --add envs_dirs /home/runner/miniforge3/envs
-        conda info --envs || true
-        conda run -n pypsa-china python -V || true
-        conda run -n pypsa-china pytest --version || true
-        conda run -n pypsa-china mamba info > mamba_info.txt 2>&1 || true
-        sed -n '1,120p' mamba_info.txt || true
-        conda run -n pypsa-china mamba list > mamba_list.txt 2>&1 || true
-        sed -n '1,120p' mamba_list.txt || true
-
-    # Step 6: Run tests
+    # Step 5: Run tests
     - name: Run pytest
       shell: bash -el {0}
       run: |
