@@ -43,7 +43,7 @@ jobs:
         pkgs-dirs: ~/.conda/pkgs
 
     # Step 4: Create env only if cache miss
-    - name: Create env (cache miss)
+    - name: Create env
       if: steps.env-cache.outputs.cache-hit != 'true'
       shell: bash -el {0}
       run: |
