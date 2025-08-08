@@ -18,7 +18,7 @@ jobs:
     # Step 1: Checkout the repository
     - uses: actions/checkout@v4
 
-    # Step 2: Restore Conda/Mamba caches BEFORE environment setup
+    # Step 2: Restore Conda/Mamba caches Before environment setup2
     - name: Cache Conda packages
       uses: actions/cache@v4
       with:
