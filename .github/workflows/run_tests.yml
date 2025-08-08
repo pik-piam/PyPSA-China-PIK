@@ -36,7 +36,8 @@ jobs:
         miniforge-version: latest
         installation-dir: ~/miniforge3
         use-mamba: true
-        auto-activate-base: false
+        auto-activate-base: true
+        activate-environment: base
         channels: conda-forge,bioconda
         channel-priority: strict
         pkgs-dirs: ~/.conda/pkgs
@@ -46,7 +47,7 @@ jobs:
       if: steps.env-cache.outputs.cache-hit != 'true'
       shell: bash -el {0}
       run: |
-        mamba env create -f workflow/envs/environment.yaml
+        mamba env create -n pypsa-china -f workflow/envs/environment.yaml
 
     # Step 5: Show environment info
     - name: Show environment
