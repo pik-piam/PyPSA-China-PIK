@@ -23,13 +23,14 @@ jobs:
       uses: conda-incubator/setup-miniconda@v3
       with:
         miniforge-version: latest
-        installation-dir: ${HOME}/miniforge3
+        # Use fixed absolute paths to avoid ~/${HOME} parsing issues
+        installation-dir: /home/runner/miniforge3
         use-mamba: true
         auto-activate-base: true
         activate-environment: base
         channels: conda-forge,bioconda
         channel-priority: strict
-        pkgs-dirs: ${HOME}/.conda/pkgs
+        pkgs-dirs: /home/runner/.conda/pkgs
 
     # Step 3: Restore full Conda environment cache AFTER setup
     - name: Restore Conda env cache
@@ -37,9 +38,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
-          ${HOME}/miniforge3/envs/pypsa-china
-          ${HOME}/.conda/pkgs
-          ${HOME}/.cache/mamba
+          /home/runner/miniforge3/envs/pypsa-china
+          /home/runner/.conda/pkgs
+          /home/runner/.cache/mamba
         key: ${{ runner.os }}-conda-env-${{ hashFiles('workflow/envs/environment.yaml') }}
 
     # Step 4: Create env only if cache miss
@@ -47,24 +48,22 @@ jobs:
       if: steps.env-cache.outputs.cache-hit != 'true'
       shell: bash -el {0}
       run: |
-        conda config --add envs_dirs ${HOME}/miniforge3/envs
+        conda config --add envs_dirs /home/runner/miniforge3/envs
         mamba env create -n pypsa-china -f workflow/envs/environment.yaml
 
     # Step 5: Show environment info
     - name: Show environment
       shell: bash -el {0}
       run: |
-        conda config --add envs_dirs ${HOME}/miniforge3/envs
+        conda config --add envs_dirs /home/runner/miniforge3/envs
         conda info --envs
-        conda activate pypsa-china
-        mamba info
-        mamba list | head -100
-        python -V
-        pytest --version
+        conda run -n pypsa-china python -V
+        conda run -n pypsa-china mamba info
+        conda run -n pypsa-china mamba list | head -100
+        conda run -n pypsa-china pytest --version
 
     # Step 6: Run tests
     - name: Run pytest
       shell: bash -el {0}
       run: |
-        conda activate pypsa-china
-        pytest -v -s
+        conda run -n pypsa-china pytest -v -s
