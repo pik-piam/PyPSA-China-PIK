@@ -33,5 +33,5 @@ You may want to look into the [PyPSA documentation](https://pypsa.readthedocs.io
 
 This version has is maintained by the PIK team. It is not yet published, please contact us in case you are interested in using the model.
 
-The model is based on the PyPSA-EUR work by the Tom Brown Group, orignally adapted to China by Hailiang Liu et al for their study of [hydro-power in china](https://doi.org/10.1016/j.apenergy.2019.02.009) and extended by Xiaowei Zhou et al for their  ["Multi-energy system horizon planning: Early decarbonisation in China avoids stranded assets"](https://doi.org/10.1049/ein2.12011) paper. It has received significant upgrades.
+The model is based on the PyPSA-EUR work by the Tom Brown Group, originally adapted to China by Hailiang Liu et al for their study of [hydro-power in china](https://doi.org/10.1016/j.apenergy.2019.02.009) and extended by Xiaowei Zhou et al for their  ["Multi-energy system horizon planning: Early decarbonisation in China avoids stranded assets"](https://doi.org/10.1049/ein2.12011) paper. It has received significant upgrades.
 
