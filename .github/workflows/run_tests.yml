@@ -18,18 +18,7 @@ jobs:
     # Step 1: Checkout the repository
     - uses: actions/checkout@v4
 
-    # Step 2: Restore full Conda environment cache BEFORE setup
-    - name: Restore Conda env cache
-      id: env-cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/miniforge3/envs/pypsa-china
-          ~/.conda/pkgs
-          ~/.cache/mamba
-        key: ${{ runner.os }}-conda-env-${{ hashFiles('workflow/envs/environment.yaml') }}
-
-    # Step 3: Install Miniforge (no env creation here)
+    # Step 2: Install Miniforge (no env creation here)
     - name: Setup Miniforge
       uses: conda-incubator/setup-miniconda@v3
       with:
@@ -42,6 +31,17 @@ jobs:
         channel-priority: strict
         pkgs-dirs: ~/.conda/pkgs
 
+    # Step 3: Restore full Conda environment cache AFTER setup
+    - name: Restore Conda env cache
+      id: env-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/miniforge3/envs/pypsa-china
+          ~/.conda/pkgs
+          ~/.cache/mamba
+        key: ${{ runner.os }}-conda-env-${{ hashFiles('workflow/envs/environment.yaml') }}
+
     # Step 4: Create env only if cache miss
     - name: Create env
       if: steps.env-cache.outputs.cache-hit != 'true'
@@ -53,6 +53,7 @@ jobs:
     - name: Show environment
       shell: bash -el {0}
       run: |
+        conda info --envs
         conda activate pypsa-china
         mamba info
         mamba list | head -100
