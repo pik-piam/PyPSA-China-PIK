@@ -15,28 +15,42 @@ jobs:
     runs-on: ubuntu-latest  # Set the environment to Ubuntu
 
     steps:
-    # Step 1: Checkout the repository code
+    # Step 1: Checkout the repository
     - uses: actions/checkout@v4
-    # Step 2: Set up Conda
+
+    # Step 2: Set up Conda with Mamba
     - name: Set up Conda
       uses: conda-incubator/setup-miniconda@v3
       with:
-        miniconda-version: 'latest'  # Use the latest version of Miniconda
-        environment-file: workflow/envs/environment.yaml  # Point to your conda environment file (if exists)
-        auto-activate-base: false
+        miniforge-version: 'latest'
+        environment-file: workflow/envs/environment.yaml
         activate-environment: pypsa-china
-    # /3 cache the Conda environment (for faster CI)
+        auto-activate-base: false
+        use-mamba: true
+        condarc: |
+          channels:
+            - conda-forge
+            - bioconda
+          channel_priority: strict
+
+    # Step 3: Cache the Conda environment
     - name: Cache Conda environment
-      uses: actions/cache@v4  
+      uses: actions/cache@v4
       with:
-        path: ~/miniconda3
+        path: ~/miniforge3
         key: ${{ runner.os }}-conda-${{ hashFiles('workflow/envs/environment.yaml') }}
         restore-keys: |
           ${{ runner.os }}-conda-
-    # 4/ Run tests using pytest
+
+    # Step 4: Show environment info
+    - name: Show environment
+      shell: bash -el {0}
+      run: |
+        mamba info
+        mamba list
+        python -V
+        pytest --version
     - name: Run pytest
       shell: bash -el {0}
       run: |
-        conda install pytest
-        pytest -v -s  # Run pytest (make sure your tests are discovered and run)
-
+        pytest -v -s

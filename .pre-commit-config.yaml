@@ -1,10 +1,10 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 22.3.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.8
     hooks:
-      - id: black
-        args: [--line-length=100]
-        language_version: python3.12
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -12,3 +12,7 @@ repos:
       - id: check-case-conflict
       - id: end-of-file-fixer
       - id: trailing-whitespace
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+      - id: nbstripout

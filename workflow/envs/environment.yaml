@@ -52,6 +52,8 @@ dependencies:
 
   # Keep in conda environment when calling ipython
   - ipython
+  # Testing
+  - pytest
 
   # GIS dependencies:
   - cartopy

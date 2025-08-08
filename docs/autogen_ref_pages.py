@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import mkdocs_gen_files
 
 # Set the root and scripts directory
@@ -29,7 +30,9 @@ for path in sorted(scripts_dir.rglob("[!_]*.py")):
     # Create the documentation file
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         identifier = ".".join(parts)
-        print(f"::: {identifier}", file=fd)  # MkDocs-specific syntax to pull in the module
+        print(
+            f"::: {identifier}", file=fd
+        )  # MkDocs-specific syntax to pull in the module
 
     # Set the edit path to link the documentation back to the original Python file
     mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
@@ -63,7 +66,7 @@ with mkdocs_gen_files.open("reference_nav.yml", "w") as nav_file:
 
 
 def make_literate_nav():
-    """make a literate-nav style nav for mkdocs. The nav of mkdocs.yml then should point to the corresponding file"""
+    """Make a literate-nav style nav for mkdocs. The nav of mkdocs.yml then should point to the corresponding file"""
     # Create the navigation structure
     nav = mkdocs_gen_files.Nav()
 
@@ -82,10 +85,10 @@ def make_literate_nav():
 
 def write_literate_nav(
     lit_nav: mkdocs_gen_files.Nav,
-    prepend: ["Home: index.md\n", "Tutorials: tutorials.md\n", "Reference:\n"],
+    prepend: list[str],
     fname="reference_nav.yml",
 ):
-    """write the literate-nav style nav for mkdocs. The nav of mkdocs.yml then should point to the corresponding fil
+    """Write the literate-nav style nav for mkdocs. The nav of mkdocs.yml then should point to the corresponding fil
     Args:
         lit_nav: mkdocs_gen_files.Nav from make_literate_nav
         prepend: list of strings to prepend to the nav file (other sections)
