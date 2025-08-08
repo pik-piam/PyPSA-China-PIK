@@ -18,39 +18,49 @@ jobs:
     # Step 1: Checkout the repository
     - uses: actions/checkout@v4
 
-    # Step 2: Restore Conda/Mamba caches Before environment setup2
-    - name: Cache Conda packages
+    # Step 2: Restore full Conda environment cache BEFORE setup
+    - name: Restore Conda env cache
+      id: env-cache
       uses: actions/cache@v4
       with:
         path: |
+          ~/miniforge3/envs/pypsa-china
           ~/.conda/pkgs
           ~/.cache/mamba
-        key: ${{ runner.os }}-conda-pkgs-${{ hashFiles('workflow/envs/environment.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-conda-pkgs-
+        key: ${{ runner.os }}-conda-env-${{ hashFiles('workflow/envs/environment.yaml') }}
 
-    # Step 3: Set up Conda with Mamba (use the cached package dirs)
-    - name: Set up Conda
+    # Step 3: Install Miniforge (no env creation here)
+    - name: Setup Miniforge
       uses: conda-incubator/setup-miniconda@v3
       with:
-        miniforge-version: 'latest'
-        environment-file: workflow/envs/environment.yaml
-        activate-environment: pypsa-china
-        auto-activate-base: false
+        miniforge-version: latest
+        installation-dir: ~/miniforge3
         use-mamba: true
+        auto-activate-base: false
         channels: conda-forge,bioconda
         channel-priority: strict
         pkgs-dirs: ~/.conda/pkgs
 
-    # Step 4: Show environment info
+    # Step 4: Create env only if cache miss
+    - name: Create env (cache miss)
+      if: steps.env-cache.outputs.cache-hit != 'true'
+      shell: bash -el {0}
+      run: |
+        mamba env create -f workflow/envs/environment.yaml
+
+    # Step 5: Show environment info
     - name: Show environment
       shell: bash -el {0}
       run: |
+        conda activate pypsa-china
         mamba info
         mamba list | head -100
         python -V
         pytest --version
+
+    # Step 6: Run tests
     - name: Run pytest
       shell: bash -el {0}
       run: |
+        conda activate pypsa-china
         pytest -v -s
