@@ -58,7 +58,6 @@ jobs:
         conda info --envs || true
         conda run -n pypsa-china python -V || true
         conda run -n pypsa-china pytest --version || true
-        # Write verbose outputs to files, then print first 120 lines to avoid pipe break
         conda run -n pypsa-china mamba info > mamba_info.txt 2>&1 || true
         sed -n '1,120p' mamba_info.txt || true
         conda run -n pypsa-china mamba list > mamba_list.txt 2>&1 || true
