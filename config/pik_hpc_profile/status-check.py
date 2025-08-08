@@ -2,7 +2,6 @@
 # https://github.com/LUMC/slurm-cluster-status/blob/master/README.md
 import argparse
 import subprocess
-import time
 
 STATE_MAP = {
     "BOOT_FAIL": "failed",
@@ -20,25 +19,24 @@ STATE_MAP = {
     "RESIZING": "running",
     "SUSPENDED": "running",
     "TIMEOUT": "failed",
-    "UNKNOWN": "running"
+    "UNKNOWN": "running",
 }
 
 
 def fetch_status(batch_id):
-    """fetch the status for the batch id"""
-    sacct_args = ["sacct", "-j",  batch_id, "-o", "State", "--parsable2",
-                  "--noheader"]
+    """Fetch the status for the batch id"""
+    sacct_args = ["sacct", "-j", batch_id, "-o", "State", "--parsable2", "--noheader"]
 
     try:
         output = subprocess.check_output(sacct_args).decode("utf-8").strip()
     except Exception:
         # If sacct fails for whatever reason, assume its temporary and return 'running'
-        output = 'UNKNOWN'
+        output = "UNKNOWN"
 
     # Sometimes, sacct returns nothing, in which case we assume it is temporary
     # and return 'running'
     if not output:
-        output = 'UNKNOWN'
+        output = "UNKNOWN"
 
     # The first output is the state of the overall job
     # See
@@ -55,8 +53,10 @@ def fetch_status(batch_id):
     try:
         return STATE_MAP[job_status]
     except KeyError:
-        raise NotImplementedError(f"Encountered unknown status '{job_status}' "
-                                  f"when parsing output:\n'{output}'")
+        raise NotImplementedError(
+            f"Encountered unknown status '{job_status}' "
+            f"when parsing output:\n'{output}'"
+        )
 
 
 if __name__ == "__main__":

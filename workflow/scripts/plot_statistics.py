@@ -303,7 +303,7 @@ if __name__ == "__main__":
     stats_list = snakemake.params.stat_types
 
     attached_carriers = filter_carriers(n, carrier)
-    if "capacity_factor" in stats_list:e
+    if "capacity_factor" in stats_list:
         cf_filtered, theo_cf_filtered = prepare_capacity_factor_data(n, carrier)
         fig, ax = plt.subplots(figsize=(12, 8))
         plot_capacity_factor(cf_filtered, theo_cf_filtered, ax, colors)
