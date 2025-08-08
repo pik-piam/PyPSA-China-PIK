@@ -8,15 +8,22 @@ Associated with the `solve_network_myopic` rule in the Snakefile.
 To be merged/consolidated with the `solve_network` script.
 """
 import logging
+import re
+import socket
+import os
+import pandas as pd
+import xarray as xr
 
 import numpy as np
-import pandas as pd
 import pypsa
+from _pypsa_helpers import process_dual_variables
 from _helpers import (
     configure_logging,
     mock_snakemake,
     setup_gurobi_tunnel_and_env,
 )
+from pathlib import Path
+from _pypsa_helpers import export_duals
 
 logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
@@ -284,7 +291,7 @@ def extra_functionality(n, snapshots):
         add_retrofit_constraints(n)
 
 
-def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
+def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs) -> pypsa.Network:
     """perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
@@ -370,6 +377,9 @@ if __name__ == "__main__":
 
     n = prepare_network(n, solve_opts, snakemake.config)
 
+    # Extract export_duals from config in main
+    export_duals = snakemake.params.solving["options"].get("export_duals", False)
+    
     n = solve_network(
         n,
         config=snakemake.config,
@@ -377,6 +387,17 @@ if __name__ == "__main__":
         opts=opts,
         log_fn=snakemake.log.solver,
     )
+    
+    # Post-process and export dual variables (outside solve function)
+    if export_duals:
+        # This call safely no-ops if model/dual are missing
+        process_dual_variables(n)
+        dual_data = getattr(n, "duals", {})
+        if dual_data:
+            current_year = snakemake.wildcards.planning_horizons
+            results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
+            dual_output_dir = os.path.join(results_dir, 'dual', f"dual_values_raw_{current_year}")
+            export_duals(dual_data, Path(dual_output_dir))
 
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
@@ -385,7 +406,5 @@ if __name__ == "__main__":
     if compression:
         compression = compression.get("nc_compression", None)
     n.export_to_netcdf(outp, compression=compression)
-
-    logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
