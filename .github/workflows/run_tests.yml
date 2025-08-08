@@ -23,11 +23,9 @@ jobs:
       uses: conda-incubator/setup-miniconda@v3
       with:
         miniforge-version: latest
-        # Use fixed absolute paths to avoid ~/${HOME} parsing issues
         installation-dir: /home/runner/miniforge3
         use-mamba: true
-        auto-activate-base: true
-        activate-environment: base
+        auto-activate-base: false
         channels: conda-forge,bioconda
         channel-priority: strict
         pkgs-dirs: /home/runner/.conda/pkgs
