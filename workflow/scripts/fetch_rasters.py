@@ -1,8 +1,9 @@
 """
-Methods to fetch raster data from copernicus archive.
-Requires sentinelHub API. 
+Methods to fetch raster data from copernicus archive.Requires sentinelHub API creds
+Additional method to fetch bathymetry data from Cam Center for Environmental Data Analysis.
 
-EXAMPLE SCRIPT
+Note that this is an EXAMPLE SCRIPT. The CLC daat works with type identifiers which
+sre not yet integrated into the workflow.
 """
 
 import json
