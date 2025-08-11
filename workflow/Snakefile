@@ -7,6 +7,7 @@ from pathlib import Path
 from snakemake.utils import min_version
 import logging
 import os.path
+import logging
 
 from scripts._helpers import PathManager, get_cutout_params, ConfigManager
 
@@ -123,14 +124,19 @@ rule build_population_gridcell_map:
     resources: mem_mb=35000
     script: "scripts/build_population_gridcell_map.py"
 
-gem_techs = config["existing_capacities"]["techs"]
+# TODO merge all techs into a single csv
+# TODO add node wildcard/id
+brownfield_techs = config["existing_capacities"]["techs"]
 rule build_powerplants:
-    # params:
+    """ Groups power plants by node"""
+    params:
+        nodes = config["nodes"],
+        gem = config["global_energy_monitor_plants"],
     input:
         GEM_plant_tracker="resources/data/existing_infrastructure/gem_data_raw/Global-integrated-Plant-Tracker-July-2025_china.xlsx",
         nodes=DERIVED_COMMON + "/regions/provinces_onshore.geojson",
     output:
-        **{tech : DERIVED_COMMON + f"/existing_infrastructure/{tech}_capacity.csv" for tech in gem_techs},
+        **{tech : DERIVED_COMMON + f"/existing_infrastructure/{tech}_capacity.csv" for tech in brownfield_techs},
     log: LOGS_COMMON + "/build_powerplants.log"
     threads: 2 #TODO 1?
     script: "scripts/build_powerplants.py"
@@ -252,7 +258,8 @@ rule build_biomass_potential:
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
 
-# TODO switch to hdf5? merge all years in single csv?
+# TODO merge all techs into a single csv
+# TODO add node wildcard/id
 rule prepare_baseyear_capacities:
     """prepare inputs for add_existing_baseyear (optional in overnight mode)"""
     params:
@@ -260,7 +267,7 @@ rule prepare_baseyear_capacities:
         CHP_to_elec = not config.get("heat_coupling", False),
     input:
         tech_costs=path_manager.costs_dir() + "/costs_{planning_horizons}.csv",
-        **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
+        **{f"{tech}": DERIVED_COMMON + f"/existing_infrastructure/{tech}_capacity.csv"
             for tech in config['existing_capacities']['techs']},
     output: 
         installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv',
@@ -448,7 +455,6 @@ rule dag:
         """
 
 onerror:
-    log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
     if not os.path.exists(res_dir):
         os.makedirs(res_dir)
@@ -456,25 +462,17 @@ onerror:
         os.makedirs(LOG_DIR)
     # log path is available from snakemake as "log"
     try:
-        shutil.copy(log, os.path.dirname(log_out))
         yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
-    except FileNotFoundError as e:
-        logging.warning(f"Could not copy log file: {e}")
     except TypeError as e:
         logging.warning(f"Could not copy config file: {e}")
-        logging.warning(f"Copying log file to {str(log_out)} failed?")
-        logging.warning(f"saving config file to {str(res_dir)}/run_config.yaml failed?")
 
 onsuccess:
-    log_out = expand(LOG_DIR + "/_latest_snakemake.log", **config["scenario"])[0]
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
     try:
-        shutil.copy(log, log_out)
         yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
-    except FileNotFoundError as e:
-        logging.warning(f"Could not copy log file: {e}")
     except TypeError as e:
         logging.warning(f"Could not copy config file: {e}")
         logging.warning(f"Copying log file to {str(log_out)} (type {type(log_out)}) failed?")
         logging.info(f"source was {str(log)}")
         logging.warning(f"sav config file to {str(res_dir)}/run_config.yaml failed?")
+

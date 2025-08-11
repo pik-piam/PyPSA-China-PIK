@@ -21,6 +21,13 @@ from _helpers import mock_snakemake, configure_logging
 
 logger = logging.getLogger(__name__)
 
+ADM_COLS = {0: "Country",
+            1: 'Subnational unit (state, province)',
+            2: 'Major area (prefecture, district)',
+            3: "Local area (taluk, county)",
+            }
+ADM_LVL1, ADM_LVL2 = ADM_COLS[1], ADM_COLS[2]
+
 
 def load_gem_excel(path: os.PathLike, sheetname = "Units", country_col = "Country/area", country_names = ["China"])-> pd.DataFrame:
     """
@@ -125,12 +132,29 @@ def group_by_year(df: pd.DataFrame, year_bins: list, base_year = 2020) -> pd.Dat
 
     return df
 
+def assign_node_from_gps(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame) -> pd.DataFrame:
+    """
+    Assign plant node based on GPS coordinates of the plant.
+    Will cause issues if the nodes tolerance is too low
+    
+    Args:
+        gem_data (pd.DataFrame): GEM data
+        nodes (gpd.GeoDataFrame): node geometries (nodes as index).
+    Returns:
+        pd.DataFrame: DataFrame with assigned nodes."""
 
-def admin_level_partition():
-    pass
+    gem_data["geometry"] = gem_data.apply(
+        lambda row: Point(row["Longitude"], row["Latitude"]), axis=1
+    )
+    gem_gdf = gpd.GeoDataFrame(gem_data, geometry="geometry", crs="EPSG:4326")
 
-def gps_partition():
-    pass
+    joined = nodes.reset_index(names="node").sjoin_nearest(gem_gdf, how="right")
+    missing = joined[joined.node.isna()]
+    if not missing.empty:
+        logger.warning(
+            f"Some GEM locations are not covered by the nodes at GPS: {missing['Plant name'].head()}"
+        )
+    return joined
 
 
 def partition_gem_across_nodes(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame, admin_level = None) -> pd.DataFrame:
@@ -145,15 +169,14 @@ def partition_gem_across_nodes(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame, 
     Returns:
         pd.DataFrame: DataFrame with GEM data partitioned across nodes.
     """
-    ADM_COL = {0:"Country", 1:'Subnational unit (province, state)', 2: 'Major area (prefecture, district)'}
     if admin_level is not None and admin_level not in [0, 1, 2]:
         raise ValueError("admin_level must be None, 0, 1, or 2")
 
     # snap to admin_level
     if admin_level is not None:
-        admin = ADM_COL[admin_level]
+        admin = ADM_COLS[admin_level]
         gem_data[admin] = gem_data[admin].str.replace(" ", "")
-        uncovered_gem = set(gem_data[ADM_COL[admin_level]]) - set(nodes.index)
+        uncovered_gem = set(gem_data[ADM_COLS[admin_level]]) - set(nodes.index)
         if uncovered_gem:
             logger.warning(
                 f"Some GEM locations are not covered by the nodes at admin level {admin_level}: {uncovered_gem}"
@@ -173,7 +196,7 @@ def partition_gem_across_nodes(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame, 
             logger.warning(
                 f"Some GEM locations are not covered by the nodes at GPS: {missing["Plant name"].head()}"
             )
-        return joined
+        return joined["node"]
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -192,10 +215,9 @@ if __name__ == "__main__":
     output_paths = dict(snakemake.output.items())
     params = snakemake.params
 
-    # assign_mode = config["existing_capacities"].node_assignment("node_assignment_mode", "simple")
-    # is_provincial = config["nodes"].get("split_inner_mongolia", False)
 
-    node_shapes = gpd.read_file(snakemake.input.nodes)
+    # TODO add offsore for offsore wind
+    nodes = gpd.read_file(snakemake.input.nodes)
     gem_data = load_gem_excel(snakemake.input.GEM_plant_tracker, sheetname="Power facilities")
     cleaned = clean_gem_data(gem_data, cfg_GEM)
     cleaned = group_by_year(cleaned, config["existing_capacities"]["grouping_years"], base_year=cfg_GEM["base_year"])
@@ -212,13 +234,32 @@ if __name__ == "__main__":
             f"Techs from GEM {extra} not covered by existing_baseyear techs."
         )
 
+    
     # TODO assign nodes
+    assign_mode = config["existing_capacities"].get("node_assignment_mode", "simple")
+    node_cfg = config["nodes"]
+
+    if not node_cfg["split_provinces"]:
+        assign_mode = "simple"
+        cleaned["node"] = cleaned[ADM_LVL1]
+    elif assign_mode == "simple":
+        splits_inv = {} # invert to get admin2 -> node
+        for admin1, splits in node_cfg["splits"].items():
+            splits_inv.update({vv: admin1 + "_" + k for k, v in splits.items() for vv in v})
+        cleaned["node"] = cleaned[ADM_LVL2].map(splits_inv).fillna(cleaned[ADM_LVL1])
+    else:
+        if config["fetch_regions"]["simplify_tol"]["land"] > 0.05:
+            logger.warning(
+                "Using GPS assignment for existing capacities with land simplify_tol > 0.05. "
+                "This may lead to inaccurate assignments (eg. Shanxi vs InnerMongolia coal power)."
+            )
+        cleaned["node"] = assign_node_from_gps(cleaned, nodes)
 
     datasets = {tech: cleaned[cleaned.Type == tech] for tech in requested}
     for name, ds in datasets.items():
         df = ds.pivot_table(
             columns="grouping_year",
-            index="Subnational unit (state, province)",
+            index="node",
             values="Capacity (MW)",
             aggfunc="sum").fillna(0).astype(int)
 
