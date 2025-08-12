@@ -18,7 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 # TODO cleanup
-def build_cop_profiles(pop_map: pd.DateOffset, cutout: atlite.cutout, temperature: pd.DataFrame,output_path: os.PathLike):
+def build_cop_profiles(
+        pop_map: pd.DataFrame,
+        cutout: atlite.Cutout,
+        temperature: pd.DataFrame,
+        output_path: os.PathLike):
     """Build COP time profiles with atlite and write outputs to output_path as hf5
 
     Args:
@@ -87,6 +91,6 @@ if __name__ == "__main__":
 
     cutout = atlite.Cutout(snakemake.input.cutout)
 
-    build_cop_profiles(pop_map, cutout, snakemake.output.cop)
+    build_cop_profiles(pop_map, cutout, temperature, snakemake.output.cop)
 
     logger.info("COP profiles successfully built")
