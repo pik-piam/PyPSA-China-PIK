@@ -1,5 +1,5 @@
 """
-Build the existing capacities for each node from GEM (global energy monitor) tracker data. 
+Build the existing capacities for each node from GEM (global energy monitor) tracker data.
 This script is intended for use as part of the Snakemake workflow.
 
 The GEM data has to be downloaded manually and placed in the source directory of the snakemake rule.
@@ -21,15 +21,18 @@ from _helpers import mock_snakemake, configure_logging
 
 logger = logging.getLogger(__name__)
 
-ADM_COLS = {0: "Country",
-            1: 'Subnational unit (state, province)',
-            2: 'Major area (prefecture, district)',
-            3: "Local area (taluk, county)",
-            }
+ADM_COLS = {
+    0: "Country",
+    1: "Subnational unit (state, province)",
+    2: "Major area (prefecture, district)",
+    3: "Local area (taluk, county)",
+}
 ADM_LVL1, ADM_LVL2 = ADM_COLS[1], ADM_COLS[2]
 
 
-def load_gem_excel(path: os.PathLike, sheetname = "Units", country_col = "Country/area", country_names = ["China"])-> pd.DataFrame:
+def load_gem_excel(
+    path: os.PathLike, sheetname="Units", country_col="Country/area", country_names=["China"]
+) -> pd.DataFrame:
     """
     Load a Global Energy monitor excel file as a dataframe.
 
@@ -48,8 +51,8 @@ def load_gem_excel(path: os.PathLike, sheetname = "Units", country_col = "Countr
     if not country_col in df.columns:
         logger.warning(f"Column {country_col} not found in {path}. Returning unfiltered DataFrame.")
         return df
-    
-    return df.query(f'{country_col} in @country_names')
+
+    return df.query(f"{country_col} in @country_names")
 
 
 def clean_gem_data(gem_data: pd.DataFrame, gem_cfg: dict) -> pd.DataFrame:
@@ -58,7 +61,7 @@ def clean_gem_data(gem_data: pd.DataFrame, gem_cfg: dict) -> pd.DataFrame:
      - mapping GEM types onto pypsa types
      - filtering for relevant project statuses
      - cleaning invalid entries (e.g "not found"->nan)
-    
+
     Args:
         gem_data (pd.DataFrame): GEM dataset.
         gem_cfg (dict): Configuration dictionary, 'global_energy_monitor.yaml'
@@ -71,7 +74,12 @@ def clean_gem_data(gem_data: pd.DataFrame, gem_cfg: dict) -> pd.DataFrame:
     GEM.loc[:, "Retired year"] = GEM["Retired year"].replace("not found", np.nan)
     GEM.loc[:, "Start year"] = GEM["Start year"].replace("not found", np.nan)
     GEM = GEM[gem_cfg["relevant_columns"]]
-    
+
+    # Remove whitespace from admin columns
+    # Remove all whitespace (including tabs, newlines) from admin columns
+    admin_cols = [col for col in ADM_COLS.values() if col in GEM.columns]
+    GEM[admin_cols] = GEM[admin_cols].apply(lambda x: x.str.replace(r"\s+", "", regex=True))
+
     # split oil and gas, rename bioenergy
     gas_mask = GEM.query("Type == 'oil/gas' & Fuel.str.contains('gas', case=False, na=False)").index
     GEM.loc[gas_mask, "Type"] = "gas"
@@ -80,13 +88,15 @@ def clean_gem_data(gem_data: pd.DataFrame, gem_cfg: dict) -> pd.DataFrame:
     # split CHP (potential issue: split before type split. After would be better)
     if gem_cfg["CHP"].get("split", False):
         GEM.loc[:, "CHP"] = GEM.loc[:, "CHP"].map({"yes": True}).fillna(False)
-        chp_mask = GEM[GEM["CHP"]==True].index
-        
+        chp_mask = GEM[GEM["CHP"] == True].index
+
         aliases = gem_cfg["CHP"].get("aliases", [])
         for alias in aliases:
-            chp_mask = chp_mask.append(GEM[GEM["Plant name"].str.contains(alias, case=False, na=False)].index)
+            chp_mask = chp_mask.append(
+                GEM[GEM["Plant name"].str.contains(alias, case=False, na=False)].index
+            )
         chp_mask = chp_mask.unique()
-        GEM.loc[chp_mask, "Type"] = "CHP "+ GEM.loc[chp_mask, "Type"]  
+        GEM.loc[chp_mask, "Type"] = "CHP " + GEM.loc[chp_mask, "Type"]
 
     GEM["tech"] = ""
     for tech, mapping in gem_cfg["tech_map"].items():
@@ -94,7 +104,7 @@ def clean_gem_data(gem_data: pd.DataFrame, gem_cfg: dict) -> pd.DataFrame:
             raise ValueError(
                 f"Mapping for {tech} is a {type(mapping)} - expected dict. Check your config."
             )
-        
+
         tech_mask = GEM.query(f"Type == '{tech}'").index
         if tech_mask.empty:
             continue
@@ -112,7 +122,7 @@ def clean_gem_data(gem_data: pd.DataFrame, gem_cfg: dict) -> pd.DataFrame:
     return GEM.dropna(subset=["Type"])
 
 
-def group_by_year(df: pd.DataFrame, year_bins: list, base_year = 2020) -> pd.DataFrame:
+def group_by_year(df: pd.DataFrame, year_bins: list, base_year=2020) -> pd.DataFrame:
     """
     Group the DataFrame by year bins.
 
@@ -124,19 +134,20 @@ def group_by_year(df: pd.DataFrame, year_bins: list, base_year = 2020) -> pd.Dat
     Returns:
         pd.DataFrame: DataFrame with a new 'grouping_year' column.
     """
-    min_start_year = min(year_bins)-2.5
+    min_start_year = min(year_bins) - 2.5
     base_year = 2020
     df = df[df["Start year"] > min_start_year]
     df = df[df["Retired year"].isna() | (df["Retired year"] > base_year)].reset_index(drop=True)
-    df["grouping_year"] = np.take(year_bins, np.digitize(df["Start year"] , year_bins, right=True))
+    df["grouping_year"] = np.take(year_bins, np.digitize(df["Start year"], year_bins, right=True))
 
     return df
+
 
 def assign_node_from_gps(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame) -> pd.DataFrame:
     """
     Assign plant node based on GPS coordinates of the plant.
     Will cause issues if the nodes tolerance is too low
-    
+
     Args:
         gem_data (pd.DataFrame): GEM data
         nodes (gpd.GeoDataFrame): node geometries (nodes as index).
@@ -157,7 +168,9 @@ def assign_node_from_gps(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame) -> pd.
     return joined
 
 
-def partition_gem_across_nodes(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame, admin_level = None) -> pd.DataFrame:
+def partition_gem_across_nodes(
+    gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame, admin_level=None
+) -> pd.DataFrame:
     """
     Partition GEM data across nodes based on geographical coordinates.
 
@@ -194,18 +207,19 @@ def partition_gem_across_nodes(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame, 
         missing = joined[joined.node.isna()]
         if not missing.empty:
             logger.warning(
-                f"Some GEM locations are not covered by the nodes at GPS: {missing["Plant name"].head()}"
+                f"Some GEM locations are not covered by the nodes at GPS: {missing['Plant name'].head()}"
             )
         return joined["node"]
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "build_powerplants",
             topology="current+FCG",
-            co2_pathway="SSP2-PkBudg1000-freeze",
+            co2_pathway="exp175default",
             planning_horizons="2020",
-            configfiles="resources/tmp/remind_coupled.yaml",
+            # configfiles="resources/tmp/remind_coupled.yaml",
         )
 
     configure_logging(snakemake, logger=logger)
@@ -215,13 +229,14 @@ if __name__ == "__main__":
     output_paths = dict(snakemake.output.items())
     params = snakemake.params
 
-
     # TODO add offsore for offsore wind
     nodes = gpd.read_file(snakemake.input.nodes)
     gem_data = load_gem_excel(snakemake.input.GEM_plant_tracker, sheetname="Power facilities")
     cleaned = clean_gem_data(gem_data, cfg_GEM)
-    cleaned = group_by_year(cleaned, config["existing_capacities"]["grouping_years"], base_year=cfg_GEM["base_year"])
-        
+    cleaned = group_by_year(
+        cleaned, config["existing_capacities"]["grouping_years"], base_year=cfg_GEM["base_year"]
+    )
+
     processed, requested = cleaned.Type.unique(), set(output_paths.keys())
     missing = requested - set(processed)
     extra = set(processed) - requested
@@ -230,11 +245,8 @@ if __name__ == "__main__":
             f"Some techs requested existing_baseyear missing from GEM\n\t:{missing}\nAvailable Global Energy Monitor techs after processing:\n\t{processed}."
         )
     if extra:
-        logger.warning(
-            f"Techs from GEM {extra} not covered by existing_baseyear techs."
-        )
+        logger.warning(f"Techs from GEM {extra} not covered by existing_baseyear techs.")
 
-    
     # TODO assign nodes
     assign_mode = config["existing_capacities"].get("node_assignment_mode", "simple")
     node_cfg = config["nodes"]
@@ -243,7 +255,7 @@ if __name__ == "__main__":
         assign_mode = "simple"
         cleaned["node"] = cleaned[ADM_LVL1]
     elif assign_mode == "simple":
-        splits_inv = {} # invert to get admin2 -> node
+        splits_inv = {}  # invert to get admin2 -> node
         for admin1, splits in node_cfg["splits"].items():
             splits_inv.update({vv: admin1 + "_" + k for k, v in splits.items() for vv in v})
         cleaned["node"] = cleaned[ADM_LVL2].map(splits_inv).fillna(cleaned[ADM_LVL1])
@@ -257,15 +269,17 @@ if __name__ == "__main__":
 
     datasets = {tech: cleaned[cleaned.Type == tech] for tech in requested}
     for name, ds in datasets.items():
-        df = ds.pivot_table(
-            columns="grouping_year",
-            index="node",
-            values="Capacity (MW)",
-            aggfunc="sum").fillna(0).astype(int)
+        df = (
+            ds.pivot_table(
+                columns="grouping_year", index="node", values="Capacity (MW)", aggfunc="sum"
+            )
+            .fillna(0)
+            .astype(int)
+        )
 
         # sanity checks
         logger.debug(f"GEM Dataset for pypsa-tech {name}: has techs \n\t{ds.Technology.unique()}")
-        
+
         df.to_csv(output_paths[name])
         logger.info(f"cap for {name} {df.sum().sum()/1000}")
 
