@@ -17,30 +17,37 @@ authors:
   - name: Ivan Ramirez
     affiliation: '1'
     contributions: development, project direction, code review, documentation, validation
+    orcid: #TODO
 
   - name: Yanlei Zhu
     affiliation: '2' # also 1?
-    contributions: development, code review, documentation#TODO
+    contributions: development, code review, documentation #TODO
+    orcid: #TODO
 
   - name: Falko Ueckerdt
     affiliation: '1'
     contributions: project direction
+    orcid: #TODO
 
   - name: Adrian Odenweller
     affiliation: '1'
     contributions: development (IAM coupling)
+    orcid: #TODO
 
   - name: Chen Chris Gong
     affiliation: '1'
     contributions: #TODO
+    orcid: #TODO
 
   - name: Robert Pietzcker
     affiliation: '1'
     contributions: validation
+    orcid: #TODO
 
   - name: Gunnar Luderer
     affiliation: '1'
     contributions: #TODO
+    orcid: #TODO
 
 affiliations:
   - index: 1
@@ -107,5 +114,6 @@ An advanced feature is using a transformation pathway from the REMIND macro-econ
 # Related work <!-- (include?) -->
 - pypsa-eur
 - pypsa-earth
+
 # Acknowledgements
 Energy Foundation China grant <ID> #TODO
