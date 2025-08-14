@@ -1064,7 +1064,7 @@ def add_heat_coupling(
         solar_thermal = shift_profile_to_planning_year(solar_thermal, planning_year)
         solar_thermal = solar_thermal.loc[network.snapshots]
 
-        for cat in [" decentral "]:
+        for cat in [" decentral ", " central "]:
             network.add(
                 "Generator",
                 nodes,

@@ -221,7 +221,7 @@ def add_power_capacities_installed_before_baseyear(
         "solar thermal": "central solar thermal",
         "onwind": "onwind",
         "offwind": "offwind",
-        "coal boiler": "central coal boier",
+        "coal boiler": "central coal boiler",
         "heat pump": "central ground-sourced heat pump",
         "ground-sourced heat pump": "central ground-sourced heat pump",
         "nuclear": "nuclear",
@@ -357,7 +357,7 @@ def add_power_capacities_installed_before_baseyear(
             logger.info(f"Skipped {generator} because heat coupling is not activated")
 
         elif generator == "solar thermal":
-            p_max_pu = n.generators_t.p_max_pu[capacity.index + " central " + generator]
+            p_max_pu = n.generators_t.p_max_pu[capacity.index]
             p_max_pu.columns = capacity.index
             n.add(
                 "Generator",
@@ -662,11 +662,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "add_existing_baseyear",
             topology="current+FCG",
-            # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
+            co2_pathway="exp175default",
+            # co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
             planning_horizons="2040",
-            configfiles="resources/tmp/remind_coupled_cg.yaml",
-            # heating_demand="positive",
+            # configfiles="resources/tmp/remind_coupled_cg.yaml",
+            heating_demand="positive",
         )
 
     configure_logging(snakemake, logger=logger)

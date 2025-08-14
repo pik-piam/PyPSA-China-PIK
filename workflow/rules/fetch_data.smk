@@ -78,6 +78,16 @@ if config["enable"].get("retrieve_raster", True):
                 zip_ref.extractall(os.path.dirname(params.zip_file))
             os.remove(params.zip_file)
 
+rule retrive_powerplants:
+    input:
+        powerplants=storage.http(
+            "https://zenodo.org/records/16810831/files/Global-integrated-Plant-Tracker-July-2025_china.xlsx"
+        ),
+    output:
+        powerplants="resources/data/existing_infrastructure/gem_data_raw/Global-integrated-Plant-Tracker-July-2025_china.xlsx",
+    run:
+        os.makedirs(os.path.dirname(output.powerplants), exist_ok=True)
+        shutil.move(input.powerplants, output.powerplants)
 
 
 if config["enable"].get("retrieve_cutout", False) and config["enable"].get(
