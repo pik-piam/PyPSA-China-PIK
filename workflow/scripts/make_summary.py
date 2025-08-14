@@ -570,7 +570,9 @@ def calculate_weighted_prices(
     # stores
     w = n.statistics.withdrawal(comps="Store")
     # biomass stores have no withdrawal for some reason
-    w[w == 0] = n.statistics.supply(comps="Store")[w == 0]
+    if not w[w == 0].empty:
+        w[w == 0] = n.statistics.supply(comps="Store")[w == 0]
+
     store_rev = n.statistics.revenue(comps="Store")
     mask = store_rev > load_rev.sum() / 400  # remove small
     wp_stores = store_rev[mask] / w[mask]
@@ -726,11 +728,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "make_summary",
             topology="current+FCG",
-            # co2_pathway="exp175default",
-            planning_horizons="2050",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
-            # heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            co2_pathway="exp175default",
+            planning_horizons="2060",
+            # co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            heating_demand="positive",
+            # configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
 
     configure_logging(snakemake)

@@ -11,10 +11,7 @@ import numpy as np
 import pypsa
 import xarray as xr
 import pandas as pd
-from pandas import DatetimeIndex
-import xarray as xr
 
-from functools import partial
 from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 
@@ -37,7 +34,7 @@ def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1
         n_years (int, optional): the number of years to consider for the limit. Defaults to 1.
     """
     logger.info(
-        f"Setting global transmission limit for {kind} with factor {factor}/year and {n_years} years"
+        f"Adding global transmission limit for {kind} with factor {factor}/year & {n_years} years"
     )
     links_dc = n.links.query("carrier in ['AC','DC']").index
     # links_dc_rev = n.links.query("carrier in ['AC','DC'] & Link.str.contains('reverse')").index
@@ -76,7 +73,7 @@ def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1
         con_type = "expansion_cost" if kind == "c" else "volume_expansion"
         rhs = float(factor) ** n_years * ref
         logger.info(
-            f"Setting global transmission limit for {kind} to {float(factor) ** n_years} current value"
+            f"Adding global transmission limit for {kind} to {float(factor)**n_years} current value"
         )
         n.add(
             "GlobalConstraint",
@@ -147,7 +144,7 @@ def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
         )
     else:
         logger.error(f"Unhandled CO2 control config {co2_control} due to unknown control.")
-        raise ValueError(f"Unhandled CO2 config {config['scenario']['co2_reduction']}")
+        raise ValueError(f"Unhandled CO2 control config {co2_control} due to unknown control")
 
 
 def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbine"]):
@@ -157,12 +154,13 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbi
     Args:
         n (pypsa.Network): the network object
         config (dict): the configuration dictionary
-        exclude (list, optional): list of technologies to exclude from freezing. Defaults to ["OCGT"]
+        exclude (list, optional): list of technologies to exclude from freezing.
+            Defaults to ["OCGT"]
     """
 
     # Freeze VRE and conventional techs
     freeze = config["Techs"]["vre_techs"] + config["Techs"]["conv_techs"]
-    freeze = [f for f in freeze if not f in exclude]
+    freeze = [f for f in freeze if f not in exclude]
     if "coal boiler" in freeze:
         freeze += ["coal boiler central", "coal boiler decentral"]
     if "gas boiler" in freeze:
@@ -520,6 +518,8 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     attached_carriers = filter_carriers(n, "AC")
     # conceivably a link could have a negative efficiency and flow towards bus0 - don't consider
     prod_links = n.links.query("carrier in @attached_carriers & not bus0 in @ac_buses")
+    transport_links = prod_links.bus0.map(n.buses.carrier) == prod_links.bus1.map(n.buses.carrier)
+    prod_links = prod_links.loc[transport_links == False]
     prod_gen = n.generators.loc[ac_mask]
     producers_all = prod_links.index.append(prod_gen.index)
     producers_all.name = "Producers-p"
@@ -532,9 +532,9 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     vres_gen = prod_gen.query("carrier in @VRE_TECHS")
     non_vre = prod_gen.index.difference(vres_gen.index)
     # full capacity credit for non-VRE producers (questionable, maybe should be weighted by availability)
-    summed_reserve = n.model["Link-r"].sum("Link") + n.model["Generator-r"].loc[:, non_vre].sum(
-        "Generator"
-    )
+    summed_reserve = (n.model["Link-r"] * prod_links.efficiency).sum("Link") + n.model[
+        "Generator-r"
+    ].loc[:, non_vre].sum("Generator")
 
     # VRE capacity credit & margin reqs
     ext_idx = vres_gen.query("p_nom_extendable").index
@@ -559,7 +559,6 @@ def add_operational_reserve_margin(n: pypsa.network, config):
         vre_ext_p = 0
 
     lhs = summed_reserve - vre_req_fixed
-
     # Right-hand-side
     demand = get_as_dense(n, "Load", "p_set").sum(axis=1)
     rhs = EPSILON_LOAD * demand + EPSILON_VRES * vre_ext_p + CONTINGENCY
