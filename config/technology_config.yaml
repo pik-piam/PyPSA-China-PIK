@@ -26,8 +26,6 @@ electricity:
     H2: 168
   min_charge:
     battery: 0.1 # fraction of e_nom
-```
-
 
 # TODO move to brownfield?
 hydro:
