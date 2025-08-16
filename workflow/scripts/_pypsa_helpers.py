@@ -6,18 +6,11 @@ import numpy as np
 import logging
 import pytz
 import xarray as xr
-from typing import Optional, Any, Union
-from pathlib import Path
 
 import pypsa
 
 # get root logger
 logger = logging.getLogger()
-
-# Type aliases
-ComponentName = str
-ConstraintType = str
-DualValue = float | np.ndarray | xr.DataArray | list[float] | dict[str, float] | pd.Series | pd.DataFrame
 
 # Simplified component mapping - only essential mappings
 COMPONENT_MAPPING: dict[str, str] = {
@@ -440,21 +433,28 @@ def update_p_nom_max(n: pypsa.Network) -> None:
     n.generators.p_nom_max = n.generators[["p_nom_min", "p_nom_max"]].max(1)
 
 
-def process_dual_variables(network: pypsa.Network) -> pypsa.Network:
-    """Process dual variables from network model and map to components."""
+def store_duals_to_network(network: pypsa.Network) -> None:
+    """Store dual variables in network components so they get saved to netcdf file.
+    
+    Args:
+        network (pypsa.Network): Network object with solved model
+    """
+    # Check if dual variables exist
     if not hasattr(network, "model") or not hasattr(network.model, "dual"):
-        return network
+        logger.info("No dual variables found in network model")
+        return
     
-    if network.model.dual is None or len(network.model.dual) == 0:
-        return network
+    duals = network.model.dual
+    if duals is None or len(duals) == 0:
+        logger.info("No dual variables to store")
+        return
     
-    # Store dual variables in network.duals
-    network.duals = dict(network.model.dual)
+    logger.info(f"Extracted {len(duals)} dual variables from network model")
     
-    # Map dual variables to network components
-    for dual_name, dual_value in network.duals.items():
+    # Store duals in network components so they get saved to netcdf
+    for dual_name, dual_value in duals.items():
         try:
-            # Parse dual name: "ComponentType-constraint_type"
+            # Parse dual name to find component type
             if "-" not in dual_name:
                 continue
                 
@@ -465,80 +465,39 @@ def process_dual_variables(network: pypsa.Network) -> pypsa.Network:
                 component_obj = getattr(network, component_name)
                 attr_name = f"mu_{constraint_type.replace('[', '_').replace(']', '')}"
                 
-                # Add dual value to component
+                # Add dual value to component (this will be saved to netcdf)
                 if np.isscalar(dual_value):
                     component_obj[attr_name] = float(dual_value)
                 elif isinstance(dual_value, (np.ndarray, xr.DataArray)):
                     if hasattr(dual_value, 'to_pandas'):
-                        component_obj[attr_name] = dual_value.to_pandas()
+                        # For time series data, store the full data to preserve regional differences
+                        pandas_data = dual_value.to_pandas()
+                        if isinstance(pandas_data, pd.DataFrame):
+                            # If it's a DataFrame (time series), store the mean across time but preserve regional differences
+                            component_obj[attr_name] = pandas_data.mean()
+                        else:
+                            # If it's a Series, store the full series
+                            component_obj[attr_name] = pandas_data
                     else:
-                        component_obj[attr_name] = pd.Series(dual_value.flatten(), index=component_obj.index)
+                        # For numpy arrays, store the full array
+                        component_obj[attr_name] = dual_value
+                elif isinstance(dual_value, pd.DataFrame):
+                    # For DataFrame (time series), store the mean across time but preserve regional differences
+                    component_obj[attr_name] = dual_value.mean()
+                elif isinstance(dual_value, pd.Series):
+                    # For Series, store the full series
+                    component_obj[attr_name] = dual_value
+                else:
+                    # For other types, try to convert to float
+                    try:
+                        component_obj[attr_name] = float(dual_value)
+                    except:
+                        component_obj[attr_name] = 0.0
                         
         except Exception as e:
-            logger.debug(f"Failed to map dual '{dual_name}': {e}")
+            logger.warning(f"Failed to store dual variable {dual_name}: {e}")
             continue
     
-    logger.info(f"Processed {len(network.duals)} dual variables")
-    return network
-
-
-def _sanitize_filename(filename: str) -> str:
-    """Sanitizes a string for use as a filename, replacing invalid characters with underscores."""
-    invalid_chars = ['[', ']', '-', '.', ':', '/', '\\', '*', '?', '"', '<', '>', '|']
-    safe_name = filename
-    for char in invalid_chars:
-        safe_name = safe_name.replace(char, '_')
-    # Remove consecutive underscores resulting from replacements
-    safe_name = '_'.join(filter(None, safe_name.split('_')))
-    return safe_name
-
-
-# --- Simple dual export function ---
-def export_duals(dual_data: dict, output_dir: Path) -> None:
-    """Export dual variables to CSV files."""
-    if not dual_data:
-        return
-    
-    output_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Exporting {len(dual_data)} dual variables to '{output_dir}'")
-    
-    for dual_name, dual_value in dual_data.items():
-        safe_name = _sanitize_filename(dual_name)
-        filepath = output_dir / f"{safe_name}.csv"
-        
-        try:
-            # Convert to pandas Series for consistent CSV output
-            if isinstance(dual_value, (dict, pd.Series)):
-                # Preserve original index if available
-                if hasattr(dual_value, 'index'):
-                    pd.Series(dual_value).to_csv(filepath, header=True)
-                else:
-                    pd.Series(dual_value).to_csv(filepath, header=True)
-            elif isinstance(dual_value, (list, tuple)):
-                pd.Series(dual_value, name=dual_name).to_csv(filepath, header=True)
-            elif np.isscalar(dual_value):
-                pd.Series([dual_value], name=dual_name).to_csv(filepath, header=True)
-            elif isinstance(dual_value, np.ndarray):
-                # Try to preserve original shape and create meaningful index
-                if dual_value.ndim == 1:
-                    pd.Series(dual_value, name=dual_name).to_csv(filepath, header=True)
-                else:
-                    pd.Series(dual_value.flatten(), name=dual_name).to_csv(filepath, header=True)
-            elif isinstance(dual_value, xr.DataArray):
-                # Preserve xarray coordinates as index if possible
-                try:
-                    if hasattr(dual_value, 'coords') and dual_value.coords:
-                        # Try to use coordinates as index
-                        series = dual_value.to_pandas()
-                        series.to_csv(filepath, header=True)
-                    else:
-                        pd.Series(dual_value.values.flatten(), name=dual_name).to_csv(filepath, header=True)
-                except:
-                    pd.Series(dual_value.values.flatten(), name=dual_name).to_csv(filepath, header=True)
-            else:
-                pd.Series([str(dual_value)], name=dual_name).to_csv(filepath, header=True)
-                
-        except Exception as e:
-            logger.warning(f"Failed to export dual variable '{dual_name}': {str(e)}")
+    logger.info(f"Stored dual variables in network components for netcdf export")
 
 

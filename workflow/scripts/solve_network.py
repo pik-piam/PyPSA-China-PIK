@@ -14,12 +14,10 @@ import pandas as pd
 import os
 from pandas import DatetimeIndex
 
-from _pypsa_helpers import process_dual_variables
+from _pypsa_helpers import store_duals_to_network
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, ConfigManager
 from _pypsa_helpers import mock_solve
 from constants import YEAR_HRS
-from pathlib import Path
-from _pypsa_helpers import export_duals
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -621,8 +619,8 @@ if __name__ == "__main__":
     # which doesn't work as snakemake is a subprocess
     is_test = snakemake.config["run"].get("is_test", False)
     if not is_test:
-        # Extract export_duals from config in main
-        export_duals = snakemake.params.solving["options"].get("export_duals", False)
+        # Extract export_duals flag from config in main
+        export_duals_flag = snakemake.params.solving["options"].get("export_duals", False)
         
         n = solve_network(
             n,
@@ -632,16 +630,9 @@ if __name__ == "__main__":
             log_fn=snakemake.log.solver,
         )
         
-        # Post-process and export dual variables (outside solve function)
-        if export_duals:
-            # This call safely no-ops if model/dual are missing
-            process_dual_variables(n)
-            dual_data = getattr(n, "duals", {})
-            if dual_data:
-                current_year = snakemake.wildcards.planning_horizons
-                results_dir = os.path.dirname(os.path.dirname(snakemake.output.network_name))
-                dual_output_dir = os.path.join(results_dir, 'dual', f"dual_values_raw_{current_year}")
-                export_duals(dual_data, Path(dual_output_dir))
+        # Store dual variables in network components for netcdf export
+        if export_duals_flag:
+            store_duals_to_network(n)
     else:
         logging.info("Mocking the solve step")
         n = mock_solve(n)
