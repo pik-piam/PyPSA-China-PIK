@@ -14,7 +14,7 @@ import pypsa
 logger = logging.getLogger()
 
 # Simplified component mapping - only essential mappings
-COMPONENT_MAPPING: dict[str, str] = {
+COMPONENT_MAPPING = {
     'generator': 'generators',
     'link': 'links',
     'line': 'lines',

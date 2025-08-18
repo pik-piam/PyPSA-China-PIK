@@ -365,7 +365,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         network.add(
             "Link",
             nodes,
-            suffix="central CHP gas generator",
+            suffix=" central CHP gas generator",
             bus0=nodes + " gas",
             bus1=nodes,
             carrier="CHP gas",
