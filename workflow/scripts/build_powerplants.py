@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: : 2025 The PyPSA-China Authors
+#
+# SPDX-License-Identifier: MIT
 """
 Build the existing capacities for each node from GEM (global energy monitor) tracker data.
 This script is intended for use as part of the Snakemake workflow.

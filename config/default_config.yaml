@@ -4,7 +4,7 @@
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
-  name: unamed_run
+  name: 1hr_elec_only
 foresight: "overnight"
 
 paths:
@@ -54,9 +54,9 @@ snapshots:
   start: "01-01 00:00"
   end: "12-31 23:00"
   bounds: 'both'
-  freq: '5h'
+  freq: '1h'
   # test weighings -> to be improved
-  frequency: 5.
+  frequency: 1.
   # in case snapshots cross the planning horizon year
   end_year_plus1: false
 
@@ -67,8 +67,8 @@ logging:
 
 enable:
   build_cutout: false
-  retrieve_cutout: false
-  retrieve_raster: false
+  retrieve_cutout: true
+  retrieve_raster: true
 
 atlite:
   cutout_name: "China-2020c"
@@ -307,30 +307,6 @@ existing_capacities:
   threshold_capacity: 1 # TODO UNIT
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'solar thermal', 'onwind', 'offwind','nuclear'] # 'coal boiler','ground heat pump',
   node_assignment: simple # simple | gps
-
-
-# TODO integrate in workflow
-nodes: 
-  split_provinces: False # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
-  # exclude currently only applies if split_provinces is True, will be fixed with integrartion to workflow
-  exclude_provinces: ["Macau", "HongKong"] # list of provinces to exclude from splitting
-  splits:
-    # adminl2 groups per adminl1. {adminl1: {custom_name: [adminl2_names],..}}
-    InnerMongolia:
-      West: 
-        - "Hulunbuir"
-        - "Xing'an"
-        - "Tongliao"
-        - "Chifeng"
-        - "Xilin Gol"
-      East: 
-        - "Alxa"
-        - "Baotou"
-        - "Baynnur"
-        - "Hohhot"
-        - "Ordos"
-        - "Ulaan Chab"
-        - "Wuhai"
 
 # TODO integrate in workflow
 nodes: 
