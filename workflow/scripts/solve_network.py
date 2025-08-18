@@ -541,27 +541,29 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     avail = n.generators_t.p_max_pu.loc[:, vres_gen.index]
     vres_idx = avail.columns
     if not ext_idx.empty and not vres_idx.empty:
-        # Reserve score based on a mean availability factor not actual avail (lack of foresight)
+        # Reserve score based on actual avail (perfect foresight) not mean/expected avail
         vre_reserve_score = (n.model["Generator-r"].loc[:, vres_gen.index] * avail).sum("Generator")
         summed_reserve += vre_reserve_score
 
         # reqs from brownfield VRE generators. epsilon is the margin for VRES forecast error
         avail_factor = n.generators_t.p_max_pu[ext_idx]
         p_nom_vres = n.model["Generator-p_nom"].loc[ext_idx].rename({"Generator-ext": "Generator"})
-        vre_req_fixed = (p_nom_vres * (EPSILON_VRES * xr.DataArray(avail_factor))).sum("Generator")
+        vre_req_ext = (p_nom_vres * (EPSILON_VRES * xr.DataArray(avail_factor))).sum("Generator")
+    else:
+        vre_req_ext = 0
 
+    if not vres_idx.empty:
         # reqs extendable VRE generators
         avail_factor = n.generators_t.p_max_pu[vres_idx.difference(ext_idx)]
         renewable_capacity = n.generators.p_nom[vres_idx.difference(ext_idx)]
-        vre_ext_p = (avail_factor * renewable_capacity).sum(axis=1)
+        vre_req_fix = (avail_factor * renewable_capacity).sum(axis=1)
     else:
-        vre_req_fixed = 0
-        vre_ext_p = 0
+        vre_req_fix = 0
 
-    lhs = summed_reserve - vre_req_fixed
+    lhs = summed_reserve - vre_req_ext
     # Right-hand-side
     demand = get_as_dense(n, "Load", "p_set").sum(axis=1)
-    rhs = EPSILON_LOAD * demand + EPSILON_VRES * vre_ext_p + CONTINGENCY
+    rhs = EPSILON_LOAD * demand + EPSILON_VRES * vre_req_fix + CONTINGENCY
 
     n.model.add_constraints(lhs >= rhs, name="Reserve-margin")
 
