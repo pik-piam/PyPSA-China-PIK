@@ -6,6 +6,7 @@ import numpy as np
 import logging
 import pytz
 import xarray as xr
+import re
 
 import pypsa
 
@@ -434,70 +435,59 @@ def update_p_nom_max(n: pypsa.Network) -> None:
 
 
 def store_duals_to_network(network: pypsa.Network) -> None:
-    """Store dual variables in network components so they get saved to netcdf file.
-    
-    Args:
-        network (pypsa.Network): Network object with solved model
-    """
-    # Check if dual variables exist
-    if not hasattr(network, "model") or not hasattr(network.model, "dual"):
-        logger.info("No dual variables found in network model")
-        return
-    
-    duals = network.model.dual
-    if duals is None or len(duals) == 0:
-        logger.info("No dual variables to store")
-        return
-    
-    logger.info(f"Extracted {len(duals)} dual variables from network model")
-    
-    # Store duals in network components so they get saved to netcdf
+    """Store dual variables in network components so they get saved to netcdf file."""
+    model = getattr(network, "model", None)
+    duals = getattr(model, "dual", None)
+
     for dual_name, dual_value in duals.items():
-        try:
-            # Parse dual name to find component type
-            if "-" not in dual_name:
-                continue
-                
+        # ---- Parse component / constraint ----
+        if "-" in dual_name:
             component_type, constraint_type = dual_name.split("-", 1)
-            component_name = COMPONENT_MAPPING.get(component_type.lower())
-            
-            if component_name and hasattr(network, component_name):
-                component_obj = getattr(network, component_name)
-                attr_name = f"mu_{constraint_type.replace('[', '_').replace(']', '')}"
-                
-                # Add dual value to component (this will be saved to netcdf)
-                if np.isscalar(dual_value):
-                    component_obj[attr_name] = float(dual_value)
-                elif isinstance(dual_value, (np.ndarray, xr.DataArray)):
-                    if hasattr(dual_value, 'to_pandas'):
-                        # For time series data, store the full data to preserve regional differences
-                        pandas_data = dual_value.to_pandas()
-                        if isinstance(pandas_data, pd.DataFrame):
-                            # If it's a DataFrame (time series), store the mean across time but preserve regional differences
-                            component_obj[attr_name] = pandas_data.mean()
-                        else:
-                            # If it's a Series, store the full series
-                            component_obj[attr_name] = pandas_data
-                    else:
-                        # For numpy arrays, store the full array
-                        component_obj[attr_name] = dual_value
-                elif isinstance(dual_value, pd.DataFrame):
-                    # For DataFrame (time series), store the mean across time but preserve regional differences
-                    component_obj[attr_name] = dual_value.mean()
-                elif isinstance(dual_value, pd.Series):
-                    # For Series, store the full series
-                    component_obj[attr_name] = dual_value
-                else:
-                    # For other types, try to convert to float
-                    try:
-                        component_obj[attr_name] = float(dual_value)
-                    except:
-                        component_obj[attr_name] = 0.0
-                        
-        except Exception as e:
-            logger.warning(f"Failed to store dual variable {dual_name}: {e}")
+        else:
+            lt = dual_name.lower()
+            component_type = next((k for k in COMPONENT_MAPPING if k in lt), None)
+            if not component_type:
+                continue
+            constraint_type = dual_name
+
+        comp_name = COMPONENT_MAPPING.get(component_type.lower())
+        comp_obj = getattr(network, comp_name, None)
+        if comp_obj is None:
             continue
-    
-    logger.info(f"Stored dual variables in network components for netcdf export")
+
+        # ---- Standardize attr name ----
+        attr = f"mu_{re.sub(r'[^a-zA-Z0-9_]', '_', constraint_type)}"
+
+        # ---- Normalize to pandas ----
+        if hasattr(dual_value, "to_pandas"):
+            dual_value = dual_value.to_pandas()
+
+        # ---- Write back (single decision on DataFrame vs not) ----
+        if isinstance(dual_value, pd.DataFrame):
+            if comp_name == "global_constraints":
+                # collapse rows → per-constraint Series, align to component index
+                series = dual_value.mean(axis=0).reindex(comp_obj.index)
+                comp_obj[attr] = series
+            else:
+                # align time index & columns safely
+                time_index = getattr(network, "snapshots", dual_value.index)
+                aligned = dual_value.reindex(index=time_index, columns=comp_obj.index)
+
+                comp_t_name = f"{comp_name}_t"
+                if not hasattr(network, comp_t_name):
+                    setattr(network, comp_t_name, {})
+                getattr(network, comp_t_name)[attr] = aligned
+        else:
+            # Series / scalar / ndarray → Series aligned to component index
+            if isinstance(dual_value, pd.Series):
+                series = dual_value.reindex(comp_obj.index)
+            else:
+                try:
+                    val = float(np.asarray(dual_value).ravel()[0])
+                except Exception:
+                    val = 0.0
+                series = pd.Series(val, index=comp_obj.index)
+            comp_obj[attr] = series
+
 
 
