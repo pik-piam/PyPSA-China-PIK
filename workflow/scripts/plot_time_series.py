@@ -420,7 +420,7 @@ def plot_price_heatmap(
 
 
 def plot_vre_heatmap(
-    n: pypsa.Network, color_map="magma", config: dict, log_values=True, time_range: pd.Index = None,
+    n: pypsa.Network, config: dict, color_map="magma", log_values=True, time_range: pd.Index = None,
 ):
     """plot the VRE generation per hour and day as a heatmap
 
