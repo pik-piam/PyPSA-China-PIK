@@ -2,13 +2,29 @@
 
 import os
 import pandas as pd
+import numpy as np
 import logging
 import pytz
+import xarray as xr
+import re
 
 import pypsa
 
 # get root logger
 logger = logging.getLogger()
+
+# Simplified component mapping - only essential mappings
+COMPONENT_MAPPING = {
+    'generator': 'generators',
+    'link': 'links',
+    'line': 'lines',
+    'store': 'stores',
+    'storageunit': 'storage_units',
+    'bus': 'buses',
+    'globalconstraint': 'global_constraints',
+    'load': 'loads',
+    'transformer': 'transformers',
+}
 
 
 def get_location_and_carrier(
@@ -30,6 +46,30 @@ def get_location_and_carrier(
     bus, carrier = pypsa.statistics.get_bus_and_carrier(n, c, port, nice_names=nice_names)
     location = bus.map(n.buses.location).rename("location")
     return [location, carrier]
+
+
+def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Link"]) -> list:
+    """filter carriers for links that attach to a bus of the target carrier
+
+    Args:
+        n (pypsa.Network): the pypsa network object
+        bus_carrier (str, optional): the bus carrier. Defaults to "AC".
+        comps (list, optional): the components to check. Defaults to ["Generator", "Link"].
+
+    Returns:
+        list: list of carriers that are attached to the bus carrier
+    """
+    carriers = []
+    for c in comps:
+        comp = n.static(c)
+        ports = [c for c in comp.columns if c.startswith("bus")]
+        comp_df = comp[ports + ["carrier"]]
+        is_attached = comp_df[ports].apply(lambda x: x.map(n.buses.carrier) == bus_carrier).T.any()
+        carriers += comp_df.loc[is_attached].carrier.unique().tolist()
+
+    if bus_carrier not in carriers:
+        carriers += [bus_carrier]
+    return carriers
 
 
 def assign_locations(n: pypsa.Network):
@@ -101,15 +141,17 @@ def calc_lcoe(
     # eta is applied by statistics
     n.links.loc[gas_links, "marginal_cost"] += fuel_costs
     # TODO same with BECCS? & other links?
-
     rev = n.statistics.revenue(groupby=grouper, **kwargs)
     opex = n.statistics.opex(groupby=grouper, **kwargs)
     capex = n.statistics.expanded_capex(groupby=grouper, **kwargs)
     tot_capex = n.statistics.capex(groupby=grouper, **kwargs)
     supply = n.statistics.supply(groupby=grouper, **kwargs)
-
     # restore original marginal costs
     n.links.marginal_cost = original_marginal_costs
+
+    # incase no grouper was specified, get different levels
+    if grouper is None:
+        supply = supply.groupby(level=[0, 1]).sum()
 
     outputs = pd.concat(
         [opex, capex, tot_capex, rev, supply],
@@ -124,6 +166,28 @@ def calc_lcoe(
     outputs.sort_values("profit_pu", ascending=False, inplace=True)
 
     return outputs[outputs.supply > 0]
+
+
+def calc_generation_share(df, n, carrier):
+    """
+    Add generation share column to an existing DataFrame.
+    Assumes df has carrier index already.
+
+    Returns: DataFrame with an added 'GenShare' column.
+    """
+    supply_data = n.statistics.supply(bus_carrier=carrier, comps="Generator")
+    total_supply = supply_data.sum()
+    gen_shares = (supply_data / total_supply * 100).dropna()
+    carrier_map = {
+        c.lower(): row["nice_name"]
+        for c, row in n.carriers.iterrows()
+    }
+    gen_shares.index = gen_shares.index.map(
+        lambda idx: carrier_map.get(idx.lower(), idx)
+    )
+    df = df.copy()
+    df["GenShare"] = gen_shares
+    return df
 
 
 # TODO is thsi really good? useful?
@@ -414,3 +478,62 @@ def update_p_nom_max(n: pypsa.Network) -> None:
     # Hence, we update the assumptions.
 
     n.generators.p_nom_max = n.generators[["p_nom_min", "p_nom_max"]].max(1)
+
+
+def store_duals_to_network(network: pypsa.Network) -> None:
+    """Store dual variables in network components so they get saved to netcdf file."""
+    model = getattr(network, "model", None)
+    duals = getattr(model, "dual", None)
+
+    for dual_name, dual_value in duals.items():
+        # ---- Parse component / constraint ----
+        if "-" in dual_name:
+            component_type, constraint_type = dual_name.split("-", 1)
+        else:
+            lt = dual_name.lower()
+            component_type = next((k for k in COMPONENT_MAPPING if k in lt), None)
+            if not component_type:
+                continue
+            constraint_type = dual_name
+
+        comp_name = COMPONENT_MAPPING.get(component_type.lower())
+        comp_obj = getattr(network, comp_name, None)
+        if comp_obj is None:
+            continue
+
+        # ---- Standardize attr name ----
+        attr = f"mu_{re.sub(r'[^a-zA-Z0-9_]', '_', constraint_type)}"
+
+        # ---- Normalize to pandas ----
+        if hasattr(dual_value, "to_pandas"):
+            dual_value = dual_value.to_pandas()
+
+        # ---- Write back (single decision on DataFrame vs not) ----
+        if isinstance(dual_value, pd.DataFrame):
+            if comp_name == "global_constraints":
+                # collapse rows → per-constraint Series, align to component index
+                series = dual_value.mean(axis=0).reindex(comp_obj.index)
+                comp_obj[attr] = series
+            else:
+                # align time index & columns safely
+                time_index = getattr(network, "snapshots", dual_value.index)
+                aligned = dual_value.reindex(index=time_index, columns=comp_obj.index)
+
+                comp_t_name = f"{comp_name}_t"
+                if not hasattr(network, comp_t_name):
+                    setattr(network, comp_t_name, {})
+                getattr(network, comp_t_name)[attr] = aligned
+        else:
+            # Series / scalar / ndarray → Series aligned to component index
+            if isinstance(dual_value, pd.Series):
+                series = dual_value.reindex(comp_obj.index)
+            else:
+                try:
+                    val = float(np.asarray(dual_value).ravel()[0])
+                except Exception:
+                    val = 0.0
+                series = pd.Series(val, index=comp_obj.index)
+            comp_obj[attr] = series
+
+
+

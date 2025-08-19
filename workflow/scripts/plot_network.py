@@ -162,6 +162,7 @@ def add_cost_pannel(
     tech_colors: dict,
     plot_additions: bool,
     ax_loc=[-0.09, 0.28, 0.09, 0.45],
+    **kwargs: dict,
 ) -> None:
     """Add a cost pannel to the figure
 
@@ -191,6 +192,7 @@ def add_cost_pannel(
         ax=ax3,
         stacked=True,
         color=color_list,
+        **kwargs,
     )
     ax3.legend().remove()
     ax3.set_ylabel("annualized system cost bEUR/a")
@@ -203,6 +205,7 @@ def add_cost_pannel(
         ax3.text(0.85, (df.sum()["added"] + 15), str(percent) + "%", color="black")
 
     fig.tight_layout()
+    return ax3
 
 
 # TODO fix args unused
@@ -247,7 +250,9 @@ def plot_cost_map(
     # ============ === Stats by bus ===
     # calc costs & sum over component types to keep bus & carrier (remove no loc)
     costs = network.statistics.capex(groupby=["location", "carrier"])
-    costs = costs.groupby(level=[1, 2]).sum().drop("")
+    costs = costs.groupby(level=[1, 2]).sum()
+    if "" in costs.index:
+        costs.drop("", inplace=True)
     # we miss some buses by grouping epr location, fill w 0s
     bus_idx = pd.MultiIndex.from_product([network.buses.index, ["AC"]])
     costs = costs.reindex(bus_idx.union(costs.index), fill_value=0)
@@ -306,7 +311,7 @@ def plot_cost_map(
     bus_size_factor = opts["cost_map"]["bus_size_factor"]
     linewidth_factor = opts["cost_map"]["linewidth_factor"]
 
-    plot_map(
+    ax = plot_map(
         network,
         tech_colors=tech_colors,
         edge_widths=edge_widths / linewidth_factor,
@@ -322,7 +327,7 @@ def plot_cost_map(
     # TODO check edges is working
     # Add the added pathway costs
     if plot_additions:
-        plot_map(
+        ax2 = plot_map(
             network,
             tech_colors=tech_colors,
             edge_widths=edge_widths_added / linewidth_factor,
@@ -352,7 +357,7 @@ def plot_cost_map(
         df = df / PLOT_COST_UNITS
         # TODO decide discount
         # df = df / (1 + discount_rate) ** (int(planning_horizon) - base_year)
-        add_cost_pannel(
+        ax3 = add_cost_pannel(
             df,
             fig,
             preferred_order,
@@ -360,6 +365,9 @@ def plot_cost_map(
             plot_additions,
             ax_loc=[-0.09, 0.28, 0.09, 0.45],
         )
+        # Set x-label angle to 45 degrees for better readability
+        for label in ax3.get_xticklabels():
+            label.set_rotation(45)
 
     fig.set_size_inches(opts["cost_map"][f"figsize{'_w_additions' if plot_additions else ''}"])
     fig.tight_layout()
@@ -467,7 +475,7 @@ def plot_energy_map(
         )
     else:
         bus_sizes = supply_pies / opts_plot["bus_size_factor"]
-    plot_map(
+    ax = plot_map(
         network,
         tech_colors=tech_colors,  # colors.to_dict(),
         edge_widths=edge_widths / opts_plot["linewidth_factor"],
@@ -484,6 +492,7 @@ def plot_energy_map(
     if energy_pannel:
         df = supply_pies.groupby(level=1).sum().to_frame()
         df = df.fillna(0)
+        df.rename(columns={0: ""}, inplace=True)
         add_energy_pannel(df, fig, preferred_order, bus_colors, ax_loc=[-0.09, 0.28, 0.09, 0.45])
 
     handles, labels = ax.get_legend_handles_labels()
@@ -632,7 +641,7 @@ if __name__ == "__main__":
             "plot_network",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000_CHAb",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             planning_horizons="2030",
             # heating_demand="positive",
             configfiles=["resources/tmp/remind_coupled_cg.yaml"],

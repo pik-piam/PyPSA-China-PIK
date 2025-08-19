@@ -5,7 +5,7 @@ plotting:
   network_style_config_file: "config/plotting_styles/network_map.mplstyle"
   transparent: false
   statistics:
-    clip_numerical_zeroes: false
+    clip_numerical_zeroes: true
   cost_panel:
     y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
   cost_map:
@@ -18,7 +18,7 @@ plotting:
     bus_size_factor_heat: 5.e+4
     linewidth_factor_heat: 5.e+4
     min_edge_capacity : 1.e+4
-    ref_edge_sizes : [5.e+3,10.e+3,30.e+3] # MW
+    ref_edge_sizes : [5.e+3,30.e+3,100.e+3] # MW
     ref_bus_sizes : [20.e+9, 10.e+9, 5.e+9] # eur/currnecy
     ref_bus_unit: "bn €/a"
     edge_color: "indigo"
@@ -32,10 +32,10 @@ plotting:
     bus_size_factor_demand: 2.e+7
     min_edge_capacity : 5.e+2 # MW
     ref_bus_unit: "TWh"
-    ref_edge_sizes : [5.e+3,10.e+3,30.e+3] # MW
+    ref_edge_sizes : [10.e+3,50.e+3,150.e+3] # MW
     ref_edge_sizes_heat : [1.e+3,10.e+3,50.e+3]  # in MW
-    ref_bus_sizes : [5.e+7, 1.e+8, 2.e+9] # MWh
-    ref_bus_sizes_heat : [10.e+6, 100.e+6, 500.e+6] # MWh
+    ref_bus_sizes : [ 2.e+9, 5.e+8,] # MWh
+    ref_bus_sizes_heat : [500.e+6, 100.e+6, 10.e+6] # MWh
     bus_ref_title : "Electricity supply"
     edge_color: "indigo"
   price_map:
@@ -58,13 +58,14 @@ plotting:
   costs_threshold: 2.e+6 # Eur
   energy_threshold: 5.e+6 # MWh
   capacity_threshold: 1.e+4 # MW
-
+  market_value:
+      min_gen_share: 0.01
   loads: ['electricity', 'decentral heat', 'central heat']
   vre_techs: [ "onwind", "offwind", "solar"]
   conv_techs: [ "gas", "gas-heat", "gas-AC", "AC-gas", "coal", "coal-AC","solar thermal","AC-heat","AC-AC","stations-AC","uranium", "H2-AC", "H2-gas",]
   storage_techs: [ "hydro+PHS", "battery", "AC-battery", "H2", "AC-H2" , "AC-heat"]
 
-  nan_color: "pink"
+  nan_color: "brown"
 
   tech_colors:
     blank: "white"
@@ -127,23 +128,27 @@ plotting:
     biomass to liquid: '#32CD32'
     BioSNG: '#123456'
     # coal
-    coal carbon capture: '#8487e8'
-    coal-CCS: '#8487e8'
-    coal cc: '#8487e8'
-    coal ccs: '#8487e8'
-    coal power plant retrofit: '#8487e8'
+    coal carbon capture: '#8c8dad'
+    coal-CCS: '#8c8dad'
+    coal CCS: '#8c8dad'
+    coal cc: '#8c8dad'
+    coal ccs: '#8c8dad'
+    coal power plant retrofit: '#8c8dad'
     # gas
     gas: '#e0986c'
     # gas: '#e05b09'
     Gas: '#e0986c'
     OCGT: '#e0986c'
     OCGT gas: '#e0986c'
+    gas ocgt: '#e0986c'
     gas OCGT: '#e0986c'
+    Open-Cycle Gas: '#e0986c'
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
     CCGT: '#a85522'
-    CCGT gas: '#a85522'
+    CCGT marginal: '#a85522'
     gas CCGT: '#a85522'
+    CCGT gas: '#a85522'
     gas ccs: '#a85522'
     CCGT-CCS: '#76855B'
     gas CCGT-CCS: '#76855B'
@@ -160,9 +165,6 @@ plotting:
     fossil gas: '#e05b09'
     natural gas: '#e05b09'
     biogas to gas: '#e36311'
-    CCGT: '#a85522'
-    CCGT marginal: '#a85522'
-    gas CCGT: '#a85522'
     allam: '#B98F76'
     gas for industry co2 to atmosphere: '#692e0a'
     gas for industry co2 to stored: '#8a3400'
@@ -171,8 +173,6 @@ plotting:
     gas pipeline: '#ebbca0'
     gas pipeline new: '#a87c62'
     gas-AC: "grey"
-
-
     # hot water storage
     water tanks: '#e69487'
     residential rural water tanks: '#f7b7a3'
@@ -225,8 +225,9 @@ plotting:
     CHP coal: '#8a5751'
     CHP coal generator: '#8a5751'
     coal heat: '#8a7f7d'
-    urban central gas CHP: '#8f6e6a'
+    gas CHP: '#8f6e6a'
     CHP gas: '#8f6e6a'
+    central gas CHP: '#8f6e6a'
     CHP gas generator: '#8f6e6a'
     CHP gas boiler: '#8f6e6a'
     CHP CC: '#634643'
@@ -240,8 +241,8 @@ plotting:
     services rural resistive heater: '#a5ed9d'
     services urban decentral resistive heater: '#98e991'
     urban central resistive heater: '#8cdf85'
-    retrofitting: '#8487e8'
-    building retrofitting: '#8487e8'
+    retrofitting: '#8c8dad'
+    building retrofitting: '#8c8dad'
 
     # hydrogen
     H2 for industry: "#f073da"
@@ -286,6 +287,7 @@ plotting:
     services urban decentral solar thermal: '#dfb953'
     urban central solar thermal: '#d7b24c'
     solar rooftop: '#ffea80'
+    csp: "#ffe76e"
     # wind
     wind: "#235ebc"
     onwind: "#235ebc"
@@ -332,6 +334,8 @@ plotting:
     industry new electricity: '#2d2a66'
     agriculture electricity: '#494778'
     load shedding: "#dd2e23"
+    Load shedding: "#dd2e23"
+    Load Shedding: "#dd2e23"
     # syngas
     Sabatier: '#9850ad'
     methanation: '#c44ce6'
@@ -397,10 +401,10 @@ plotting:
     CHP: "Combined Heat and Power"
     OCGT: "Open-Cycle Gas"
     gas OCGT: "Open-Cycle Gas"
+    Gas Ocgt: "Open-Cycle Gas"
     CCGT: "Combined-Cycle Gas"
     gas CCGT: "Combined-Cycle Gas"
     gas ccs: "Gas with Carbon Capture"
-    CCGT gas: "Combined-Cycle Gas"
     gas: Gas
     heat pump: "Heat Pump"
     stations-AC: "Reservoir & Dam"
@@ -408,6 +412,7 @@ plotting:
     # generatord
     battery: "Battery Storage"
     battery discharger: "Battery Discharger"
+    # coal: "Coal"
     coal: "Coal Power Plant"
     coal cc: "Coal with carbon capture"
     coal ccs: "Coal with carbon capture"
@@ -416,20 +421,14 @@ plotting:
     hydro: "Reservoir & Dam"
     H2 fuel cell: "H2 Fuel Cell"
     PHS: "Pumped Hydro Storage"
+    # H2: "Hydrogen Power"
+    ror: "Run of River"
+    uranium: "Nuclear"
+    hydroelectricity: "Hydroelectricity"
     offwind: "Offshore Wind"
     onwind: "Onshore Wind"
     solar: "Solar"
-    # H2: "Hydrogen Power"
-    ror: "Run of River"
     solar thermal: "Solar Thermal"
-    uranium: "Nuclear"
-    hydroelectricity: "Hydroelectricity"
-    energy:
-      coal: "Coal"
-      offwind: "Offshore Wind"
-      onwind: "Onshore Wind"
-      solar: "Solar"
-      solar thermal: "Solar Thermal"
 
   preferred_order:
   - electric load
@@ -449,6 +448,7 @@ plotting:
   - coal carbon capture
   - coal ccs
   - coal-CCS
+  - coal CCS
   - Coal with Carbon Capture
   - coal boiler
   - coal boiler decentral
@@ -458,6 +458,8 @@ plotting:
   - gas CCGT
   - CCGT-CCS
   - gas CCGT-CCS 
+  - gas
+  - gas CCS
   - Combined-Cycle Gas
   - gas boiler
   - gas boiler decentral
@@ -477,7 +479,6 @@ plotting:
   - H2 fuel cell
   - H2 CHP
   - CO2 capture
-
   - hot water storage
   - hydrogen storage
   - solar thermal
@@ -490,9 +491,9 @@ plotting:
   - solar PV
   - Solar
   - solar
-  - battery storage
   - OCGT
   - gas OCGT
+  - battery storage
   - battery discharger
   - battery
   - Battery

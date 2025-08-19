@@ -21,7 +21,13 @@ from _helpers import (
     mock_snakemake,
     set_plot_test_backend,
 )
-from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL, PROV_NAMES
+from constants import (
+    PLOT_CAP_UNITS,
+    PLOT_CAP_LABEL,
+    PROV_NAMES,
+    PLOT_SUPPLY_UNITS,
+    PLOT_SUPPLY_LABEL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +38,9 @@ def plot_energy_balance(
     bus_carrier="AC",
     start_date="2060-03-31 21:00",
     end_date="2060-04-06 12:00:00",
+    aggregate_fossil=False,
     add_load_line=True,
+    add_reserves=False,
     ax: plt.Axes = None,
 ):
     """plot the electricity balance of the network for the given time range
@@ -43,6 +51,7 @@ def plot_energy_balance(
         bus_carrier (str, optional): the carrier for the energy_balance op. Defaults to "AC".
         start_date (str, optional): the range to plot. Defaults to "2060-03-31 21:00".
         end_date (str, optional): the range to plot. Defaults to "2060-04-06 12:00:00".
+        aggregate_fossil (bool, optional): whether to aggregate fossil fuels. Defaults to False.
         add_load_line (bool, optional): add a dashed line for the load. Defaults to True.
     """
     if not ax:
@@ -55,21 +64,22 @@ def plot_energy_balance(
         .dropna(how="all")
         .groupby("carrier")
         .sum()
-        .div(PLOT_CAP_UNITS)
+        .div(PLOT_SUPPLY_UNITS)
         # .drop("-")
         .T
     )
 
-    p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
     p = p.loc[start_date:end_date]
+    p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
 
     # aggreg fossil
-    coal = p.filter(regex="[C|c]oal")
-    p.drop(columns=coal.columns, inplace=True)
-    p["Coal"] = coal.sum(axis=1)
-    gas = p.filter(regex="[G|g]as")
-    p.drop(columns=gas.columns, inplace=True)
-    p["Gas"] = gas.sum(axis=1)
+    if aggregate_fossil:
+        coal = p.filter(regex="[C|c]oal")
+        p.drop(columns=coal.columns, inplace=True)
+        p["Coal"] = coal.sum(axis=1)
+        gas = p.filter(regex="[G|g]as")
+        p.drop(columns=gas.columns, inplace=True)
+        p["Gas"] = gas.sum(axis=1)
 
     extra_c = {
         "Load": plot_config["tech_colors"]["electric load"],
@@ -123,7 +133,7 @@ def plot_energy_balance(
         charge.drop(columns="load_pos", inplace=True)
 
     ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
-    ax.set_ylabel(PLOT_CAP_LABEL)
+    ax.set_ylabel(PLOT_SUPPLY_LABEL)
     ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
     ax.grid(axis="y")
     ax.set_xlim(supply.index.min(), supply.index.max())
@@ -131,6 +141,12 @@ def plot_energy_balance(
     fig.tight_layout()
 
     return ax
+
+
+def add_reserves(n: pypsa.Network):
+    """plot the reserves of the network"""
+
+    curtailed = n.statistics.curtailment(aggregate_time=False, bus_carrier="AC")
 
 
 def plot_load_duration_curve(
@@ -357,6 +373,7 @@ def plot_price_heatmap(
     carrier="AC",
     log_values=False,
     color_map="viridis",
+    time_range: pd.Index = None,
     ax: plt.Axes = None,
 ) -> plt.Axes:
     """plot the price heat map (region vs time) for the given carrier
@@ -366,6 +383,7 @@ def plot_price_heatmap(
         carrier (str, optional): the carrier for which to get the price. Defaults to "AC".
         log_values (bool, optional): whether to use log scale for the prices. Defaults to False.
         color_map (str, optional): the color map to use. Defaults to "viridis".
+        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).
         ax (plt.Axes, optional): the plotting axis. Defaults to None (new fig).
 
     Returns:
@@ -379,6 +397,10 @@ def plot_price_heatmap(
 
     carrier_buses = network.buses.carrier[network.buses.carrier == carrier].index.values
     nodal_prices = network.buses_t.marginal_price[carrier_buses]
+
+    if time_range is not None:
+        # Filter nodal_prices by the given time range
+        nodal_prices = nodal_prices.loc[time_range]
     # Normalize nodal_prices with log transformation
     if log_values:
         # Avoid log(0) by clipping values to a minimum of 0.1
@@ -388,20 +410,104 @@ def plot_price_heatmap(
         normalized_prices = nodal_prices
         label = "Price [€/MWh]"
     # Create a heatmap of normalized nodal_prices
+    plot_index = normalized_prices.index.strftime("%m-%d %H:%M").to_list()
+    normalized_prices.index = plot_index
     sns.heatmap(
-        normalized_prices.reset_index(drop=True).T,
+        normalized_prices.T,
         cmap=color_map,
         cbar_kws={"label": label},
         ax=ax,
     )
 
     # Customize the plot
-    ax.set_title("Heatmap of Log-Transformed Nodal Prices")
+    if log_values:
+        ax.set_title("Heatmap of Log-Transformed Nodal Prices")
+    else:
+        ax.set_title("Heatmap of Nodal Prices")
+
     ax.set_xlabel("Time")
     ax.set_ylabel("Nodes")
     fig.tight_layout()
 
     return ax
+
+
+def plot_vre_heatmap(
+    n: pypsa.Network, config: dict, color_map="magma", log_values=True, time_range: pd.Index = None,
+):
+    """plot the VRE generation per hour and day as a heatmap
+
+    Args:
+        network (pypsa.Network): the pypsa network object
+        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).
+        log_values (bool, optional): whether to use log scale for the values. Defaults to True.
+        config (dict, optional): the run config (snakemake.config).
+
+    """
+
+    vres = config["Techs"].get("non_dispatchable", ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential'])
+    vre_avail = (
+        n.statistics.supply(
+            comps="Generator",
+            aggregate_time=False,
+            bus_carrier="AC",
+            nice_names=False,
+            groupby=["location", "carrier"],
+        )
+        .query("carrier in @vres")
+        .T.fillna(0)
+    )
+
+    if time_range is not None:
+        vre_avail = vre_avail.loc[time_range]
+
+    for tech in vres[::-1]:
+        tech_avail = vre_avail.T.query("carrier == @tech")
+        tech_avail.index = tech_avail.index.droplevel(1)
+        tech_avail = tech_avail.T
+        tech_avail.index = tech_avail.index.strftime("%m-%d %H:%M")
+        if log_values:
+            # Avoid log(0) by clipping values to a minimum of 10
+            tech_avail = np.log(tech_avail.clip(lower=10))
+        fig, ax = plt.subplots()
+        sns.heatmap(tech_avail.T, ax=ax, cmap=color_map)
+        ax.set_title(f"{tech} generation by province")
+
+
+def plot_vre_timemap(
+    network: pypsa.Network,
+    color_map="viridis",
+    time_range: pd.Index = None,
+):
+    """plot the VRE generation per hour and day as a heatmap
+
+    Args:
+        network (pypsa.Network): the pypsa network object
+        color_map (str, optional): the color map to use. Defaults to "viridis".
+        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).
+    """
+
+    vres = ["offwind", "onwind", "solar"]
+    vre_avail = (
+        network.statistics.supply(
+            comps="Generator", aggregate_time=False, bus_carrier="AC", nice_names=False
+        )
+        .query("carrier in @vres")
+        .T.fillna(0)
+    )
+    if time_range is not None:
+        vre_avail = vre_avail.loc[time_range]
+
+    vre_avail["day"] = vre_avail.index.strftime("%d-%m")
+    vre_avail["hour"] = vre_avail.index.hour
+
+    for tech in vres:
+        pivot_ = vre_avail.pivot_table(index="hour", columns="day", values=tech)
+        fig, ax = plt.subplots(figsize=(12, 6))
+        sns.heatmap(pivot_.sort_index(ascending=False), cmap=color_map, ax=ax)
+        ax.set_title(f"{tech} generation by hour and day")
+
+        fig.tight_layout()
 
 
 if __name__ == "__main__":
@@ -415,7 +521,7 @@ if __name__ == "__main__":
             co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
             configfiles=["resources/tmp/remind_coupled_cg.yaml"],
-            planning_horizons="2035",
+            planning_horizons="2050",
             winter_day1="12-10 21:00",  # mm-dd HH:MM
             winter_day2="12-17 12:00",  # mm-dd HH:MM
             spring_day1="03-31 21:00",  # mm-dd HH:MM

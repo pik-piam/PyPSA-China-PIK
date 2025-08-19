@@ -26,7 +26,7 @@ from constants import (
     PLOT_CAP_UNITS,
     PLOT_CAP_LABEL,
 )
-from _plot_utilities import set_plot_style
+from _plot_utilities import set_plot_style, label_stacked_bars
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +195,8 @@ def plot_pathway_capacities(
         year = cap_df.columns.get_level_values(0)[0]
         cap_df = cap_df.droplevel(0, axis=1).rename(columns={"Unnamed: 4_level_1": year})
         cap_df /= PLOT_CAP_UNITS
+        if "Load Shedding" in cap_df.index.get_level_values("carrier"):
+            cap_df.drop("Load Shedding", level="carrier", inplace=True)
 
         # get stores relevant for reporting according to config, use later
         stores = (
@@ -223,6 +225,7 @@ def plot_pathway_capacities(
         )
         cap_ac = cap_ac.groupby("carrier").sum()[year]
 
+        cap_h2 = pd.DataFrame()
         if plot_h2:
             cap_h2 = cap_df.reset_index().query(
                 "bus_carrier == 'H2' | carrier =='H2' | end_carrier =='H2'"
@@ -255,6 +258,8 @@ def plot_pathway_capacities(
     for i, capacity_df in enumerate([caps_ac, caps_heat, caps_stores, caps_h2]):
         if capacity_df.empty:
             continue
+        if isinstance(capacity_df, pd.Series):
+            capacity_df = capacity_df.to_frame()
         k, j = divmod(i, 2)
         ax = axes[k, j]
         preferred_order = pd.Index(config["preferred_order"])
@@ -278,7 +283,7 @@ def plot_pathway_capacities(
         labels.reverse()
 
         if capacity_df.index.difference(caps_stores.index).empty:
-            ax.set_ylabel(f"Installed Capacity [{PLOT_CAP_LABEL}h]")
+            ax.set_ylabel(f"Installed Storage Capacity [{PLOT_CAP_LABEL}h]")
         else:
             ax.set_ylabel(f"Installed Capacity [{PLOT_CAP_LABEL}]")
         ax.set_ylim([0, capacity_df.sum(axis=0).max() * 1.1])
@@ -483,6 +488,10 @@ def plot_electricty_heat_balance(
         bbox_to_anchor=[1, 1],
         loc="upper left",
     )
+
+    if config.get("add_bar_labels", False):
+        label_stacked_bars(ax, len(el_gen.columns))
+
     fig.tight_layout()
 
     if fig_dir is not None:
@@ -548,6 +557,10 @@ def plot_capacity_factors(
         df_year = pd.read_csv(results_file, index_col=list(range(2)), header=[1]).T
         capfacs_df = pd.concat([df_year, capfacs_df])
 
+    if ("links", "battery") in capfacs_df.columns:
+        capfacs_df.loc[:, ("links", "battery charger")] = capfacs_df.loc[:, ("links", "battery")]
+        capfacs_df.drop(columns=("links", "battery"), inplace=True)
+
     capfacs_df = capfacs_df.droplevel(0, axis=1).fillna(0)
     capfacs_df.sort_index(axis=0, inplace=True)
 
@@ -591,7 +604,15 @@ def plot_capacity_factors(
         fig.savefig(fig_name, transparent=False)
 
 
-def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax: object = None):
+def plot_prices(
+    file_list: list,
+    config: dict,
+    fig_name=None,
+    absolute=False,
+    ax: object = None,
+    unit="€/MWh",
+    **kwargs,
+):
     """plot the prices
 
     Args:
@@ -600,6 +621,7 @@ def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax
         fig_name (os.PathLike, optional): the figure name. Defaults to None.
         absolute (bool, optional): plot absolute prices. Defaults to False.
         ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
+        unit (str, optional): the unit of the prices. Defaults to "€/MWh".
     """
     prices_df = pd.DataFrame()
     for results_file in file_list:
@@ -618,14 +640,23 @@ def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax
     if absolute:
         prices_df = prices_df.abs()
 
+    defaults = {"lw": 3, "marker": "o", "markersize": 5, "alpha": 0.8}
+    if "linewidth" in kwargs:
+        kwargs["lw"] = kwargs.pop("linewidth")
+    defaults.update(kwargs)
     prices_df.plot(
         ax=ax,
         kind="line",
         color=[colors[k] if k in colors else "k" for k in prices_df.columns],
-        linewidth=3,
+        **defaults,
     )
-    ax.set_ylim([prices_df.min().min() * 1.1, prices_df.max().max() * 1.1])
-    ax.set_ylabel("prices [X/UNIT]")
+    min_ = prices_df.min().min()
+    if np.sign(min_) < 0:
+        min_ *= 1.1
+    else:
+        min_ *= 0.9
+    ax.set_ylim([min_, prices_df.max().max() * 1.1])
+    ax.set_ylabel(f"Prices [{unit}]")
     ax.set_xlabel("")
     ax.grid(axis="y")
 
@@ -685,55 +716,6 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
     fig.tight_layout()
     if fig_name is not None:
         fig.savefig(fig_name, transparent=config["transparent"])
-
-
-def plot_prices(file_list: list, config: dict, fig_name=None, absolute=False, ax: object = None):
-    """plot the prices
-
-    Args:
-        file_list (list): the input csvs from make_summary
-        config (dict): the configuration for plotting (snakemake.config["plotting"])
-        fig_name (os.PathLike, optional): the figure name. Defaults to None.
-        absolute (bool, optional): plot absolute prices. Defaults to False.
-        ax (matplotlib.axes.Axes, optional): the axes to plot on. Defaults to None.
-    """
-    prices_df = pd.DataFrame()
-    for results_file in file_list:
-        df_year = pd.read_csv(results_file, index_col=list(range(1)), header=[1]).T
-
-        prices_df = pd.concat([df_year, prices_df])
-    prices_df.sort_index(axis=0, inplace=True)
-    if not ax:
-        fig, ax = plt.subplots()
-    else:
-        fig = ax.get_figure()
-    fig.set_size_inches((12, 8))
-
-    colors = config["tech_colors"]
-
-    if absolute:
-        prices_df = prices_df.abs()
-
-    prices_df.plot(
-        ax=ax,
-        kind="line",
-        color=[colors[k] if k in colors else "k" for k in prices_df.columns],
-        linewidth=3,
-    )
-    ax.set_ylim([prices_df.min().min() * 1.1, prices_df.max().max() * 1.1])
-    ax.set_ylabel("prices [X/UNIT]")
-    ax.set_xlabel("")
-    ax.grid(axis="y")
-
-    handles, labels = ax.get_legend_handles_labels()
-
-    handles.reverse()
-    labels.reverse()
-    ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
-    fig.tight_layout()
-
-    if fig_name is not None:
-        fig.savefig(fig_name, transparent=False)
 
 
 def plot_co2_prices(co2_prices: dict, config: dict, fig_name=None):
@@ -807,6 +789,10 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
         fig.savefig(fig_name, transparent=config["transparent"])
 
 
+def plot_investments(file_list: list, config: dict, fig_name=None, ax: object = None):
+    pass
+
+
 # TODO move to a separate rule
 def write_data(data_paths: dict, outp_dir: os.PathLike):
     """Write some selected data
@@ -856,20 +842,10 @@ if __name__ == "__main__":
             "plot_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-freeze",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
             heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled.yaml"],
-            planning_horizons=[
-                2020,
-                2025,
-                2030,
-                # 2035,
-                # 2040,
-                # 2045,
-                # 2050,
-                # 2055,
-                # 2060,
-            ],
+            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
 
     configure_logging(snakemake)
@@ -894,7 +870,6 @@ if __name__ == "__main__":
         co2_prices = None
 
     plot_heat = config.get("heat_coupling", False)
-    plot_h2 = config["add_H2"]
     NAN_COLOR = config["plotting"]["nan_color"]
     data_paths = {
         "energy": [os.path.join(p, "energy.csv") for p in paths],
@@ -917,11 +892,12 @@ if __name__ == "__main__":
             "solar",
             "onwind",
             "offwind",
-            "battery",
+            # "battery",
+            "battery discharger",
             "coal",
             "coal-CCS",
-            "CCGT",
-            "OCGT",
+            "hydroelectricity",
+            "gas OCGT",
             "CCGT-CCS",
             "H2 Electrolysis",
         ],

@@ -14,15 +14,18 @@ __pycache__
 
 /site/**
 !/resources/data/shapefiles/
-!/resources/**/*.csv
+# !/resources/**/*.csv
 /resources/**/*
 /resources/derived_data/
 /resources/data/province_shapes
 /resources/data/landuse_availability/World_EEZ/*eez*
 /workflow/scripts/*.pdf
+/workflow/notebooks/*.py
+/workflow/notebooks/*.ipynb
 /results
 !/results/.gitkeep
 /cutouts
+/workflow/scripts/*.pdf
 /logs
 /benchmarks
 /tests/derived_data/**
