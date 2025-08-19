@@ -1,0 +1,3818 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../readers_geospatial/">
+      
+      
+        <link rel="next" href="../solve_network_myopic/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.17">
+    
+    
+      
+        <title>Solve network - PyPSA China Model (PIK edition) Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#solve_network" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PyPSA China Model (PIK edition) Documentation" class="md-header__button md-logo" aria-label="PyPSA China Model (PIK edition) Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyPSA China Model (PIK edition) Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Solve network
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PyPSA China Model (PIK edition) Documentation" class="md-nav__button md-logo" aria-label="PyPSA China Model (PIK edition) Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    PyPSA China Model (PIK edition) Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Welcome to the PyPSA-China (PIK version) documentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SUMMARY
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_brownfield/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add brownfield
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_electricity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add electricity
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_existing_baseyear/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add existing baseyear
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_biomass_potential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build biomass potential
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_cop_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build cop profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_cutout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build cutout
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_load_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build load profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_population/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build population
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_population_gridcell_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build population gridcell map
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_province_shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build province shapes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_renewable_potential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build renewable potential
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_renewable_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build renewable profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_solar_thermal_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build solar thermal profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_temperature_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build temperature profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Constants
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../determine_availability_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Determine availability matrix
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fetch_rasters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fetch rasters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fetch_shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fetch shapes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Functions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../make_summary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Make summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_heatmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot heatmap
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_input_costs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot input costs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_inputs_visualisation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot inputs visualisation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_network_heat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot network heat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_statistics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot statistics
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_summary_all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot summary all
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_time_series/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot time series
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_base_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare base network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_base_network_2020/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare base network 2020
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_existing_capacities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare existing capacities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_network_common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare network common
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Readers
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers_geospatial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Readers geospatial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Solve network
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solve network
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network" class="md-nav__link">
+    <span class="md-ellipsis">
+      solve_network
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_battery_constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_battery_constraints
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_chp_constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_chp_constraints
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_co2_constraints_prices" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_co2_constraints_prices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_emission_prices" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_emission_prices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_land_use_constraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_land_use_constraint
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_operational_reserve_margin" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_operational_reserve_margin
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_remind_paid_off_constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_remind_paid_off_constraints
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_transmission_constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_transmission_constraints
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.extra_functionality" class="md-nav__link">
+    <span class="md-ellipsis">
+      extra_functionality
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.freeze_components" class="md-nav__link">
+    <span class="md-ellipsis">
+      freeze_components
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.prepare_network" class="md-nav__link">
+    <span class="md-ellipsis">
+      prepare_network
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.set_transmission_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_transmission_limit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.solve_network" class="md-nav__link">
+    <span class="md-ellipsis">
+      solve_network
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solve_network_myopic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solve network myopic
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_39" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_39" id="__nav_3_39_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Remind coupling
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_39_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_39">
+            <span class="md-nav__icon md-icon"></span>
+            Remind coupling
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/disaggregate_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Disaggregate data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/generic_etl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Generic etl
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/make_pypsa_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Make pypsa config
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network" class="md-nav__link">
+    <span class="md-ellipsis">
+      solve_network
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_battery_constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_battery_constraints
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_chp_constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_chp_constraints
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_co2_constraints_prices" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_co2_constraints_prices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_emission_prices" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_emission_prices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_land_use_constraint" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_land_use_constraint
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_operational_reserve_margin" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_operational_reserve_margin
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_remind_paid_off_constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_remind_paid_off_constraints
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.add_transmission_constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_transmission_constraints
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.extra_functionality" class="md-nav__link">
+    <span class="md-ellipsis">
+      extra_functionality
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.freeze_components" class="md-nav__link">
+    <span class="md-ellipsis">
+      freeze_components
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.prepare_network" class="md-nav__link">
+    <span class="md-ellipsis">
+      prepare_network
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.set_transmission_limit" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_transmission_limit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solve_network.solve_network" class="md-nav__link">
+    <span class="md-ellipsis">
+      solve_network
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Solve network</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="solve_network"></a>
+    <div class="doc doc-contents first">
+
+        <p>Functions to add constraints and prepare the network for the solver.
+Associated with the <code>solve_networks</code> rule in the Snakefile.</p>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.add_battery_constraints" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_battery_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add constraint ensuring that charger = discharger, i.e.
+1 * charger_size - efficiency * discharger_size = 0</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_battery_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add constraint ensuring that charger = discharger, i.e.</span>
+<span class="sd">    1 * charger_size - efficiency * discharger_size = 0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">p_nom_extendable</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span>
+
+    <span class="n">discharger_bool</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;battery discharger&quot;</span><span class="p">)</span>
+    <span class="n">charger_bool</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;battery charger&quot;</span><span class="p">)</span>
+
+    <span class="n">dischargers_ext</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">discharger_bool</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;p_nom_extendable&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">chargers_ext</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">charger_bool</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;p_nom_extendable&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+
+    <span class="n">eff</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">efficiency</span><span class="p">[</span><span class="n">dischargers_ext</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">lhs</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;Link-p_nom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">chargers_ext</span><span class="p">]</span> <span class="o">-</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;Link-p_nom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">dischargers_ext</span><span class="p">]</span> <span class="o">*</span> <span class="n">eff</span>
+
+    <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraints</span><span class="p">(</span><span class="n">lhs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Link-charger_ratio&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.add_chp_constraints" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_chp_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add constraints to couple the heat and electricity output of CHP plants
+     (using the cb and cv parameter). See the DEA technology cataloge</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the pypsa network object to which's model the constraints are added</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_chp_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add constraints to couple the heat and electricity output of CHP plants</span>
+<span class="sd">         (using the cb and cv parameter). See the DEA technology cataloge</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the pypsa network object to which&#39;s model the constraints are added</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">electric</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;CHP&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;generator&quot;</span><span class="p">)</span>
+    <span class="n">heat</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;CHP&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;boiler&quot;</span><span class="p">)</span>
+
+    <span class="n">electric_ext</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">electric</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;p_nom_extendable&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">heat_ext</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">heat</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;p_nom_extendable&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+
+    <span class="n">electric_fix</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">electric</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;~p_nom_extendable&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">heat_fix</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">heat</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;~p_nom_extendable&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;Link-p&quot;</span><span class="p">]</span>  <span class="c1"># dimension: [time, link]</span>
+
+    <span class="c1"># output ratio between heat and electricity and top_iso_fuel_line for extendable</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">electric_ext</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">p_nom</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;Link-p_nom&quot;</span><span class="p">]</span>
+
+        <span class="n">lhs</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">p_nom</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">electric_ext</span><span class="p">]</span>
+            <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">p_nom_ratio</span> <span class="o">*</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">efficiency</span><span class="p">)[</span><span class="n">electric_ext</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="o">-</span> <span class="n">p_nom</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">heat_ext</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">efficiency</span><span class="p">[</span><span class="n">heat_ext</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="p">)</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraints</span><span class="p">(</span><span class="n">lhs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chplink-fix_p_nom_ratio&quot;</span><span class="p">)</span>
+
+        <span class="n">rename</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Link-ext&quot;</span><span class="p">:</span> <span class="s2">&quot;Link&quot;</span><span class="p">}</span>
+        <span class="n">lhs</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">electric_ext</span><span class="p">]</span> <span class="o">+</span> <span class="n">p</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">heat_ext</span><span class="p">]</span> <span class="o">-</span> <span class="n">p_nom</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">rename</span><span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">electric_ext</span><span class="p">]</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraints</span><span class="p">(</span><span class="n">lhs</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chplink-top_iso_fuel_line_ext&quot;</span><span class="p">)</span>
+
+    <span class="c1"># top_iso_fuel_line for fixed</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">electric_fix</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">lhs</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">electric_fix</span><span class="p">]</span> <span class="o">+</span> <span class="n">p</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">heat_fix</span><span class="p">]</span>
+        <span class="n">rhs</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">p_nom</span><span class="p">[</span><span class="n">electric_fix</span><span class="p">]</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraints</span><span class="p">(</span><span class="n">lhs</span> <span class="o">&lt;=</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chplink-top_iso_fuel_line_fix&quot;</span><span class="p">)</span>
+
+    <span class="c1"># back-pressure</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">electric</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">lhs</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">heat</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">efficiency</span><span class="p">[</span><span class="n">heat</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">c_b</span><span class="p">[</span><span class="n">electric</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">p</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">electric</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">efficiency</span><span class="p">[</span><span class="n">electric</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraints</span><span class="p">(</span><span class="n">lhs</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chplink-backpressure&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.add_co2_constraints_prices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_co2_constraints_prices</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">co2_control</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add co2 constraints or prices</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>network</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the network to which prices or constraints are to be added</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>co2_control</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the config</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>unrecognised co2 control option</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_co2_constraints_prices</span><span class="p">(</span><span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span> <span class="n">co2_control</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add co2 constraints or prices</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        network (pypsa.Network): the network to which prices or constraints are to be added</span>
+<span class="sd">        co2_control (dict): the config</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: unrecognised co2 control option</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">co2_control</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">co2_control</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;price&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding CO2 price to marginal costs of generators and storage units&quot;</span><span class="p">)</span>
+        <span class="n">add_emission_prices</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">emission_prices</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;co2&quot;</span><span class="p">:</span> <span class="n">co2_control</span><span class="p">[</span><span class="s2">&quot;co2_pr_or_limit&quot;</span><span class="p">]})</span>
+
+    <span class="k">elif</span> <span class="n">co2_control</span><span class="p">[</span><span class="s2">&quot;control&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;budget&quot;</span><span class="p">):</span>
+        <span class="n">co2_limit</span> <span class="o">=</span> <span class="n">co2_control</span><span class="p">[</span><span class="s2">&quot;co2_pr_or_limit&quot;</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding CO2 constraint based on scenario </span><span class="si">{co2_limit}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="s2">&quot;GlobalConstraint&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;co2_limit&quot;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;primary_energy&quot;</span><span class="p">,</span>
+            <span class="n">carrier_attribute</span><span class="o">=</span><span class="s2">&quot;co2_emissions&quot;</span><span class="p">,</span>
+            <span class="n">sense</span><span class="o">=</span><span class="s2">&quot;&lt;=&quot;</span><span class="p">,</span>
+            <span class="n">constant</span><span class="o">=</span><span class="n">co2_limit</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unhandled CO2 control config </span><span class="si">{</span><span class="n">co2_control</span><span class="si">}</span><span class="s2"> due to unknown control.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unhandled CO2 control config </span><span class="si">{</span><span class="n">co2_control</span><span class="si">}</span><span class="s2"> due to unknown control&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.add_emission_prices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_emission_prices</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">emission_prices</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;co2&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span> <span class="n">exclude_co2</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>from pypsa-eur: add GHG price to marginal costs of generators and storage units</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the pypsa network</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>emission_prices</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>emission prices per GHG. Defaults to {"co2": 0.0}.</p>
+              </div>
+            </td>
+            <td>
+                  <code>{&#39;co2&#39;: 0.0}</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exclude_co2</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>do not charge for CO2 emissions. Defaults to False.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_emission_prices</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span> <span class="n">emission_prices</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;co2&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">},</span> <span class="n">exclude_co2</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;from pypsa-eur: add GHG price to marginal costs of generators and storage units</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the pypsa network</span>
+<span class="sd">        emission_prices (dict, optional): emission prices per GHG. Defaults to {&quot;co2&quot;: 0.0}.</span>
+<span class="sd">        exclude_co2 (bool, optional): do not charge for CO2 emissions. Defaults to False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">exclude_co2</span><span class="p">:</span>
+        <span class="n">emission_prices</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;co2&quot;</span><span class="p">)</span>
+    <span class="n">em_price</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">emission_prices</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="s2">&quot;_emissions&quot;</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">n</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">like</span><span class="o">=</span><span class="s2">&quot;_emissions&quot;</span><span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">n</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;emission_prices&quot;</span><span class="p">:</span> <span class="n">emission_prices</span><span class="p">})</span>
+
+    <span class="n">gen_em_price</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">carrier</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">em_price</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">efficiency</span>
+
+    <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="s2">&quot;marginal_cost&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">gen_em_price</span>
+    <span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="p">[</span><span class="s2">&quot;marginal_cost&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">gen_em_price</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="p">[</span><span class="s2">&quot;marginal_cost&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+    <span class="c1"># storage units su</span>
+    <span class="n">su_em_price</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">carrier</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">em_price</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="o">.</span><span class="n">efficiency_dispatch</span>
+    <span class="n">n</span><span class="o">.</span><span class="n">storage_units</span><span class="p">[</span><span class="s2">&quot;marginal_cost&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">su_em_price</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Added emission prices to marginal costs of generators and storage units&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Emission prices: </span><span class="si">{</span><span class="n">emission_prices</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.add_land_use_constraint" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_land_use_constraint</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">planning_horizons</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add land use constraints for renewable energy potential. This ensures that the brownfield +
+ greenfield vre installations for each generator tech do not exceed the technical potential.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the network object to add the constraints to</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>planning_horizons</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the planning horizon year as string</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_land_use_constraint</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span> <span class="n">planning_horizons</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add land use constraints for renewable energy potential. This ensures that the brownfield +</span>
+<span class="sd">     greenfield vre installations for each generator tech do not exceed the technical potential.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the network object to add the constraints to</span>
+<span class="sd">        planning_horizons (str | int): the planning horizon year as string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># warning: this will miss existing offwind which is not classed AC-DC and has carrier &#39;offwind&#39;</span>
+
+    <span class="k">for</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="s2">&quot;solar&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;solar thermal&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;onwind&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;offwind&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;offwind-ac&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;offwind-dc&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;offwind-float&quot;</span><span class="p">,</span>
+    <span class="p">]:</span>
+        <span class="n">ext_i</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">carrier</span> <span class="o">==</span> <span class="n">carrier</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">p_nom_extendable</span>
+        <span class="n">grouper</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">ext_i</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">carrier</span><span class="si">}</span><span class="s2">.*$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">existing</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">ext_i</span><span class="p">,</span> <span class="s2">&quot;p_nom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">grouper</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">existing</span><span class="o">.</span><span class="n">index</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">carrier</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">existing</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;p_nom_max&quot;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">existing</span>
+
+    <span class="c1"># check if existing capacities are larger than technical potential</span>
+    <span class="n">existing_large</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="s2">&quot;p_nom_min&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="s2">&quot;p_nom_max&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">index</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">existing_large</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Existing capacities larger than technical potential for </span><span class="si">{</span><span class="n">existing_large</span><span class="si">}</span><span class="s2">,</span><span class="se">\</span>
+<span class="s2">                        adjust technical potential to existing capacities&quot;</span>
+        <span class="p">)</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">existing_large</span><span class="p">,</span> <span class="s2">&quot;p_nom_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+            <span class="n">existing_large</span><span class="p">,</span> <span class="s2">&quot;p_nom_min&quot;</span>
+        <span class="p">]</span>
+
+    <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="s2">&quot;p_nom_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="p">[</span><span class="s2">&quot;p_nom_max&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.add_operational_reserve_margin" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_operational_reserve_margin</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Build operational reserve margin constraints based on the formulation given in
+https://genxproject.github.io/GenX.jl/stable/Model_Reference/core/#GenX.operational_reserves_core!-Tuple{JuMP.Model,%20Dict,%20Dict}</p>
+<p>The constraint is network wide and not at each node!</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the network object to optimize</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>config</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the configuration dictionary</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>config.yaml requires to specify operational_reserve:
+operational_reserve:
+    activate: true
+    epsilon_load: 0.02 # percentage of load at each snapshot
+    epsilon_vres: 0.02 # percentage of VRES at each snapshot
+    contingency: 400000 # MW</p>
+</details>
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_operational_reserve_margin</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">network</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build operational reserve margin constraints based on the formulation given in</span>
+<span class="sd">    https://genxproject.github.io/GenX.jl/stable/Model_Reference/core/#GenX.operational_reserves_core!-Tuple{JuMP.Model,%20Dict,%20Dict}</span>
+
+<span class="sd">    The constraint is network wide and not at each node!</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the network object to optimize</span>
+<span class="sd">        config (dict): the configuration dictionary</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        config.yaml requires to specify operational_reserve:</span>
+<span class="sd">        operational_reserve:</span>
+<span class="sd">            activate: true</span>
+<span class="sd">            epsilon_load: 0.02 # percentage of load at each snapshot</span>
+<span class="sd">            epsilon_vres: 0.02 # percentage of VRES at each snapshot</span>
+<span class="sd">            contingency: 400000 # MW</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">reserve_config</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;operational_reserve&quot;</span><span class="p">]</span>
+    <span class="n">VRE_TECHS</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;Techs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;non_dispatchable&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;onwind&quot;</span><span class="p">,</span> <span class="s2">&quot;offwind&quot;</span><span class="p">,</span> <span class="s2">&quot;solar&quot;</span><span class="p">])</span>
+    <span class="n">EPSILON_LOAD</span><span class="p">,</span> <span class="n">EPSILON_VRES</span> <span class="o">=</span> <span class="n">reserve_config</span><span class="p">[</span><span class="s2">&quot;epsilon_load&quot;</span><span class="p">],</span> <span class="n">reserve_config</span><span class="p">[</span><span class="s2">&quot;epsilon_vres&quot;</span><span class="p">]</span>
+    <span class="n">CONTINGENCY</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">reserve_config</span><span class="p">[</span><span class="s2">&quot;contingency&quot;</span><span class="p">])</span>
+
+    <span class="c1"># AC producers</span>
+    <span class="n">ac_mask</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">carrier</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;AC&quot;</span>
+    <span class="n">ac_buses</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier ==&#39;AC&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">attached_carriers</span> <span class="o">=</span> <span class="n">filter_carriers</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="s2">&quot;AC&quot;</span><span class="p">)</span>
+    <span class="c1"># conceivably a link could have a negative efficiency and flow towards bus0 - don&#39;t consider</span>
+    <span class="n">prod_links</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier in @attached_carriers &amp; not bus0 in @ac_buses&quot;</span><span class="p">)</span>
+    <span class="n">transport_links</span> <span class="o">=</span> <span class="n">prod_links</span><span class="o">.</span><span class="n">bus0</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">carrier</span><span class="p">)</span> <span class="o">==</span> <span class="n">prod_links</span><span class="o">.</span><span class="n">bus1</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">carrier</span><span class="p">)</span>
+    <span class="n">prod_links</span> <span class="o">=</span> <span class="n">prod_links</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">transport_links</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+    <span class="n">prod_gen</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">ac_mask</span><span class="p">]</span>
+    <span class="n">producers_all</span> <span class="o">=</span> <span class="n">prod_links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prod_gen</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">producers_all</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Producers-p&quot;</span>
+
+    <span class="c1"># RSERVES</span>
+    <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_variables</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">prod_gen</span><span class="o">.</span><span class="n">index</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Generator-r&quot;</span><span class="p">)</span>
+    <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_variables</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="p">[</span><span class="n">n</span><span class="o">.</span><span class="n">snapshots</span><span class="p">,</span> <span class="n">prod_links</span><span class="o">.</span><span class="n">index</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Link-r&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Define Reserve and weigh VRES by their mean availability (&quot;capacity credit&quot;)</span>
+    <span class="n">vres_gen</span> <span class="o">=</span> <span class="n">prod_gen</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier in @VRE_TECHS&quot;</span><span class="p">)</span>
+    <span class="n">non_vre</span> <span class="o">=</span> <span class="n">prod_gen</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">vres_gen</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="c1"># full capacity credit for non-VRE producers (questionable, maybe should be weighted by availability)</span>
+    <span class="n">summed_reserve</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;Link-r&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">prod_links</span><span class="o">.</span><span class="n">efficiency</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;Link&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span>
+        <span class="s2">&quot;Generator-r&quot;</span>
+    <span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">non_vre</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;Generator&quot;</span><span class="p">)</span>
+
+    <span class="c1"># VRE capacity credit &amp; margin reqs</span>
+    <span class="n">ext_idx</span> <span class="o">=</span> <span class="n">vres_gen</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;p_nom_extendable&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">avail</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p_max_pu</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">vres_gen</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">vres_idx</span> <span class="o">=</span> <span class="n">avail</span><span class="o">.</span><span class="n">columns</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">vres_gen</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="c1"># Reserve score based on actual avail (perfect foresight) not mean/expected avail</span>
+        <span class="n">vre_reserve_score</span> <span class="o">=</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;Generator-r&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">vres_gen</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">*</span> <span class="n">avail</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;Generator&quot;</span><span class="p">)</span>
+        <span class="n">summed_reserve</span> <span class="o">+=</span> <span class="n">vre_reserve_score</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ext_idx</span><span class="o">.</span><span class="n">empty</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">vres_idx</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="c1"># reqs from brownfield VRE generators. epsilon is the margin for VRES forecast error</span>
+        <span class="n">avail_factor</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p_max_pu</span><span class="p">[</span><span class="n">ext_idx</span><span class="p">]</span>
+        <span class="n">p_nom_vres</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;Generator-p_nom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">ext_idx</span><span class="p">]</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s2">&quot;Generator-ext&quot;</span><span class="p">:</span> <span class="s2">&quot;Generator&quot;</span><span class="p">})</span>
+        <span class="n">vre_req_ext</span> <span class="o">=</span> <span class="p">(</span><span class="n">p_nom_vres</span> <span class="o">*</span> <span class="p">(</span><span class="n">EPSILON_VRES</span> <span class="o">*</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">avail_factor</span><span class="p">)))</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="s2">&quot;Generator&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vre_req_ext</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">vres_idx</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="c1"># reqs extendable VRE generators</span>
+        <span class="n">avail_factor</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p_max_pu</span><span class="p">[</span><span class="n">vres_idx</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">ext_idx</span><span class="p">)]</span>
+        <span class="n">renewable_capacity</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">p_nom</span><span class="p">[</span><span class="n">vres_idx</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">ext_idx</span><span class="p">)]</span>
+        <span class="n">vre_req_fix</span> <span class="o">=</span> <span class="p">(</span><span class="n">avail_factor</span> <span class="o">*</span> <span class="n">renewable_capacity</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vre_req_fix</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">lhs</span> <span class="o">=</span> <span class="n">summed_reserve</span> <span class="o">-</span> <span class="n">vre_req_ext</span>
+    <span class="c1"># Right-hand-side</span>
+    <span class="n">demand</span> <span class="o">=</span> <span class="n">get_as_dense</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="s2">&quot;Load&quot;</span><span class="p">,</span> <span class="s2">&quot;p_set&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">rhs</span> <span class="o">=</span> <span class="n">EPSILON_LOAD</span> <span class="o">*</span> <span class="n">demand</span> <span class="o">+</span> <span class="n">EPSILON_VRES</span> <span class="o">*</span> <span class="n">vre_req_fix</span> <span class="o">+</span> <span class="n">CONTINGENCY</span>
+
+    <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraints</span><span class="p">(</span><span class="n">lhs</span> <span class="o">&gt;=</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Reserve-margin&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Need additional constraints (reserve + dispatch &lt;= p_nom): gen_r + gen_p &lt;= gen_p_nom (capacity)</span>
+    <span class="n">to_constrain</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Link&quot;</span><span class="p">:</span> <span class="n">prod_links</span><span class="p">,</span> <span class="s2">&quot;Generator&quot;</span><span class="p">:</span> <span class="n">prod_gen</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">component</span><span class="p">,</span> <span class="n">producer</span> <span class="ow">in</span> <span class="n">to_constrain</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;adding secondary reserve constraint for </span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+
+        <span class="n">fix_i</span> <span class="o">=</span> <span class="n">producer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;p_nom_extendable==False&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">ext_i</span> <span class="o">=</span> <span class="n">producer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;p_nom_extendable==True&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+
+        <span class="n">dispatch</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">-p&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">producer</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">reserve</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">-r&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">ext_i</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">fix_i</span><span class="p">)]</span>
+
+        <span class="n">capacity_variable</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">-p_nom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">ext_i</span><span class="p">]</span>
+        <span class="n">capacity_variable</span> <span class="o">=</span> <span class="n">capacity_variable</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">-ext&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">})</span>
+        <span class="n">capacity_fixed</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">component</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">p_nom</span><span class="p">[</span><span class="n">fix_i</span><span class="p">]</span>
+
+        <span class="n">p_max_pu</span> <span class="o">=</span> <span class="n">get_as_dense</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;p_max_pu&quot;</span><span class="p">)</span>
+
+        <span class="n">lhs</span> <span class="o">=</span> <span class="n">dispatch</span> <span class="o">+</span> <span class="n">reserve</span>
+        <span class="c1"># MAY have to check what happens in case pmaxpu is not defined for all items</span>
+        <span class="n">rhs</span> <span class="o">=</span> <span class="n">capacity_variable</span> <span class="o">*</span> <span class="n">p_max_pu</span><span class="p">[</span><span class="n">ext_i</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">p_max_pu</span><span class="p">[</span><span class="n">fix_i</span><span class="p">]</span> <span class="o">*</span> <span class="n">capacity_fixed</span><span class="p">)</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraints</span><span class="p">(</span>
+            <span class="n">lhs</span> <span class="o">-</span> <span class="n">rhs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">lhs</span><span class="o">.</span><span class="n">indexes</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">-p-reserve-upper&quot;</span>
+        <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.add_remind_paid_off_constraints" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_remind_paid_off_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Paid-off components can be placed wherever PyPSA wants but have a total limit.</p>
+<p>Add constraints to ensure that the paid off capacity from REMIND is not
+exceeded across the network &amp; that it does not exceed the technical potential.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the network object to which's model the constraints are added</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_remind_paid_off_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Paid-off components can be placed wherever PyPSA wants but have a total limit.</span>
+
+<span class="sd">    Add constraints to ensure that the paid off capacity from REMIND is not</span>
+<span class="sd">    exceeded across the network &amp; that it does not exceed the technical potential.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the network object to which&#39;s model the constraints are added</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;run&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_remind_coupled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Skipping paid off constraints as REMIND is not coupled&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="c1"># In coupled-mode components (Generators, Links,..) have limits p/e_nom_rcl &amp; a tech_group</span>
+    <span class="c1"># These columns are added by `add_existing_baseyear.add_paid_off_capacity`.</span>
+    <span class="c1"># p/e_nom_rcl is the availale paid-off capacity per tech group and is nan for non paid-off (usual) generators.</span>
+    <span class="c1"># rcl is a legacy name from Aodenweller</span>
+    <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Generator&quot;</span><span class="p">,</span> <span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;Store&quot;</span><span class="p">]:</span>
+
+        <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span> <span class="k">if</span> <span class="n">component</span> <span class="o">==</span> <span class="s2">&quot;Store&quot;</span> <span class="k">else</span> <span class="s2">&quot;p&quot;</span>
+        <span class="n">paid_off_col</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_nom_max_rcl&quot;</span>
+
+        <span class="n">paid_off</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">component</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># if there are no paid_off components</span>
+        <span class="k">if</span> <span class="n">paid_off_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">paid_off</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">paid_off</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="n">paid_off_col</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">paid_off_totals</span> <span class="o">=</span> <span class="n">paid_off</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;tech_group&quot;</span><span class="p">)[</span><span class="n">paid_off_col</span><span class="p">]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+
+        <span class="c1"># LHS: p_nom per technology grp &lt; totals</span>
+        <span class="n">groupers</span> <span class="o">=</span> <span class="p">[</span><span class="n">paid_off</span><span class="p">[</span><span class="s2">&quot;tech_group&quot;</span><span class="p">]]</span>
+        <span class="n">grouper_lhs</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">(</span><span class="n">groupers</span><span class="p">),</span> <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">-ext&quot;</span><span class="p">])</span>
+        <span class="n">p_nom_groups</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_nom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">paid_off</span><span class="o">.</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">grouper_lhs</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="c1"># get indices to sort RHS. the grouper is multi-indexed (legacy from PyPSA-Eur)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">p_nom_groups</span><span class="o">.</span><span class="n">indexes</span><span class="p">[</span><span class="s2">&quot;group&quot;</span><span class="p">]</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">]</span>
+
+        <span class="c1"># Add constraint</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">p_nom_groups</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraints</span><span class="p">(</span>
+                <span class="n">p_nom_groups</span> <span class="o">&lt;=</span> <span class="n">paid_off_totals</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;paidoff_cap_totals_</span><span class="si">{</span><span class="n">component</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="c1"># === ensure normal e/p_nom_max is respected for (paid_off + normal) components</span>
+    <span class="c1"># e.g. if PV has 100MW tech potential at nodeA, paid_off+normal p_nom_opt &lt;100MW</span>
+    <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Generator&quot;</span><span class="p">,</span> <span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;Store&quot;</span><span class="p">]:</span>
+        <span class="n">paidoff_comp</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">component</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="n">prefix</span> <span class="o">=</span> <span class="s2">&quot;e&quot;</span> <span class="k">if</span> <span class="n">component</span> <span class="o">==</span> <span class="s2">&quot;Store&quot;</span> <span class="k">else</span> <span class="s2">&quot;p&quot;</span>
+        <span class="n">paid_off_col</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_nom_max_rcl&quot;</span>
+        <span class="c1"># if there are no paid_off components</span>
+        <span class="k">if</span> <span class="n">paid_off_col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">paidoff_comp</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">paidoff_comp</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="n">paid_off_col</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># techs that only exist as paid-off don&#39;t have usual counterparts</span>
+        <span class="n">remind_only_techs</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;existing_capacities&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;remind_only_tech_groups&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">paidoff_comp</span> <span class="o">=</span> <span class="n">paidoff_comp</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;tech_group not in @remind_only_techs&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">paidoff_comp</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># find equivalent usual (not paid-off) components</span>
+        <span class="n">usual_comps_idx</span> <span class="o">=</span> <span class="n">paidoff_comp</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_paid_off&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">usual_comps</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">component</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">usual_comps_idx</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">usual_comps</span> <span class="o">=</span> <span class="n">usual_comps</span><span class="p">[</span><span class="o">~</span><span class="n">usual_comps</span><span class="o">.</span><span class="n">p_nom_max</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">])]</span>
+
+        <span class="n">paid_off_wlimits</span> <span class="o">=</span> <span class="n">paidoff_comp</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">usual_comps</span><span class="o">.</span><span class="n">index</span> <span class="o">+</span> <span class="s2">&quot;_paid_off&quot;</span><span class="p">]</span>
+        <span class="n">to_constrain</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">usual_comps</span><span class="p">,</span> <span class="n">paid_off_wlimits</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">to_constrain</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">to_constrain</span><span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">-ext&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># otherwise n.model query will fail. This is needed in case freeze_compoents was used</span>
+        <span class="c1"># it is fine so long as p_nom is zero for the frozen components</span>
+        <span class="n">to_constrain</span> <span class="o">=</span> <span class="n">to_constrain</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;p_nom_extendable==True&quot;</span><span class="p">)</span>
+        <span class="n">to_constrain</span><span class="p">[</span><span class="s2">&quot;grouper&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">to_constrain</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_paid_off&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="n">grouper</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">to_constrain</span><span class="o">.</span><span class="n">grouper</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">-ext&quot;</span><span class="p">])</span>
+
+        <span class="n">lhs</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_nom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">to_constrain</span><span class="o">.</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">grouper</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="c1"># RHS</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">lhs</span><span class="o">.</span><span class="n">indexes</span><span class="p">[</span><span class="s2">&quot;grouper&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">lhs</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraints</span><span class="p">(</span>
+                <span class="n">lhs</span> <span class="o">&lt;=</span> <span class="n">usual_comps</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">p_nom_max</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;constrain_paidoff&amp;usual_</span><span class="si">{</span><span class="n">component</span><span class="si">}</span><span class="s2">_potential&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.add_transmission_constraints" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_transmission_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.
+p_nom positive = p_nom negative</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the network object to optimize</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_transmission_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add constraint ensuring that transmission lines p_nom are the same for both directions, i.e.</span>
+<span class="sd">    p_nom positive = p_nom negative</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the network object to optimize</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">p_nom_extendable</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">return</span>
+
+    <span class="n">positive_bool</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;positive&quot;</span><span class="p">)</span>
+    <span class="n">negative_bool</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;reversed&quot;</span><span class="p">)</span>
+
+    <span class="n">positive_ext</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">positive_bool</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;p_nom_extendable&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">negative_ext</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">negative_bool</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;p_nom_extendable&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+
+    <span class="n">lhs</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;Link-p_nom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">positive_ext</span><span class="p">]</span>
+    <span class="n">rhs</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="p">[</span><span class="s2">&quot;Link-p_nom&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">negative_ext</span><span class="p">]</span>
+
+    <span class="n">n</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">add_constraints</span><span class="p">(</span><span class="n">lhs</span> <span class="o">==</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Link-transmission&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.extra_functionality" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">extra_functionality</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add supplementary constraints to the network model. <code>pypsa.linopf.network_lopf</code>.
+If you want to enforce additional custom constraints, this is a good location to add them.
+The arguments <code>opts</code> and <code>snakemake.config</code> are expected to be attached to the network.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the network object to optimize</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span>
+<span class="normal">620</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">extra_functionality</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add supplementary constraints to the network model. ``pypsa.linopf.network_lopf``.</span>
+<span class="sd">    If you want to enforce additional custom constraints, this is a good location to add them.</span>
+<span class="sd">    The arguments ``opts`` and ``snakemake.config`` are expected to be attached to the network.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the network object to optimize</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">config</span>
+    <span class="n">add_battery_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">add_transmission_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">add_chp_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;run&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_remind_coupled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding remind paid off constraints&quot;</span><span class="p">)</span>
+        <span class="n">add_remind_paid_off_constraints</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+    <span class="n">reserve</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;operational_reserve&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="k">if</span> <span class="n">reserve</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;activate&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding operational reserve margin constraints&quot;</span><span class="p">)</span>
+        <span class="n">add_operational_reserve_margin</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Added extra functionality to the network model&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.freeze_components" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">freeze_components</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;H2 turbine&#39;</span><span class="p">])</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set p_nom_extendable=False for the components in the network.
+Applies to vre_techs and conventional technologies not in the exclude list.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the network object</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>config</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the configuration dictionary</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exclude</code>
+            </td>
+            <td>
+                  <code><span title="list">list</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>list of technologies to exclude from freezing.
+Defaults to ["OCGT"]</p>
+              </div>
+            </td>
+            <td>
+                  <code>[&#39;H2 turbine&#39;]</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">freeze_components</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">exclude</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;H2 turbine&quot;</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set p_nom_extendable=False for the components in the network.</span>
+<span class="sd">    Applies to vre_techs and conventional technologies not in the exclude list.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the network object</span>
+<span class="sd">        config (dict): the configuration dictionary</span>
+<span class="sd">        exclude (list, optional): list of technologies to exclude from freezing.</span>
+<span class="sd">            Defaults to [&quot;OCGT&quot;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Freeze VRE and conventional techs</span>
+    <span class="n">freeze</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;Techs&quot;</span><span class="p">][</span><span class="s2">&quot;vre_techs&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;Techs&quot;</span><span class="p">][</span><span class="s2">&quot;conv_techs&quot;</span><span class="p">]</span>
+    <span class="n">freeze</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">freeze</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">exclude</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;coal boiler&quot;</span> <span class="ow">in</span> <span class="n">freeze</span><span class="p">:</span>
+        <span class="n">freeze</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;coal boiler central&quot;</span><span class="p">,</span> <span class="s2">&quot;coal boiler decentral&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">&quot;gas boiler&quot;</span> <span class="ow">in</span> <span class="n">freeze</span><span class="p">:</span>
+        <span class="n">freeze</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;gas boiler central&quot;</span><span class="p">,</span> <span class="s2">&quot;gas boiler decentral&quot;</span><span class="p">]</span>
+
+    <span class="c1"># very ugly -&gt; how to make more robust?</span>
+    <span class="n">to_fix</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;OCGT&quot;</span><span class="p">:</span> <span class="s2">&quot;gas OCGT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;CCGT&quot;</span><span class="p">:</span> <span class="s2">&quot;gas CCGT&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;CCGT-CCS&quot;</span><span class="p">:</span> <span class="s2">&quot;gas ccs&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;coal power plant&quot;</span><span class="p">:</span> <span class="s2">&quot;coal&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;coal-CCS&quot;</span><span class="p">:</span> <span class="s2">&quot;coal ccs&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">freeze</span> <span class="o">+=</span> <span class="p">[</span><span class="n">to_fix</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">to_fix</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">freeze</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;generators&quot;</span><span class="p">,</span> <span class="s2">&quot;links&quot;</span><span class="p">]:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;carrier in @freeze &amp; p_nom_extendable == True&quot;</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">comp</span><span class="p">)</span>
+        <span class="c1"># p_nom_max_rcl.isna(): exclude paid_off as needed</span>
+        <span class="k">if</span> <span class="s2">&quot;p_nom_max_rcl&quot;</span> <span class="ow">in</span> <span class="n">components</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">+=</span> <span class="s2">&quot; &amp; p_nom_max_rcl.isna()&quot;</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">components</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">components</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="s2">&quot;p_nom_extendable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.prepare_network" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">prepare_network</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">solve_opts</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">plan_year</span><span class="p">,</span> <span class="n">co2_pathway</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>prepare the network for the solver,
+Args:
+    n (pypsa.Network): the network object to optimize
+    solve_opts (dict): solving options
+    config (dict): the snakemake configuration dictionary
+    plan_year (int): planning horizon year for which network is solved
+    co2_pathway (str): the CO2 pathway name to use</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>pypsa.Network: network object with additional constraints</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare_network</span><span class="p">(</span>
+    <span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span> <span class="n">solve_opts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">plan_year</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">co2_pathway</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;prepare the network for the solver,</span>
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the network object to optimize</span>
+<span class="sd">        solve_opts (dict): solving options</span>
+<span class="sd">        config (dict): the snakemake configuration dictionary</span>
+<span class="sd">        plan_year (int): planning horizon year for which network is solved</span>
+<span class="sd">        co2_pathway (str): the CO2 pathway name to use</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pypsa.Network: network object with additional constraints</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">co2_opts</span> <span class="o">=</span> <span class="n">ConfigManager</span><span class="p">(</span><span class="n">config</span><span class="p">)</span><span class="o">.</span><span class="n">fetch_co2_restriction</span><span class="p">(</span><span class="n">co2_pathway</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">plan_year</span><span class="p">))</span>
+    <span class="n">add_co2_constraints_prices</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">co2_opts</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;clip_p_max_pu&quot;</span> <span class="ow">in</span> <span class="n">solve_opts</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">df</span> <span class="ow">in</span> <span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p_max_pu</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">storage_units_t</span><span class="o">.</span><span class="n">inflow</span><span class="p">):</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">df</span> <span class="o">&gt;</span> <span class="n">solve_opts</span><span class="p">[</span><span class="s2">&quot;clip_p_max_pu&quot;</span><span class="p">],</span> <span class="n">other</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># TODO duplicated with freeze components</span>
+    <span class="k">if</span> <span class="n">solve_opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;load_shedding&quot;</span><span class="p">):</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;Carrier&quot;</span><span class="p">,</span> <span class="s2">&quot;Load Shedding&quot;</span><span class="p">)</span>
+        <span class="n">buses_i</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier == &#39;AC&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="s2">&quot;Generator&quot;</span><span class="p">,</span>
+            <span class="n">buses_i</span><span class="p">,</span>
+            <span class="s2">&quot; load&quot;</span><span class="p">,</span>
+            <span class="n">bus</span><span class="o">=</span><span class="n">buses_i</span><span class="p">,</span>
+            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;Load Shedding&quot;</span><span class="p">,</span>
+            <span class="n">marginal_cost</span><span class="o">=</span><span class="n">solve_opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;voll&quot;</span><span class="p">,</span> <span class="mf">1e5</span><span class="p">),</span>  <span class="c1"># EUR/MWh</span>
+            <span class="c1"># intersect between macroeconomic and surveybased</span>
+            <span class="c1"># willingness to pay</span>
+            <span class="c1"># http://journal.frontiersin.org/article/10.3389/fenrg.2015.00055/full</span>
+            <span class="n">p_nom</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span>  <span class="c1"># MW</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">solve_opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;noisy_costs&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">iterate_components</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">one_port_components</span><span class="p">):</span>
+            <span class="c1"># if &#39;capital_cost&#39; in t.df:</span>
+            <span class="c1">#    t.df[&#39;capital_cost&#39;] += 1e1 + 2.*(np.random.random(len(t.df)) - 0.5)</span>
+            <span class="k">if</span> <span class="s2">&quot;marginal_cost&quot;</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">df</span><span class="p">:</span>
+                <span class="n">t</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;marginal_cost&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1e-2</span> <span class="o">+</span> <span class="mf">2e-3</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">df</span><span class="p">))</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">iterate_components</span><span class="p">([</span><span class="s2">&quot;Line&quot;</span><span class="p">,</span> <span class="s2">&quot;Link&quot;</span><span class="p">]):</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;capital_cost&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mf">1e-1</span> <span class="o">+</span> <span class="mf">2e-2</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">df</span><span class="p">))</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">))</span> <span class="o">*</span> <span class="n">t</span><span class="o">.</span><span class="n">df</span><span class="p">[</span>
+                <span class="s2">&quot;length&quot;</span>
+            <span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;run&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;is_remind_coupled&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;existing_capacities&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;freeze_new&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="n">freeze_components</span><span class="p">(</span>
+            <span class="n">n</span><span class="p">,</span>
+            <span class="n">config</span><span class="p">,</span>
+            <span class="n">exclude</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;existing_capacities&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;never_freeze&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">solve_opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nhours&quot;</span><span class="p">):</span>
+        <span class="n">nhours</span> <span class="o">=</span> <span class="n">solve_opts</span><span class="p">[</span><span class="s2">&quot;nhours&quot;</span><span class="p">]</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">set_snapshots</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">snapshots</span><span class="p">[:</span><span class="n">nhours</span><span class="p">])</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">snapshot_weightings</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">YEAR_HRS</span> <span class="o">/</span> <span class="n">nhours</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;existing_capacities&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;add&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">add_land_use_constraint</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">plan_year</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">n</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.set_transmission_limit" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_transmission_limit</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">n_years</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set global transimission limit constraints - adapted from pypsa-eur</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>n</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the network object</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>kind</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the kind of limit to set, either 'c' for cost or 'v' for volume or l for length</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>factor</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span> or <span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the factor to apply to the base year quantity, per year</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>n_years</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the number of years to consider for the limit. Defaults to 1.</p>
+              </div>
+            </td>
+            <td>
+                  <code>1</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_transmission_limit</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">n_years</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set global transimission limit constraints - adapted from pypsa-eur</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the network object</span>
+<span class="sd">        kind (str): the kind of limit to set, either &#39;c&#39; for cost or &#39;v&#39; for volume or l for length</span>
+<span class="sd">        factor (float or str): the factor to apply to the base year quantity, per year</span>
+<span class="sd">        n_years (int, optional): the number of years to consider for the limit. Defaults to 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Adding global transmission limit for </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2"> with factor </span><span class="si">{</span><span class="n">factor</span><span class="si">}</span><span class="s2">/year &amp; </span><span class="si">{</span><span class="n">n_years</span><span class="si">}</span><span class="s2"> years&quot;</span>
+    <span class="p">)</span>
+    <span class="n">links_dc</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier in [&#39;AC&#39;,&#39;DC&#39;]&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+    <span class="c1"># links_dc_rev = n.links.query(&quot;carrier in [&#39;AC&#39;,&#39;DC&#39;] &amp; Link.str.contains(&#39;reverse&#39;)&quot;).index</span>
+
+    <span class="n">_lines_s_nom</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">line_types</span><span class="o">.</span><span class="n">i_nom</span><span class="p">)</span>
+        <span class="o">*</span> <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">num_parallel</span>
+        <span class="o">*</span> <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">bus0</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">v_nom</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">lines_s_nom</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">_lines_s_nom</span><span class="p">)</span>
+
+    <span class="n">col</span> <span class="o">=</span> <span class="s2">&quot;capital_cost&quot;</span> <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;c&quot;</span> <span class="k">else</span> <span class="s2">&quot;length&quot;</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">lines_s_nom</span> <span class="o">@</span> <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">+</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">links_dc</span><span class="p">,</span> <span class="s2">&quot;p_nom&quot;</span><span class="p">]</span> <span class="o">@</span> <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">links_dc</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">factor</span> <span class="o">==</span> <span class="s2">&quot;opt&quot;</span> <span class="ow">or</span> <span class="nb">float</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span> <span class="o">**</span> <span class="n">n_years</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="s2">&quot;s_nom_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lines_s_nom</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="s2">&quot;s_nom_extendable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">links_dc</span><span class="p">,</span> <span class="s2">&quot;p_nom_extendable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">elif</span> <span class="nb">float</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span> <span class="o">**</span> <span class="n">n_years</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="c1"># if factor is 1.0, then we do not need to extend</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="s2">&quot;s_nom_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lines_s_nom</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="s2">&quot;s_nom_extendable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">links_dc</span><span class="p">,</span> <span class="s2">&quot;p_nom_extendable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># factor = 1 + 1e-7  # to avoid numerical issues with the constraints</span>
+
+    <span class="k">elif</span> <span class="nb">float</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span> <span class="o">**</span> <span class="n">n_years</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="s2">&quot;s_nom_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">links_dc</span><span class="p">,</span> <span class="s2">&quot;p_nom_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># n.links.loc[links_dc_rev, &quot;p_nom_min&quot;] = 0</span>
+
+    <span class="k">if</span> <span class="n">factor</span> <span class="o">!=</span> <span class="s2">&quot;opt&quot;</span><span class="p">:</span>
+        <span class="n">con_type</span> <span class="o">=</span> <span class="s2">&quot;expansion_cost&quot;</span> <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;c&quot;</span> <span class="k">else</span> <span class="s2">&quot;volume_expansion&quot;</span>
+        <span class="n">rhs</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span> <span class="o">**</span> <span class="n">n_years</span> <span class="o">*</span> <span class="n">ref</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Adding global transmission limit for </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span><span class="o">**</span><span class="n">n_years</span><span class="si">}</span><span class="s2"> current value&quot;</span>
+        <span class="p">)</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="s2">&quot;GlobalConstraint&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;l</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">_limit&quot;</span><span class="p">,</span>
+            <span class="nb">type</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;transmission_</span><span class="si">{</span><span class="n">con_type</span><span class="si">}</span><span class="s2">_limit&quot;</span><span class="p">,</span>
+            <span class="n">sense</span><span class="o">=</span><span class="s2">&quot;&lt;=&quot;</span><span class="p">,</span>
+            <span class="n">constant</span><span class="o">=</span><span class="n">rhs</span><span class="p">,</span>
+            <span class="n">carrier_attribute</span><span class="o">=</span><span class="s2">&quot;AC, DC&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="solve_network.solve_network" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">solve_network</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">solving</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>perform the optimisation
+Args:
+    n (pypsa.Network): the pypsa network object
+    config (dict): the configuration dictionary
+    solving (dict): the solving configuration dictionary
+    opts (str): optional wildcards such as ll (not used in pypsa-china)</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>pypsa.Network: the optimized network</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/solve_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span>
+<span class="normal">639</span>
+<span class="normal">640</span>
+<span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span>
+<span class="normal">667</span>
+<span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span>
+<span class="normal">672</span>
+<span class="normal">673</span>
+<span class="normal">674</span>
+<span class="normal">675</span>
+<span class="normal">676</span>
+<span class="normal">677</span>
+<span class="normal">678</span>
+<span class="normal">679</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">solve_network</span><span class="p">(</span>
+    <span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">solving</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">opts</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;perform the optimisation</span>
+<span class="sd">    Args:</span>
+<span class="sd">        n (pypsa.Network): the pypsa network object</span>
+<span class="sd">        config (dict): the configuration dictionary</span>
+<span class="sd">        solving (dict): the solving configuration dictionary</span>
+<span class="sd">        opts (str): optional wildcards such as ll (not used in pypsa-china)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pypsa.Network: the optimized network</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">set_of_options</span> <span class="o">=</span> <span class="n">solving</span><span class="p">[</span><span class="s2">&quot;solver&quot;</span><span class="p">][</span><span class="s2">&quot;options&quot;</span><span class="p">]</span>
+    <span class="n">solver_options</span> <span class="o">=</span> <span class="n">solving</span><span class="p">[</span><span class="s2">&quot;solver_options&quot;</span><span class="p">][</span><span class="n">set_of_options</span><span class="p">]</span> <span class="k">if</span> <span class="n">set_of_options</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="n">solver_name</span> <span class="o">=</span> <span class="n">solving</span><span class="p">[</span><span class="s2">&quot;solver&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+    <span class="n">cf_solving</span> <span class="o">=</span> <span class="n">solving</span><span class="p">[</span><span class="s2">&quot;options&quot;</span><span class="p">]</span>
+    <span class="n">track_iterations</span> <span class="o">=</span> <span class="n">cf_solving</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;track_iterations&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">min_iterations</span> <span class="o">=</span> <span class="n">cf_solving</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;min_iterations&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">max_iterations</span> <span class="o">=</span> <span class="n">cf_solving</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_iterations&quot;</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+    <span class="n">transmission_losses</span> <span class="o">=</span> <span class="n">cf_solving</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transmission_losses&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># add to network for extra_functionality</span>
+    <span class="n">n</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+    <span class="n">n</span><span class="o">.</span><span class="n">opts</span> <span class="o">=</span> <span class="n">opts</span>
+
+    <span class="n">skip_iterations</span> <span class="o">=</span> <span class="n">cf_solving</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;skip_iterations&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom_extendable</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="n">skip_iterations</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No expandable lines found. Skipping iterative solving.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">skip_iterations</span><span class="p">:</span>
+        <span class="n">status</span><span class="p">,</span> <span class="n">condition</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span>
+            <span class="n">solver_name</span><span class="o">=</span><span class="n">solver_name</span><span class="p">,</span>
+            <span class="n">transmission_losses</span><span class="o">=</span><span class="n">transmission_losses</span><span class="p">,</span>
+            <span class="n">extra_functionality</span><span class="o">=</span><span class="n">extra_functionality</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">solver_options</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">status</span><span class="p">,</span> <span class="n">condition</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">optimize_transmission_expansion_iteratively</span><span class="p">(</span>
+            <span class="n">solver_name</span><span class="o">=</span><span class="n">solver_name</span><span class="p">,</span>
+            <span class="n">track_iterations</span><span class="o">=</span><span class="n">track_iterations</span><span class="p">,</span>
+            <span class="n">min_iterations</span><span class="o">=</span><span class="n">min_iterations</span><span class="p">,</span>
+            <span class="n">max_iterations</span><span class="o">=</span><span class="n">max_iterations</span><span class="p">,</span>
+            <span class="n">transmission_losses</span><span class="o">=</span><span class="n">transmission_losses</span><span class="p">,</span>
+            <span class="n">extra_functionality</span><span class="o">=</span><span class="n">extra_functionality</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">solver_options</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">status</span> <span class="o">!=</span> <span class="s2">&quot;ok&quot;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Solving status &#39;</span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">&#39; with termination condition &#39;</span><span class="si">{</span><span class="n">condition</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;infeasible&quot;</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Solving status &#39;infeasible&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">n</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>

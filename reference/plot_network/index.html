@@ -1,0 +1,3626 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../plot_inputs_visualisation/">
+      
+      
+        <link rel="next" href="../plot_network_heat/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.17">
+    
+    
+      
+        <title>Plot network - PyPSA China Model (PIK edition) Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#plot_network" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PyPSA China Model (PIK edition) Documentation" class="md-header__button md-logo" aria-label="PyPSA China Model (PIK edition) Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyPSA China Model (PIK edition) Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Plot network
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PyPSA China Model (PIK edition) Documentation" class="md-nav__button md-logo" aria-label="PyPSA China Model (PIK edition) Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    PyPSA China Model (PIK edition) Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Welcome to the PyPSA-China (PIK version) documentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SUMMARY
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_brownfield/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add brownfield
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_electricity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add electricity
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_existing_baseyear/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add existing baseyear
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_biomass_potential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build biomass potential
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_cop_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build cop profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_cutout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build cutout
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_load_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build load profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_population/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build population
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_population_gridcell_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build population gridcell map
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_province_shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build province shapes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_renewable_potential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build renewable potential
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_renewable_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build renewable profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_solar_thermal_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build solar thermal profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_temperature_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build temperature profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Constants
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../determine_availability_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Determine availability matrix
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fetch_rasters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fetch rasters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fetch_shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fetch shapes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Functions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../make_summary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Make summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_heatmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot heatmap
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_input_costs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot input costs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_inputs_visualisation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot inputs visualisation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Plot network
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot network
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_network
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.add_cost_pannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_cost_pannel
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.add_energy_pannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_energy_pannel
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.plot_cost_map" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_cost_map
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.plot_energy_map" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_energy_map
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.plot_map" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_map
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.plot_nodal_prices" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_nodal_prices
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_network_heat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot network heat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_statistics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot statistics
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_summary_all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot summary all
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_time_series/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot time series
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_base_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare base network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_base_network_2020/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare base network 2020
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_existing_capacities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare existing capacities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_network_common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare network common
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Readers
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers_geospatial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Readers geospatial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solve_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solve network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solve_network_myopic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solve network myopic
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_39" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_39" id="__nav_3_39_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Remind coupling
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_39_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_39">
+            <span class="md-nav__icon md-icon"></span>
+            Remind coupling
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/disaggregate_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Disaggregate data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/generic_etl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Generic etl
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/make_pypsa_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Make pypsa config
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_network
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.add_cost_pannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_cost_pannel
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.add_energy_pannel" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_energy_pannel
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.plot_cost_map" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_cost_map
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.plot_energy_map" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_energy_map
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.plot_map" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_map
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_network.plot_nodal_prices" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_nodal_prices
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Plot network</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="plot_network"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.add_cost_pannel" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_cost_pannel</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">fig</span><span class="p">,</span> <span class="n">preferred_order</span><span class="p">,</span> <span class="n">tech_colors</span><span class="p">,</span> <span class="n">plot_additions</span><span class="p">,</span> <span class="n">ax_loc</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.28</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add a cost pannel to the figure</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>df</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the cost data to plot</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>fig</code>
+            </td>
+            <td>
+                  <code><span title="matplotlib.pyplot.Figure">Figure</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the figure object to which the cost pannel will be added</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>preferred_order</code>
+            </td>
+            <td>
+                  <code><span title="pandas.Index">Index</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>index, the order in whiich to plot</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tech_colors</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the tech colors</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>plot_additions</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>plot the additions</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ax_loc</code>
+            </td>
+            <td>
+                  <code><span title="list">list</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the location of the cost pannel.
+Defaults to [-0.09, 0.28, 0.09, 0.45].</p>
+              </div>
+            </td>
+            <td>
+                  <code>[-0.09, 0.28, 0.09, 0.45]</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_cost_pannel</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">fig</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span>
+    <span class="n">preferred_order</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span>
+    <span class="n">tech_colors</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">plot_additions</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">ax_loc</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.28</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">],</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a cost pannel to the figure</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): the cost data to plot</span>
+<span class="sd">        fig (plt.Figure): the figure object to which the cost pannel will be added</span>
+<span class="sd">        preferred_order (pd.Index): index, the order in whiich to plot</span>
+<span class="sd">        tech_colors (dict): the tech colors</span>
+<span class="sd">        plot_additions (bool): plot the additions</span>
+<span class="sd">        ax_loc (list, optional): the location of the cost pannel.</span>
+<span class="sd">            Defaults to [-0.09, 0.28, 0.09, 0.45].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ax3</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">(</span><span class="n">ax_loc</span><span class="p">)</span>
+    <span class="n">reordered</span> <span class="o">=</span> <span class="n">preferred_order</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">preferred_order</span><span class="p">))</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">tech_colors</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="c1"># Create color list with default color for missing carriers</span>
+    <span class="n">color_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">reordered</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">colors</span><span class="p">:</span>
+            <span class="n">color_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="n">k</span><span class="o">.</span><span class="n">lower</span><span class="p">()])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">color_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;lightgrey&quot;</span><span class="p">)</span>  <span class="c1"># Default color for missing carriers</span>
+
+    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">reordered</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">ax3</span><span class="p">,</span>
+        <span class="n">stacked</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">color_list</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;annualized system cost bEUR/a&quot;</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">ax3</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">(),</span> <span class="n">rotation</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.1</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">plot_additions</span><span class="p">:</span>
+        <span class="c1"># add label</span>
+        <span class="n">percent</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">df</span><span class="o">.</span><span class="n">sum</span><span class="p">()[</span><span class="s2">&quot;added&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">df</span><span class="o">.</span><span class="n">sum</span><span class="p">()[</span><span class="s2">&quot;total&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">ax3</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.85</span><span class="p">,</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sum</span><span class="p">()[</span><span class="s2">&quot;added&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">15</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">percent</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;%&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ax3</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.add_energy_pannel" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_energy_pannel</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">fig</span><span class="p">,</span> <span class="n">preferred_order</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">ax_loc</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.28</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">])</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add a cost pannel to the figure</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>df</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the statistics supply output by carrier (from plot_energy map)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>fig</code>
+            </td>
+            <td>
+                  <code><span title="matplotlib.pyplot.Figure">Figure</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the figure object to which the cost pannel will be added</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>preferred_order</code>
+            </td>
+            <td>
+                  <code><span title="pandas.Index">Index</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>index, the order in whiich to plot</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>colors</code>
+            </td>
+            <td>
+                  <code><span title="pandas.Series">Series</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the colors for the techs, with the correct index and no extra techs</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ax_loc</code>
+            </td>
+            <td>
+                  <code><span title="list">list</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the pannel location. Defaults to [-0.09, 0.28, 0.09, 0.45].</p>
+              </div>
+            </td>
+            <td>
+                  <code>[-0.09, 0.28, 0.09, 0.45]</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_energy_pannel</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">fig</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span>
+    <span class="n">preferred_order</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">,</span>
+    <span class="n">colors</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">ax_loc</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.28</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add a cost pannel to the figure</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): the statistics supply output by carrier (from plot_energy map)</span>
+<span class="sd">        fig (plt.Figure): the figure object to which the cost pannel will be added</span>
+<span class="sd">        preferred_order (pd.Index): index, the order in whiich to plot</span>
+<span class="sd">        colors (pd.Series): the colors for the techs, with the correct index and no extra techs</span>
+<span class="sd">        ax_loc (list, optional): the pannel location. Defaults to [-0.09, 0.28, 0.09, 0.45].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ax3</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">(</span><span class="n">ax_loc</span><span class="p">)</span>
+    <span class="n">reordered</span> <span class="o">=</span> <span class="n">preferred_order</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">preferred_order</span><span class="p">))</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span> <span class="o">/</span> <span class="n">PLOT_SUPPLY_UNITS</span>
+    <span class="c1"># only works if colors has correct index</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">reordered</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;bar&quot;</span><span class="p">,</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">ax3</span><span class="p">,</span>
+        <span class="n">stacked</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">reordered</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="n">ax3</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Electricity supply [TWh]&quot;</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">ax3</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">(),</span> <span class="n">rotation</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+    <span class="n">ax3</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.1</span><span class="p">])</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.plot_cost_map" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot_cost_map</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">base_year</span><span class="o">=</span><span class="mi">2020</span><span class="p">,</span> <span class="n">plot_additions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">capex_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cost_pannel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Plot the cost of each node on a map as well as the line capacities</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>network</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the network object</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>opts</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the plotting config (snakemake.config["plotting"])</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>base_year</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the base year (for cost delta). Defaults to 2020.</p>
+              </div>
+            </td>
+            <td>
+                  <code>2020</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>capex_only</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>do not plot VOM (FOM is in CAPEX). Defaults to False.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>plot_additions</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>plot a map of investments (p_nom_opt vs p_nom).
+  Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>cost_pannel</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>add a bar graph with costs. Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_path</code>
+            </td>
+            <td>
+                  <code><span title="os.PathLike">PathLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>save figure to path (or not if None). Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>raises:
+    ValueError: if plot_additions and not capex_only</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_cost_map</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">opts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">base_year</span><span class="o">=</span><span class="mi">2020</span><span class="p">,</span>
+    <span class="n">plot_additions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">capex_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">cost_pannel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the cost of each node on a map as well as the line capacities</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        network (pypsa.Network): the network object</span>
+<span class="sd">        opts (dict): the plotting config (snakemake.config[&quot;plotting&quot;])</span>
+<span class="sd">        base_year (int, optional): the base year (for cost delta). Defaults to 2020.</span>
+<span class="sd">        capex_only (bool, optional): do not plot VOM (FOM is in CAPEX). Defaults to False.</span>
+<span class="sd">        plot_additions (bool, optional): plot a map of investments (p_nom_opt vs p_nom).</span>
+<span class="sd">              Defaults to True.</span>
+<span class="sd">        cost_pannel (bool, optional): add a bar graph with costs. Defaults to True.</span>
+<span class="sd">        save_path (os.PathLike, optional): save figure to path (or not if None). Defaults to None.</span>
+<span class="sd">    raises:</span>
+<span class="sd">        ValueError: if plot_additions and not capex_only</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">plot_additions</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">capex_only</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot plot additions without capex only&quot;</span><span class="p">)</span>
+
+    <span class="n">tech_colors</span> <span class="o">=</span> <span class="n">make_nice_tech_colors</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;tech_colors&quot;</span><span class="p">],</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;nice_names&quot;</span><span class="p">])</span>
+
+    <span class="c1"># TODO scale edges by cost from capex summary</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_link_plot_width</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span> <span class="n">additions</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">length</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">row</span><span class="o">.</span><span class="n">carrier</span> <span class="o">!=</span> <span class="n">carrier</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">row</span><span class="o">.</span><span class="n">plottable</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">additions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">p_nom</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">p_nom_opt</span>
+
+    <span class="c1"># ============ === Stats by bus ===</span>
+    <span class="c1"># calc costs &amp; sum over component types to keep bus &amp; carrier (remove no loc)</span>
+    <span class="n">costs</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">capex</span><span class="p">(</span><span class="n">groupby</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="s2">&quot;carrier&quot;</span><span class="p">])</span>
+    <span class="n">costs</span> <span class="o">=</span> <span class="n">costs</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s2">&quot;&quot;</span> <span class="ow">in</span> <span class="n">costs</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="n">costs</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># we miss some buses by grouping epr location, fill w 0s</span>
+    <span class="n">bus_idx</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">([</span><span class="n">network</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;AC&quot;</span><span class="p">]])</span>
+    <span class="n">costs</span> <span class="o">=</span> <span class="n">costs</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">bus_idx</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">index</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># add marginal (excluding quasi fixed) to costs if desired</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">capex_only</span><span class="p">:</span>
+        <span class="n">opex</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">opex</span><span class="p">(</span><span class="n">groupby</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="s2">&quot;carrier&quot;</span><span class="p">])</span>
+        <span class="n">opex</span> <span class="o">=</span> <span class="n">opex</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">cost_pies</span> <span class="o">=</span> <span class="n">costs</span> <span class="o">+</span> <span class="n">opex</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># === make map components: pies and edges</span>
+    <span class="n">cost_pies</span> <span class="o">=</span> <span class="n">costs</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">cost_pies</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;bus&quot;</span><span class="p">,</span> <span class="s2">&quot;carrier&quot;</span><span class="p">]</span>
+    <span class="n">carriers</span> <span class="o">=</span> <span class="n">cost_pies</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+    <span class="c1"># map edges</span>
+    <span class="n">link_plot_w</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">calc_link_plot_width</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom_opt</span><span class="p">,</span> <span class="n">link_plot_w</span><span class="p">])</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">line_lower_threshold</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;min_edge_capacity&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">edge_widths</span> <span class="o">=</span> <span class="n">edges</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">line_lower_threshold</span><span class="p">,</span> <span class="n">edges</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">line_lower_threshold</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># === Additions ===</span>
+    <span class="c1"># for pathways sometimes interested in additions from last time step</span>
+    <span class="k">if</span> <span class="n">plot_additions</span><span class="p">:</span>
+        <span class="n">installed</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">installed_capex</span><span class="p">(</span><span class="n">groupby</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="s2">&quot;carrier&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="n">costs_additional</span> <span class="o">=</span> <span class="n">costs</span> <span class="o">-</span> <span class="n">installed</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">cost_pies_additional</span> <span class="o">=</span> <span class="n">costs_additional</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">cost_pies_additional</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;bus&quot;</span><span class="p">,</span> <span class="s2">&quot;carrier&quot;</span><span class="p">]</span>
+
+        <span class="n">link_additions</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">calc_link_plot_width</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span> <span class="n">additions</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="n">added_links</span> <span class="o">=</span> <span class="n">link_plot_w</span> <span class="o">-</span> <span class="n">link_additions</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">link_plot_w</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">added_lines</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom_opt</span> <span class="o">-</span> <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span>
+            <span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span>
+        <span class="p">)</span>
+        <span class="n">edge_widths_added</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">added_links</span><span class="p">,</span> <span class="n">added_lines</span><span class="p">])</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+        <span class="c1"># add to carrier types</span>
+        <span class="n">carriers</span> <span class="o">=</span> <span class="n">carriers</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">cost_pies_additional</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+
+    <span class="n">preferred_order</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;preferred_order&quot;</span><span class="p">])</span>
+    <span class="n">carriers</span> <span class="o">=</span> <span class="n">carriers</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="c1"># Make figure with right number of pannels</span>
+    <span class="k">if</span> <span class="n">plot_additions</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">ax1</span><span class="p">,</span> <span class="n">ax2</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;cost_map&quot;</span><span class="p">][</span><span class="s2">&quot;figsize_w_additions&quot;</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;cost_map&quot;</span><span class="p">][</span><span class="s2">&quot;figsize&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Add the total costs</span>
+    <span class="n">bus_size_factor</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;cost_map&quot;</span><span class="p">][</span><span class="s2">&quot;bus_size_factor&quot;</span><span class="p">]</span>
+    <span class="n">linewidth_factor</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;cost_map&quot;</span><span class="p">][</span><span class="s2">&quot;linewidth_factor&quot;</span><span class="p">]</span>
+
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_map</span><span class="p">(</span>
+        <span class="n">network</span><span class="p">,</span>
+        <span class="n">tech_colors</span><span class="o">=</span><span class="n">tech_colors</span><span class="p">,</span>
+        <span class="n">edge_widths</span><span class="o">=</span><span class="n">edge_widths</span> <span class="o">/</span> <span class="n">linewidth_factor</span><span class="p">,</span>
+        <span class="n">bus_colors</span><span class="o">=</span><span class="n">tech_colors</span><span class="p">,</span>
+        <span class="n">bus_sizes</span><span class="o">=</span><span class="n">cost_pies</span> <span class="o">/</span> <span class="n">bus_size_factor</span><span class="p">,</span>
+        <span class="n">edge_colors</span><span class="o">=</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;cost_map&quot;</span><span class="p">][</span><span class="s2">&quot;edge_color&quot;</span><span class="p">],</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">ax1</span><span class="p">,</span>
+        <span class="n">add_legend</span><span class="o">=</span><span class="ow">not</span> <span class="n">plot_additions</span><span class="p">,</span>
+        <span class="n">bus_ref_title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;System costs</span><span class="si">{</span><span class="s1">&#39; (CAPEX)&#39;</span><span class="k">if</span><span class="w"> </span><span class="n">capex_only</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;cost_map&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># TODO check edges is working</span>
+    <span class="c1"># Add the added pathway costs</span>
+    <span class="k">if</span> <span class="n">plot_additions</span><span class="p">:</span>
+        <span class="n">ax2</span> <span class="o">=</span> <span class="n">plot_map</span><span class="p">(</span>
+            <span class="n">network</span><span class="p">,</span>
+            <span class="n">tech_colors</span><span class="o">=</span><span class="n">tech_colors</span><span class="p">,</span>
+            <span class="n">edge_widths</span><span class="o">=</span><span class="n">edge_widths_added</span> <span class="o">/</span> <span class="n">linewidth_factor</span><span class="p">,</span>
+            <span class="n">bus_colors</span><span class="o">=</span><span class="n">tech_colors</span><span class="p">,</span>
+            <span class="n">bus_sizes</span><span class="o">=</span><span class="n">cost_pies_additional</span> <span class="o">/</span> <span class="n">bus_size_factor</span><span class="p">,</span>
+            <span class="n">edge_colors</span><span class="o">=</span><span class="s2">&quot;rosybrown&quot;</span><span class="p">,</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">ax2</span><span class="p">,</span>
+            <span class="n">bus_ref_title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Added costs</span><span class="si">{</span><span class="s1">&#39; (CAPEX)&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">capex_only</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">add_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;cost_map&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Add the optional cost pannel</span>
+    <span class="k">if</span> <span class="n">cost_pannel</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">])</span>
+        <span class="n">df</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">capex</span><span class="p">(</span><span class="n">nice_names</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">capex_only</span><span class="p">:</span>
+            <span class="n">df</span><span class="p">[</span><span class="s2">&quot;opex&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">opex</span><span class="p">(</span><span class="n">nice_names</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="s2">&quot;capex&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">plot_additions</span><span class="p">:</span>
+            <span class="n">df</span><span class="p">[</span><span class="s2">&quot;added&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">df</span><span class="p">[</span><span class="s2">&quot;total&quot;</span><span class="p">]</span>
+                <span class="o">-</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">installed_capex</span><span class="p">(</span><span class="n">nice_names</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="p">)</span>
+
+        <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span> <span class="o">/</span> <span class="n">PLOT_COST_UNITS</span>
+        <span class="c1"># TODO decide discount</span>
+        <span class="c1"># df = df / (1 + discount_rate) ** (int(planning_horizon) - base_year)</span>
+        <span class="n">ax3</span> <span class="o">=</span> <span class="n">add_cost_pannel</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">,</span>
+            <span class="n">fig</span><span class="p">,</span>
+            <span class="n">preferred_order</span><span class="p">,</span>
+            <span class="n">tech_colors</span><span class="p">,</span>
+            <span class="n">plot_additions</span><span class="p">,</span>
+            <span class="n">ax_loc</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.28</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="c1"># Set x-label angle to 45 degrees for better readability</span>
+        <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">ax3</span><span class="o">.</span><span class="n">get_xticklabels</span><span class="p">():</span>
+            <span class="n">label</span><span class="o">.</span><span class="n">set_rotation</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;cost_map&quot;</span><span class="p">][</span><span class="sa">f</span><span class="s2">&quot;figsize</span><span class="si">{</span><span class="s1">&#39;_w_additions&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">plot_additions</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">save_path</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">save_path</span><span class="p">,</span> <span class="n">transparent</span><span class="o">=</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;transparent&quot;</span><span class="p">],</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">&quot;tight&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.plot_energy_map" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot_energy_map</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">energy_pannel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">carrier</span><span class="o">=</span><span class="s1">&#39;AC&#39;</span><span class="p">,</span> <span class="n">plot_ac_imports</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_batteries</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Generator&#39;</span><span class="p">,</span> <span class="s1">&#39;Link&#39;</span><span class="p">])</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>A map plot of energy, either AC or heat</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>network</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the pyPSA network object</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>opts</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the plotting options (snakemake.config["plotting"])</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>energy_pannel</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>add an anergy pie to the left. Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_path</code>
+            </td>
+            <td>
+                  <code><span title="os.PathLike">PathLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Fig outp path. Defaults to None (no save).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>carrier</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the energy carrier. Defaults to "AC".</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;AC&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>plot_ac_imports</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>plot electricity imports. Defaults to False.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exclude_batteries</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>exclude battery dischargers from the supply pie.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>components</code>
+            </td>
+            <td>
+                  <code><span title="list">list</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the components to plot. Defaults to ["Generator", "Link"].</p>
+              </div>
+            </td>
+            <td>
+                  <code>[&#39;Generator&#39;, &#39;Link&#39;]</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>raises:
+    ValueError: if carrier is not AC or heat</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_energy_map</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">opts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">energy_pannel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span>
+    <span class="n">plot_ac_imports</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_batteries</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">components</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Generator&quot;</span><span class="p">,</span> <span class="s2">&quot;Link&quot;</span><span class="p">],</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A map plot of energy, either AC or heat</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        network (pypsa.Network): the pyPSA network object</span>
+<span class="sd">        opts (dict): the plotting options (snakemake.config[&quot;plotting&quot;])</span>
+<span class="sd">        energy_pannel (bool, optional): add an anergy pie to the left. Defaults to True.</span>
+<span class="sd">        save_path (os.PathLike, optional): Fig outp path. Defaults to None (no save).</span>
+<span class="sd">        carrier (str, optional): the energy carrier. Defaults to &quot;AC&quot;.</span>
+<span class="sd">        plot_ac_imports (bool, optional): plot electricity imports. Defaults to False.</span>
+<span class="sd">        exclude_batteries (bool, optional): exclude battery dischargers from the supply pie.</span>
+<span class="sd">        components (list, optional): the components to plot. Defaults to [&quot;Generator&quot;, &quot;Link&quot;].</span>
+<span class="sd">    raises:</span>
+<span class="sd">        ValueError: if carrier is not AC or heat</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">carrier</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span> <span class="s2">&quot;heat&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Carrier must be either &#39;AC&#39; or &#39;heat&#39;&quot;</span><span class="p">)</span>
+
+    <span class="c1"># make the statistics. Buses not assigned to a region will be included</span>
+    <span class="c1"># if they are linked to a region (e.g. turbine link w carrier = hydroelectricity)</span>
+    <span class="n">energy_supply</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">supply</span><span class="p">(</span>
+        <span class="n">groupby</span><span class="o">=</span><span class="n">get_location_and_carrier</span><span class="p">,</span>
+        <span class="n">bus_carrier</span><span class="o">=</span><span class="n">carrier</span><span class="p">,</span>
+        <span class="n">comps</span><span class="o">=</span><span class="n">components</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># get rid of components</span>
+    <span class="n">supply_pies</span> <span class="o">=</span> <span class="n">energy_supply</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="c1"># TODO fix  this for heat</span>
+    <span class="c1"># # calc costs &amp; sum over component types to keep bus &amp; carrier (remove no loc)</span>
+    <span class="c1"># energy_supply = network.statistics.capex(groupby=[&quot;location&quot;, &quot;carrier&quot;])</span>
+    <span class="c1"># energy_supply = energy_supply.groupby(level=[1, 2]).sum().drop(&quot;&quot;)</span>
+    <span class="c1"># # we miss some buses by grouping epr location, fill w 0s</span>
+    <span class="c1"># bus_idx = pd.MultiIndex.from_product([network.buses.index, [&quot;AC&quot;]])</span>
+    <span class="c1"># supply_pies = energy_supply.reindex(bus_idx.union(energy_supply.index), fill_value=0)</span>
+
+    <span class="c1"># remove imports from supply pies</span>
+    <span class="k">if</span> <span class="n">carrier</span> <span class="o">==</span> <span class="s2">&quot;AC&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">plot_ac_imports</span><span class="p">:</span>
+        <span class="n">supply_pies</span> <span class="o">=</span> <span class="n">supply_pies</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">supply_pies</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;AC&quot;</span><span class="p">]</span>
+
+    <span class="c1"># TODO aggregate costs below threshold into &quot;other&quot; -&gt; requires messing with network</span>
+    <span class="c1"># network.add(&quot;Carrier&quot;, &quot;Other&quot;)</span>
+
+    <span class="c1"># get all carrier types</span>
+    <span class="n">carriers_list</span> <span class="o">=</span> <span class="n">supply_pies</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+    <span class="n">carriers_list</span> <span class="o">=</span> <span class="n">carriers_list</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+    <span class="c1"># TODO make line handling nicer</span>
+    <span class="n">line_lower_threshold</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;min_edge_capacity&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+    <span class="c1"># Make figur</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;energy_map&quot;</span><span class="p">][</span><span class="s2">&quot;figsize&quot;</span><span class="p">])</span>
+    <span class="c1"># get colors</span>
+    <span class="n">bus_colors</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">nice_name</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">carriers_list</span><span class="p">),</span> <span class="s2">&quot;color&quot;</span><span class="p">]</span>
+    <span class="n">bus_colors</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;nice_names&quot;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">preferred_order</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;preferred_order&quot;</span><span class="p">])</span>
+    <span class="n">reordered</span> <span class="o">=</span> <span class="n">preferred_order</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">bus_colors</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">bus_colors</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">preferred_order</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="c1"># TODO there&#39;sa  problem with network colors when using heat, pies aren&#39;t grouped by location</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">colors</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;nice_names&quot;</span><span class="p">])</span>
+    <span class="n">tech_colors</span> <span class="o">=</span> <span class="n">make_nice_tech_colors</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;tech_colors&quot;</span><span class="p">],</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;nice_names&quot;</span><span class="p">])</span>
+
+    <span class="c1"># make sure plot isnt overpopulated</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_link_plot_width</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">length</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">row</span><span class="o">.</span><span class="n">carrier</span> <span class="o">!=</span> <span class="n">carrier</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">row</span><span class="o">.</span><span class="n">plottable</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">p_nom_opt</span>
+
+    <span class="n">edge_carrier</span> <span class="o">=</span> <span class="s2">&quot;H2 pipeline&quot;</span> <span class="k">if</span> <span class="n">carrier</span> <span class="o">==</span> <span class="s2">&quot;heat&quot;</span> <span class="k">else</span> <span class="s2">&quot;AC&quot;</span>
+    <span class="n">link_plot_w</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">calc_link_plot_width</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">edge_carrier</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom_opt</span><span class="p">,</span> <span class="n">link_plot_w</span><span class="p">])</span>
+    <span class="n">edge_widths</span> <span class="o">=</span> <span class="n">edges</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">line_lower_threshold</span><span class="p">,</span> <span class="n">edges</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">line_lower_threshold</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">opts_plot</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;energy_map&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">carrier</span> <span class="o">==</span> <span class="s2">&quot;heat&quot;</span><span class="p">:</span>
+        <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;ref_bus_sizes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;ref_bus_sizes_heat&quot;</span><span class="p">]</span>
+        <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;ref_edge_sizes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;ref_edge_sizes_heat&quot;</span><span class="p">]</span>
+        <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;linewidth_factor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;linewidth_factor_heat&quot;</span><span class="p">]</span>
+        <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;bus_size_factor&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;bus_size_factor_heat&quot;</span><span class="p">]</span>
+    <span class="c1"># exclude battery dischargers from bus sizes</span>
+    <span class="k">if</span> <span class="n">exclude_batteries</span><span class="p">:</span>
+        <span class="n">bus_sizes</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">supply_pies</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">supply_pies</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;battery&quot;</span><span class="p">)]</span>
+            <span class="o">/</span> <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;bus_size_factor&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">bus_sizes</span> <span class="o">=</span> <span class="n">supply_pies</span> <span class="o">/</span> <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;bus_size_factor&quot;</span><span class="p">]</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">plot_map</span><span class="p">(</span>
+        <span class="n">network</span><span class="p">,</span>
+        <span class="n">tech_colors</span><span class="o">=</span><span class="n">tech_colors</span><span class="p">,</span>  <span class="c1"># colors.to_dict(),</span>
+        <span class="n">edge_widths</span><span class="o">=</span><span class="n">edge_widths</span> <span class="o">/</span> <span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;linewidth_factor&quot;</span><span class="p">],</span>
+        <span class="n">bus_colors</span><span class="o">=</span><span class="n">bus_colors</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">reordered</span><span class="p">],</span>
+        <span class="n">bus_sizes</span><span class="o">=</span><span class="n">bus_sizes</span><span class="p">,</span>
+        <span class="n">edge_colors</span><span class="o">=</span><span class="n">opts_plot</span><span class="p">[</span><span class="s2">&quot;edge_color&quot;</span><span class="p">],</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+        <span class="n">edge_unit_conv</span><span class="o">=</span><span class="n">PLOT_CAP_UNITS</span><span class="p">,</span>
+        <span class="n">bus_unit_conv</span><span class="o">=</span><span class="n">PLOT_SUPPLY_UNITS</span><span class="p">,</span>
+        <span class="n">add_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">opts_plot</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># # Add the optional cost pannel</span>
+    <span class="k">if</span> <span class="n">energy_pannel</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">supply_pies</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">add_energy_pannel</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">fig</span><span class="p">,</span> <span class="n">preferred_order</span><span class="p">,</span> <span class="n">bus_colors</span><span class="p">,</span> <span class="n">ax_loc</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.28</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">])</span>
+
+    <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">save_path</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">save_path</span><span class="p">,</span> <span class="n">transparent</span><span class="o">=</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;transparent&quot;</span><span class="p">],</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">&quot;tight&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.plot_map" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot_map</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">tech_colors</span><span class="p">,</span> <span class="n">edge_widths</span><span class="p">,</span> <span class="n">bus_colors</span><span class="p">,</span> <span class="n">bus_sizes</span><span class="p">,</span> <span class="n">edge_colors</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">add_ref_edge_sizes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">add_ref_bus_sizes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">add_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bus_unit_conv</span><span class="o">=</span><span class="n">PLOT_COST_UNITS</span><span class="p">,</span> <span class="n">edge_unit_conv</span><span class="o">=</span><span class="n">PLOT_CAP_UNITS</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Plot the network on a map</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>network</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the pypsa network (filtered to contain only relevant buses &amp; links)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tech_colors</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>config mapping</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>edge_colors</code>
+            </td>
+            <td>
+                  <code><span title="pandas.Series">Series</span> | <span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the series of edge colors</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;black&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>edge_widths</code>
+            </td>
+            <td>
+                  <code><span title="pandas.Series">Series</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the edge widths</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bus_colors</code>
+            </td>
+            <td>
+                  <code><span title="pandas.Series">Series</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the series of bus colors</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>bus_sizes</code>
+            </td>
+            <td>
+                  <code><span title="pandas.Series">Series</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the series of bus sizes</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>add_ref_edge_sizes</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>add reference line sizes in legend
+(requires edge_colors=True). Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>add_ref_bus_sizes</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>add reference bus sizes in legend.
+Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ax</code>
+            </td>
+            <td>
+                  <code><span title="matplotlib.pyplot.Axes">Axes</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the plotting ax. Defaults to None (new figure).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_map</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">tech_colors</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">edge_widths</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">bus_colors</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">bus_sizes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
+    <span class="n">edge_colors</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+    <span class="n">add_ref_edge_sizes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">add_ref_bus_sizes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">add_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">bus_unit_conv</span><span class="o">=</span><span class="n">PLOT_COST_UNITS</span><span class="p">,</span>
+    <span class="n">edge_unit_conv</span><span class="o">=</span><span class="n">PLOT_CAP_UNITS</span><span class="p">,</span>
+    <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the network on a map</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        network (pypsa.Network): the pypsa network (filtered to contain only relevant buses &amp; links)</span>
+<span class="sd">        tech_colors (dict): config mapping</span>
+<span class="sd">        edge_colors (pd.Series|str): the series of edge colors</span>
+<span class="sd">        edge_widths (pd.Series): the edge widths</span>
+<span class="sd">        bus_colors (pd.Series): the series of bus colors</span>
+<span class="sd">        bus_sizes (pd.Series): the series of bus sizes</span>
+<span class="sd">        add_ref_edge_sizes (bool, optional): add reference line sizes in legend</span>
+<span class="sd">            (requires edge_colors=True). Defaults to True.</span>
+<span class="sd">        add_ref_bus_sizes (bool, optional): add reference bus sizes in legend.</span>
+<span class="sd">            Defaults to True.</span>
+<span class="sd">        ax (plt.Axes, optional): the plotting ax. Defaults to None (new figure).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ax</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_figure</span><span class="p">()</span>
+
+    <span class="n">network</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">bus_sizes</span><span class="o">=</span><span class="n">bus_sizes</span><span class="p">,</span>
+        <span class="n">bus_colors</span><span class="o">=</span><span class="n">bus_colors</span><span class="p">,</span>
+        <span class="n">line_colors</span><span class="o">=</span><span class="n">edge_colors</span><span class="p">,</span>
+        <span class="n">link_colors</span><span class="o">=</span><span class="n">edge_colors</span><span class="p">,</span>
+        <span class="n">line_widths</span><span class="o">=</span><span class="n">edge_widths</span><span class="p">,</span>
+        <span class="n">link_widths</span><span class="o">=</span><span class="n">edge_widths</span><span class="p">,</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+        <span class="n">color_geomap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">boundaries</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;boundaries&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">cfeature</span><span class="o">.</span><span class="n">BORDERS</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">)</span>
+    <span class="n">states_provinces</span> <span class="o">=</span> <span class="n">cfeature</span><span class="o">.</span><span class="n">NaturalEarthFeature</span><span class="p">(</span>
+        <span class="n">category</span><span class="o">=</span><span class="s2">&quot;cultural&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;admin_1_states_provinces_lines&quot;</span><span class="p">,</span>
+        <span class="n">scale</span><span class="o">=</span><span class="s2">&quot;50m&quot;</span><span class="p">,</span>
+        <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Add our states feature.</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="n">states_provinces</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;lightgray&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">add_legend</span><span class="p">:</span>
+        <span class="n">carriers</span> <span class="o">=</span> <span class="n">bus_sizes</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+        <span class="c1"># Ensure all carriers have colors, use default color for missing ones</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">carriers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">tech_colors</span><span class="p">:</span>
+                <span class="n">colors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tech_colors</span><span class="p">[</span><span class="n">carrier</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">colors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;lightgrey&quot;</span><span class="p">)</span>  <span class="c1"># Default color for missing carriers</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">edge_colors</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">colors</span> <span class="o">+=</span> <span class="p">[</span><span class="n">edge_colors</span><span class="p">]</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="n">carriers</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;HVDC or HVAC link&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">colors</span> <span class="o">+=</span> <span class="n">edge_colors</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="n">carriers</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span> <span class="o">+</span> <span class="n">edge_colors</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+        <span class="n">leg_opt</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">1.42</span><span class="p">,</span> <span class="mf">1.04</span><span class="p">),</span> <span class="s2">&quot;frameon&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+        <span class="n">add_legend_patches</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">legend_kw</span><span class="o">=</span><span class="n">leg_opt</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">add_ref_edge_sizes</span> <span class="o">&amp;</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">edge_colors</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">ref_unit</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ref_edge_unit&quot;</span><span class="p">,</span> <span class="s2">&quot;GW&quot;</span><span class="p">)</span>
+        <span class="n">size_factor</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;linewidth_factor&quot;</span><span class="p">,</span> <span class="mf">1e5</span><span class="p">))</span>
+        <span class="n">ref_sizes</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ref_edge_sizes&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mf">1e5</span><span class="p">,</span> <span class="mf">5e5</span><span class="p">])</span>
+
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">/</span><span class="n">edge_unit_conv</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">ref_unit</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ref_sizes</span><span class="p">]</span>
+        <span class="n">ref_sizes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">size_factor</span><span class="p">,</span> <span class="n">ref_sizes</span><span class="p">))</span>
+        <span class="n">legend_kw</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">,</span>
+            <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mf">0.26</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+            <span class="n">frameon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">labelspacing</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+            <span class="n">handletextpad</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;edge_ref_title&quot;</span><span class="p">,</span> <span class="s2">&quot;Grid cap.&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">add_legend_lines</span><span class="p">(</span>
+            <span class="n">ax</span><span class="p">,</span> <span class="n">ref_sizes</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">patch_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">edge_colors</span><span class="p">),</span> <span class="n">legend_kw</span><span class="o">=</span><span class="n">legend_kw</span>
+        <span class="p">)</span>
+
+    <span class="c1"># add reference bus sizes ferom the units</span>
+    <span class="k">if</span> <span class="n">add_ref_bus_sizes</span><span class="p">:</span>
+        <span class="n">ref_unit</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ref_bus_unit&quot;</span><span class="p">,</span> <span class="s2">&quot;bEUR/a&quot;</span><span class="p">)</span>
+        <span class="n">size_factor</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bus_size_factor&quot;</span><span class="p">,</span> <span class="mf">1e10</span><span class="p">))</span>
+        <span class="n">ref_sizes</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ref_bus_sizes&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mf">2e10</span><span class="p">,</span> <span class="mf">1e10</span><span class="p">,</span> <span class="mf">5e10</span><span class="p">])</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="o">/</span><span class="n">bus_unit_conv</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">ref_unit</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">ref_sizes</span><span class="p">]</span>
+        <span class="n">ref_sizes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">size_factor</span><span class="p">,</span> <span class="n">ref_sizes</span><span class="p">))</span>
+
+        <span class="n">legend_kw</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;loc&quot;</span><span class="p">:</span> <span class="s2">&quot;upper left&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;bbox_to_anchor&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+            <span class="s2">&quot;labelspacing&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+            <span class="s2">&quot;frameon&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;handletextpad&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bus_ref_title&quot;</span><span class="p">,</span> <span class="s2">&quot;UNDEFINED TITLE&quot;</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="n">add_legend_circles</span><span class="p">(</span>
+            <span class="n">ax</span><span class="p">,</span>
+            <span class="n">ref_sizes</span><span class="p">,</span>
+            <span class="n">labels</span><span class="p">,</span>
+            <span class="n">srid</span><span class="o">=</span><span class="n">network</span><span class="o">.</span><span class="n">srid</span><span class="p">,</span>
+            <span class="n">patch_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;lightgrey&quot;</span><span class="p">),</span>
+            <span class="n">legend_kw</span><span class="o">=</span><span class="n">legend_kw</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">ax</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_network.plot_nodal_prices" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot_nodal_prices</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">carrier</span><span class="o">=</span><span class="s1">&#39;AC&#39;</span><span class="p">,</span> <span class="n">save_path</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>A map plot of energy, either AC or heat</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>network</code>
+            </td>
+            <td>
+                  <code><span title="pypsa.Network">Network</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the pyPSA network object</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>opts</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the plotting options (snakemake.config["plotting"])</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_path</code>
+            </td>
+            <td>
+                  <code><span title="os.PathLike">PathLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Fig outp path. Defaults to None (no save).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>carrier</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the energy carrier. Defaults to "AC".</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;AC&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>raises:
+    ValueError: if carrier is not AC or heat</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_network.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span>
+<span class="normal">617</span>
+<span class="normal">618</span>
+<span class="normal">619</span>
+<span class="normal">620</span>
+<span class="normal">621</span>
+<span class="normal">622</span>
+<span class="normal">623</span>
+<span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_nodal_prices</span><span class="p">(</span>
+    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+    <span class="n">opts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+    <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A map plot of energy, either AC or heat</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        network (pypsa.Network): the pyPSA network object</span>
+<span class="sd">        opts (dict): the plotting options (snakemake.config[&quot;plotting&quot;])</span>
+<span class="sd">        save_path (os.PathLike, optional): Fig outp path. Defaults to None (no save).</span>
+<span class="sd">        carrier (str, optional): the energy carrier. Defaults to &quot;AC&quot;.</span>
+<span class="sd">    raises:</span>
+<span class="sd">        ValueError: if carrier is not AC or heat</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">carrier</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span> <span class="s2">&quot;heat&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Carrier must be either &#39;AC&#39; or &#39;heat&#39;&quot;</span><span class="p">)</span>
+
+    <span class="c1"># demand weighed prices per node</span>
+    <span class="n">nodal_prices</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">revenue</span><span class="p">(</span>
+            <span class="n">groupby</span><span class="o">=</span><span class="n">pypsa</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">get_bus_and_carrier_and_bus_carrier</span><span class="p">,</span>
+            <span class="n">comps</span><span class="o">=</span><span class="s2">&quot;Load&quot;</span><span class="p">,</span>
+            <span class="n">bus_carrier</span><span class="o">=</span><span class="n">carrier</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="o">/</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">withdrawal</span><span class="p">(</span>
+            <span class="n">comps</span><span class="o">=</span><span class="s2">&quot;Load&quot;</span><span class="p">,</span>
+            <span class="n">groupby</span><span class="o">=</span><span class="n">pypsa</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">get_bus_and_carrier_and_bus_carrier</span><span class="p">,</span>
+            <span class="n">bus_carrier</span><span class="o">=</span><span class="n">carrier</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="o">*</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="p">)</span>
+    <span class="c1"># drop the carrier and bus_carrier, map to colors</span>
+    <span class="n">nodal_prices</span> <span class="o">=</span> <span class="n">nodal_prices</span><span class="o">.</span><span class="n">droplevel</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">droplevel</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">nodal_prices</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">vmax</span><span class="o">=</span><span class="n">nodal_prices</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s2">&quot;plasma&quot;</span><span class="p">)</span>
+    <span class="n">bus_colors</span> <span class="o">=</span> <span class="n">nodal_prices</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">cmap</span><span class="p">(</span><span class="n">norm</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
+
+    <span class="n">energy_consum</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">withdrawal</span><span class="p">(</span>
+        <span class="n">groupby</span><span class="o">=</span><span class="n">pypsa</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">get_bus_and_carrier</span><span class="p">,</span>
+        <span class="n">bus_carrier</span><span class="o">=</span><span class="n">carrier</span><span class="p">,</span>
+        <span class="n">comps</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Load&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">consum_pies</span> <span class="o">=</span> <span class="n">energy_consum</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="c1"># Make figure</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="n">ccrs</span><span class="o">.</span><span class="n">PlateCarree</span><span class="p">()})</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;price_map&quot;</span><span class="p">][</span><span class="s2">&quot;figsize&quot;</span><span class="p">])</span>
+    <span class="c1"># get colors</span>
+
+    <span class="c1"># TODO make line handling nicer</span>
+    <span class="c1"># make sure plot isnt overpopulated</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_plot_width</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">length</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">row</span><span class="o">.</span><span class="n">carrier</span> <span class="o">!=</span> <span class="n">carrier</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">row</span><span class="o">.</span><span class="n">p_nom_opt</span>
+
+    <span class="n">line_lower_threshold</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;min_edge_capacity&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+    <span class="n">edge_carrier</span> <span class="o">=</span> <span class="s2">&quot;H2&quot;</span> <span class="k">if</span> <span class="n">carrier</span> <span class="o">==</span> <span class="s2">&quot;heat&quot;</span> <span class="k">else</span> <span class="s2">&quot;AC&quot;</span>
+    <span class="n">link_plot_w</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">calc_plot_width</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">edge_carrier</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">network</span><span class="o">.</span><span class="n">lines</span><span class="o">.</span><span class="n">s_nom_opt</span><span class="p">,</span> <span class="n">link_plot_w</span><span class="p">])</span>
+    <span class="n">edge_widths</span> <span class="o">=</span> <span class="n">edges</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">line_lower_threshold</span><span class="p">,</span> <span class="n">edges</span><span class="o">.</span><span class="n">max</span><span class="p">())</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">line_lower_threshold</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">bus_size_factor</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;price_map&quot;</span><span class="p">][</span><span class="s2">&quot;bus_size_factor&quot;</span><span class="p">]</span>
+    <span class="n">linewidth_factor</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s2">&quot;price_map&quot;</span><span class="p">][</span><span class="sa">f</span><span class="s2">&quot;linewidth_factor</span><span class="si">{</span><span class="s2">&quot;_heat&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">carrier</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;heat&#39;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+    <span class="n">plot_map</span><span class="p">(</span>
+        <span class="n">network</span><span class="p">,</span>
+        <span class="n">tech_colors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">edge_widths</span><span class="o">=</span><span class="n">edge_widths</span> <span class="o">/</span> <span class="n">linewidth_factor</span><span class="p">,</span>
+        <span class="n">bus_colors</span><span class="o">=</span><span class="n">bus_colors</span><span class="p">,</span>
+        <span class="n">bus_sizes</span><span class="o">=</span><span class="n">consum_pies</span> <span class="o">/</span> <span class="n">bus_size_factor</span><span class="p">,</span>
+        <span class="n">edge_colors</span><span class="o">=</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;price_map&quot;</span><span class="p">][</span><span class="s2">&quot;edge_color&quot;</span><span class="p">],</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+        <span class="n">edge_unit_conv</span><span class="o">=</span><span class="n">PLOT_CAP_UNITS</span><span class="p">,</span>
+        <span class="n">bus_unit_conv</span><span class="o">=</span><span class="n">PLOT_SUPPLY_UNITS</span><span class="p">,</span>
+        <span class="n">add_legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;price_map&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Add colorbar based on bus_colors</span>
+    <span class="c1"># fig.tight_layout()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">right</span><span class="o">=</span><span class="mf">0.85</span><span class="p">)</span>
+    <span class="n">cax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="mf">0.87</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">y0</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">,</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_position</span><span class="p">()</span><span class="o">.</span><span class="n">height</span><span class="p">])</span>
+    <span class="n">sm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">ScalarMappable</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">)</span>
+    <span class="n">sm</span><span class="o">.</span><span class="n">set_array</span><span class="p">([])</span>
+    <span class="n">cbar</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">sm</span><span class="p">,</span> <span class="n">cax</span><span class="o">=</span><span class="n">cax</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span><span class="p">)</span>
+    <span class="n">cbar</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Nodal Prices $</span><span class="si">{</span><span class="n">CURRENCY</span><span class="si">}</span><span class="s2">/MWh&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">save_path</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">save_path</span><span class="p">,</span> <span class="n">transparent</span><span class="o">=</span><span class="n">opts</span><span class="p">[</span><span class="s2">&quot;transparent&quot;</span><span class="p">],</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">&quot;tight&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2465 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../plot_network_heat/">
+      
+      
+        <link rel="next" href="../plot_summary_all/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.17">
+    
+    
+      
+        <title>Plot statistics - PyPSA China Model (PIK edition) Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#plot_statistics" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PyPSA China Model (PIK edition) Documentation" class="md-header__button md-logo" aria-label="PyPSA China Model (PIK edition) Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyPSA China Model (PIK edition) Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Plot statistics
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PyPSA China Model (PIK edition) Documentation" class="md-nav__button md-logo" aria-label="PyPSA China Model (PIK edition) Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    PyPSA China Model (PIK edition) Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Welcome to the PyPSA-China (PIK version) documentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SUMMARY
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_brownfield/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add brownfield
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_electricity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add electricity
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_existing_baseyear/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add existing baseyear
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_biomass_potential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build biomass potential
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_cop_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build cop profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_cutout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build cutout
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_load_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build load profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_population/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build population
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_population_gridcell_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build population gridcell map
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_province_shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build province shapes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_renewable_potential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build renewable potential
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_renewable_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build renewable profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_solar_thermal_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build solar thermal profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_temperature_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build temperature profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Constants
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../determine_availability_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Determine availability matrix
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fetch_rasters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fetch rasters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fetch_shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fetch shapes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Functions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../make_summary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Make summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_heatmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot heatmap
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_input_costs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot input costs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_inputs_visualisation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot inputs visualisation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_network_heat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot network heat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Plot statistics
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot statistics
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_statistics
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.add_second_xaxis" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_second_xaxis
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.plot_capacity_factor" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_capacity_factor
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.plot_province_peakload_capacity" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_province_peakload_capacity
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.plot_static_per_carrier" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_static_per_carrier
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.prepare_capacity_factor_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      prepare_capacity_factor_data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.prepare_province_peakload_capacity_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      prepare_province_peakload_capacity_data
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_summary_all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot summary all
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_time_series/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot time series
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_base_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare base network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_base_network_2020/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare base network 2020
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_existing_capacities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare existing capacities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_network_common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare network common
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Readers
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers_geospatial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Readers geospatial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solve_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solve network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solve_network_myopic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solve network myopic
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_39" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_39" id="__nav_3_39_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Remind coupling
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_39_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_39">
+            <span class="md-nav__icon md-icon"></span>
+            Remind coupling
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/disaggregate_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Disaggregate data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/generic_etl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Generic etl
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/make_pypsa_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Make pypsa config
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_statistics
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.add_second_xaxis" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_second_xaxis
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.plot_capacity_factor" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_capacity_factor
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.plot_province_peakload_capacity" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_province_peakload_capacity
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.plot_static_per_carrier" class="md-nav__link">
+    <span class="md-ellipsis">
+      plot_static_per_carrier
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.prepare_capacity_factor_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      prepare_capacity_factor_data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plot_statistics.prepare_province_peakload_capacity_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      prepare_province_peakload_capacity_data
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Plot statistics</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="plot_statistics"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_statistics.add_second_xaxis" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add_second_xaxis</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add a secondary X-axis to the plot.
+Args:
+    data (pd.Series): The data to plot. Its values will be plotted on the secondary X-axis.
+    ax (matplotlib.axes.Axes): The main matplotlib Axes object.
+    label (str): The label for the secondary X-axis.
+    **kwargs: Optional keyword arguments for plot styling.</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_statistics.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_second_xaxis</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add a secondary X-axis to the plot.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (pd.Series): The data to plot. Its values will be plotted on the secondary X-axis.</span>
+<span class="sd">        ax (matplotlib.axes.Axes): The main matplotlib Axes object.</span>
+<span class="sd">        label (str): The label for the secondary X-axis.</span>
+<span class="sd">        **kwargs: Optional keyword arguments for plot styling.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;text_offset&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;markersize&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;fontsize&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">}</span>
+    <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+
+    <span class="n">ax2</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">twiny</span><span class="p">()</span>
+    <span class="c1"># # y_pos creates a sequence of integers (e.g., [0, 1, 2, 3]) to serve as distinct vertical positions</span>
+    <span class="c1"># for each data point on the shared Y-axis. This is necessary because data.values are plotted</span>
+    <span class="c1"># horizontally on the secondary X-axis (ax2), requiring vertical separation for clarity.</span>
+    <span class="n">y_pos</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+    <span class="n">ax2</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">y_pos</span><span class="p">,</span>
+        <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span>
+        <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">],</span>
+        <span class="n">markersize</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;markersize&quot;</span><span class="p">],</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Generation Share (%)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">):</span>
+        <span class="n">ax2</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+            <span class="n">val</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;text_offset&quot;</span><span class="p">],</span>
+            <span class="n">i</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">,</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">],</span>
+            <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+            <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
+            <span class="n">fontsize</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fontsize&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ax2</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fontsize&quot;</span><span class="p">])</span>  <span class="c1"># Remove color setting for ticks</span>
+
+    <span class="k">return</span> <span class="n">ax2</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_statistics.plot_capacity_factor" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot_capacity_factor</span><span class="p">(</span><span class="n">cf_filtered</span><span class="p">,</span> <span class="n">theo_cf_filtered</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Plot actual and theoretical capacity factors for each technology.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>cf_filtered</code>
+            </td>
+            <td>
+                  <code><span title="pandas.Series">Series</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Actual capacity factors indexed by technology.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>theo_cf_filtered</code>
+            </td>
+            <td>
+                  <code><span title="pandas.Series">Series</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Theoretical capacity factors indexed by technology.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ax</code>
+            </td>
+            <td>
+                  <code><span title="matplotlib.axes.Axes">Axes</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The axis to plot on.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>colors</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Color mapping for technologies.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>matplotlib.axes.Axes: The axis with the plot.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_statistics.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_capacity_factor</span><span class="p">(</span>
+    <span class="n">cf_filtered</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">theo_cf_filtered</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">axes</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span> <span class="n">colors</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot actual and theoretical capacity factors for each technology.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cf_filtered (pd.Series): Actual capacity factors indexed by technology.</span>
+<span class="sd">        theo_cf_filtered (pd.Series): Theoretical capacity factors indexed by technology.</span>
+<span class="sd">        ax (matplotlib.axes.Axes): The axis to plot on.</span>
+<span class="sd">        colors (dict): Color mapping for technologies.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        matplotlib.axes.Axes: The axis with the plot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x_pos</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cf_filtered</span><span class="p">))</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="mf">0.35</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">x_pos</span><span class="p">],</span>
+        <span class="n">cf_filtered</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">width</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">colors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tech</span><span class="p">,</span> <span class="s2">&quot;lightgrey&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">tech</span> <span class="ow">in</span> <span class="n">cf_filtered</span><span class="o">.</span><span class="n">index</span><span class="p">],</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Actual CF&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">x_pos</span><span class="p">],</span>
+        <span class="n">theo_cf_filtered</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">width</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">colors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tech</span><span class="p">,</span> <span class="s2">&quot;lightgrey&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">tech</span> <span class="ow">in</span> <span class="n">theo_cf_filtered</span><span class="o">.</span><span class="n">index</span><span class="p">],</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Theoretical CF&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">tech</span><span class="p">,</span> <span class="n">cf_val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cf_filtered</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+            <span class="n">cf_val</span> <span class="o">+</span> <span class="mf">0.01</span><span class="p">,</span>
+            <span class="n">i</span> <span class="o">-</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cf_val</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+            <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
+            <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+            <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s2">&quot;round,pad=0.2&quot;</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">theo_val</span> <span class="o">=</span> <span class="n">theo_cf_filtered</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tech</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+            <span class="n">theo_val</span> <span class="o">+</span> <span class="mf">0.01</span><span class="p">,</span>
+            <span class="n">i</span> <span class="o">+</span> <span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">theo_val</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+            <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span>
+            <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+            <span class="n">bbox</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">boxstyle</span><span class="o">=</span><span class="s2">&quot;round,pad=0.2&quot;</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">x_pos</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">cf_filtered</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Capacity Factor&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">cf_filtered</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">theo_cf_filtered</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">*</span> <span class="mf">1.1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">ax</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_statistics.plot_province_peakload_capacity" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot_province_peakload_capacity</span><span class="p">(</span><span class="n">df_plot</span><span class="p">,</span> <span class="n">bar_cols</span><span class="p">,</span> <span class="n">color_list</span><span class="p">,</span> <span class="n">outp_dir</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Plot province peak load vs installed capacity by technology.
+Args:
+    df_plot: DataFrame with provinces as index, columns as technologies and 'Peak Load'.
+    bar_cols: List of technology columns to plot as bars.
+    color_list: List of colors for each technology.
+    outp_dir: Output directory for saving the figure.</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_statistics.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_province_peakload_capacity</span><span class="p">(</span><span class="n">df_plot</span><span class="p">,</span> <span class="n">bar_cols</span><span class="p">,</span> <span class="n">color_list</span><span class="p">,</span> <span class="n">outp_dir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot province peak load vs installed capacity by technology.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        df_plot: DataFrame with provinces as index, columns as technologies and &#39;Peak Load&#39;.</span>
+<span class="sd">        bar_cols: List of technology columns to plot as bars.</span>
+<span class="sd">        color_list: List of colors for each technology.</span>
+<span class="sd">        outp_dir: Output directory for saving the figure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+    <span class="n">df_plot</span><span class="p">[</span><span class="n">bar_cols</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;barh&quot;</span><span class="p">,</span> <span class="n">stacked</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color_list</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+    <span class="c1"># Plot peak load as red vertical line</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">prov</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">df_plot</span><span class="o">.</span><span class="n">index</span><span class="p">):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="n">df_plot</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">prov</span><span class="p">,</span> <span class="s2">&quot;Peak Load&quot;</span><span class="p">],</span>
+            <span class="n">i</span><span class="p">,</span>
+            <span class="s2">&quot;r|&quot;</span><span class="p">,</span>
+            <span class="n">markersize</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Peak Load&quot;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Capacity [GW]&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Province&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Peak Load vs Installed Capacity by Province&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># Only keep one Peak Load legend</span>
+    <span class="n">handles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_legend_handles_labels</span><span class="p">()</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">new_handles</span><span class="p">,</span> <span class="n">new_labels</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">h</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">handles</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">l</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+            <span class="n">new_handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+            <span class="n">new_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+            <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">new_handles</span><span class="p">,</span> <span class="n">new_labels</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outp_dir</span><span class="p">,</span> <span class="s2">&quot;province_peakload_capacity.png&quot;</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_statistics.plot_static_per_carrier" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">plot_static_per_carrier</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">drop_zero_vals</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">add_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generic function to plot different statics</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>ds</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the data to plot</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ax</code>
+            </td>
+            <td>
+                  <code><span title="matplotlib.axes.Axes">Axes</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>plotting axes</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>colors</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>colors for the carriers</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>drop_zero_vals</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Drop zeroes from data. Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>add_labels</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Add value labels on bars. If None, reads from config. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_statistics.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot_static_per_carrier</span><span class="p">(</span>
+    <span class="n">ds</span><span class="p">:</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">axes</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span> <span class="n">colors</span><span class="p">:</span> <span class="n">DataFrame</span><span class="p">,</span> <span class="n">drop_zero_vals</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">add_labels</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic function to plot different statics</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ds (DataFrame): the data to plot</span>
+<span class="sd">        ax (matplotlib.axes.Axes): plotting axes</span>
+<span class="sd">        colors (DataFrame): colors for the carriers</span>
+<span class="sd">        drop_zero_vals (bool, optional): Drop zeroes from data. Defaults to True.</span>
+<span class="sd">        add_labels (bool, optional): Add value labels on bars. If None, reads from config. Defaults to None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">drop_zero_vals</span><span class="p">:</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">ds</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">colors</span><span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="s2">&quot;carrier&quot;</span><span class="p">)]</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">pipe</span><span class="p">(</span><span class="n">rename_index</span><span class="p">)</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> [</span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;unit&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">]&quot;</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">add_labels</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_statistics.prepare_capacity_factor_data" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">prepare_capacity_factor_data</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">carrier</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Prepare Series for actual and theoretical capacity factors per technology.
+Returns:
+    cf_filtered: Series of actual capacity factors (index: nice_name)
+    theo_cf_filtered: Series of theoretical capacity factors (index: nice_name)</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_statistics.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare_capacity_factor_data</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">carrier</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prepare Series for actual and theoretical capacity factors per technology.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        cf_filtered: Series of actual capacity factors (index: nice_name)</span>
+<span class="sd">        theo_cf_filtered: Series of theoretical capacity factors (index: nice_name)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cf_data</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">capacity_factor</span><span class="p">(</span><span class="n">groupby</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;carrier&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;battery&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">cf_data</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="n">cf_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;battery charger&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">cf_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;battery&quot;</span><span class="p">)]</span>
+        <span class="n">cf_data</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;battery&quot;</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">cf_data</span> <span class="o">=</span> <span class="n">cf_data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="c1"># Theoretical capacity factor</span>
+    <span class="n">gen</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">p_max_pu</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">generators_t</span><span class="o">.</span><span class="n">p_max_pu</span>
+    <span class="n">gen</span><span class="p">[</span><span class="s2">&quot;p_nom_used&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gen</span><span class="p">[</span><span class="s2">&quot;p_nom_opt&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">gen</span><span class="p">[</span><span class="s2">&quot;p_nom&quot;</span><span class="p">])</span>
+    <span class="n">weighted_energy_per_gen</span> <span class="o">=</span> <span class="p">(</span><span class="n">p_max_pu</span> <span class="o">*</span> <span class="n">gen</span><span class="p">[</span><span class="s2">&quot;p_nom_used&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">gen</span><span class="p">[</span><span class="s2">&quot;weighted_energy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weighted_energy_per_gen</span>
+
+    <span class="n">gen</span><span class="p">[</span><span class="s2">&quot;nice_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gen</span><span class="p">[</span><span class="s2">&quot;carrier&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;nice_name&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">index</span> <span class="k">else</span> <span class="n">x</span>
+    <span class="p">)</span>
+    <span class="n">grouped_energy</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;nice_name&quot;</span><span class="p">)[</span><span class="s2">&quot;weighted_energy&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">grouped_capacity</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;nice_name&quot;</span><span class="p">)[</span><span class="s2">&quot;p_nom_used&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">theoretical_cf_weighted</span> <span class="o">=</span> <span class="n">grouped_energy</span> <span class="o">/</span> <span class="n">grouped_capacity</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">snapshots</span><span class="p">)</span>
+
+    <span class="c1"># Only keep technologies present in both actual and theoretical CF</span>
+    <span class="n">common_techs</span> <span class="o">=</span> <span class="n">cf_data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">theoretical_cf_weighted</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">cf_filtered</span> <span class="o">=</span> <span class="n">cf_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">common_techs</span><span class="p">]</span>
+    <span class="n">theo_cf_filtered</span> <span class="o">=</span> <span class="n">theoretical_cf_weighted</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">cf_filtered</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+    <span class="c1"># Todo: use config nondispatchable_techs</span>
+    <span class="n">non_zero_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">cf_filtered</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">theo_cf_filtered</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">cf_filtered</span> <span class="o">=</span> <span class="n">cf_filtered</span><span class="p">[</span><span class="n">non_zero_mask</span><span class="p">]</span>
+    <span class="n">theo_cf_filtered</span> <span class="o">=</span> <span class="n">theo_cf_filtered</span><span class="p">[</span><span class="n">non_zero_mask</span><span class="p">]</span>
+    <span class="n">cf_filtered</span> <span class="o">=</span> <span class="n">cf_filtered</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">theo_cf_filtered</span> <span class="o">=</span> <span class="n">theo_cf_filtered</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">cf_filtered</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">cf_filtered</span><span class="p">,</span> <span class="n">theo_cf_filtered</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="plot_statistics.prepare_province_peakload_capacity_data" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">prepare_province_peakload_capacity_data</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">attached_carriers</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Prepare DataFrame for province peak load and installed capacity by technology.
+Returns:
+    df_plot: DataFrame with provinces as index, columns as technologies and 'Peak Load'.
+    bar_cols: List of technology columns to plot as bars.
+    color_list: List of colors for each technology.</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/plot_statistics.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">prepare_province_peakload_capacity_data</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">attached_carriers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prepare DataFrame for province peak load and installed capacity by technology.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        df_plot: DataFrame with provinces as index, columns as technologies and &#39;Peak Load&#39;.</span>
+<span class="sd">        bar_cols: List of technology columns to plot as bars.</span>
+<span class="sd">        color_list: List of colors for each technology.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Calculate peak load per province</span>
+    <span class="n">load</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">load</span><span class="p">[</span><span class="s2">&quot;province&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">load</span><span class="p">[</span><span class="s2">&quot;bus&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">buses</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">])</span>
+    <span class="n">peak_load</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">loads_t</span><span class="o">.</span><span class="n">p_set</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">load</span><span class="p">[</span><span class="s2">&quot;province&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">peak_load</span> <span class="o">=</span> <span class="n">peak_load</span> <span class="o">/</span> <span class="n">PLOT_CAP_UNITS</span>  <span class="c1"># ensure peak load is in GW</span>
+
+    <span class="c1"># Calculate installed capacity per province and technology using optimal_capacity</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">optimal_capacity</span><span class="p">(</span><span class="n">groupby</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="s2">&quot;carrier&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+    <span class="n">valid_components</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Generator&quot;</span><span class="p">,</span> <span class="s2">&quot;StorageUnit&quot;</span><span class="p">,</span> <span class="s2">&quot;Link&quot;</span><span class="p">]</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">valid_components</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;battery&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;battery charger&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;battery&quot;</span><span class="p">)]</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Link&quot;</span><span class="p">,</span> <span class="s2">&quot;battery&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="s2">&quot;stations&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;stations&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;load shedding&quot;</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;load shedding&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">(</span><span class="n">prov</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">carrier</span><span class="p">,</span> <span class="s2">&quot;nice_name&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">index</span> <span class="k">else</span> <span class="n">carrier</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">prov</span><span class="p">,</span> <span class="n">carrier</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">index</span>
+        <span class="p">],</span>
+        <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;province&quot;</span><span class="p">,</span> <span class="s2">&quot;nice_name&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">cap_by_prov_tech</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">level</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">cap_by_prov_tech</span> <span class="o">=</span> <span class="n">cap_by_prov_tech</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span> <span class="o">/</span> <span class="n">PLOT_CAP_UNITS</span>
+
+    <span class="k">if</span> <span class="s2">&quot;Battery Discharger&quot;</span> <span class="ow">in</span> <span class="n">cap_by_prov_tech</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">cap_by_prov_tech</span> <span class="o">=</span> <span class="n">cap_by_prov_tech</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">&quot;Battery Discharger&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;AC&quot;</span> <span class="ow">in</span> <span class="n">cap_by_prov_tech</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">cap_by_prov_tech</span> <span class="o">=</span> <span class="n">cap_by_prov_tech</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">)</span>
+    <span class="c1"># Only keep columns in attached_carriers if provided</span>
+    <span class="k">if</span> <span class="n">attached_carriers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Ensure nice_name mapping for attached_carriers</span>
+        <span class="n">attached_nice_names</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">n</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;nice_name&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">index</span> <span class="k">else</span> <span class="n">c</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">attached_carriers</span>
+        <span class="p">]</span>
+        <span class="n">cap_by_prov_tech</span> <span class="o">=</span> <span class="n">cap_by_prov_tech</span><span class="p">[</span>
+            <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cap_by_prov_tech</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">attached_nice_names</span><span class="p">]</span>
+        <span class="p">]</span>
+
+    <span class="c1"># Merge peak load and capacity</span>
+    <span class="n">df_plot</span> <span class="o">=</span> <span class="n">cap_by_prov_tech</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">df_plot</span><span class="p">[</span><span class="s2">&quot;Peak Load&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">peak_load</span>
+
+    <span class="c1"># Bar columns: exclude Peak Load, only keep nonzero</span>
+    <span class="n">bar_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df_plot</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="s2">&quot;Peak Load&quot;</span><span class="p">]</span>
+    <span class="n">bar_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">bar_cols</span> <span class="k">if</span> <span class="n">df_plot</span><span class="p">[</span><span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">color_list</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">n</span><span class="o">.</span><span class="n">carriers</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;nice_name&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">color</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tech</span><span class="p">,</span> <span class="s2">&quot;lightgrey&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">tech</span> <span class="ow">in</span> <span class="n">bar_cols</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">df_plot</span><span class="p">,</span> <span class="n">bar_cols</span><span class="p">,</span> <span class="n">color_list</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3485 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../fetch_rasters/">
+      
+      
+        <link rel="next" href="../functions/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.17">
+    
+    
+      
+        <title>Fetch shapes - PyPSA China Model (PIK edition) Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fetch_shapes" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PyPSA China Model (PIK edition) Documentation" class="md-header__button md-logo" aria-label="PyPSA China Model (PIK edition) Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyPSA China Model (PIK edition) Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Fetch shapes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PyPSA China Model (PIK edition) Documentation" class="md-nav__button md-logo" aria-label="PyPSA China Model (PIK edition) Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    PyPSA China Model (PIK edition) Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Welcome to the PyPSA-China (PIK version) documentation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    SUMMARY
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_brownfield/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add brownfield
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_electricity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add electricity
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../add_existing_baseyear/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Add existing baseyear
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_biomass_potential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build biomass potential
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_cop_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build cop profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_cutout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build cutout
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_load_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build load profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_population/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build population
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_population_gridcell_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build population gridcell map
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_province_shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build province shapes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_renewable_potential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build renewable potential
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_renewable_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build renewable profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_solar_thermal_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build solar thermal profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_temperature_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Build temperature profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Constants
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../determine_availability_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Determine availability matrix
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fetch_rasters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fetch rasters
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Fetch shapes
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fetch shapes
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_shapes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.build_nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      build_nodes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.cut_smaller_from_larger" class="md-nav__link">
+    <span class="md-ellipsis">
+      cut_smaller_from_larger
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.eez_by_region" class="md-nav__link">
+    <span class="md-ellipsis">
+      eez_by_region
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_country_shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_country_shape
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_gadm" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_gadm
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_maritime_eez" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_maritime_eez
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_natural_earth_shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_natural_earth_shape
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_prefecture_shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_prefecture_shapes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_province_shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_province_shapes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.has_overlap" class="md-nav__link">
+    <span class="md-ellipsis">
+      has_overlap
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.remove_overlaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      remove_overlaps
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.split_provinces" class="md-nav__link">
+    <span class="md-ellipsis">
+      split_provinces
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.validate_split_cfg" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_split_cfg
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Functions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../make_summary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Make summary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_heatmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot heatmap
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_input_costs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot input costs
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_inputs_visualisation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot inputs visualisation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_network_heat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot network heat
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_statistics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot statistics
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_summary_all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot summary all
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_time_series/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Plot time series
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_base_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare base network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_base_network_2020/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare base network 2020
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_existing_capacities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare existing capacities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../prepare_network_common/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prepare network common
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Readers
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../readers_geospatial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Readers geospatial
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solve_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solve network
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../solve_network_myopic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Solve network myopic
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_39" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_39" id="__nav_3_39_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Remind coupling
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_39_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_39">
+            <span class="md-nav__icon md-icon"></span>
+            Remind coupling
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/disaggregate_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Disaggregate data
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/generic_etl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Generic etl
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/make_pypsa_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Make pypsa config
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remind_coupling/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_shapes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.build_nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      build_nodes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.cut_smaller_from_larger" class="md-nav__link">
+    <span class="md-ellipsis">
+      cut_smaller_from_larger
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.eez_by_region" class="md-nav__link">
+    <span class="md-ellipsis">
+      eez_by_region
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_country_shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_country_shape
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_gadm" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_gadm
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_maritime_eez" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_maritime_eez
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_natural_earth_shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_natural_earth_shape
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_prefecture_shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_prefecture_shapes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.fetch_province_shapes" class="md-nav__link">
+    <span class="md-ellipsis">
+      fetch_province_shapes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.has_overlap" class="md-nav__link">
+    <span class="md-ellipsis">
+      has_overlap
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.remove_overlaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      remove_overlaps
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.split_provinces" class="md-nav__link">
+    <span class="md-ellipsis">
+      split_provinces
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fetch_shapes.validate_split_cfg" class="md-nav__link">
+    <span class="md-ellipsis">
+      validate_split_cfg
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Fetch shapes</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+<a id="fetch_shapes"></a>
+    <div class="doc doc-contents first">
+
+        <p>Data fetch operation for region/province/country shapes</p>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.build_nodes" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">build_nodes</span><span class="p">(</span><span class="n">prefectures</span><span class="p">,</span> <span class="n">nodes_cfg</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Build the nodes, either directly at provincial (admin1) level or from adminlvk2 subregions</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>prefectures</code>
+            </td>
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_nodes</span><span class="p">(</span>
+    <span class="n">prefectures</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span>
+    <span class="n">nodes_cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Build the nodes, either directly at provincial (admin1) level or from adminlvk2 subregions</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      prefectures:  &quot;&quot;&quot;</span>
+    <span class="n">gdf</span> <span class="o">=</span> <span class="n">prefectures</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">nodes_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;split_provinces&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">validate_split_cfg</span><span class="p">(</span><span class="n">nodes_cfg</span><span class="p">[</span><span class="s2">&quot;splits&quot;</span><span class="p">],</span> <span class="n">gdf</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">split_provinces</span><span class="p">(</span><span class="n">gdf</span><span class="p">,</span> <span class="n">nodes_cfg</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">provs</span> <span class="o">=</span> <span class="n">provs</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">dissolve</span><span class="p">(</span><span class="n">GDAM_LV1</span><span class="p">)</span>
+        <span class="n">provs</span> <span class="o">=</span> <span class="n">provs</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="n">nodes_cfg</span><span class="p">[</span><span class="s2">&quot;exclude_provinces&quot;</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">provs</span><span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span><span class="s2">&quot;node&quot;</span><span class="p">)[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.cut_smaller_from_larger" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">cut_smaller_from_larger</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">gdf</span><span class="p">,</span> <span class="n">overlaps</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>automatically assign overlapping area to the smaller region</p>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>areas_gdf.apply(cut_smaller_from_larger, args=(areas_gdf, overlaps), axis=1)</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>row</code>
+            </td>
+            <td>
+                  <code><span title="geopandas.GeoSeries">GeoSeries</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the row from pandas apply</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>gdf</code>
+            </td>
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the geodataframe on which the operation is performed</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>overlaps</code>
+            </td>
+            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the boolean overlap table</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>in case areas are exactly equal</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="geopandas.GeoSeries">GeoSeries</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>gpd.GeoSeries: the row with overlaps removed or not</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cut_smaller_from_larger</span><span class="p">(</span>
+    <span class="n">row</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">,</span> <span class="n">gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span> <span class="n">overlaps</span><span class="p">:</span> <span class="n">DataFrame</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;automatically assign overlapping area to the smaller region</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        areas_gdf.apply(cut_smaller_from_larger, args=(areas_gdf, overlaps), axis=1)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        row (gpd.GeoSeries): the row from pandas apply</span>
+<span class="sd">        gdf (gpd.GeoDataFrame): the geodataframe on which the operation is performed</span>
+<span class="sd">        overlaps (DataFrame): the boolean overlap table</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: in case areas are exactly equal</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        gpd.GeoSeries: the row with overlaps removed or not</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ovrlap_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">overlaps</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">ovrlap_idx</span><span class="p">:</span>
+        <span class="n">geom</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">geometry</span>
+        <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">area</span> <span class="o">&gt;</span> <span class="n">geom</span><span class="o">.</span><span class="n">area</span><span class="p">:</span>
+            <span class="n">row</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;geometry&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">row</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">area</span> <span class="o">==</span> <span class="n">geom</span><span class="o">.</span><span class="n">area</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Equal area overlap between </span><span class="si">{</span><span class="n">row</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2"> - unhandled&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">row</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.eez_by_region" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">eez_by_region</span><span class="p">(</span><span class="n">eez</span><span class="p">,</span> <span class="n">province_shapes</span><span class="p">,</span> <span class="n">prov_key</span><span class="o">=</span><span class="s1">&#39;region&#39;</span><span class="p">,</span> <span class="n">simplify_tol</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>break up the eez by admin1 regions based on voronoi polygons of the centroids</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>eez</code>
+            </td>
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><em>description</em></p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>province_shapes</code>
+            </td>
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><em>description</em></p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>prov_key</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>name of the provinces col in province_shapes. Defaults to "region".</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;region&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>simplify_tol</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>tolerance for simplifying the voronoi polygons. Defaults to 0.5.</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.5</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: <em>description</em></p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">eez_by_region</span><span class="p">(</span>
+    <span class="n">eez</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span>
+    <span class="n">province_shapes</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span>
+    <span class="n">prov_key</span><span class="o">=</span><span class="s2">&quot;region&quot;</span><span class="p">,</span>
+    <span class="n">simplify_tol</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;break up the eez by admin1 regions based on voronoi polygons of the centroids</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        eez (gpd.GeoDataFrame): _description_</span>
+<span class="sd">        province_shapes (gpd.GeoDataFrame): _description_</span>
+<span class="sd">        prov_key (str, optional): name of the provinces col in province_shapes. Defaults to &quot;region&quot;.</span>
+<span class="sd">        simplify_tol (float, optional): tolerance for simplifying the voronoi polygons. Defaults to 0.5.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        gpd.GeoDataFrame: _description_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># generate voronoi cells (more than one per province &amp; can overlap)</span>
+    <span class="n">voronois_simple</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span>
+        <span class="n">geometry</span><span class="o">=</span><span class="n">province_shapes</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">tolerance</span><span class="o">=</span><span class="n">simplify_tol</span><span class="p">)</span><span class="o">.</span><span class="n">voronoi_polygons</span><span class="p">(),</span>
+        <span class="n">crs</span><span class="o">=</span><span class="n">province_shapes</span><span class="o">.</span><span class="n">crs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># assign region</span>
+    <span class="n">prov_voronoi</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">voronois_simple</span><span class="o">.</span><span class="n">sjoin</span><span class="p">(</span><span class="n">province_shapes</span><span class="p">,</span> <span class="n">predicate</span><span class="o">=</span><span class="s2">&quot;intersects&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">prov_key</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">union_all</span><span class="p">(</span><span class="s2">&quot;unary&quot;</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="n">prov_voronoi</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span>
+        <span class="n">geometry</span><span class="o">=</span><span class="n">prov_voronoi</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">crs</span><span class="o">=</span><span class="n">province_shapes</span><span class="o">.</span><span class="n">crs</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="n">prov_key</span><span class="p">:</span> <span class="n">prov_voronoi</span><span class="o">.</span><span class="n">index</span><span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="c1"># remove overlaps</span>
+    <span class="n">gdf_</span> <span class="o">=</span> <span class="n">remove_overlaps</span><span class="p">(</span><span class="n">prov_voronoi</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">prov_key</span><span class="p">))</span>
+
+    <span class="n">eez_prov</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">gdf_</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">eez</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;intersection&quot;</span><span class="p">)[[</span><span class="n">prov_key</span><span class="p">,</span> <span class="s2">&quot;geometry&quot;</span><span class="p">]]</span>
+        <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">prov_key</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">union_all</span><span class="p">(</span><span class="s2">&quot;unary&quot;</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="n">eez_prov</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span>
+        <span class="n">geometry</span><span class="o">=</span><span class="n">eez_prov</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">crs</span><span class="o">=</span><span class="n">province_shapes</span><span class="o">.</span><span class="n">crs</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="n">prov_key</span><span class="p">:</span> <span class="n">eez_prov</span><span class="o">.</span><span class="n">index</span><span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">eez_prov</span><span class="p">[</span><span class="n">eez_prov</span><span class="p">[</span><span class="n">prov_key</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">OFFSHORE_WIND_NODES</span><span class="p">)]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">prov_key</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.fetch_country_shape" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">fetch_country_shape</span><span class="p">(</span><span class="n">outp_path</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>fetch the country shape from natural earth and save it to the outpath</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>outp_path</code>
+            </td>
+            <td>
+                  <code><span title="os.PathLike">PathLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the path to save the country shape (geojson)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fetch_country_shape</span><span class="p">(</span><span class="n">outp_path</span><span class="p">:</span> <span class="n">PathLike</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;fetch the country shape from natural earth and save it to the outpath</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        outp_path (PathLike): the path to save the country shape (geojson)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">country_shape</span> <span class="o">=</span> <span class="n">fetch_natural_earth_shape</span><span class="p">(</span><span class="s2">&quot;admin_0_countries&quot;</span><span class="p">,</span> <span class="s2">&quot;ADMIN&quot;</span><span class="p">,</span> <span class="n">COUNTRY_NAME</span><span class="p">)</span>
+    <span class="n">country_shape</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">country_shape</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">outp_path</span><span class="p">,</span> <span class="n">driver</span><span class="o">=</span><span class="s2">&quot;GeoJSON&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.fetch_gadm" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">fetch_gadm</span><span class="p">(</span><span class="n">country_code</span><span class="o">=</span><span class="s1">&#39;CHN&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>fetch GADM shapefile for a given country and administrative level.
+https://gadm.org/download_country.html</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>country_code</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>ISO3 country code (e.g., 'CHN', 'USA').</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;CHN&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>level</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Administrative level (0=country, 1=region, etc.).</p>
+              </div>
+            </td>
+            <td>
+                  <code>2</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>geopandas.GeoDataFrame: Loaded shapefile as GeoDataFrame.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fetch_gadm</span><span class="p">(</span><span class="n">country_code</span><span class="o">=</span><span class="s2">&quot;CHN&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    fetch GADM shapefile for a given country and administrative level.</span>
+<span class="sd">    https://gadm.org/download_country.html</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        country_code (str): ISO3 country code (e.g., &#39;CHN&#39;, &#39;USA&#39;).</span>
+<span class="sd">        level (int): Administrative level (0=country, 1=region, etc.).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        geopandas.GeoDataFrame: Loaded shapefile as GeoDataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Construct the URL</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://geodata.ucdavis.edu/gadm/gadm4.1/shp/gadm41_</span><span class="si">{</span><span class="n">country_code</span><span class="si">}</span><span class="s2">_shp.zip&quot;</span>
+
+    <span class="c1"># Download the zip file</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Failed to download data for </span><span class="si">{</span><span class="n">country_code</span><span class="si">}</span><span class="s2"> - Status code: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Extract the zip file in memory</span>
+    <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">content</span><span class="p">))</span> <span class="k">as</span> <span class="n">z</span><span class="p">:</span>
+        <span class="c1"># Filter to the desired level shapefile</span>
+        <span class="n">level_filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;gadm41_</span><span class="si">{</span><span class="n">country_code</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2">.shp&quot;</span>
+        <span class="k">if</span> <span class="n">level_filename</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">z</span><span class="o">.</span><span class="n">namelist</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Level </span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s2"> shapefile not found for </span><span class="si">{</span><span class="n">country_code</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="n">shp_dir</span> <span class="o">=</span> <span class="s2">&quot;resources/data/province_shapes&quot;</span>
+        <span class="n">z</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">shp_dir</span><span class="p">)</span>
+        <span class="n">gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">shp_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">level_filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gdf</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.fetch_maritime_eez" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">fetch_maritime_eez</span><span class="p">(</span><span class="n">zone_name</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>fetch maritime data for a country from Maritime Gazette API#
+(Royal marine institute of Flanders data base)</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>zone_name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the country's zone name, e.g "Chinese" for china</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="requests.HTTPError">HTTPError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if the request fails</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Returns:
+    dict: the maritime data</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fetch_maritime_eez</span><span class="p">(</span><span class="n">zone_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;fetch maritime data for a country from Maritime Gazette API#</span>
+<span class="sd">    (Royal marine institute of Flanders data base)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        zone_name (str): the country&#39;s zone name, e.g &quot;Chinese&quot; for china</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        requests.HTTPError: if the request fails</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: the maritime data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_record_id</span><span class="p">(</span><span class="n">zone_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="c1"># get Maritime Gazette record ID for the country</span>
+        <span class="c1"># eez ID is 70: see https://www.marineregions.org/gazetteer.php?p=webservices&amp;type=rest#/</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://www.marineregions.org/rest/getGazetteerRecordsByName.json/</span><span class="si">{</span><span class="n">zone_name</span><span class="si">}</span><span class="s2">/?like=true&amp;fuzzy=false&amp;typeID=70&amp;offset=0&amp;count=100&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">requests</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Failed to retrieve Maritime Gazette ID. Status code: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">record_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">record_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">data</span>
+            <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">record_data</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;standard&quot;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;preferredGazetteerName&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">zone_name</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;MRGID&quot;</span><span class="p">]</span>
+
+    <span class="n">mgrid</span> <span class="o">=</span> <span class="n">find_record_id</span><span class="p">(</span><span class="n">zone_name</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found Maritime Gazette ID for </span><span class="si">{</span><span class="n">zone_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">mgrid</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1">#  URL of the WFS service</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://geo.vliz.be/geoserver/wfs&quot;</span>
+    <span class="c1"># WFS request parameters + record ID filter</span>
+    <span class="n">base_filter_</span> <span class="o">=</span> <span class="s2">&quot;&lt;Filter&gt;&lt;PropertyIsEqualTo&gt;&lt;PropertyName&gt;mrgid_eez&lt;/PropertyName&gt;&lt;Literal&gt;&quot;</span>
+    <span class="n">filter_</span> <span class="o">=</span> <span class="n">base_filter_</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mgrid</span><span class="si">}</span><span class="s2">&lt;/Literal&gt;&lt;/PropertyIsEqualTo&gt;&lt;/Filter&gt;&quot;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">service</span><span class="o">=</span><span class="s2">&quot;WFS&quot;</span><span class="p">,</span>
+        <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.1.0&quot;</span><span class="p">,</span>
+        <span class="n">request</span><span class="o">=</span><span class="s2">&quot;GetFeature&quot;</span><span class="p">,</span>
+        <span class="n">typeName</span><span class="o">=</span><span class="s2">&quot;MarineRegions:eez&quot;</span><span class="p">,</span>
+        <span class="n">outputFormat</span><span class="o">=</span><span class="s2">&quot;json&quot;</span><span class="p">,</span>
+        <span class="nb">filter</span><span class="o">=</span><span class="n">filter_</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Fetch data from WFS using requests</span>
+    <span class="n">response_eez</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+
+    <span class="c1"># Check for successful request</span>
+    <span class="k">if</span> <span class="n">response_eez</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">response_eez</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">response_eez</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">requests</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Failed to retrieve Maritime Gazette data. Status code: </span><span class="si">{</span><span class="n">response_eez</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;totalFeatures&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected 1 feature, got </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;totalFeatures&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">crs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;crs&quot;</span><span class="p">][</span><span class="s2">&quot;properties&quot;</span><span class="p">][</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;EPSG::&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">eez</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="o">.</span><span class="n">from_features</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">eez</span><span class="o">.</span><span class="n">set_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="n">crs</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.fetch_natural_earth_shape" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">fetch_natural_earth_shape</span><span class="p">(</span><span class="n">dataset_name</span><span class="p">,</span> <span class="n">filter_key</span><span class="p">,</span> <span class="n">filter_value</span><span class="o">=</span><span class="s1">&#39;China&#39;</span><span class="p">,</span> <span class="n">region_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>fetch region or country shape from natural earth dataset and filter</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>dataset_name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the name of the natural earth dataset to fetch</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filter_key</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>key to filter the records by</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filter_value</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="list">list</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>filter pass value. Defaults to "China".</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;China&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>china country: build_natural_earth_shape("admin_0_countries", "ADMIN", "China")
+china provinces: build_natural_earth_shape("admin_1_states_provinces", 
+    "iso_a2", "CN", region_key="name_en")</p>
+</details>
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: the filtered records</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fetch_natural_earth_shape</span><span class="p">(</span>
+    <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filter_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filter_value</span><span class="o">=</span><span class="s2">&quot;China&quot;</span><span class="p">,</span> <span class="n">region_key</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;fetch region or country shape from natural earth dataset and filter</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dataset_name (str): the name of the natural earth dataset to fetch</span>
+<span class="sd">        filter_key (str): key to filter the records by</span>
+<span class="sd">        filter_value (str|list, optional): filter pass value. Defaults to &quot;China&quot;.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        china country: build_natural_earth_shape(&quot;admin_0_countries&quot;, &quot;ADMIN&quot;, &quot;China&quot;)</span>
+<span class="sd">        china provinces: build_natural_earth_shape(&quot;admin_1_states_provinces&quot;, </span>
+<span class="sd">            &quot;iso_a2&quot;, &quot;CN&quot;, region_key=&quot;name_en&quot;)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        gpd.GeoDataFrame: the filtered records</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">shpfilename</span> <span class="o">=</span> <span class="n">shpreader</span><span class="o">.</span><span class="n">natural_earth</span><span class="p">(</span>
+        <span class="n">resolution</span><span class="o">=</span><span class="n">NATURAL_EARTH_RESOLUTION</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="s2">&quot;cultural&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">dataset_name</span>
+    <span class="p">)</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">shpreader</span><span class="o">.</span><span class="n">Reader</span><span class="p">(</span><span class="n">shpfilename</span><span class="p">)</span>
+    <span class="n">records</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">records</span><span class="p">())</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">region_key</span><span class="p">:</span>
+        <span class="n">region_key</span> <span class="o">=</span> <span class="n">filter_key</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">filter_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">region_key</span><span class="p">],</span> <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">geometry</span><span class="p">}</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">records</span>
+                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">filter_key</span><span class="p">]</span> <span class="ow">in</span> <span class="n">filter_value</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">region_key</span><span class="p">],</span> <span class="s2">&quot;geometry&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">geometry</span><span class="p">}</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">records</span>
+                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">filter_key</span><span class="p">]</span> <span class="o">==</span> <span class="n">filter_value</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+    <span class="n">gdf</span><span class="o">.</span><span class="n">set_crs</span><span class="p">(</span><span class="n">epsg</span><span class="o">=</span><span class="n">CRS</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gdf</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.fetch_prefecture_shapes" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">fetch_prefecture_shapes</span><span class="p">(</span><span class="n">fixes</span><span class="o">=</span><span class="p">{</span><span class="n">GDAM_LV1</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;Nei Mongol&#39;</span><span class="p">:</span> <span class="s1">&#39;InnerMongolia&#39;</span><span class="p">,</span> <span class="s1">&#39;Xinjiang Uygur&#39;</span><span class="p">:</span> <span class="s1">&#39;Xinjiang&#39;</span><span class="p">,</span> <span class="s1">&#39;Hong Kong&#39;</span><span class="p">:</span> <span class="s1">&#39;HongKong&#39;</span><span class="p">,</span> <span class="s1">&#39;Ningxia Hui&#39;</span><span class="p">:</span> <span class="s1">&#39;Ningxia&#39;</span><span class="p">}})</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Fetch county-level shapefiles for China.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>fixes</code>
+            </td>
+            <td>
+                  <code>(<span title="dict">dict</span>, <span title="Optional">Optional</span>)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dictionary mapping old names to new names for specific columns.</p>
+              </div>
+            </td>
+            <td>
+                  <code>{<span title="fetch_shapes.GDAM_LV1">GDAM_LV1</span>: {&#39;Nei Mongol&#39;: &#39;InnerMongolia&#39;, &#39;Xinjiang Uygur&#39;: &#39;Xinjiang&#39;, &#39;Hong Kong&#39;: &#39;HongKong&#39;, &#39;Ningxia Hui&#39;: &#39;Ningxia&#39;}}</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fetch_prefecture_shapes</span><span class="p">(</span>
+    <span class="n">fixes</span><span class="o">=</span><span class="p">{</span>
+        <span class="n">GDAM_LV1</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;Nei Mongol&quot;</span><span class="p">:</span> <span class="s2">&quot;InnerMongolia&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Xinjiang Uygur&quot;</span><span class="p">:</span> <span class="s2">&quot;Xinjiang&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Hong Kong&quot;</span><span class="p">:</span> <span class="s2">&quot;HongKong&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Ningxia Hui&quot;</span><span class="p">:</span> <span class="s2">&quot;Ningxia&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fetch county-level shapefiles for China.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fixes (dict, Optional): Dictionary mapping old names to new names for specific columns.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gdf</span> <span class="o">=</span> <span class="n">fetch_gadm</span><span class="p">(</span><span class="n">country_code</span><span class="o">=</span><span class="s2">&quot;CHN&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">fix_dict</span> <span class="ow">in</span> <span class="n">fixes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">old_name</span><span class="p">,</span> <span class="n">new_name</span> <span class="ow">in</span> <span class="n">fix_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2"> == &#39;</span><span class="si">{</span><span class="n">old_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">gdf</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_name</span>
+    <span class="k">return</span> <span class="n">gdf</span><span class="p">[[</span><span class="s2">&quot;COUNTRY&quot;</span><span class="p">,</span> <span class="s2">&quot;NAME_1&quot;</span><span class="p">,</span> <span class="s2">&quot;NAME_2&quot;</span><span class="p">,</span> <span class="s2">&quot;geometry&quot;</span><span class="p">]]</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.fetch_province_shapes" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">fetch_province_shapes</span><span class="p">()</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>fetch the province shapes from natural earth and save it to the outpath</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: the province shapes</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fetch_province_shapes</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;fetch the province shapes from natural earth and save it to the outpath</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        gpd.GeoDataFrame: the province shapes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">province_shapes</span> <span class="o">=</span> <span class="n">fetch_natural_earth_shape</span><span class="p">(</span>
+        <span class="s2">&quot;admin_1_states_provinces&quot;</span><span class="p">,</span> <span class="s2">&quot;iso_a2&quot;</span><span class="p">,</span> <span class="n">COUNTRY_ISO</span><span class="p">,</span> <span class="n">region_key</span><span class="o">=</span><span class="s2">&quot;name_en&quot;</span>
+    <span class="p">)</span>
+    <span class="n">province_shapes</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="s2">&quot;province&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">province_shapes</span><span class="o">.</span><span class="n">province</span> <span class="o">=</span> <span class="n">province_shapes</span><span class="o">.</span><span class="n">province</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">province_shapes</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">&quot;province&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;province shapes:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">province_shapes</span><span class="p">)</span>
+
+    <span class="n">filtered</span> <span class="o">=</span> <span class="n">province_shapes</span><span class="p">[</span><span class="n">province_shapes</span><span class="p">[</span><span class="s2">&quot;province&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">PROV_NAMES</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">filtered</span><span class="p">[</span><span class="s2">&quot;province&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span> <span class="o">!=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">PROV_NAMES</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Missing provinces: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">PROV_NAMES</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">set</span><span class="p">(</span><span class="n">province_shapes</span><span class="p">[</span><span class="s1">&#39;province&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="n">filtered</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;province&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">filtered</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.has_overlap" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">has_overlap</span><span class="p">(</span><span class="n">gdf</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check for spatial overlaps across rows</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>gdf</code>
+            </td>
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the geodataframe to check</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>DataFrame</code></td>            <td>
+                  <code><span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Index x Index boolean dataframe</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">has_overlap</span><span class="p">(</span><span class="n">gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check for spatial overlaps across rows</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        gdf (gpd.GeoDataFrame): the geodataframe to check</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataFrame: Index x Index boolean dataframe</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">gdf</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="n">gdf</span><span class="p">[</span><span class="n">gdf</span><span class="o">.</span><span class="n">index</span> <span class="o">!=</span> <span class="n">row</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">geom</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">intersects</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.remove_overlaps" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">remove_overlaps</span><span class="p">(</span><span class="n">gdf</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>remove inter row overlaps from a GeoDataFrame, cutting out the smaller region from the larger one</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>gdf</code>
+            </td>
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the geodataframe to be treated</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>gpd.GeoDataFrame: the treated geodataframe</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">remove_overlaps</span><span class="p">(</span><span class="n">gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;remove inter row overlaps from a GeoDataFrame, cutting out the smaller region from the larger one</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        gdf (gpd.GeoDataFrame): the geodataframe to be treated</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        gpd.GeoDataFrame: the treated geodataframe</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">overlaps</span> <span class="o">=</span> <span class="n">has_overlap</span><span class="p">(</span><span class="n">gdf</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gdf</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">cut_smaller_from_larger</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">gdf</span><span class="p">,</span> <span class="n">overlaps</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.split_provinces" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">split_provinces</span><span class="p">(</span><span class="n">prefectures</span><span class="p">,</span> <span class="n">node_config</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Split Inner Mongolia into East and West regions based on prefectures.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>prefectures</code>
+            </td>
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Gall chinese prefectures.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>node_config</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the configuration for node build</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Returns:
+    gpd.GeoDataFrame: Updated GeoDataFrame with Inner Mongolia split EAST/WEST.</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">split_provinces</span><span class="p">(</span>
+    <span class="n">prefectures</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">,</span>
+    <span class="n">node_config</span><span class="p">:</span> <span class="nb">dict</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Split Inner Mongolia into East and West regions based on prefectures.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prefectures (gpd.GeoDataFrame): Gall chinese prefectures.</span>
+<span class="sd">        node_config (dict): the configuration for node build</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        gpd.GeoDataFrame: Updated GeoDataFrame with Inner Mongolia split EAST/WEST.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gdf</span> <span class="o">=</span> <span class="n">prefectures</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">admin1</span><span class="p">,</span> <span class="n">splits</span> <span class="ow">in</span> <span class="n">node_config</span><span class="p">[</span><span class="s2">&quot;splits&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">GDAM_LV1</span><span class="si">}</span><span class="s2"> == &#39;</span><span class="si">{</span><span class="n">admin1</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+        <span class="n">splits_inv</span> <span class="o">=</span> <span class="p">{</span><span class="n">vv</span><span class="p">:</span> <span class="n">admin1</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">splits</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">for</span> <span class="n">vv</span> <span class="ow">in</span> <span class="n">v</span><span class="p">}</span>
+        <span class="n">gdf</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="n">GDAM_LV1</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="s2">&quot;NAME_2&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">splits_inv</span><span class="p">)</span>
+
+    <span class="c1"># merge geometries by node</span>
+    <span class="n">gdf</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span> <span class="o">=</span> <span class="p">{</span><span class="n">GDAM_LV1</span><span class="p">:</span> <span class="s2">&quot;node&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gdf</span><span class="p">[[</span><span class="s2">&quot;node&quot;</span><span class="p">,</span> <span class="s2">&quot;geometry&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">dissolve</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">&quot;node&quot;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s2">&quot;sum&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="fetch_shapes.validate_split_cfg" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">validate_split_cfg</span><span class="p">(</span><span class="n">split_cfg</span><span class="p">,</span> <span class="n">gdf</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>validate the province split configuration. 
+The province (admin level 1) is split by admin level 2 {subregion: [prefecture names],..}.
+The prefecture names must be unique and cover all admin2 in the admin1 level.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>split_cfg</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the configuration for the prefecture split</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>gdf</code>
+            </td>
+            <td>
+                  <code><span title="geopandas.GeoDataFrame">GeoDataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the geodataframe with prefecture shapes</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Raises:
+    ValueError: if the prefectures are not unique or do not cover all admin2 in the admin1 level</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>workflow/scripts/fetch_shapes.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_split_cfg</span><span class="p">(</span><span class="n">split_cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;validate the province split configuration. </span>
+<span class="sd">    The province (admin level 1) is split by admin level 2 {subregion: [prefecture names],..}.</span>
+<span class="sd">    The prefecture names must be unique and cover all admin2 in the admin1 level.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        split_cfg (dict): the configuration for the prefecture split</span>
+<span class="sd">        gdf (gpd.GeoDataFrame): the geodataframe with prefecture shapes</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: if the prefectures are not unique or do not cover all admin2 in the admin1 level</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># validate_settings</span>
+    <span class="k">for</span> <span class="n">admin1</span> <span class="ow">in</span> <span class="n">split_cfg</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">admin1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">gdf</span><span class="p">[</span><span class="n">GDAM_LV1</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+            <span class="n">err_</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Invalid admin1 entry </span><span class="si">{</span><span class="n">admin1</span><span class="si">}</span><span class="s2"> not found in provinces </span><span class="si">{</span><span class="n">gdf</span><span class="p">[</span><span class="n">GDAM_LV1</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_</span><span class="p">)</span>
+
+        <span class="c1"># flatten values</span>
+        <span class="n">admin2</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">names</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">split_cfg</span><span class="p">[</span><span class="n">admin1</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">admin2</span> <span class="o">+=</span> <span class="n">v</span>
+
+        <span class="c1"># check completeness</span>
+        <span class="n">all_admin2</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">GDAM_LV1</span><span class="si">}</span><span class="s1"> == &quot;</span><span class="si">{</span><span class="n">admin1</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)[</span><span class="n">GDAM_LV2</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">admin2</span><span class="p">)</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">all_admin2</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">admin1</span><span class="si">}</span><span class="s2"> prefectures do not match expected:</span><span class="se">\n</span><span class="s2">got </span><span class="si">{</span><span class="n">admin2</span><span class="si">}</span><span class="se">\n</span><span class="s2">vs</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="n">all_admin2</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># check uniqueness (pop -&gt; must be after completeness check)</span>
+        <span class="n">duplicated</span> <span class="o">=</span> <span class="nb">any</span><span class="p">([</span><span class="n">admin2</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span> <span class="ow">in</span> <span class="n">admin2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">admin2</span><span class="p">))])</span>
+        <span class="k">if</span> <span class="n">duplicated</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicated prefecture names in </span><span class="si">{</span><span class="n">admin1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">admin2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>
