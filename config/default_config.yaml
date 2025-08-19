@@ -176,8 +176,9 @@ Techs:
   non_dispatchable: ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential', "Solar Thermal"]
   conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
-  coal_cc: true # currently myopic pathway only.  CC = co2 cap 
-  hydrogen_lines: true # currently myopic pathway only
+  non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
+  hydrogen_lines: true
+  coal_ccs_retrofit: true # currently myopic pathway only.  CC = co2 cap 
 
 ## add components (overwrites vre tech choice)
 heat_coupling: false
@@ -303,10 +304,17 @@ security:
   line_margin: 70 # max percent of line capacity
 
 existing_capacities:
-  add: True 
-  grouping_years: [1980,1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
+  add: True # whether to add brownfield capacities
+  grouping_years: [1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
+  collapse_years: False # Treat as a single unit when preparing & solving network 
   threshold_capacity: 1 # TODO UNIT
-  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
+  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear']
+
+operational_reserve:
+  activate: false
+  epsilon_load: 0.02
+  epsilon_vres: 0.02
+  contingency: 300000 # MW
 
 fetch_regions:
   simplify_tol: 0.5

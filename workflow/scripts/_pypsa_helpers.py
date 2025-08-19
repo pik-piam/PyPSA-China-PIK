@@ -48,6 +48,30 @@ def get_location_and_carrier(
     return [location, carrier]
 
 
+def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Link"]) -> list:
+    """filter carriers for links that attach to a bus of the target carrier
+
+    Args:
+        n (pypsa.Network): the pypsa network object
+        bus_carrier (str, optional): the bus carrier. Defaults to "AC".
+        comps (list, optional): the components to check. Defaults to ["Generator", "Link"].
+
+    Returns:
+        list: list of carriers that are attached to the bus carrier
+    """
+    carriers = []
+    for c in comps:
+        comp = n.static(c)
+        ports = [c for c in comp.columns if c.startswith("bus")]
+        comp_df = comp[ports + ["carrier"]]
+        is_attached = comp_df[ports].apply(lambda x: x.map(n.buses.carrier) == bus_carrier).T.any()
+        carriers += comp_df.loc[is_attached].carrier.unique().tolist()
+
+    if bus_carrier not in carriers:
+        carriers += [bus_carrier]
+    return carriers
+
+
 def assign_locations(n: pypsa.Network):
     """Assign location based on the node location
 
