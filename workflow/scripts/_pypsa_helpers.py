@@ -2,13 +2,29 @@
 
 import os
 import pandas as pd
+import numpy as np
 import logging
 import pytz
+import xarray as xr
+import re
 
 import pypsa
 
 # get root logger
 logger = logging.getLogger()
+
+# Simplified component mapping - only essential mappings
+COMPONENT_MAPPING = {
+    'generator': 'generators',
+    'link': 'links',
+    'line': 'lines',
+    'store': 'stores',
+    'storageunit': 'storage_units',
+    'bus': 'buses',
+    'globalconstraint': 'global_constraints',
+    'load': 'loads',
+    'transformer': 'transformers',
+}
 
 
 def get_location_and_carrier(
@@ -125,7 +141,6 @@ def calc_lcoe(
     # eta is applied by statistics
     n.links.loc[gas_links, "marginal_cost"] += fuel_costs
     # TODO same with BECCS? & other links?
-
     rev = n.statistics.revenue(groupby=grouper, **kwargs)
     opex = n.statistics.opex(groupby=grouper, **kwargs)
     capex = n.statistics.expanded_capex(groupby=grouper, **kwargs)
@@ -463,3 +478,62 @@ def update_p_nom_max(n: pypsa.Network) -> None:
     # Hence, we update the assumptions.
 
     n.generators.p_nom_max = n.generators[["p_nom_min", "p_nom_max"]].max(1)
+
+
+def store_duals_to_network(network: pypsa.Network) -> None:
+    """Store dual variables in network components so they get saved to netcdf file."""
+    model = getattr(network, "model", None)
+    duals = getattr(model, "dual", None)
+
+    for dual_name, dual_value in duals.items():
+        # ---- Parse component / constraint ----
+        if "-" in dual_name:
+            component_type, constraint_type = dual_name.split("-", 1)
+        else:
+            lt = dual_name.lower()
+            component_type = next((k for k in COMPONENT_MAPPING if k in lt), None)
+            if not component_type:
+                continue
+            constraint_type = dual_name
+
+        comp_name = COMPONENT_MAPPING.get(component_type.lower())
+        comp_obj = getattr(network, comp_name, None)
+        if comp_obj is None:
+            continue
+
+        # ---- Standardize attr name ----
+        attr = f"mu_{re.sub(r'[^a-zA-Z0-9_]', '_', constraint_type)}"
+
+        # ---- Normalize to pandas ----
+        if hasattr(dual_value, "to_pandas"):
+            dual_value = dual_value.to_pandas()
+
+        # ---- Write back (single decision on DataFrame vs not) ----
+        if isinstance(dual_value, pd.DataFrame):
+            if comp_name == "global_constraints":
+                # collapse rows → per-constraint Series, align to component index
+                series = dual_value.mean(axis=0).reindex(comp_obj.index)
+                comp_obj[attr] = series
+            else:
+                # align time index & columns safely
+                time_index = getattr(network, "snapshots", dual_value.index)
+                aligned = dual_value.reindex(index=time_index, columns=comp_obj.index)
+
+                comp_t_name = f"{comp_name}_t"
+                if not hasattr(network, comp_t_name):
+                    setattr(network, comp_t_name, {})
+                getattr(network, comp_t_name)[attr] = aligned
+        else:
+            # Series / scalar / ndarray → Series aligned to component index
+            if isinstance(dual_value, pd.Series):
+                series = dual_value.reindex(comp_obj.index)
+            else:
+                try:
+                    val = float(np.asarray(dual_value).ravel()[0])
+                except Exception:
+                    val = 0.0
+                series = pd.Series(val, index=comp_obj.index)
+            comp_obj[attr] = series
+
+
+
