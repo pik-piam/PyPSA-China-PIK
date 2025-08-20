@@ -2,13 +2,13 @@
 Functions to get the province shapes.
 """
 
+import logging
+import os.path
+
 import cartopy.io.shapereader as shpreader
 import geopandas as gpd
-import os.path
-import logging
-
 from _helpers import configure_logging, mock_snakemake
-from constants import PROV_NAMES, CRS
+from constants import CRS, PROV_NAMES
 
 # TODO integrate constants with repo/config files/snakefile
 NATURAL_EARTH_RESOLUTION = "10m"  # 1:10m scale
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def fetch_natural_earth_records(country_iso2_code="CN") -> object:
-    """fetch the province/state level (1st admin level) from the
+    """Fetch the province/state level (1st admin level) from the
             NATURAL_EARTH data store and make a file
 
     Args:
@@ -42,7 +42,7 @@ def fetch_natural_earth_records(country_iso2_code="CN") -> object:
     provinces_states = reader.records()
 
     def filter_country_code(records: object, target_iso_a2_code="CN") -> list:
-        """filter provincial/state (admin level 1) records for one country
+        """Filter provincial/state (admin level 1) records for one country
 
         Args:
             records (shpreader.Reader.records): the records object from cartopy
@@ -70,7 +70,7 @@ def fetch_natural_earth_records(country_iso2_code="CN") -> object:
 
 
 def records_to_data_frame(records: object) -> gpd.GeoDataFrame:
-    """dump irrelevant info and make records into a GeoDataFrame that matches the PROV_NAMES
+    """Dump irrelevant info and make records into a GeoDataFrame that matches the PROV_NAMES
 
     Args:
         records (object): the cartopy shpread records from natural earth
@@ -103,7 +103,7 @@ def save_province_data(
     crs: int = CRS,
     output_file: os.PathLike = DEFAULT_SHAPE_OUTPATH,
 ):
-    """save to file
+    """Save to file
 
     Args:
         provinces_gdf (GeoDataFrame): the cleaned up province records

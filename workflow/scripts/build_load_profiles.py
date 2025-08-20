@@ -6,32 +6,33 @@
 """
 
 import logging
+import os
+from collections.abc import Iterable
+
 import atlite
+import numpy as np
 import pandas as pd
 import scipy as sp
-import numpy as np
-from collections.abc import Iterable
-from scipy.optimize import curve_fit
-import os
-from _helpers import configure_logging, mock_snakemake, get_cutout_params
+from _helpers import configure_logging, get_cutout_params, mock_snakemake
 from _pypsa_helpers import (
-    make_periodic_snapshots,
     calc_atlite_heating_timeshift,
+    make_periodic_snapshots,
     shift_profile_to_planning_year,
 )
-from readers import read_yearly_load_projections
 
 # TODO switch from hardocded REF_YEAR to a base year?
 from constants import (
-    PROV_NAMES,
-    UNIT_HOT_WATER_START_YEAR,
-    UNIT_HOT_WATER_END_YEAR,
-    START_YEAR,
     END_YEAR,
+    PROV_NAMES,
     REF_YEAR,
     REGIONAL_GEO_TIMEZONES,
+    START_YEAR,
     TIMEZONE,
+    UNIT_HOT_WATER_END_YEAR,
+    UNIT_HOT_WATER_START_YEAR,
 )
+from readers import read_yearly_load_projections
+from scipy.optimize import curve_fit
 
 logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
@@ -119,7 +120,7 @@ def build_daily_heat_demand_profiles(
     atlite_heating_hr_shift: int,
     switch_month_day: bool = True,
 ) -> pd.DataFrame:
-    """build the heat demand profile according to forecast demans
+    """Build the heat demand profile according to forecast demans
 
     Args:
         heat_demand_config (dict): the heat demand configuration
@@ -127,6 +128,7 @@ def build_daily_heat_demand_profiles(
             timezone handling in atlite
         switch_month_day (bool, optional): whether to switch month & day from heat_demand_config.
             Defaults to True.
+
     Returns:
         pd.DataFrame: regional daily heating demand with April to Sept forced to 0
     """
@@ -160,7 +162,7 @@ def build_daily_heat_demand_profiles(
     else:
         start_day = heat_demand_config["start_day"]
         end_day = heat_demand_config["end_day"]
-    regonal_daily_hd.loc[f"{atlite_year}-{start_day}":f"{atlite_year}-{end_day}"] = 0
+    regonal_daily_hd.loc[f"{atlite_year}-{start_day}" : f"{atlite_year}-{end_day}"] = 0
 
     return regonal_daily_hd
 
@@ -312,7 +314,7 @@ def project_elec_demand(
     yearly_projections_MWh: pd.DataFrame,
     year=2020,
 ) -> pd.DataFrame:
-    """project the hourly demand to the future years
+    """Project the hourly demand to the future years
 
     Args:
         hourly_demand_base_yr_MWh (pd.DataFrame): the hourly demand in the base year
@@ -348,7 +350,6 @@ def project_elec_demand(
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
         snakemake = mock_snakemake(
             "build_load_profiles",
             heating_demand="positive",

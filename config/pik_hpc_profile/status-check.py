@@ -54,8 +54,7 @@ def fetch_status(batch_id):
         return STATE_MAP[job_status]
     except KeyError:
         raise NotImplementedError(
-            f"Encountered unknown status '{job_status}' "
-            f"when parsing output:\n'{output}'"
+            f"Encountered unknown status '{job_status}' when parsing output:\n'{output}'"
         )
 
 

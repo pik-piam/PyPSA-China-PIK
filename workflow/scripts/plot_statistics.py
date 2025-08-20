@@ -1,36 +1,42 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText: : 2017-2024 The PyPSA-Eur Authors
 # 2014 Adapted from pypsa-eur by PyPSA-China authors
 #
 # SPDX-License-Identifier: MIT
 
-import matplotlib.pyplot as plt
+import logging
+import os
+
 import matplotlib.axes as axes
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import pypsa
 import seaborn as sns
-import os
-import logging
-from pandas import DataFrame
-import pandas as pd
-import numpy as np
-
-from _plot_utilities import heatmap, annotate_heatmap
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
-from _plot_utilities import rename_index, fix_network_names_colors, filter_carriers
-from _pypsa_helpers import calc_lcoe, calc_generation_share
+from _plot_utilities import (
+    annotate_heatmap,
+    filter_carriers,
+    fix_network_names_colors,
+    heatmap,
+    rename_index,
+)
+from _pypsa_helpers import calc_generation_share, calc_lcoe
 from constants import (
     PLOT_CAP_LABEL,
     PLOT_CAP_UNITS,
-    PLOT_SUPPLY_UNITS,
     PLOT_SUPPLY_LABEL,
+    PLOT_SUPPLY_UNITS,
 )
+from pandas import DataFrame
 
 sns.set_theme("paper", style="whitegrid")
 logger = logging.getLogger(__name__)
 
 
-def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, drop_zero_vals=True, add_labels=True):
+def plot_static_per_carrier(
+    ds: DataFrame, ax: axes.Axes, colors: DataFrame, drop_zero_vals=True, add_labels=True
+):
     """Generic function to plot different statics
 
     Args:
@@ -39,7 +45,7 @@ def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, dro
         colors (DataFrame): colors for the carriers
         drop_zero_vals (bool, optional): Drop zeroes from data. Defaults to True.
         add_labels (bool, optional): Add value labels on bars. If None, reads from config. Defaults to None.
-    """    
+    """
     if drop_zero_vals:
         ds = ds[ds != 0]
     ds = ds.dropna()
@@ -48,54 +54,63 @@ def plot_static_per_carrier(ds: DataFrame, ax: axes.Axes, colors: DataFrame, dro
     label = f"{ds.attrs['name']} [{ds.attrs['unit']}]"
     ds.plot.barh(color=c.values, xlabel=label, ax=ax)
     if add_labels:
-        for i, (index, value) in enumerate(ds.items()): 
-            ax.text(value, i, f"{value:.1f}", va='center', ha='left', fontsize=8)
+        for i, (index, value) in enumerate(ds.items()):
+            ax.text(value, i, f"{value:.1f}", va="center", ha="left", fontsize=8)
     ax.grid(axis="y")
 
 
-def add_second_xaxis(data:pd.Series, ax, label, **kwargs):  
+def add_second_xaxis(data: pd.Series, ax, label, **kwargs):
     """
     Add a secondary X-axis to the plot.
+
     Args:
         data (pd.Series): The data to plot. Its values will be plotted on the secondary X-axis.
         ax (matplotlib.axes.Axes): The main matplotlib Axes object.
         label (str): The label for the secondary X-axis.
         **kwargs: Optional keyword arguments for plot styling.
     """
-    defaults = {"color":'red', "text_offset":0.5, "markersize":8, "fontsize":9}  
-    kwargs.update(defaults)  
+    defaults = {"color": "red", "text_offset": 0.5, "markersize": 8, "fontsize": 9}
+    kwargs.update(defaults)
 
-    ax2 = ax.twiny()  
+    ax2 = ax.twiny()
     # # y_pos creates a sequence of integers (e.g., [0, 1, 2, 3]) to serve as distinct vertical positions
     # for each data point on the shared Y-axis. This is necessary because data.values are plotted
-    # horizontally on the secondary X-axis (ax2), requiring vertical separation for clarity.  
-    y_pos = range(len(data))  
+    # horizontally on the secondary X-axis (ax2), requiring vertical separation for clarity.
+    y_pos = range(len(data))
 
-    ax2.plot(  
-        data.values,  
-        y_pos,  
-        marker='o',  
-        linestyle='',  
-        color=kwargs["color"],  
-        markersize=kwargs["markersize"],  
-        label="Generation Share (%)"  
-    )  
+    ax2.plot(
+        data.values,
+        y_pos,
+        marker="o",
+        linestyle="",
+        color=kwargs["color"],
+        markersize=kwargs["markersize"],
+        label="Generation Share (%)",
+    )
 
-    for i, val in enumerate(data.values):  
-        ax2.text(val + kwargs["text_offset"], i, f"{val:.1f}%", color=kwargs["color"],  
-                 va='center', ha='left', fontsize=kwargs["fontsize"])  
+    for i, val in enumerate(data.values):
+        ax2.text(
+            val + kwargs["text_offset"],
+            i,
+            f"{val:.1f}%",
+            color=kwargs["color"],
+            va="center",
+            ha="left",
+            fontsize=kwargs["fontsize"],
+        )
 
-    ax2.set_xlim(left=0)  
-    ax2.set_xlabel(label)  
-    ax2.grid(False)  
-    ax2.tick_params(axis='x', labelsize=kwargs["fontsize"])  # Remove color setting for ticks  
+    ax2.set_xlim(left=0)
+    ax2.set_xlabel(label)
+    ax2.grid(False)
+    ax2.tick_params(axis="x", labelsize=kwargs["fontsize"])  # Remove color setting for ticks
 
-    return ax2  
+    return ax2
 
 
 def prepare_capacity_factor_data(n, carrier):
     """
     Prepare Series for actual and theoretical capacity factors per technology.
+
     Returns:
         cf_filtered: Series of actual capacity factors (index: nice_name)
         theo_cf_filtered: Series of theoretical capacity factors (index: nice_name)
@@ -105,15 +120,17 @@ def prepare_capacity_factor_data(n, carrier):
         cf_data.loc[("Link", "battery charger")] = cf_data.loc[("Link", "battery")]
         cf_data.drop(index=("Link", "battery"), inplace=True)
     cf_data = cf_data.groupby(level=1).mean()
-    
+
     # Theoretical capacity factor
     gen = n.generators.copy()
     p_max_pu = n.generators_t.p_max_pu
     gen["p_nom_used"] = gen["p_nom_opt"].fillna(gen["p_nom"])
     weighted_energy_per_gen = (p_max_pu * gen["p_nom_used"]).sum()
     gen["weighted_energy"] = weighted_energy_per_gen
-    
-    gen["nice_name"] = gen["carrier"].map(lambda x: n.carriers.loc[x, "nice_name"] if x in n.carriers.index else x)
+
+    gen["nice_name"] = gen["carrier"].map(
+        lambda x: n.carriers.loc[x, "nice_name"] if x in n.carriers.index else x
+    )
     grouped_energy = gen.groupby("nice_name")["weighted_energy"].sum()
     grouped_capacity = gen.groupby("nice_name")["p_nom_used"].sum()
     theoretical_cf_weighted = grouped_energy / grouped_capacity / len(n.snapshots)
@@ -132,39 +149,61 @@ def prepare_capacity_factor_data(n, carrier):
     return cf_filtered, theo_cf_filtered
 
 
-def plot_capacity_factor(cf_filtered: pd.Series, 
-                         theo_cf_filtered: pd.Series, 
-                         ax: axes.Axes, 
-                         colors: dict, 
-                         **kwargs):
+def plot_capacity_factor(
+    cf_filtered: pd.Series, theo_cf_filtered: pd.Series, ax: axes.Axes, colors: dict, **kwargs
+):
     """
     Plot actual and theoretical capacity factors for each technology.
-    
+
     Args:
         cf_filtered (pd.Series): Actual capacity factors indexed by technology.
         theo_cf_filtered (pd.Series): Theoretical capacity factors indexed by technology.
         ax (matplotlib.axes.Axes): The axis to plot on.
         colors (dict): Color mapping for technologies.
-    
+
     Returns:
         matplotlib.axes.Axes: The axis with the plot.
     """
     x_pos = range(len(cf_filtered))
     width = 0.35
 
-    ax.barh([i - width/2 for i in x_pos], cf_filtered.values,
-            width, color=[colors.get(tech, "lightgrey") for tech in cf_filtered.index],
-            alpha=0.8, label='Actual CF')
-    ax.barh([i + width/2 for i in x_pos], theo_cf_filtered.values,
-            width, color=[colors.get(tech, "lightgrey") for tech in theo_cf_filtered.index],
-            alpha=0.4, label='Theoretical CF')
+    ax.barh(
+        [i - width / 2 for i in x_pos],
+        cf_filtered.values,
+        width,
+        color=[colors.get(tech, "lightgrey") for tech in cf_filtered.index],
+        alpha=0.8,
+        label="Actual CF",
+    )
+    ax.barh(
+        [i + width / 2 for i in x_pos],
+        theo_cf_filtered.values,
+        width,
+        color=[colors.get(tech, "lightgrey") for tech in theo_cf_filtered.index],
+        alpha=0.4,
+        label="Theoretical CF",
+    )
 
     for i, (tech, cf_val) in enumerate(cf_filtered.items()):
-        ax.text(cf_val + 0.01, i - width/2, f'{cf_val:.2f}', va='center', ha='left', fontsize=8,
-                bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.8))
+        ax.text(
+            cf_val + 0.01,
+            i - width / 2,
+            f"{cf_val:.2f}",
+            va="center",
+            ha="left",
+            fontsize=8,
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.8),
+        )
         theo_val = theo_cf_filtered.get(tech, 0)
-        ax.text(theo_val + 0.01, i + width/2, f'{theo_val:.2f}', va='center', ha='left', fontsize=8,
-                bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.5))
+        ax.text(
+            theo_val + 0.01,
+            i + width / 2,
+            f"{theo_val:.2f}",
+            va="center",
+            ha="left",
+            fontsize=8,
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.5),
+        )
 
     ax.set_yticks(list(x_pos))
     ax.set_yticklabels(cf_filtered.index)
@@ -176,10 +215,10 @@ def plot_capacity_factor(cf_filtered: pd.Series,
     return ax
 
 
-
 def prepare_province_peakload_capacity_data(n, attached_carriers=None):
     """
     Prepare DataFrame for province peak load and installed capacity by technology.
+
     Returns:
         df_plot: DataFrame with provinces as index, columns as technologies and 'Peak Load'.
         bar_cols: List of technology columns to plot as bars.
@@ -208,7 +247,7 @@ def prepare_province_peakload_capacity_data(n, attached_carriers=None):
             (prov, n.carriers.loc[carrier, "nice_name"] if carrier in n.carriers.index else carrier)
             for prov, carrier in ds.index
         ],
-        names=["province", "nice_name"]
+        names=["province", "nice_name"],
     )
     cap_by_prov_tech = ds.unstack(level=-1).fillna(0)
     cap_by_prov_tech = cap_by_prov_tech.abs() / PLOT_CAP_UNITS
@@ -220,8 +259,13 @@ def prepare_province_peakload_capacity_data(n, attached_carriers=None):
     # Only keep columns in attached_carriers if provided
     if attached_carriers is not None:
         # Ensure nice_name mapping for attached_carriers
-        attached_nice_names = [n.carriers.loc[c, "nice_name"] if c in n.carriers.index else c for c in attached_carriers]
-        cap_by_prov_tech = cap_by_prov_tech[[c for c in cap_by_prov_tech.columns if c in attached_nice_names]]
+        attached_nice_names = [
+            n.carriers.loc[c, "nice_name"] if c in n.carriers.index else c
+            for c in attached_carriers
+        ]
+        cap_by_prov_tech = cap_by_prov_tech[
+            [c for c in cap_by_prov_tech.columns if c in attached_nice_names]
+        ]
 
     # Merge peak load and capacity
     df_plot = cap_by_prov_tech.copy()
@@ -230,13 +274,16 @@ def prepare_province_peakload_capacity_data(n, attached_carriers=None):
     # Bar columns: exclude Peak Load, only keep nonzero
     bar_cols = [c for c in df_plot.columns if c != "Peak Load"]
     bar_cols = [c for c in bar_cols if df_plot[c].sum() > 0]
-    color_list = [n.carriers.set_index("nice_name").color.get(tech, "lightgrey") for tech in bar_cols]
+    color_list = [
+        n.carriers.set_index("nice_name").color.get(tech, "lightgrey") for tech in bar_cols
+    ]
     return df_plot, bar_cols, color_list
 
 
 def plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir):
     """
     Plot province peak load vs installed capacity by technology.
+
     Args:
         df_plot: DataFrame with provinces as index, columns as technologies and 'Peak Load'.
         bar_cols: List of technology columns to plot as bars.
@@ -247,7 +294,13 @@ def plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir):
     df_plot[bar_cols].plot(kind="barh", stacked=True, ax=ax, color=color_list, alpha=0.8)
     # Plot peak load as red vertical line
     for i, prov in enumerate(df_plot.index):
-        ax.plot(df_plot.loc[prov, "Peak Load"], i, "r|", markersize=18, label="Peak Load" if i==0 else "")
+        ax.plot(
+            df_plot.loc[prov, "Peak Load"],
+            i,
+            "r|",
+            markersize=18,
+            label="Peak Load" if i == 0 else "",
+        )
     ax.set_xlabel("Capacity [GW]")
     ax.set_ylabel("Province")
     ax.set_title("Peak Load vs Installed Capacity by Province")
@@ -268,7 +321,6 @@ def plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir):
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
         snakemake = mock_snakemake(
             "plot_statistics",
             carrier="AC",
@@ -310,7 +362,6 @@ if __name__ == "__main__":
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capacity_factor.png"))
 
-
     if "installed_capacity" in stats_list:
         fig, ax = plt.subplots()
         ds = n.statistics.installed_capacity(groupby=["carrier"], nice_names=False).dropna()
@@ -349,7 +400,7 @@ if __name__ == "__main__":
             n.links.loc[pseudo_links, "p_nom_opt"] = 0
 
         # Calculate optimal capacity for all components
-        ds = n.statistics.optimal_capacity(groupby=["carrier"], nice_names = False).dropna()
+        ds = n.statistics.optimal_capacity(groupby=["carrier"], nice_names=False).dropna()
 
         # Restore original link capacities to avoid modifying the network object
         n.links.p_nom_opt = original_p_nom_opt
@@ -397,7 +448,9 @@ if __name__ == "__main__":
         fig, ax = plt.subplots()
         ds = n.statistics.curtailment(bus_carrier=carrier)
         # curtailment definition only makes sense for VREs
-        vres = snakemake.config["Techs"].get("non_dispatchable", ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential'])
+        vres = snakemake.config["Techs"].get(
+            "non_dispatchable", ["Offshore Wind", "Onshore Wind", "Solar", "Solar Residential"]
+        )
         vres = [v for v in vres if v in ds.index.get_level_values("carrier")]
         attrs = ds.attrs.copy()
         ds = ds.unstack()[vres].stack()
@@ -407,8 +460,12 @@ if __name__ == "__main__":
         fig.savefig(os.path.join(outp_dir, "curtailment.png"))
 
         # 1. Calculate curtailment and actual generation by province and technology
-        curtailment = n.statistics.curtailment(comps="Generator", groupby=["location", "carrier"], bus_carrier=carrier)
-        supply = n.statistics.supply(comps="Generator", groupby=["location", "carrier"], bus_carrier=carrier)
+        curtailment = n.statistics.curtailment(
+            comps="Generator", groupby=["location", "carrier"], bus_carrier=carrier
+        )
+        supply = n.statistics.supply(
+            comps="Generator", groupby=["location", "carrier"], bus_carrier=carrier
+        )
 
         # 2. Calculate curtailment rate (curtailment / (curtailment + actual generation))
         curtailment_rate = curtailment / (curtailment + supply.replace(0, np.nan)) * 100
@@ -417,7 +474,9 @@ if __name__ == "__main__":
         # 3. Convert to DataFrame for plotting
         df_rate = curtailment_rate.unstack(level=-1).fillna(0)
         # Map columns to nice_name
-        df_rate.columns = [n.carriers.loc[c, "nice_name"] if c in n.carriers.index else c for c in df_rate.columns]
+        df_rate.columns = [
+            n.carriers.loc[c, "nice_name"] if c in n.carriers.index else c for c in df_rate.columns
+        ]
         colors_nice = n.carriers.set_index("nice_name").color
         color_list = [colors_nice.get(tech, "lightgrey") for tech in df_rate.columns]
 
@@ -427,8 +486,14 @@ if __name__ == "__main__":
 
         fig, ax = plt.subplots(figsize=(14, 8))
         im, cbar = heatmap(
-            df_vre.values, df_vre.index, df_vre.columns, ax=ax,
-            cmap="magma_r", cbarlabel="Curtailment Rate [%]", vmin=0, vmax=100
+            df_vre.values,
+            df_vre.index,
+            df_vre.columns,
+            ax=ax,
+            cmap="magma_r",
+            cbarlabel="Curtailment Rate [%]",
+            vmin=0,
+            vmax=100,
         )
         annotate_heatmap(im, valfmt="{x:.1f}", size=8, threshold=50, textcolors=("black", "white"))
         ax.set_xlabel("Technology")
@@ -501,5 +566,7 @@ if __name__ == "__main__":
         fig.savefig(os.path.join(outp_dir, "MV_minus_LCOE.png"))
 
     if "province_peakload_capacity" in stats_list:
-        df_plot, bar_cols, color_list = prepare_province_peakload_capacity_data(n, attached_carriers=attached_carriers)
+        df_plot, bar_cols, color_list = prepare_province_peakload_capacity_data(
+            n, attached_carriers=attached_carriers
+        )
         plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir)

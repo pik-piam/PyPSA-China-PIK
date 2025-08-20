@@ -1,16 +1,16 @@
-import seaborn as sns
+import logging
+
+import matplotlib.pyplot as plt
 import pandas as pd
 import pypsa
-import logging
-import matplotlib.pyplot as plt
-
+import seaborn as sns
 from _helpers import configure_logging, mock_snakemake
 
 logger = logging.getLogger(__name__)
 
 
 def set_plot_style():
-    """apply plotting style to all figures"""
+    """Apply plotting style to all figures"""
     plt.style.use(
         [
             "classic",

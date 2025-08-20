@@ -37,9 +37,7 @@ def launch_subprocess(cmd: str, env=None) -> subprocess.CompletedProcess:
     """
     try:
         logging.debug(f"Running command: {cmd}")
-        res = subprocess.run(
-            cmd, check=True, shell=True, capture_output=True, text=True, env=env
-        )
+        res = subprocess.run(cmd, check=True, shell=True, capture_output=True, text=True, env=env)
         logging.info("\n\t".join(res.stdout.split("\n")))
         logging.info(f"return code: {res.returncode}")
         logging.info(f"====== stderr ====== :\n {'\n\t'.join(res.stderr.split('\n'))}")
@@ -121,9 +119,7 @@ def test_dry_run_build_cutouts(make_test_config_file):
     res = launch_subprocess(cmd)
     if res.returncode != 0:
         hash_id = copy_failed_config(cfg)
-    assert res.returncode == 0, (
-        f"Snakemake dry run w build cutouts failed, config id {hash_id}"
-    )
+    assert res.returncode == 0, f"Snakemake dry run w build cutouts failed, config id {hash_id}"
 
 
 # TODO use case cases pluggin

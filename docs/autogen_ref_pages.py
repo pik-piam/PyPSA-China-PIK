@@ -30,9 +30,7 @@ for path in sorted(scripts_dir.rglob("[!_]*.py")):
     # Create the documentation file
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         identifier = ".".join(parts)
-        print(
-            f"::: {identifier}", file=fd
-        )  # MkDocs-specific syntax to pull in the module
+        print(f"::: {identifier}", file=fd)  # MkDocs-specific syntax to pull in the module
 
     # Set the edit path to link the documentation back to the original Python file
     mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))

@@ -8,18 +8,18 @@ Helper functions for the PyPSA China workflow including
 - HPC helpers (gurobi tunnel setup)
 - Snakemake helpers (logging, path management and emulators for testing)
 """
-import os
-import sys
-import subprocess
-import logging
-import importlib
 
-from pathlib import Path
+import functools
+import importlib
+import logging
+import multiprocessing
+import os
+import subprocess
+import sys
 from copy import deepcopy
+from pathlib import Path
 
 import gurobipy
-import multiprocessing
-import functools
 
 # get root logger
 logger = logging.getLogger()
@@ -85,7 +85,7 @@ class GHGConfigHandler:
         self._validate_scenarios()
 
     def handle_ghg_scenarios(self) -> dict:
-        """handle ghg scenarios (parse, valdiate & unpack to config[scenario])
+        """Handle ghg scenarios (parse, valdiate & unpack to config[scenario])
 
         Returns:
             dict: validated and parsed
@@ -108,7 +108,7 @@ class GHGConfigHandler:
         return self.config
 
     def _filter_active_scenarios(self):
-        """select active ghg scenarios"""
+        """Select active ghg scenarios"""
         scenarios = self.config["scenario"].get("co2_pathway", [])
         if not isinstance(scenarios, list):
             scenarios = [scenarios]
@@ -118,9 +118,10 @@ class GHGConfigHandler:
         }
 
     def _reduction_to_budget(self, base_yr_ems: float):
-        """transform reduction to budget
+        """Transform reduction to budget
 
         Args:
+            base_yr_ems (float): Base year emissions value
         """
         for name, co2_scen in self.config["co2_scenarios"].items():
             if co2_scen["control"] == "reduction":
@@ -134,7 +135,6 @@ class GHGConfigHandler:
         """Validate CO2 scenarios"""
 
         for name, scen in self._raw_config["co2_scenarios"].items():
-
             # do not validate if not selected
             if name not in self.config["scenario"]["co2_pathway"]:
                 continue
@@ -153,8 +153,8 @@ class GHGConfigHandler:
 
             ALLOWED = ["price", "reduction", "budget", None]
 
-            if not scen["control"] in ALLOWED:
-                err = f"Control must be {','.join([str(x) for x in ALLOWED])} but was {name}:{scen.get('control', "missing")}"
+            if scen["control"] not in ALLOWED:
+                err = f"Control must be {','.join([str(x) for x in ALLOWED])} but was {name}:{scen.get('control', 'missing')}"
                 raise ValueError(err)
 
             years_int = set(map(int, self.config["scenario"]["planning_horizons"]))
@@ -218,7 +218,7 @@ class PathManager:
         )
 
     def results_dir(self, extra_opts: dict = None) -> os.PathLike:
-        """generate the results directory
+        """Generate the results directory
 
         Args:
             extra_opts (dict, optional): opt extra args. Defaults to None.
@@ -269,7 +269,8 @@ class PathManager:
         """Generate cutouts directory.
 
         Returns:
-            os.PathLike: The path to the cutouts directory."""
+            os.PathLike: The path to the cutouts directory.
+        """
 
         if self._is_test_run:
             return "tests/testdata"
@@ -312,6 +313,7 @@ class PathManager:
         Args:
             ignore_remind (bool, optional): do not return the remind default,
                 even if remind coupling is enabled. Defaults to False.
+
         Returns:
             os.PathLike: the dirname
         """
@@ -336,7 +338,7 @@ class PathManager:
         """Determine the path to the electric load data. If a path
          is specified in the config, it will be used, otherwise the defaukt
         The default path is different for remind coupled & standalone runs.
-        
+
         Args:
             ignore_remind (bool, optional): use the non-remind default regardless
                 of coupling
@@ -362,7 +364,7 @@ class PathManager:
         """Determine the path to the existing insrastructure data. If a path
          is specified in the config, it will be used, otherwise the defaukt
         The default path is different for remind coupled & standalone runs.
-        
+
         Args:
             ignore_remind (bool, optional): use the non-remind default regardless
                 of coupling
@@ -603,7 +605,6 @@ def mock_snakemake(
         wildcards (optional):  keyword arguments fixing the wildcards (if any needed)
 
     Raises:
-
         FileNotFoundError: Config file not found
 
     Returns:

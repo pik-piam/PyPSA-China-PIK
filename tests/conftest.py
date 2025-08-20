@@ -97,9 +97,7 @@ def make_test_config_file(make_snakemake_test_config, tmpdir_factory, request):
     # Get parameters passed via pytest.mark.parametrize
     time_res = request.param.get("time_res", 24)
     plan_year = request.param.get("plan_year", 2040)
-    kwargs = {
-        k: v for k, v in request.param.items() if k not in ["time_res", "plan_year"]
-    }
+    kwargs = {k: v for k, v in request.param.items() if k not in ["time_res", "plan_year"]}
 
     # Helper function to create a unique filename from the config arguments
     def generate_filename(*args, **kwargs):
@@ -112,9 +110,7 @@ def make_test_config_file(make_snakemake_test_config, tmpdir_factory, request):
     # temp_dir = pathlib.Path("tests/")
 
     # Generate the test config
-    test_config = make_snakemake_test_config(
-        time_res=time_res, plan_year=plan_year, **kwargs
-    )
+    test_config = make_snakemake_test_config(time_res=time_res, plan_year=plan_year, **kwargs)
 
     # Generate a unique filename based on the arguments
     config_filename = generate_filename(time_res=time_res, plan_year=plan_year)

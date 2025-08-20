@@ -6,30 +6,29 @@ Functions associated with the build_renewable_potential rule.
 - Temporal Profiles are built based on the atlite cutout
 - Potentials are built based on the atlite cutout and raster data (land availability)
 """
-import progressbar as pgb
 
-import logging
 import functools
-import atlite
-import xarray as xr
-import geopandas as gpd
-import numpy as np
+import logging
+import os.path
 import time
-import pandas as pd
-from atlite.gis import ExclusionContainer
 from os import PathLike, mkdir
 from shutil import rmtree
-import os.path
 
-from _helpers import mock_snakemake, configure_logging
-from readers_geospatial import read_province_shapes
+import atlite
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+import xarray as xr
+from _helpers import configure_logging, mock_snakemake
+from atlite.gis import ExclusionContainer
 from constants import (
-    PROV_NAMES,
     CRS,
-    OFFSHORE_WIND_NODES,
     DEFAULT_OFFSHORE_WIND_CORR_FACTOR,
+    OFFSHORE_WIND_NODES,
+    PROV_NAMES,
     TIMEZONE,
 )
+from readers_geospatial import read_province_shapes
 
 logger = logging.getLogger(__name__)
 
@@ -343,7 +342,6 @@ def make_offshore_wind_profile(offwind_config: dict, cutout: atlite.Cutout, outp
 
 
 if __name__ == "__main__":
-
     if "snakemake" not in globals():
         snakemake = mock_snakemake("build_renewable_potential")
 

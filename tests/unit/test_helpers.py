@@ -25,9 +25,7 @@ def sample_config():
         "paths": {
             "results_dir": "results",
             "costs_dir": "",
-            "yearly_regional_load": {
-                "ac": "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
-            },
+            "yearly_regional_load": {"ac": "resources/data/load/Provincial_Load_2020_2060_MWh.csv"},
         },
         "atlite": {
             "cutout_name": "cutout_test",

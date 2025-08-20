@@ -51,9 +51,7 @@ def calc_overlap_area(gdf: gpd.GeoDataFrame) -> DataFrame:
     return gdf.apply(
         lambda row: gdf[gdf.index != row.name].geometry.apply(
             lambda geom: (
-                row.geometry.intersection(geom).area
-                if row.geometry.intersects(geom)
-                else 0
+                row.geometry.intersection(geom).area if row.geometry.intersects(geom) else 0
             )
         ),
         axis=1,
@@ -90,9 +88,7 @@ def test_fetch_maritime_eez():
 
 
 def test_eez_by_region(mock_eez, mock_province_shapes):
-    result = eez_by_region(
-        mock_eez, mock_province_shapes, prov_key="province", simplify_tol=0
-    )
+    result = eez_by_region(mock_eez, mock_province_shapes, prov_key="province", simplify_tol=0)
     assert not result.empty
     assert "geometry" in result.columns
     assert result.crs == mock_eez.crs

@@ -2,19 +2,17 @@
 Helper/utility functions for plotting, including legacy functions yet to be removed
 """
 
-import pypsa
-import pandas as pd
-import numpy as np
 import os.path
-import matplotlib.pyplot as plt
-from os import PathLike
 import re
-from typing import Dict
+from os import PathLike
 
-from constants import PROV_NAMES
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import pypsa
 
 
-def validate_hex_colors(tech_colors: Dict[str, str]) -> Dict[str, str]:
+def validate_hex_colors(tech_colors: dict[str, str]) -> dict[str, str]:
     """Validate and standardize hex color codes in the tech_colors dictionary.
 
     Args:
@@ -48,7 +46,6 @@ def find_weeks_of_interest(
     Returns:
         tuple: Index ranges of ±3.5 days around the winter_max and summer_max.
     """
-    max_prices = n.buses_t["marginal_price"][PROV_NAMES].T.max()
     prices_w = (
         -1
         * n.statistics.revenue(comps="Load", bus_carrier="AC", aggregate_time=False)
@@ -61,9 +58,15 @@ def find_weeks_of_interest(
 
     summer = prices_w.query("snapshot > @summer_start and snapshot < @summer_end")
     summer_peak = summer.idxmax().iloc[0]
-    summer_peak_w = n.snapshots[(n.snapshots >= summer_peak - pd.Timedelta(days=3.5)) & (n.snapshots <= summer_peak + pd.Timedelta(days=3.5))]
+    summer_peak_w = n.snapshots[
+        (n.snapshots >= summer_peak - pd.Timedelta(days=3.5))
+        & (n.snapshots <= summer_peak + pd.Timedelta(days=3.5))
+    ]
     winter_peak = prices_w.loc[~prices_w.index.isin(summer.index)].idxmax().iloc[0]
-    winter_peak_w = n.snapshots[(n.snapshots >= winter_peak - pd.Timedelta(days=3.5)) & (n.snapshots <= winter_peak + pd.Timedelta(days=3.5))]
+    winter_peak_w = n.snapshots[
+        (n.snapshots >= winter_peak - pd.Timedelta(days=3.5))
+        & (n.snapshots <= winter_peak + pd.Timedelta(days=3.5))
+    ]
 
     return winter_peak_w, summer_peak_w
 
@@ -76,7 +79,8 @@ def label_stacked_bars(ax: object, nbars: int, fontsize=8, small_values=350):
         nbars (int): The number of bars in the stacked chart.
         fontsize (int, optional): Font size for the labels. Defaults to 8.
         small_values (int, optional): Threshold for small values. Small values
-            adjacent to one another are not printed to avoid overlap. Defaults to 350."""
+            adjacent to one another are not printed to avoid overlap. Defaults to 350.
+    """
 
     # reorganize patches by bar
     stacked = [ax.patches[i::nbars] for i in range(len(ax.patches) // nbars)]
@@ -113,7 +117,7 @@ def label_stacked_bars(ax: object, nbars: int, fontsize=8, small_values=350):
 
 
 def make_nice_tech_colors(tech_colors: dict, nice_names: dict) -> dict:
-    """add the nice names to the tech_colors dict keys
+    """Add the nice names to the tech_colors dict keys
 
     Args:
         tech_colors (dict): the tech colors (plot config)
@@ -160,7 +164,7 @@ def get_stat_colors(
 
 
 def get_solver_tolerance(config: dict, tol_name="BarConvTol") -> float:
-    """get the solver tolerance from the config
+    """Get the solver tolerance from the config
 
     Args:
         config (dict): the config
@@ -359,7 +363,7 @@ def set_plot_style(
 
 
 def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Link"]) -> list:
-    """filter carriers for links that attach to a bus of the target carrier
+    """Filter carriers for links that attach to a bus of the target carrier
 
     Args:
         n (pypsa.Network): the pypsa network object
@@ -404,6 +408,7 @@ def aggregate_small_pie_vals(pie: pd.Series, threshold: float) -> pd.Series:
 def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **kwargs):
     """
     Create a heatmap from a numpy array and two lists of labels.
+
     Args:
         data (np.ndarray): The data to plot.
         row_labels (list): The labels for the rows.
@@ -412,13 +417,14 @@ def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **k
         cbar_kw (dict, optional): Arguments to pass to colorbar. Defaults to {}.
         cbarlabel (str, optional): The label for the colorbar. Defaults to "".
         **kwargs: Additional arguments for imshow.
+
     Returns:
         im: The image.
         cbar: The colorbar.
     """
     if ax is None:
         ax = plt.gca()
-    im = ax.imshow(data, aspect='auto', interpolation='none', **kwargs)
+    im = ax.imshow(data, aspect="auto", interpolation="none", **kwargs)
     cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
     cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
     ax.set_xticks(np.arange(data.shape[1]), labels=col_labels)
@@ -430,9 +436,12 @@ def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **k
     return im, cbar
 
 
-def annotate_heatmap(im, data=None, valfmt="{x:.1f}", textcolors=("black", "white"), threshold=None, **textkw):
+def annotate_heatmap(
+    im, data=None, valfmt="{x:.1f}", textcolors=("black", "white"), threshold=None, **textkw
+):
     """
     Annotate a heatmap.
+
     Args:
         im: The AxesImage to annotate.
         data (np.ndarray, optional): Data to annotate. Defaults to im.get_array().
@@ -440,6 +449,7 @@ def annotate_heatmap(im, data=None, valfmt="{x:.1f}", textcolors=("black", "whit
         textcolors (tuple, optional): Colors for values below/above threshold. Defaults to ("black", "white").
         threshold (float, optional): Value in data units according to which the colors are applied. Defaults to half the max.
         **textkw: Additional arguments for text.
+
     Returns:
         list: List of text annotations.
     """
@@ -448,7 +458,7 @@ def annotate_heatmap(im, data=None, valfmt="{x:.1f}", textcolors=("black", "whit
     if threshold is not None:
         threshold = im.norm(threshold)
     else:
-        threshold = im.norm(data.max())/2.
+        threshold = im.norm(data.max()) / 2.0
     kw = dict(horizontalalignment="center", verticalalignment="center")
     kw.update(textkw)
     texts = []

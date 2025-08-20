@@ -1,19 +1,24 @@
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: CC0-1.0
-""" 
+"""
 Maths calculations used in the PyPSA-China workflow."""
+
+from functools import partial
+from math import asin, cos, radians, sin, sqrt
+
 import numpy as np
 import pandas as pd
-from scipy import interpolate
 import pyproj
+from pyproj import transform
+from scipy import interpolate
 
-from math import radians, cos, sin, asin, sqrt
-from functools import partial
 
 # TODO make function
 # polynomial centroid for plotting
-get_poly_center = lambda poly: (poly.centroid.xy[0][0], poly.centroid.xy[1][0])
+def get_poly_center(poly):
+    """Get the centroid of a polygon."""
+    return (poly.centroid.xy[0][0], poly.centroid.xy[1][0])
 
 
 def cartesian(s1: pd.Series, s2: pd.Series) -> pd.DataFrame:
@@ -65,7 +70,8 @@ def haversine(p1, p2) -> float:
 # This function follows http://toblerity.org/shapely/manual.html
 def area_from_lon_lat_poly(geometry):
     """For shapely geometry in lon-lat coordinates,
-    returns area in km^2."""
+    returns area in km^2.
+    """
 
     project = partial(
         pyproj.transform,
@@ -82,6 +88,7 @@ def area_from_lon_lat_poly(geometry):
 # TODO fix this/ DELETE
 def HVAC_cost_curve(distance):
     """Calculate the cost of HVAC lines based on distance.
+
     Args:
         distance (float): distance in km
     Returns:

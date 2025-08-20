@@ -7,6 +7,7 @@
 Associated with the `solve_network_myopic` rule in the Snakefile.
 To be merged/consolidated with the `solve_network` script.
 """
+
 import logging
 
 import numpy as np
@@ -27,7 +28,7 @@ def prepare_network(
     config: dict,
     solve_opts=None,
 ):
-    """prepare the network for the solver
+    """Prepare the network for the solver
     Args:
         n (pypsa.Network): the pypsa network object
         solve_opts (dict): the solving options
@@ -285,7 +286,7 @@ def extra_functionality(n, snapshots):
 
 
 def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
-    """perform the optimisation
+    """Perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
         config (dict): the configuration dictionary

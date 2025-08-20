@@ -1,16 +1,15 @@
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import logging
-import geopandas as gpd
-import xarray as xr
 
-from _plot_utilities import set_plot_style
-from readers_geospatial import read_province_shapes
+import geopandas as gpd
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import xarray as xr
 from _helpers import (
     configure_logging,
     mock_snakemake,
     set_plot_test_backend,
 )
+from readers_geospatial import read_province_shapes
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +21,7 @@ def plot_average_distances(
     Args:
         distances (xr.DataArray): the average distances for each class to the node
         ax (plt.Axes, optional): the axes to plot on. Defaults to None.
+
     Returns:
         tuple[plt.Figure, plt.Axes]: the figure and axes
     """
@@ -55,6 +55,7 @@ def plot_resource_class_bins(
         regions (gpd.GeoDataFrame): the regions/node regions
         technology (str): the technology name
         ax (plt.Axes, optional): the axes to plot on. Defaults to None.
+
     Returns:
         tuple[plt.Figure, plt.Axes]: the figure and axes
     """
@@ -95,6 +96,7 @@ def plot_resource_class_cfs(
         regions (gpd.GeoDataFrame): the regions/node regions
         technology (str): the technology name
         ax (plt.Axes, optional): the axes to plot on. Defaults to None.
+
     Returns:
         tuple[plt.Figure, plt.Axes]: the figure and axes
     """
