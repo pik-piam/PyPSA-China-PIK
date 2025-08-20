@@ -195,7 +195,6 @@ def plot_pathway_capacities(
         year = cap_df.columns.get_level_values(0)[0]
         cap_df = cap_df.droplevel(0, axis=1).rename(columns={"Unnamed: 4_level_1": year})
         cap_df /= PLOT_CAP_UNITS
-
         if "Load Shedding" in cap_df.index.get_level_values("carrier"):
             cap_df.drop("Load Shedding", level="carrier", inplace=True)
 
@@ -226,6 +225,7 @@ def plot_pathway_capacities(
         )
         cap_ac = cap_ac.groupby("carrier").sum()[year]
 
+        cap_h2 = pd.DataFrame()
         if plot_h2:
             cap_h2 = cap_df.reset_index().query(
                 "bus_carrier == 'H2' | carrier =='H2' | end_carrier =='H2'"
@@ -258,6 +258,8 @@ def plot_pathway_capacities(
     for i, capacity_df in enumerate([caps_ac, caps_heat, caps_stores, caps_h2]):
         if capacity_df.empty:
             continue
+        if isinstance(capacity_df, pd.Series):
+            capacity_df = capacity_df.to_frame()
         k, j = divmod(i, 2)
         ax = axes[k, j]
         preferred_order = pd.Index(config["preferred_order"])
@@ -639,12 +641,14 @@ def plot_prices(
         prices_df = prices_df.abs()
 
     defaults = {"lw": 3, "marker": "o", "markersize": 5, "alpha": 0.8}
-    kwargs.update(kwargs)
+    if "linewidth" in kwargs:
+        kwargs["lw"] = kwargs.pop("linewidth")
+    defaults.update(kwargs)
     prices_df.plot(
         ax=ax,
         kind="line",
         color=[colors[k] if k in colors else "k" for k in prices_df.columns],
-        **kwargs,
+        **defaults,
     )
     min_ = prices_df.min().min()
     if np.sign(min_) < 0:
@@ -838,7 +842,8 @@ if __name__ == "__main__":
             "plot_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
             heating_demand="positive",
             configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
@@ -865,7 +870,6 @@ if __name__ == "__main__":
         co2_prices = None
 
     plot_heat = config.get("heat_coupling", False)
-    plot_h2 = config["add_H2"]
     NAN_COLOR = config["plotting"]["nan_color"]
     data_paths = {
         "energy": [os.path.join(p, "energy.csv") for p in paths],
@@ -888,11 +892,11 @@ if __name__ == "__main__":
             "solar",
             "onwind",
             "offwind",
-            "battery",
+            # "battery",
             "battery discharger",
             "coal",
             "coal-CCS",
-            "gas CCGT",
+            "hydroelectricity",
             "gas OCGT",
             "CCGT-CCS",
             "H2 Electrolysis",

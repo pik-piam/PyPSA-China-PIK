@@ -21,7 +21,13 @@ from _helpers import (
     mock_snakemake,
     set_plot_test_backend,
 )
-from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL, PROV_NAMES
+from constants import (
+    PLOT_CAP_UNITS,
+    PLOT_CAP_LABEL,
+    PROV_NAMES,
+    PLOT_SUPPLY_UNITS,
+    PLOT_SUPPLY_LABEL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +40,7 @@ def plot_energy_balance(
     end_date="2060-04-06 12:00:00",
     aggregate_fossil=False,
     add_load_line=True,
+    add_reserves=False,
     ax: plt.Axes = None,
 ):
     """plot the electricity balance of the network for the given time range
@@ -57,13 +64,13 @@ def plot_energy_balance(
         .dropna(how="all")
         .groupby("carrier")
         .sum()
-        .div(PLOT_CAP_UNITS)
+        .div(PLOT_SUPPLY_UNITS)
         # .drop("-")
         .T
     )
 
-    p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
     p = p.loc[start_date:end_date]
+    p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
 
     # aggreg fossil
     if aggregate_fossil:
@@ -126,7 +133,7 @@ def plot_energy_balance(
         charge.drop(columns="load_pos", inplace=True)
 
     ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
-    ax.set_ylabel(PLOT_CAP_LABEL)
+    ax.set_ylabel(PLOT_SUPPLY_LABEL)
     ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
     ax.grid(axis="y")
     ax.set_xlim(supply.index.min(), supply.index.max())
@@ -134,6 +141,12 @@ def plot_energy_balance(
     fig.tight_layout()
 
     return ax
+
+
+def add_reserves(n: pypsa.Network):
+    """plot the reserves of the network"""
+
+    curtailed = n.statistics.curtailment(aggregate_time=False, bus_carrier="AC")
 
 
 def plot_load_duration_curve(
@@ -420,7 +433,7 @@ def plot_price_heatmap(
 
 
 def plot_vre_heatmap(
-    n: pypsa.Network, color_map="magma", log_values=True, time_range: pd.Index = None
+    n: pypsa.Network, config: dict, color_map="magma", log_values=True, time_range: pd.Index = None,
 ):
     """plot the VRE generation per hour and day as a heatmap
 
@@ -428,10 +441,11 @@ def plot_vre_heatmap(
         n (pypsa.Network): the pypsa network object
         time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).
         log_values (bool, optional): whether to use log scale for the values. Defaults to True.
+        config (dict, optional): the run config (snakemake.config).
 
     """
 
-    vres = ["offwind", "onwind", "solar"]
+    vres = config["Techs"].get("non_dispatchable", ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential'])
     vre_avail = (
         n.statistics.supply(
             comps="Generator",
@@ -457,6 +471,7 @@ def plot_vre_heatmap(
             tech_avail = np.log(tech_avail.clip(lower=10))
         fig, ax = plt.subplots()
         sns.heatmap(tech_avail.T, ax=ax, cmap=color_map)
+        ax.set_title(f"{tech} generation by province")
 
 
 def plot_vre_timemap(
@@ -487,9 +502,9 @@ def plot_vre_timemap(
     vre_avail["hour"] = vre_avail.index.hour
 
     for tech in vres:
-        solar_pivot = vre_avail.pivot_table(index="hour", columns="day", values=tech)
+        pivot_ = vre_avail.pivot_table(index="hour", columns="day", values=tech)
         fig, ax = plt.subplots(figsize=(12, 6))
-        sns.heatmap(solar_pivot.sort_index(ascending=False), cmap=color_map, ax=ax)
+        sns.heatmap(pivot_.sort_index(ascending=False), cmap=color_map, ax=ax)
         ax.set_title(f"{tech} generation by hour and day")
 
         fig.tight_layout()

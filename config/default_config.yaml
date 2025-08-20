@@ -4,7 +4,7 @@
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
-  name: unamed_run
+  name: 
 foresight: "overnight"
 
 paths:
@@ -35,6 +35,7 @@ scenario:
     - 2060
   heating_demand: ["positive"]
 
+# emission reduction scenarios (can be selected with scenario.co2_pathway)
 co2_scenarios: 
   exp175default:
     control: "reduction" # price | reduction | budget | None
@@ -47,15 +48,16 @@ co2_scenarios:
       '2045': 0.79092165
       '2050': 0.87480618
       '2055': 0.94359322
-      '2060': 1.0
+      '2060': 1
 
-# TODO Need to test timezones and functionality of end_year_plus1
+# Time dimension
+# TODO Need to test functionality of end_year_plus1
 snapshots:
   start: "01-01 00:00"
   end: "12-31 23:00"
   bounds: 'both'
-  freq: '5h'
-  # test weighings -> to be improved
+  freq: '5h' # down to 1h
+  # for weighings -> to be improved
   frequency: 5.
   # in case snapshots cross the planning horizon year
   end_year_plus1: false
@@ -88,6 +90,8 @@ atlite:
       dy: 5
       weather_year: 2020
 
+# renewable potentials and availabilities from Atlite. 
+# !CARE cutout should match atlite.cutout_name above
 renewable:
   onwind:
     cutout: China-2020c
@@ -151,7 +155,9 @@ reporting:
   # This ensures consistent capacity reporting across the network
   adjust_link_capacities_by_efficiency: true
 
-bus_suffix: [""," central heat"," decentral heat"," gas"," coal"]
+
+# Network carriers and technologies
+bus_suffix: [""," central heat"," decentral heat"," gas"," coal"] #TODO check used
 bus_carrier: {
     "": "AC",
     " central heat": "heat",
@@ -161,12 +167,15 @@ bus_carrier: {
 }
 
 Techs:
-  ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
+  ## tech selection
+  #TODO: rework vre_techs to split with clean_techs. Merge vre with non_dispatchable
   vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier","H2 CHP", "fuel cell"]
+  non_dispatchable: ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential', "Solar Thermal"]
   conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
-  coal_cc: true # currently myopic pathway only.  CC = co2 cap 
-  hydrogen_lines: true # currently myopic pathway only
+  non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
+  hydrogen_lines: true
+  coal_ccs_retrofit: true # currently myopic pathway only.  CC = co2 cap 
 
 ## add components (overwrites vre tech choice)
 heat_coupling: false
@@ -205,6 +214,7 @@ solving:
     clip_p_max_pu: 0.01
     skip_iterations: false
     track_iterations: false
+    export_duals: true   # Single switch for dual functionality
 
   solver:
     name: gurobi
@@ -276,6 +286,15 @@ solving:
 
   mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
 
+# brownfield options
+existing_capacities:
+  add: True # whether to add brownfield capacities
+  grouping_years: [1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
+  collapse_years: False # Treat as a single unit when preparing & solving network 
+  threshold_capacity: 1 # TODO UNIT
+  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear']
+
+# transmission options
 lines:
   line_length_factor: 1.25
   expansion:
@@ -285,17 +304,44 @@ lines:
 security:
   line_margin: 70 # max percent of line capacity
 
-existing_capacities:
-  add: True 
-  grouping_years: [1980,1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  threshold_capacity: 1 # TODO UNIT
-  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
+# contingencies (slower!) -> epsilon is fraction of vre gen or load for which reserves should exist
+operational_reserve:
+  activate: false
+  epsilon_load: 0.02
+  epsilon_vres: 0.02
+  contingency: 300000 # MW. Additional reserves on top of fractions
 
-fetch_regions:
-  simplify_tol: 0.5
+# TODO integrate in workflow: split_provinces is currently not supported by build_loads and reporting
+nodes: 
+  split_provinces: False # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
+  # exclude currently only applies if split_provinces is True, will be fixed with integrartion to workflow
+  exclude_provinces: ["Macau", "HongKong"] # list of provinces to exclude from splitting
+  splits:
+    # adminl2 groups per adminl1. {adminl1: {custom_name: [adminl2_names],..}}
+    InnerMongolia:
+      West: 
+        - "Hulunbuir"
+        - "Xing'an"
+        - "Tongliao"
+        - "Chifeng"
+        - "Xilin Gol"
+      East: 
+        - "Alxa"
+        - "Baotou"
+        - "Baynnur"
+        - "Hohhot"
+        - "Ordos"
+        - "Ulaan Chab"
+        - "Wuhai"
 
-
+# compression of netcdf network objects
 io:
   nc_compression:
     level: 4
     zlib: True
+
+# simplification of shapes to save memory. If using GPS for plant node assignment a lower value is preferable.
+fetch_regions:  
+  simplify_tol: 
+    eez: 0.5
+    land: 0.05

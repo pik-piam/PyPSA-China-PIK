@@ -236,6 +236,9 @@ def add_power_capacities_installed_before_baseyear(
     else:
         df.resource_class.fillna("", inplace=True)
     df.grouping_year = df.grouping_year.astype(int)
+    if config["existing_capacities"].get("collapse_years", False):
+        df.grouping_year = "brownwfield"
+
     df_ = df.pivot_table(
         index=["grouping_year", "tech_clean", "resource_class"],
         columns="bus",
@@ -252,7 +255,7 @@ def add_power_capacities_installed_before_baseyear(
     # TODO do we really need to loop over the years? / so many things?
     # something like df_.unstack(level=0) would be more efficient
     for grouping_year, generator, resource_grade in df_.index:
-        grouping_year = int(grouping_year)
+        build_year = 0 if grouping_year == "brownwfield" else grouping_year
         logger.info(f"Adding existing generator {generator} with year grp {grouping_year}")
         if not carrier_map.get(generator, "missing") in defined_carriers:
             logger.warning(
@@ -292,7 +295,7 @@ def add_power_capacities_installed_before_baseyear(
                 marginal_cost=costs.at[costs_key, "marginal_cost"],
                 efficiency=costs.at[costs_key, "efficiency"],
                 p_max_pu=p_max_pu[capacity.index],
-                build_year=grouping_year,
+                build_year=build_year,
                 lifetime=costs.at[costs_key, "lifetime"],
                 location=buses,
             )
@@ -311,7 +314,7 @@ def add_power_capacities_installed_before_baseyear(
                 p_min_pu=config["nuclear_reactors"]["p_min_pu"] if generator == "nuclear" else 0,
                 marginal_cost=costs.at[costs_key, "marginal_cost"],
                 efficiency=costs.at[costs_key, "efficiency"],
-                build_year=grouping_year,
+                build_year=build_year,
                 lifetime=costs.at[costs_key, "lifetime"],
                 location=buses,
             )
@@ -343,7 +346,7 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom_min=capacity / costs.at[costs_key, "efficiency"],
                 p_nom_extendable=False,
                 efficiency=costs.at[costs_key, "efficiency"],
-                build_year=grouping_year,
+                build_year=build_year,
                 lifetime=costs.at[costs_key, "lifetime"],
                 location=buses,
             )
@@ -370,7 +373,7 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom_extendable=False,
                 marginal_cost=costs.at["central " + generator, "marginal_cost"],
                 p_max_pu=p_max_pu,
-                build_year=grouping_year,
+                build_year=build_year,
                 lifetime=costs.at["central " + generator, "lifetime"],
                 location=buses,
             )
@@ -394,7 +397,7 @@ def add_power_capacities_installed_before_baseyear(
                 efficiency=hist_efficiency,
                 p_nom_ratio=1.0,
                 c_b=0.75,
-                build_year=grouping_year,
+                build_year=build_year,
                 lifetime=costs.at["central coal CHP", "lifetime"],
                 location=buses,
             )
@@ -412,7 +415,7 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom_min=capacity / hist_efficiency * costs.at["central coal CHP", "c_v"],
                 p_nom_extendable=False,
                 efficiency=hist_efficiency / costs.at["central coal CHP", "c_v"],
-                build_year=grouping_year,
+                build_year=build_year,
                 lifetime=costs.at["central coal CHP", "lifetime"],
                 location=buses,
             )
@@ -437,7 +440,7 @@ def add_power_capacities_installed_before_baseyear(
                 efficiency=hist_efficiency,
                 p_nom_ratio=1.0,
                 c_b=costs.at["central gas CHP", "c_b"],
-                build_year=grouping_year,
+                build_year=build_year,
                 lifetime=costs.at["central gas CHP", "lifetime"],
                 location=buses,
             )
@@ -454,7 +457,7 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom_min=capacity / hist_efficiency * costs.at["central gas CHP", "c_v"],
                 p_nom_extendable=False,
                 efficiency=hist_efficiency / costs.at["central gas CHP", "c_v"],
-                build_year=grouping_year,
+                build_year=build_year,
                 lifetime=costs.at["central gas CHP", "lifetime"],
                 location=buses,
             )
@@ -477,7 +480,7 @@ def add_power_capacities_installed_before_baseyear(
                     p_nom_min=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
                     p_nom_extendable=False,
                     efficiency=costs.at[cat.lstrip() + generator, "efficiency"],
-                    build_year=grouping_year,
+                    build_year=build_year,
                     lifetime=costs.at[cat.lstrip() + generator, "lifetime"],
                     location=buses,
                 )
@@ -511,7 +514,7 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom=capacity / costs.at["decentral ground-sourced heat pump", "efficiency"],
                 p_nom_min=capacity / costs.at["decentral ground-sourced heat pump", "efficiency"],
                 p_nom_extendable=False,
-                build_year=grouping_year,
+                build_year=build_year,
                 lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
                 location=buses,
             )
@@ -663,9 +666,9 @@ if __name__ == "__main__":
             "add_existing_baseyear",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
+            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
             planning_horizons="2040",
-            configfiles="resources/tmp/remind_coupled_cg.yaml",
+            configfiles="resources/tmp/pseudo_coupled.yml",
             # heating_demand="positive",
         )
 
