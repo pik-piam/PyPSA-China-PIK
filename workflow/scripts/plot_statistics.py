@@ -15,6 +15,7 @@ from pandas import DataFrame
 import pandas as pd
 import numpy as np
 
+from matplotlib.colors import to_rgb
 from _plot_utilities import heatmap, annotate_heatmap
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import rename_index, fix_network_names_colors
@@ -48,12 +49,27 @@ def plot_static_per_carrier(
     c = colors[ds.index.get_level_values("carrier")]
     ds = ds.pipe(rename_index)
     label = f"{ds.attrs['name']} [{ds.attrs['unit']}]"
-    ds.plot.barh(color=c.values, xlabel=label, ax=ax)
+    ds.plot(color=c.values, xlabel=label, ax=ax, kind="barh")
     if add_labels:
         for i, (index, value) in enumerate(ds.items()):
-            align = "left" if np.sign(value) > 0 else "right"
-            txt = f"{value:.1f}" if value <= 100 else f"{value:.1e}"
-            ax.text(value, i, txt, va="center", ha=align, fontsize=8)
+            # Center the label at value/2, bold font, and choose text color based on background
+            bg_color = c.values[i]
+            # Convert color to RGB if needed
+            rgb = to_rgb(bg_color) if isinstance(bg_color, str) else bg_color
+            # Calculate luminance (perceived brightness)
+            luminance = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
+            text_color = "black" if luminance > 0.5 else "white"
+            txt = f"{value:.1f}" if value <= 3000 else f"{value:.1e}"
+            ax.text(
+                value / 2,
+                i,
+                txt,
+                va="center",
+                ha="center",
+                fontsize=8,
+                # fontweight="bold",
+                color=text_color,
+            )
     ax.grid(axis="y")
 
 
@@ -285,6 +301,7 @@ def plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir):
         outp_dir: Output directory for saving the figure.
     """
     fig, ax = plt.subplots(figsize=(14, 8))
+
     df_plot[bar_cols].plot(kind="barh", stacked=True, ax=ax, color=color_list, alpha=0.8)
     # Plot peak load as red vertical line
     for i, prov in enumerate(df_plot.index):
@@ -319,7 +336,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_statistics",
             carrier="AC",
-            planning_horizons="2025",
+            planning_horizons="2030",
             # co2_pathway="exp175default",
             # planning_horizons="2130",
             co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
@@ -566,7 +583,7 @@ if __name__ == "__main__":
 
     if "lcoe" in stats_list:
         rev_costs = calc_lcoe(n, groupby=None)
-        ds = rev_costs["LCOE"]
+        ds = rev_costs["LCOE"].copy()
         if "load shedding" in ds.index.get_level_values(1):
             ds.drop("load shedding", level=1, inplace=True)
         if "H2" in ds.index.get_level_values(1):
@@ -577,8 +594,10 @@ if __name__ == "__main__":
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "LCOE.png"))
 
-        rev_costs = calc_lcoe(n, groupby=None)
-        ds = rev_costs["profit_pu"]
+    if "mv_minus_lcoe" in stats_list:
+        if not "lcoe" in stats_list:
+            rev_costs = calc_lcoe(n, groupby=None)
+        ds = rev_costs["profit_pu"].copy()
         ds.attrs = {"name": "MV - LCOE", "unit": "€/MWh"}
         fig, ax = plt.subplots()
         plot_static_per_carrier(
