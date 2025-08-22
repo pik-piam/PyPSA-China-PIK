@@ -432,9 +432,6 @@ def add_power_capacities_installed_before_baseyear(
                 carrier=carrier_map[generator],
                 marginal_cost=hist_efficiency
                 * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
-                capital_cost=hist_efficiency
-                * costs.at["central gas CHP", "capital_cost"],  # NB: fixed cost is per MWel,
-                p_nom=capacity / hist_efficiency,
                 p_nom_min=capacity / hist_efficiency,
                 p_nom_extendable=False,
                 efficiency=hist_efficiency,
@@ -474,8 +471,6 @@ def add_power_capacities_installed_before_baseyear(
                     carrier=carrier_map[generator],
                     marginal_cost=costs.at[cat.lstrip() + generator, "efficiency"]
                     * costs.at[cat.lstrip() + generator, "VOM"],
-                    capital_cost=costs.at[cat.lstrip() + generator, "efficiency"]
-                    * costs.at[cat.lstrip() + generator, "capital_cost"],
                     p_nom=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
                     p_nom_min=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
                     p_nom_extendable=False,
@@ -507,8 +502,6 @@ def add_power_capacities_installed_before_baseyear(
                     if config["time_dep_hp_cop"]
                     else costs.at["decentral ground-sourced heat pump", "efficiency"]
                 ),
-                capital_cost=costs.at["decentral ground-sourced heat pump", "efficiency"]
-                * costs.at["decentral ground-sourced heat pump", "capital_cost"],
                 marginal_cost=costs.at["decentral ground-sourced heat pump", "efficiency"]
                 * costs.at["decentral ground-sourced heat pump", "marginal_cost"],
                 p_nom=capacity / costs.at["decentral ground-sourced heat pump", "efficiency"],
@@ -517,6 +510,25 @@ def add_power_capacities_installed_before_baseyear(
                 build_year=build_year,
                 lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
                 location=buses,
+            )
+
+        elif generator == "PHS":
+
+            # pure pumped hydro storage, fixed, 6h energy by default, no inflow
+            n.add(
+                "StorageUnit",
+                capacity.index,
+                suffix="-" + str(grouping_year),
+                bus=buses,
+                carrier="PHS",
+                p_nom=capacity,
+                p_nom_min=capacity,
+                p_nom_extendable=False,
+                max_hours=config["hydro"]["PHS_max_hours"],
+                efficiency_store=np.sqrt(costs.at["PHS", "efficiency"]),
+                efficiency_dispatch=np.sqrt(costs.at["PHS", "efficiency"]),
+                cyclic_state_of_charge=True,
+                marginal_cost=0.0,
             )
 
         else:

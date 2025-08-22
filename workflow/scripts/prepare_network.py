@@ -1404,25 +1404,16 @@ def prepare_network(
     # TODO add coal CC? no retrofit option
 
     if "PHS" in config["Techs"]["store_techs"]:
-        # TODO soft-code path
         # pure pumped hydro storage, fixed, 6h energy by default, no inflow
-        hydrocapa_df = pd.read_csv("resources/data/hydro/PHS_p_nom.csv", index_col=0)
-        phss = hydrocapa_df.index[hydrocapa_df["MW"] > 0].intersection(nodes)
-        if config["hydro"]["hydro_capital_cost"]:
-            cc = costs.at["PHS", "capital_cost"]
-        else:
-            cc = 0.0
+        cc = costs.at["PHS", "capital_cost"]
 
         network.add(
             "StorageUnit",
-            phss,
+            nodes,
             suffix=" PHS",
-            bus=phss,
+            bus=nodes,
             carrier="PHS",
             p_nom_extendable=True,
-            # p_nom_max=hydrocapa_df.loc[phss]["MW"],
-            p_nom=hydrocapa_df.loc[phss]["MW"],
-            p_nom_min=hydrocapa_df.loc[phss]["MW"],
             max_hours=config["hydro"]["PHS_max_hours"],
             efficiency_store=np.sqrt(costs.at["PHS", "efficiency"]),
             efficiency_dispatch=np.sqrt(costs.at["PHS", "efficiency"]),
