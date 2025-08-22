@@ -78,7 +78,7 @@ if config["enable"].get("retrieve_raster", True):
                 zip_ref.extractall(os.path.dirname(params.zip_file))
             os.remove(params.zip_file)
 
-rule retrive_powerplants:
+rule retrieve_powerplants:
     input:
         powerplants=storage.http(
             "https://zenodo.org/records/16810831/files/Global-integrated-Plant-Tracker-July-2025_china.xlsx"
