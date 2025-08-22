@@ -362,30 +362,6 @@ def set_plot_style(
     plt.style.use(style_config_file)
 
 
-def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Link"]) -> list:
-    """Filter carriers for links that attach to a bus of the target carrier
-
-    Args:
-        n (pypsa.Network): the pypsa network object
-        bus_carrier (str, optional): the bus carrier. Defaults to "AC".
-        comps (list, optional): the components to check. Defaults to ["Generator", "Link"].
-
-    Returns:
-        list: list of carriers that are attached to the bus carrier
-    """
-    carriers = []
-    for c in comps:
-        comp = n.static(c)
-        ports = [c for c in comp.columns if c.startswith("bus")]
-        comp_df = comp[ports + ["carrier"]]
-        is_attached = comp_df[ports].apply(lambda x: x.map(n.buses.carrier) == bus_carrier).T.any()
-        carriers += comp_df.loc[is_attached].carrier.unique().tolist()
-
-    if bus_carrier not in carriers:
-        carriers += [bus_carrier]
-    return carriers
-
-
 def aggregate_small_pie_vals(pie: pd.Series, threshold: float) -> pd.Series:
     """Aggregate small pie values into the "Other" category
 

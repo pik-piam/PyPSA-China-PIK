@@ -9,15 +9,22 @@ To be merged/consolidated with the `solve_network` script.
 """
 
 import logging
+import re
+import socket
+import os
+import pandas as pd
+import xarray as xr
 
 import numpy as np
-import pandas as pd
 import pypsa
+from _pypsa_helpers import store_duals_to_network
 from _helpers import (
     configure_logging,
     mock_snakemake,
     setup_gurobi_tunnel_and_env,
 )
+
+
 
 logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
@@ -285,8 +292,8 @@ def extra_functionality(n, snapshots):
         add_retrofit_constraints(n)
 
 
-def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
-    """Perform the optimisation
+def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs) -> pypsa.Network:
+    """perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
         config (dict): the configuration dictionary
@@ -371,6 +378,9 @@ if __name__ == "__main__":
 
     n = prepare_network(n, solve_opts, snakemake.config)
 
+    # Extract export_duals flag from config in main
+    export_duals_flag = snakemake.params.solving["options"].get("export_duals", False)
+    
     n = solve_network(
         n,
         config=snakemake.config,
@@ -378,6 +388,10 @@ if __name__ == "__main__":
         opts=opts,
         log_fn=snakemake.log.solver,
     )
+    
+    # Store dual variables in network components for netcdf export
+    if export_duals_flag:
+        store_duals_to_network(n)
 
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
@@ -386,7 +400,5 @@ if __name__ == "__main__":
     if compression:
         compression = compression.get("nc_compression", None)
     n.export_to_netcdf(outp, compression=compression)
-
-    logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")

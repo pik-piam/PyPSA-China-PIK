@@ -146,8 +146,9 @@ plotting:
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
     CCGT: '#a85522'
-    CCGT gas: '#a85522'
+    CCGT marginal: '#a85522'
     gas CCGT: '#a85522'
+    CCGT gas: '#a85522'
     gas ccs: '#a85522'
     CCGT-CCS: '#76855B'
     gas CCGT-CCS: '#76855B'
@@ -164,9 +165,6 @@ plotting:
     fossil gas: '#e05b09'
     natural gas: '#e05b09'
     biogas to gas: '#e36311'
-    CCGT: '#a85522'
-    CCGT marginal: '#a85522'
-    gas CCGT: '#a85522'
     allam: '#B98F76'
     gas for industry co2 to atmosphere: '#692e0a'
     gas for industry co2 to stored: '#8a3400'
@@ -175,8 +173,6 @@ plotting:
     gas pipeline: '#ebbca0'
     gas pipeline new: '#a87c62'
     gas-AC: "grey"
-
-
     # hot water storage
     water tanks: '#e69487'
     residential rural water tanks: '#f7b7a3'
@@ -229,8 +225,9 @@ plotting:
     CHP coal: '#8a5751'
     CHP coal generator: '#8a5751'
     coal heat: '#8a7f7d'
-    urban central gas CHP: '#8f6e6a'
+    gas CHP: '#8f6e6a'
     CHP gas: '#8f6e6a'
+    central gas CHP: '#8f6e6a'
     CHP gas generator: '#8f6e6a'
     CHP gas boiler: '#8f6e6a'
     CHP CC: '#634643'
@@ -415,6 +412,7 @@ plotting:
     # generatord
     battery: "Battery Storage"
     battery discharger: "Battery Discharger"
+    # coal: "Coal"
     coal: "Coal Power Plant"
     coal cc: "Coal with carbon capture"
     coal ccs: "Coal with carbon capture"
@@ -423,15 +421,10 @@ plotting:
     hydro: "Reservoir & Dam"
     H2 fuel cell: "H2 Fuel Cell"
     PHS: "Pumped Hydro Storage"
-    offwind: "Offshore Wind"
-    onwind: "Onshore Wind"
-    solar: "Solar"
     # H2: "Hydrogen Power"
     ror: "Run of River"
-    solar thermal: "Solar Thermal"
     uranium: "Nuclear"
     hydroelectricity: "Hydroelectricity"
-    coal: "Coal"
     offwind: "Offshore Wind"
     onwind: "Onshore Wind"
     solar: "Solar"

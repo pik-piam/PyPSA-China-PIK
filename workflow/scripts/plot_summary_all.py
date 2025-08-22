@@ -226,6 +226,7 @@ def plot_pathway_capacities(
         )
         cap_ac = cap_ac.groupby("carrier").sum()[year]
 
+        cap_h2 = pd.DataFrame()
         if plot_h2:
             cap_h2 = cap_df.reset_index().query(
                 "bus_carrier == 'H2' | carrier =='H2' | end_carrier =='H2'"
@@ -842,6 +843,7 @@ if __name__ == "__main__":
             topology="current+FCG",
             # co2_pathway="exp175default",
             co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
             heating_demand="positive",
             configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
@@ -891,6 +893,8 @@ if __name__ == "__main__":
             "solar",
             "onwind",
             "offwind",
+            # "battery",
+            "battery discharger",
             "coal",
             "coal-CCS",
             "hydroelectricity",

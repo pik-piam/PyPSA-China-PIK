@@ -51,10 +51,13 @@ def determine_simulation_timespan(config: dict, year: int) -> int:
     return n_years
 
 
-def read_existing_capacities(paths_dict: dict[str, os.PathLike]) -> pd.DataFrame:
+# TODO switch this to a single file and remove agg
+# Associated #TODO: do not split files in build_powerplants
+def read_existing_capacities(paths_dict: dict[str, os.PathLike], techs: list) -> pd.DataFrame:
     """Read existing capacities from csv files and format them
     Args:
         paths_dict (dict[str, os.PathLike]): dictionary with paths to the csv files
+        techs (list): list of technologies to read
     Returns:
         pd.DataFrame: DataFrame with existing capacities
     """
@@ -73,6 +76,8 @@ def read_existing_capacities(paths_dict: dict[str, os.PathLike]) -> pd.DataFrame
         "ground heat pump": "central ground-sourced heat pump",
         "nuclear": "nuclear",
     }
+    carrier = {k: v for k, v in carrier.items() if k in techs}
+
     df_agg = pd.DataFrame()
     for tech in carrier:
         df = pd.read_csv(paths_dict[tech], index_col=0).fillna(0.0)
@@ -115,6 +120,11 @@ def fix_existing_capacities(
     lifetimes = existing_df.Fueltype.map(costs.lifetime).fillna(
         existing_df.Tech.map(costs.lifetime)
     )
+    if lifetimes.isna().any():
+        raise ValueError(
+            f"Some assets have no lifetime assigned: \n{lifetimes[lifetimes.isna()]}. "
+            "Please check the costs file for the missing lifetimes."
+        )
     existing_df.loc[:, "DateOut"] = existing_df.DateOut.fillna(lifetimes) + existing_df.DateIn
 
     # TODO go through the pypsa-EUR fuel drops for the new ppmatching style
@@ -223,9 +233,9 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_baseyear_capacities",
             topology="current+FCG",
-            co2_pathway="SSP2-PkBudg1000-freeze",
+            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
             planning_horizons="2020",
-            configfiles="resources/tmp/remind_coupled.yaml",
+            configfiles="resources/tmp/pseudo_coupled.yml",
         )
 
     configure_logging(snakemake, logger=logger)
@@ -244,14 +254,17 @@ if __name__ == "__main__":
     baseyear = int(snakemake.wildcards["planning_horizons"])
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
-    existing_capacities = read_existing_capacities(data_paths)
+    techs = config["existing_capacities"]["techs"]
+    existing_capacities = read_existing_capacities(data_paths, techs)
+    existing_capacities = existing_capacities.query("Fueltype in @techs | Tech in @techs")
+
     year_bins = config["existing_capacities"]["grouping_years"]
     # TODO add renewables
     existing_capacities = assign_year_bins(existing_capacities, year_bins)
-    installed = fix_existing_capacities(existing_capacities, costs, year_bins, baseyear)
-
     if params.CHP_to_elec:
-        installed = convert_CHP_to_poweronly(installed)
+        existing_capacities = convert_CHP_to_poweronly(existing_capacities)
+
+    installed = fix_existing_capacities(existing_capacities, costs, year_bins, baseyear)
 
     if installed.empty or installed.lifetime.isna().any():
         logger.warning(

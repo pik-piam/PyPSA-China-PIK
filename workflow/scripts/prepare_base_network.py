@@ -88,7 +88,7 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         if carrier == "battery":
             network.add("Carrier", "battery discharger")
 
-    if "coal power plant" in config["Techs"]["conv_techs"] and config["Techs"]["coal_cc"]:
+    if "coal power plant" in config["Techs"]["conv_techs"] and config["Techs"]["coal_ccs_retrofit"]:
         network.add("Carrier", "coal cc", co2_emissions=0.034)
 
 
@@ -393,7 +393,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         )
 
     # TODO separate retrofit in config from coal power plant
-    if "coal power plant" in config["Techs"]["conv_techs"] and config["Techs"]["coal_cc"]:
+    if "coal power plant" in config["Techs"]["conv_techs"] and config["Techs"]["coal_ccs_retrofit"]:
         network.add(
             "Generator",
             nodes,

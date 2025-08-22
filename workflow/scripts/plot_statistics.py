@@ -14,14 +14,8 @@ import pandas as pd
 import pypsa
 import seaborn as sns
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
-from _plot_utilities import (
-    annotate_heatmap,
-    filter_carriers,
-    fix_network_names_colors,
-    heatmap,
-    rename_index,
-)
-from _pypsa_helpers import calc_generation_share, calc_lcoe
+from _plot_utilities import rename_index, fix_network_names_colors
+from _pypsa_helpers import calc_lcoe, filter_carriers, calc_generation_share
 from constants import (
     PLOT_CAP_LABEL,
     PLOT_CAP_UNITS,
@@ -356,9 +350,16 @@ if __name__ == "__main__":
 
     attached_carriers = filter_carriers(n, carrier)
     if "capacity_factor" in stats_list:
-        cf_filtered, theo_cf_filtered = prepare_capacity_factor_data(n, carrier)
-        fig, ax = plt.subplots(figsize=(12, 8))
-        plot_capacity_factor(cf_filtered, theo_cf_filtered, ax, colors)
+        fig, ax = plt.subplots()
+        ds = n.statistics.capacity_factor(groupby=["carrier"], nice_names=False).dropna()
+        # avoid grouping battery uif same name
+        if ("Link", "battery") in ds.index:
+            ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
+            ds.drop(index=("Link", "battery"), inplace=True)
+        ds = ds.groupby(level=1).first()
+        ds = ds.loc[ds.index.isin(attached_carriers)]
+        ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
+        plot_static_per_carrier(ds, ax, colors=colors)
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capacity_factor.png"))
 
@@ -448,9 +449,7 @@ if __name__ == "__main__":
         fig, ax = plt.subplots()
         ds = n.statistics.curtailment(bus_carrier=carrier)
         # curtailment definition only makes sense for VREs
-        vres = snakemake.config["Techs"].get(
-            "non_dispatchable", ["Offshore Wind", "Onshore Wind", "Solar", "Solar Residential"]
-        )
+        vres = ["Offshore Wind", "Onshore Wind", "Solar", "Solar Residential"]
         vres = [v for v in vres if v in ds.index.get_level_values("carrier")]
         attrs = ds.attrs.copy()
         ds = ds.unstack()[vres].stack()

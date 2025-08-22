@@ -12,14 +12,13 @@ from _helpers import (
     mock_snakemake,
     set_plot_test_backend,
 )
-from _plot_utilities import (
-    fix_network_names_colors,
-    get_stat_colors,
-    make_nice_tech_colors,
-    set_plot_style,
+from constants import (
+    PLOT_CAP_UNITS,
+    PLOT_CAP_LABEL,
+    PROV_NAMES,
+    PLOT_SUPPLY_UNITS,
+    PLOT_SUPPLY_LABEL,
 )
-from _pypsa_helpers import get_location_and_carrier
-from constants import PLOT_CAP_LABEL, PLOT_CAP_UNITS, PROV_NAMES
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +31,7 @@ def plot_energy_balance(
     end_date="2060-04-06 12:00:00",
     aggregate_fossil=False,
     add_load_line=True,
+    add_reserves=False,
     ax: plt.Axes = None,
 ):
     """Plot the electricity balance of the network for the given time range
@@ -55,13 +55,13 @@ def plot_energy_balance(
         .dropna(how="all")
         .groupby("carrier")
         .sum()
-        .div(PLOT_CAP_UNITS)
+        .div(PLOT_SUPPLY_UNITS)
         # .drop("-")
         .T
     )
 
-    p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
     p = p.loc[start_date:end_date]
+    p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
 
     # aggreg fossil
     if aggregate_fossil:
@@ -124,7 +124,7 @@ def plot_energy_balance(
         charge.drop(columns="load_pos", inplace=True)
 
     ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
-    ax.set_ylabel(PLOT_CAP_LABEL)
+    ax.set_ylabel(PLOT_SUPPLY_LABEL)
     ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
     ax.grid(axis="y")
     ax.set_xlim(supply.index.min(), supply.index.max())
@@ -132,6 +132,12 @@ def plot_energy_balance(
     fig.tight_layout()
 
     return ax
+
+
+def add_reserves(n: pypsa.Network):
+    """plot the reserves of the network"""
+
+    curtailed = n.statistics.curtailment(aggregate_time=False, bus_carrier="AC")
 
 
 def plot_load_duration_curve(
@@ -421,11 +427,7 @@ def plot_price_heatmap(
 
 
 def plot_vre_heatmap(
-    n: pypsa.Network,
-    config: dict,
-    color_map="magma",
-    log_values=True,
-    time_range: pd.Index = None,
+    n: pypsa.Network, config: dict, color_map="magma", log_values=True, time_range: pd.Index = None,
 ):
     """Plot the VRE generation per hour and day as a heatmap
 

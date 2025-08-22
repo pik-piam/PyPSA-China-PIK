@@ -408,7 +408,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
     if "H2 turbine" in config["Techs"]["vre_techs"]:
         network.add(
             "Link",
-            name=nodes + " H2 Turbine",
+            name=nodes + " H2 turbine",
             bus0=nodes + " H2",
             bus1=nodes,
             p_nom_extendable=True,
