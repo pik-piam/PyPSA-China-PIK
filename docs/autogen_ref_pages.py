@@ -64,7 +64,7 @@ with mkdocs_gen_files.open("reference_nav.yml", "w") as nav_file:
 
 
 def make_literate_nav():
-    """Make a literate-nav style nav for mkdocs. The nav of mkdocs.yml then should point to the corresponding file"""
+    """Make a literate-nav style nav for mkdocs."""
     # Create the navigation structure
     nav = mkdocs_gen_files.Nav()
 
@@ -86,7 +86,7 @@ def write_literate_nav(
     prepend: list[str],
     fname="reference_nav.yml",
 ):
-    """Write the literate-nav style nav for mkdocs. The nav of mkdocs.yml then should point to the corresponding fil
+    """Write the literate-nav style nav for mkdocs.
     Args:
         lit_nav: mkdocs_gen_files.Nav from make_literate_nav
         prepend: list of strings to prepend to the nav file (other sections)

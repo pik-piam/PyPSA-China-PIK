@@ -31,9 +31,6 @@ ignore = [
 
 "**/*.py" = [
     'E501', # line too long
-    'D100', # Missing docstring in public module
-    'D103', # Missing docstring in public function
-    'D104', # Missing docstring in public package
     'D107', # Missing docstring in __init__
     'D200', # One-line docstring should fit on one line with quotes
     'D202', # No blank lines allowed after function docstring
