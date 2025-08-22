@@ -3,7 +3,6 @@ from zipfile import ZipFile
 import shutil
 import os
 
-
 # TODO rework this, save shapes with all admin levels
 # build nodes with another script and save that to DERIVED_DATA
 # nodes could be read by snakefile and passed as a param to the relevant rules

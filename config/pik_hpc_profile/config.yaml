@@ -57,7 +57,7 @@ set-resources:
     mem_mb: 80000
     time: 80
   solve_networks:
-    mem_mb: 60000
+    mem_mb: 90000
     time : 80
     threads: 6
   build_cutout:
@@ -126,9 +126,10 @@ set-resources:
 # GROUPS
 
 groups: 
-  plot_network: plot
-  plot_statistics: plot
-  plot_snapshots: plot
+  # plot_network: plot
+  # plot_statistics: plot
+  # plot_snapshots: plot
+  prep_capacities: prepare_baseyear_capacities
   build_load_profiles: build_load
   prepare_networks: prep_network
   add_existing_baseyear: prep_network2
@@ -146,3 +147,4 @@ group-components:
   prep_network2: 3
   retrieve: 1 # io queue
   summary: 3
+  prep_capacities: 3
