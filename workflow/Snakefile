@@ -458,9 +458,6 @@ onerror:
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
     if not os.path.exists(res_dir):
         os.makedirs(res_dir)
-    if not os.path.exists(LOG_DIR):
-        os.makedirs(LOG_DIR)
-    # log path is available from snakemake as "log"
     try:
         yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
     except TypeError as e:
@@ -469,10 +466,7 @@ onerror:
 onsuccess:
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
     try:
-        yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
+        with open(res_dir + "/run_config.yaml", "w") as f:
+            yaml.dump(config, f )
     except TypeError as e:
         logging.warning(f"Could not copy config file: {e}")
-        logging.warning(f"Copying log file to {str(log_out)} (type {type(log_out)}) failed?")
-        logging.info(f"source was {str(log)}")
-        logging.warning(f"sav config file to {str(res_dir)}/run_config.yaml failed?")
-
