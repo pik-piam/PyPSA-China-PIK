@@ -101,13 +101,14 @@ def read_existing_capacities(paths_dict: dict[str, os.PathLike], techs: list) ->
 def fix_existing_capacities(
     existing_df: pd.DataFrame, costs: pd.DataFrame, year_bins: list, baseyear: int
 ) -> pd.DataFrame:
-    """add/fill missing dateIn, drop expired assets, drop too new assets
+    """add/fill missing dateIn, discretize lifetime to grouping year, rename columns
+    drop plants that were retired before the smallest sim timeframe
 
     Args:
         existing_df (pd.DataFrame): the existing capacities
         costs (pd.DataFrame): the technoeconomic data
         year_bins (list): the year groups
-        baseyear (int): the base year (run year)
+
 
     Returns:
         pd.DataFrame: fixed capacities
@@ -116,6 +117,7 @@ def fix_existing_capacities(
     # add/fill missing dateIn
     if "DateOut" not in existing_df.columns:
         existing_df["DateOut"] = np.nan
+
     # names matching costs split across FuelType and Tech, apply to both. Fillna means no overwrite
     lifetimes = existing_df.Fueltype.map(costs.lifetime).fillna(
         existing_df.Tech.map(costs.lifetime)
@@ -127,25 +129,23 @@ def fix_existing_capacities(
         )
     existing_df.loc[:, "DateOut"] = existing_df.DateOut.fillna(lifetimes) + existing_df.DateIn
 
-    # TODO go through the pypsa-EUR fuel drops for the new ppmatching style
-    # drop assets which are already phased out / decommissioned
+    existing_df["lifetime"] = existing_df.DateOut - existing_df["grouping_year"]
+    existing_df.rename(columns={"cluster_bus": "bus"}, inplace=True)
+
     phased_out = existing_df[existing_df["DateOut"] < baseyear].index
     existing_df.drop(phased_out, inplace=True)
 
+    # check the grouping years are appropriate
     newer_assets = (existing_df.DateIn > max(year_bins)).sum()
     if newer_assets:
-        logger.warning(
+        raise ValueError(
             f"There are {newer_assets} assets with build year "
             f"after last power grouping year {max(year_bins)}. "
             "These assets are dropped and not considered."
-            "Consider to redefine the grouping years to keep them."
+            "Redefine the grouping years to keep them or"
+            " remove pre-construction/construction/... states."
         )
-        to_drop = existing_df[existing_df.DateIn > max(year_bins)].index
-        existing_df.drop(to_drop, inplace=True)
 
-    existing_df["lifetime"] = existing_df.DateOut - existing_df["grouping_year"]
-
-    existing_df.rename(columns={"cluster_bus": "bus"}, inplace=True)
     return existing_df
 
 
@@ -242,17 +242,13 @@ if __name__ == "__main__":
 
     config = snakemake.config
     params = snakemake.params
-    # remind extends beyond pypsa: limit the reference pypsa cost year to the last pypsa year
-    plan_year = int(snakemake.wildcards["planning_horizons"])
-    cost_year = min(params.last_pypsa_cost_year, plan_year)
-    tech_costs = snakemake.input.tech_costs.replace(str(plan_year), str(cost_year))
+    # reference pypsa cost (lifetime) year is simulation Baseyar
+    baseyear = min([int(y) for y in config["scenario"]["planning_horizons"]])
+    tech_costs = snakemake.input.tech_costs
     data_paths = {k: v for k, v in snakemake.input.items()}
 
-    n_years = determine_simulation_timespan(
-        snakemake.config, snakemake.wildcards["planning_horizons"]
-    )
-    baseyear = int(snakemake.wildcards["planning_horizons"])
-    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
+    n_years = determine_simulation_timespan(snakemake.config, baseyear)
+    costs = load_costs(tech_costs, config["costs"], config["electricity"], baseyear, n_years)
 
     techs = config["existing_capacities"]["techs"]
     existing_capacities = read_existing_capacities(data_paths, techs)
