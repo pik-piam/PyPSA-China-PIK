@@ -221,7 +221,7 @@ def add_power_capacities_installed_before_baseyear(
         "solar thermal": "central solar thermal",
         "onwind": "onwind",
         "offwind": "offwind",
-        "coal boiler": "central coal boier",
+        "coal boiler": "central coal boiler",
         "heat pump": "central ground-sourced heat pump",
         "ground-sourced heat pump": "central ground-sourced heat pump",
         "nuclear": "nuclear",
@@ -360,7 +360,7 @@ def add_power_capacities_installed_before_baseyear(
             logger.info(f"Skipped {generator} because heat coupling is not activated")
 
         elif generator == "solar thermal":
-            p_max_pu = n.generators_t.p_max_pu[capacity.index + " central " + generator]
+            p_max_pu = n.generators_t.p_max_pu[capacity.index]
             p_max_pu.columns = capacity.index
             n.add(
                 "Generator",
@@ -432,9 +432,6 @@ def add_power_capacities_installed_before_baseyear(
                 carrier=carrier_map[generator],
                 marginal_cost=hist_efficiency
                 * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
-                capital_cost=hist_efficiency
-                * costs.at["central gas CHP", "capital_cost"],  # NB: fixed cost is per MWel,
-                p_nom=capacity / hist_efficiency,
                 p_nom_min=capacity / hist_efficiency,
                 p_nom_extendable=False,
                 efficiency=hist_efficiency,
@@ -474,8 +471,6 @@ def add_power_capacities_installed_before_baseyear(
                     carrier=carrier_map[generator],
                     marginal_cost=costs.at[cat.lstrip() + generator, "efficiency"]
                     * costs.at[cat.lstrip() + generator, "VOM"],
-                    capital_cost=costs.at[cat.lstrip() + generator, "efficiency"]
-                    * costs.at[cat.lstrip() + generator, "capital_cost"],
                     p_nom=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
                     p_nom_min=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
                     p_nom_extendable=False,
@@ -507,8 +502,6 @@ def add_power_capacities_installed_before_baseyear(
                     if config["time_dep_hp_cop"]
                     else costs.at["decentral ground-sourced heat pump", "efficiency"]
                 ),
-                capital_cost=costs.at["decentral ground-sourced heat pump", "efficiency"]
-                * costs.at["decentral ground-sourced heat pump", "capital_cost"],
                 marginal_cost=costs.at["decentral ground-sourced heat pump", "efficiency"]
                 * costs.at["decentral ground-sourced heat pump", "marginal_cost"],
                 p_nom=capacity / costs.at["decentral ground-sourced heat pump", "efficiency"],
@@ -517,6 +510,25 @@ def add_power_capacities_installed_before_baseyear(
                 build_year=build_year,
                 lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
                 location=buses,
+            )
+
+        elif generator == "PHS":
+
+            # pure pumped hydro storage, fixed, 6h energy by default, no inflow
+            n.add(
+                "StorageUnit",
+                capacity.index,
+                suffix="-" + str(grouping_year),
+                bus=buses,
+                carrier="PHS",
+                p_nom=capacity,
+                p_nom_min=capacity,
+                p_nom_extendable=False,
+                max_hours=config["hydro"]["PHS_max_hours"],
+                efficiency_store=np.sqrt(costs.at["PHS", "efficiency"]),
+                efficiency_dispatch=np.sqrt(costs.at["PHS", "efficiency"]),
+                cyclic_state_of_charge=True,
+                marginal_cost=0.0,
             )
 
         else:
@@ -659,6 +671,30 @@ def add_paid_off_capacity(
             tech_group=paid_off.loc["biomass", "tech_group"],
         )
 
+    # TODO go through the pypsa-EUR fuel drops for the new ppmatching style
+
+
+def filter_capacities(existing_df: pd.DataFrame, plan_year: int) -> pd.DataFrame:
+    """
+    Filter brownfield capacities to remove retired/not yet built plants .
+    Parameters:
+        existing_df (pd.DataFrame): DataFrame containing asset information with at least the columns 'DateOut', 'DateIn', 'grouping_year', and 'cluster_bus'.
+        plan_year (int): The year modelled year/horizon
+    Returns:
+        pd.DataFrame: The filtered and updated DataFrame.
+    """
+
+    # drop assets which are already phased out / decommissioned
+    phased_out = existing_df[existing_df["DateOut"] < plan_year].index
+    existing_df.drop(phased_out, inplace=True)
+
+    to_drop = existing_df[existing_df.DateIn > plan_year].index
+    existing_df.drop(to_drop, inplace=True)
+
+    existing_df.rename(columns={"cluster_bus": "bus"}, inplace=True)
+
+    return existing_df
+
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
@@ -678,7 +714,7 @@ if __name__ == "__main__":
 
     config = snakemake.config
     tech_costs = snakemake.input.tech_costs
-    cost_year = snakemake.wildcards["planning_horizons"]
+    cost_year = int(snakemake.wildcards["planning_horizons"])
     data_paths = {k: v for k, v in snakemake.input.items()}
 
     if config["run"].get("is_remind_coupled", False):
@@ -695,6 +731,8 @@ if __name__ == "__main__":
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
     existing_capacities = pd.read_csv(snakemake.input.installed_capacities, index_col=0)
+    existing_capacities = filter_capacities(existing_capacities, cost_year)
+
     vre_caps = existing_capacities.query("Tech in @vre_techs | Fueltype in @vre_techs")
     # vre_caps.loc[:, "Country"] = coco.CountryConverter().convert(["China"], to="iso2")
     vres = add_existing_vre_capacities(n, costs, vre_caps, config)

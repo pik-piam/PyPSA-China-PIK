@@ -15,6 +15,7 @@ from pandas import DataFrame
 import pandas as pd
 import numpy as np
 
+from matplotlib.colors import to_rgb
 from _plot_utilities import heatmap, annotate_heatmap
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import rename_index, fix_network_names_colors
@@ -48,10 +49,27 @@ def plot_static_per_carrier(
     c = colors[ds.index.get_level_values("carrier")]
     ds = ds.pipe(rename_index)
     label = f"{ds.attrs['name']} [{ds.attrs['unit']}]"
-    ds.plot.barh(color=c.values, xlabel=label, ax=ax)
+    ds.plot(color=c.values, xlabel=label, ax=ax, kind="barh")
     if add_labels:
         for i, (index, value) in enumerate(ds.items()):
-            ax.text(value, i, f"{value:.1f}", va="center", ha="left", fontsize=8)
+            # Center the label at value/2, bold font, and choose text color based on background
+            bg_color = c.values[i]
+            # Convert color to RGB if needed
+            rgb = to_rgb(bg_color) if isinstance(bg_color, str) else bg_color
+            # Calculate luminance (perceived brightness)
+            luminance = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
+            text_color = "black" if luminance > 0.5 else "white"
+            txt = f"{value:.1f}" if value <= 3000 else f"{value:.1e}"
+            ax.text(
+                value / 2,
+                i,
+                txt,
+                va="center",
+                ha="center",
+                fontsize=8,
+                # fontweight="bold",
+                color=text_color,
+            )
     ax.grid(axis="y")
 
 
@@ -283,6 +301,7 @@ def plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir):
         outp_dir: Output directory for saving the figure.
     """
     fig, ax = plt.subplots(figsize=(14, 8))
+
     df_plot[bar_cols].plot(kind="barh", stacked=True, ax=ax, color=color_list, alpha=0.8)
     # Plot peak load as red vertical line
     for i, prov in enumerate(df_plot.index):
@@ -317,26 +336,27 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_statistics",
             carrier="AC",
-            planning_horizons="2025",
+            planning_horizons="2030",
             # co2_pathway="exp175default",
             # planning_horizons="2130",
-            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
+            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
             topology="current+FCG",
             # heating_demand="positive",
-            configfiles="resources/tmp/remind_coupled_cg.yaml",
+            configfiles="resources/tmp/pseudo_coupled.yml",
         )
     configure_logging(snakemake)
     set_plot_test_backend(snakemake.config)
 
-    carrier = snakemake.params.carrier
-
     n = pypsa.Network(snakemake.input.network)
+    carrier = snakemake.params.carrier
+    config = snakemake.config["plotting"]
     # # incase an old version need to add missing info to network
     fix_network_names_colors(n, snakemake.config)
+
     n.loads.carrier = "load"
     n.carriers.loc["load", ["nice_name", "color"]] = (
         "Load",
-        snakemake.config["plotting"]["tech_colors"]["electric load"],
+        config["tech_colors"]["electric load"],
     )
 
     colors = n.carriers.set_index("nice_name").color.where(lambda s: s != "", "lightgrey")
@@ -346,6 +366,9 @@ if __name__ == "__main__":
         os.makedirs(outp_dir)
 
     stats_list = snakemake.params.stat_types
+    labels_list = config["statistics"]["add_labels"]
+    add_label = {plot_type: False for plot_type in stats_list}
+    add_label.update({plot_type: True for plot_type in labels_list})
 
     attached_carriers = filter_carriers(n, carrier)
     if "capacity_factor" in stats_list:
@@ -358,7 +381,9 @@ if __name__ == "__main__":
         ds = ds.groupby(level=1).first()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
-        plot_static_per_carrier(ds, ax, colors=colors)
+        plot_static_per_carrier(
+            ds, ax, colors=colors, add_labels=add_label.get("capacity_factor", False)
+        )
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capacity_factor.png"))
 
@@ -374,7 +399,9 @@ if __name__ == "__main__":
         ds = ds.drop(("Generator", "Load"), errors="ignore")
         ds = ds.abs() / PLOT_CAP_UNITS
         ds.attrs["unit"] = PLOT_CAP_LABEL
-        plot_static_per_carrier(ds, ax, colors=colors)
+        plot_static_per_carrier(
+            ds, ax, colors=colors, add_labels=add_label.get("installed_capacity", False)
+        )
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "installed_capacity.png"))
 
@@ -420,7 +447,9 @@ if __name__ == "__main__":
         ds = ds.drop(("Generator", "Load"), errors="ignore")
         ds = ds.abs() / PLOT_CAP_UNITS
         ds.attrs["unit"] = PLOT_CAP_LABEL
-        plot_static_per_carrier(ds, ax, colors=colors)
+        plot_static_per_carrier(
+            ds, ax, colors=colors, add_labels=add_label.get("optimal_capacity", False)
+        )
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "optimal_capacity.png"))
 
@@ -430,7 +459,9 @@ if __name__ == "__main__":
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
-        plot_static_per_carrier(ds, ax, colors=colors)
+        plot_static_per_carrier(
+            ds, ax, colors=colors, add_labels=add_label.get("capital_expenditure", False)
+        )
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capex.png"))
 
@@ -440,7 +471,9 @@ if __name__ == "__main__":
         ds = ds.groupby(level=1).sum()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
-        plot_static_per_carrier(ds, ax, colors=colors)
+        plot_static_per_carrier(
+            ds, ax, colors=colors, add_labels=add_label.get("operational_expenditure", False)
+        )
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "opex.png"))
 
@@ -453,7 +486,9 @@ if __name__ == "__main__":
         attrs = ds.attrs.copy()
         ds = ds.unstack()[vres].stack()
         ds.attrs = attrs
-        plot_static_per_carrier(ds, ax, colors=colors)
+        plot_static_per_carrier(
+            ds, ax, colors=colors, add_labels=add_label.get("curtailment", False)
+        )
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "curtailment.png"))
 
@@ -509,7 +544,7 @@ if __name__ == "__main__":
             ds = ds.drop("Line")
         ds = ds / PLOT_SUPPLY_UNITS
         ds.attrs["unit"] = PLOT_SUPPLY_LABEL
-        plot_static_per_carrier(ds, ax, colors=colors)
+        plot_static_per_carrier(ds, ax, colors=colors, add_labels=add_label.get("supply", False))
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "supply.png"))
 
@@ -520,7 +555,9 @@ if __name__ == "__main__":
             ds = ds.drop("Line")
         ds = ds / PLOT_SUPPLY_UNITS
         ds.attrs["unit"] = PLOT_SUPPLY_LABEL
-        plot_static_per_carrier(ds, ax, colors=colors)
+        plot_static_per_carrier(
+            ds, ax, colors=colors, add_labels=add_label.get("withdrawal", False)
+        )
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "withdrawal.png"))
 
@@ -537,29 +574,35 @@ if __name__ == "__main__":
         # Restore attrs to the series after DataFrame operations
         mv_series = df["MV"]
         mv_series.attrs = {"name": "Market Value", "unit": "€/MWh"}
-        plot_static_per_carrier(mv_series, ax=ax, colors=colors)
+        plot_static_per_carrier(
+            mv_series, ax=ax, colors=colors, add_labels=add_label.get("market_value", False)
+        )
         add_second_xaxis(df["GenShare"], ax, "Generation Share [%]")
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "market_value.png"))
 
     if "lcoe" in stats_list:
         rev_costs = calc_lcoe(n, groupby=None)
-        ds = rev_costs["LCOE"]
+        ds = rev_costs["LCOE"].copy()
         if "load shedding" in ds.index.get_level_values(1):
             ds.drop("load shedding", level=1, inplace=True)
         if "H2" in ds.index.get_level_values(1):
             ds.drop("H2", level=1, inplace=True)
         ds.attrs = {"name": "LCOE", "unit": "€/MWh"}
         fig, ax = plt.subplots()
-        plot_static_per_carrier(ds, ax, colors=colors)
+        plot_static_per_carrier(ds, ax, colors=colors, add_labels=add_label.get("lcoe", False))
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "LCOE.png"))
 
-        rev_costs = calc_lcoe(n, groupby=None)
-        ds = rev_costs["profit_pu"]
+    if "mv_minus_lcoe" in stats_list:
+        if not "lcoe" in stats_list:
+            rev_costs = calc_lcoe(n, groupby=None)
+        ds = rev_costs["profit_pu"].copy()
         ds.attrs = {"name": "MV - LCOE", "unit": "€/MWh"}
         fig, ax = plt.subplots()
-        plot_static_per_carrier(ds, ax, colors=colors)
+        plot_static_per_carrier(
+            ds, ax, colors=colors, add_labels=add_label.get("mv_minus_lcoe", False)
+        )
         fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "MV_minus_LCOE.png"))
 

@@ -91,7 +91,7 @@ set-resources:
     threads: 1
     partition: io # login
     qos: io
-  retrieve_build_up_raster:
+  retrieve_Build_up_raster:
     time: 300
     threads: 1
     partition: io # login
@@ -106,11 +106,27 @@ set-resources:
     threads: 1
     partition: io
     qos: io
+  retrieve_powerplants:
+    time: 300
+    threads: 2
+    partition: io
+    qos: io
+  retrieve_bathymetry_raster:
+    time: 300
+    threads: 1
+    partition: io
+    qos: io
   retrieve_Shrubland_raster:
     time: 300
     threads: 1
     partition: io
     qos: io
+  retrieve_cutout:
+    time: 300
+    threads: 1
+    partition: io
+    qos: io
+
 
 # GROUPS
 
@@ -123,10 +139,17 @@ groups:
   prepare_networks: prep_network
   add_existing_baseyear: prep_network2
   make_summary: summary
+  retrieve_cutout: retrieve
+  retrieve_region_shapes: retrieve
+  retrieve_rasters: retrieve 
+  retrieve_Build_up_raster: retrieve
+  retrieve_Grass_raster: retrieve
+  retrieve_Bare_raster: retrieve
 group-components:
   plot: 3
   build_load: 3
   prep_network: 3
   prep_network2: 3
+  retrieve: 1 # io queue
   summary: 3
   prep_capacities: 3
