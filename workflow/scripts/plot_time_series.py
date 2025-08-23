@@ -438,7 +438,7 @@ def plot_vre_heatmap(
     """plot the VRE generation per hour and day as a heatmap
 
     Args:
-        network (pypsa.Network): the pypsa network object
+        n (pypsa.Network): the pypsa network object
         time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).
         log_values (bool, optional): whether to use log scale for the values. Defaults to True.
         config (dict, optional): the run config (snakemake.config).
