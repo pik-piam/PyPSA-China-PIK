@@ -9,17 +9,17 @@ foresight: "overnight"
 
 paths:
   results_dir: "results/"
-  summary_dir: "summary/" # TODO useless?
   costs_dir: "resources/data/costs/default"
   yearly_regional_load: 
     ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
     # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
+#TODO merge into paths
+edge_paths:
+  current: "resources/data/grids/edges_current.csv"
+  current+FCG: "resources/data/grids/edges_current_FCG.csv"
+  current+Neighbor: "resources/data/grids/edges_current_neighbor.csv"
 
-io:
-  nc_compression:
-    level: 4
-    zlib: True
     
 scenario: 
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
@@ -35,6 +35,7 @@ scenario:
     - 2060
   heating_demand: ["positive"]
 
+# emission reduction scenarios (can be selected with scenario.co2_pathway)
 co2_scenarios: 
   exp175default:
     control: "reduction" # price | reduction | budget | None
@@ -48,12 +49,14 @@ co2_scenarios:
       '2050': 0.87480618
       '2055': 0.94359322
       '2060': 1
-# TODO Need to test timezones and functionality of end_year_plus1
+
+# Time dimension
+# TODO Need to test functionality of end_year_plus1
 snapshots:
   start: "01-01 00:00"
   end: "12-31 23:00"
   bounds: 'both'
-  freq: '5h'
+  freq: '5h' # down to 1h
   # for weighings -> to be improved
   frequency: 5.
   # in case snapshots cross the planning horizon year
@@ -87,6 +90,8 @@ atlite:
       dy: 5
       weather_year: 2020
 
+# renewable potentials and availabilities from Atlite. 
+# !CARE cutout should match atlite.cutout_name above
 renewable:
   onwind:
     cutout: China-2020c
@@ -144,24 +149,15 @@ heat_demand:
   heating_offet : 0  # linear model offset
 solar_thermal_angle: 45
 
-Technique:
-  solar: true
-  onwind: true
-  offwind: true
-
-# TODO implement consistent accounting 
-# brownfield_capex:
-#   existing_hydro: False
-#   existing_nuclear: False
-#   existing_PHS: False
-
 reporting:
   # Whether to adjust link capacities by efficiency for AC-side reporting
   # pypsa links capacity defined by input but nameplate capacity often AC
   # This ensures consistent capacity reporting across the network
   adjust_link_capacities_by_efficiency: true
 
-bus_suffix: [""," central heat"," decentral heat"," gas"," coal"]
+
+# Network carriers and technologies
+bus_suffix: [""," central heat"," decentral heat"," gas"," coal"] #TODO check used
 bus_carrier: {
     "": "AC",
     " central heat": "heat",
@@ -171,7 +167,8 @@ bus_carrier: {
 }
 
 Techs:
-  ## for add carriers and generators - but ugly to have nuclear and biomass and heatpupm in vre
+  ## tech selection
+  #TODO: rework vre_techs to split with clean_techs. Merge vre with non_dispatchable
   vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier","H2 CHP", "fuel cell"]
   non_dispatchable: ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential', "Solar Thermal"]
   conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
@@ -203,10 +200,6 @@ hydro_dams:
   damn_flows_path: "resources/data/hydro/dam_flow_links.csv"
 H2:
   geo_storage_nodes: [ "Sichuan", "Chongqing", "Hubei", "Jiangxi", "Anhui", "Jiangsu", "Shandong", "Guangdong" ]
-edge_paths:
-  current: "resources/data/grids/edges_current.csv"
-  current+FCG: "resources/data/grids/edges_current_FCG.csv"
-  current+Neighbor: "resources/data/grids/edges_current_neighbor.csv"
 
 solving:
   options:
@@ -293,8 +286,9 @@ solving:
 
   mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
 
+
+# transmission options
 lines:
-  line_volume_limit_max: 5.e+15   #line_volume_limit is set = factor * max
   line_length_factor: 1.25
   expansion:
     transmission_limit: vopt # opt for optimal (unconstrained), v for volume, c for cost. eg. c1.25 limits cost increase to 25% of the base year
@@ -302,7 +296,8 @@ lines:
 
 security:
   line_margin: 70 # max percent of line capacity
-
+  
+# brownfield options
 existing_capacities:
   add: True # whether to add brownfield capacities
   grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
@@ -311,13 +306,14 @@ existing_capacities:
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
   node_assignment: simple # simple | gps
 
+# contingencies (slower!) -> epsilon is fraction of vre gen or load for which reserves should exist
 operational_reserve:
   activate: false
   epsilon_load: 0.02
   epsilon_vres: 0.02
-  contingency: 300000 # MW
+  contingency: 300000 # MW. Additional reserves on top of fractions
 
-# TODO integrate in workflow
+# TODO integrate in workflow: split_provinces is currently not supported by build_loads and reporting
 nodes: 
   split_provinces: False # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
   # exclude currently only applies if split_provinces is True, will be fixed with integrartion to workflow
@@ -340,7 +336,14 @@ nodes:
         - "Ulaan Chab"
         - "Wuhai"
 
-fetch_regions:
+# compression of netcdf network objects
+io:
+  nc_compression:
+    level: 4
+    zlib: True
+
+# simplification of shapes to save memory. If using GPS for plant node assignment a lower value is preferable.
+fetch_regions:  
   simplify_tol: 
     eez: 0.5
     land: 0.05
