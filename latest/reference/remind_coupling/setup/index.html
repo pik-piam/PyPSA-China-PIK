@@ -1780,23 +1780,23 @@ Call this at the beginning of any script that needs to import from sibling modul
 
             <details class="quote">
               <summary>Source code in <code>workflow/scripts/remind_coupling/setup.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
-<span class="normal"><a href="#__codelineno-0-11">11</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-11">11</a></span>
 <span class="normal"><a href="#__codelineno-0-12">12</a></span>
 <span class="normal"><a href="#__codelineno-0-13">13</a></span>
 <span class="normal"><a href="#__codelineno-0-14">14</a></span>
 <span class="normal"><a href="#__codelineno-0-15">15</a></span>
 <span class="normal"><a href="#__codelineno-0-16">16</a></span>
 <span class="normal"><a href="#__codelineno-0-17">17</a></span>
-<span class="normal"><a href="#__codelineno-0-18">18</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="k">def</span><span class="w"> </span><span class="nf">setup_paths</span><span class="p">():</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="sd">    Add the scripts directory to the Python path to enable direct imports</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    from workflow/scripts subdirectories without relative imports. (for debugging)</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    Call this at the beginning of any script that needs to import from sibling modules.</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a>    <span class="n">scripts_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="k">if</span> <span class="n">scripts_dir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a>        <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">scripts_dir</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-18">18</a></span>
+<span class="normal"><a href="#__codelineno-0-19">19</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">setup_paths</span><span class="p">():</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    Add the scripts directory to the Python path to enable direct imports</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    from workflow/scripts subdirectories without relative imports. (for debugging)</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    Call this at the beginning of any script that needs to import from sibling modules.</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a>    <span class="n">scripts_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>    <span class="k">if</span> <span class="n">scripts_dir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a>        <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">scripts_dir</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

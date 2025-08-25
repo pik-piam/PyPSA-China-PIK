@@ -1896,17 +1896,84 @@ NB: Needs to be run before the coupled PyPSA run.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Read relevant REMIND data from the output directory.
-Args:
-    remind_outp_dir (os.PathLike): Path to the REMIND output directory.
-    region (str): Remind region to filter the data by.
-Returns:
-    dict: Dictionary containing REMIND data.</p>
+        <p>Read relevant REMIND data from the output directory.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>remind_outp_dir</code>
+            </td>
+            <td>
+                  <code><span title="os.PathLike">PathLike</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to the REMIND output directory.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>region</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Remind region to filter the data by.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>dict</code></td>            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dictionary containing REMIND data.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
             <details class="quote">
               <summary>Source code in <code>workflow/scripts/remind_coupling/make_pypsa_config.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-26">26</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-24">24</a></span>
+<span class="normal"><a href="#__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#__codelineno-0-26">26</a></span>
 <span class="normal"><a href="#__codelineno-0-27">27</a></span>
 <span class="normal"><a href="#__codelineno-0-28">28</a></span>
 <span class="normal"><a href="#__codelineno-0-29">29</a></span>
@@ -1935,12 +2002,14 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-52">52</a></span>
 <span class="normal"><a href="#__codelineno-0-53">53</a></span>
 <span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="k">def</span><span class="w"> </span><span class="nf">read_remind_em_prices</span><span class="p">(</span><span class="n">remind_outp_dir</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">    Read relevant REMIND data from the output directory.</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">        remind_outp_dir (os.PathLike): Path to the REMIND output directory.</span>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        region (str): Remind region to filter the data by.</span>
+<span class="normal"><a href="#__codelineno-0-55">55</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="k">def</span><span class="w"> </span><span class="nf">read_remind_em_prices</span><span class="p">(</span><span class="n">remind_outp_dir</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">    Read relevant REMIND data from the output directory.</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">        remind_outp_dir (os.PathLike): Path to the REMIND output directory.</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">        region (str): Remind region to filter the data by.</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31"></a>
 <a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">    Returns:</span>
 <a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">        dict: Dictionary containing REMIND data.</span>
 <a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">    &quot;&quot;&quot;</span>
@@ -1958,10 +2027,10 @@ Returns:
 <a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="p">)</span>  <span class="c1"># gC to ton CO2</span>
 <a id="__codelineno-0-47" name="__codelineno-0-47"></a>
 <a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="c1"># get remind version</span>
-<a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">remind_outp_dir</span><span class="p">,</span> <span class="s2">&quot;c_model_version.csv&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">remind_outp_dir</span><span class="p">,</span> <span class="s2">&quot;c_model_version.csv&quot;</span><span class="p">))</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
 <a id="__codelineno-0-50" name="__codelineno-0-50"></a>        <span class="n">remind_v</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-51" name="__codelineno-0-51"></a>    <span class="c1"># get remind run name</span>
-<a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">remind_outp_dir</span><span class="p">,</span> <span class="s2">&quot;c_expname.csv&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">remind_outp_dir</span><span class="p">,</span> <span class="s2">&quot;c_expname.csv&quot;</span><span class="p">))</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
 <a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="n">remind_exp_name</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-54" name="__codelineno-0-54"></a>
 <a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;co2_prices&quot;</span><span class="p">:</span> <span class="n">co2_p</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">remind_v</span><span class="p">,</span> <span class="s2">&quot;expname&quot;</span><span class="p">:</span> <span class="n">remind_exp_name</span><span class="p">}</span>

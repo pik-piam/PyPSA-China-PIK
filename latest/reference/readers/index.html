@@ -1767,7 +1767,7 @@
 
     <div class="doc doc-contents ">
 
-        <p>prepare projections for model use</p>
+        <p>Prepare projections for model use</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1843,8 +1843,7 @@
 
             <details class="quote">
               <summary>Source code in <code>workflow/scripts/readers.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-7"> 7</a></span>
-<span class="normal"><a href="#__codelineno-0-8"> 8</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-8"> 8</a></span>
 <span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
 <span class="normal"><a href="#__codelineno-0-10">10</a></span>
 <span class="normal"><a href="#__codelineno-0-11">11</a></span>
@@ -1867,31 +1866,32 @@
 <span class="normal"><a href="#__codelineno-0-28">28</a></span>
 <span class="normal"><a href="#__codelineno-0-29">29</a></span>
 <span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">read_yearly_load_projections</span><span class="p">(</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8"></a>    <span class="n">yearly_projections_p</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">=</span> <span class="s2">&quot;resources/data/load/Province_Load_2020_2060.csv&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="n">conversion</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;prepare projections for model use</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12"></a>
-<a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">        yearly_projections_p (os.PathLike, optional): the data path.</span>
-<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">                Defaults to &quot;resources/data/load/Province_Load_2020_2060.csv&quot;.</span>
-<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">        conversion (int, optional): the conversion factor to MWh. Defaults to 1.</span>
-<a id="__codelineno-0-17" name="__codelineno-0-17"></a>
-<a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">        pd.DataFrame: the formatted data, in MWh</span>
-<a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-21" name="__codelineno-0-21"></a>    <span class="n">yearly_proj</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">yearly_projections_p</span><span class="p">)</span>
-<a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="n">yearly_proj</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Unnamed: 0&quot;</span><span class="p">:</span> <span class="s2">&quot;province&quot;</span><span class="p">,</span> <span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="s2">&quot;province&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="k">if</span> <span class="s2">&quot;province&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">yearly_proj</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-<a id="__codelineno-0-24" name="__codelineno-0-24"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a>            <span class="s2">&quot;The province (or region or unamed) column is missing in the yearly projections data&quot;</span>
-<a id="__codelineno-0-26" name="__codelineno-0-26"></a>            <span class="s2">&quot;. Index cannot be built&quot;</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a>        <span class="p">)</span>
-<a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="n">yearly_proj</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;province&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-29" name="__codelineno-0-29"></a>    <span class="n">yearly_proj</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">yearly_proj</span><span class="o">.</span><span class="n">columns</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a>
-<a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="k">return</span> <span class="n">yearly_proj</span> <span class="o">*</span> <span class="n">conversion</span>
+<span class="normal"><a href="#__codelineno-0-31">31</a></span>
+<span class="normal"><a href="#__codelineno-0-32">32</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">read_yearly_load_projections</span><span class="p">(</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9"></a>    <span class="n">yearly_projections_p</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">=</span> <span class="s2">&quot;resources/data/load/Province_Load_2020_2060.csv&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10"></a>    <span class="n">conversion</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Prepare projections for model use</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13"></a>
+<a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">        yearly_projections_p (os.PathLike, optional): the data path.</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="sd">                Defaults to &quot;resources/data/load/Province_Load_2020_2060.csv&quot;.</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">        conversion (int, optional): the conversion factor to MWh. Defaults to 1.</span>
+<a id="__codelineno-0-18" name="__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">        pd.DataFrame: the formatted data, in MWh</span>
+<a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="n">yearly_proj</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">yearly_projections_p</span><span class="p">)</span>
+<a id="__codelineno-0-23" name="__codelineno-0-23"></a>    <span class="n">yearly_proj</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Unnamed: 0&quot;</span><span class="p">:</span> <span class="s2">&quot;province&quot;</span><span class="p">,</span> <span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="s2">&quot;province&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24"></a>    <span class="k">if</span> <span class="s2">&quot;province&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">yearly_proj</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a>            <span class="s2">&quot;The province (or region or unamed) column is missing in the yearly projections data&quot;</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>            <span class="s2">&quot;. Index cannot be built&quot;</span>
+<a id="__codelineno-0-28" name="__codelineno-0-28"></a>        <span class="p">)</span>
+<a id="__codelineno-0-29" name="__codelineno-0-29"></a>    <span class="n">yearly_proj</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;province&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="n">yearly_proj</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">yearly_proj</span><span class="o">.</span><span class="n">columns</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31"></a>
+<a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="k">return</span> <span class="n">yearly_proj</span> <span class="o">*</span> <span class="n">conversion</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

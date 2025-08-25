@@ -1785,7 +1785,7 @@
 
     <div class="doc doc-contents ">
 
-        <p>fetch the province/state level (1st admin level) from the
+        <p>Fetch the province/state level (1st admin level) from the
         NATURAL_EARTH data store and make a file</p>
 
 
@@ -1871,7 +1871,7 @@
 <span class="normal"><a href="#__codelineno-0-67">67</a></span>
 <span class="normal"><a href="#__codelineno-0-68">68</a></span>
 <span class="normal"><a href="#__codelineno-0-69">69</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="k">def</span><span class="w"> </span><span class="nf">fetch_natural_earth_records</span><span class="p">(</span><span class="n">country_iso2_code</span><span class="o">=</span><span class="s2">&quot;CN&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
-<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;fetch the province/state level (1st admin level) from the</span>
+<a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Fetch the province/state level (1st admin level) from the</span>
 <a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">            NATURAL_EARTH data store and make a file</span>
 <a id="__codelineno-0-27" name="__codelineno-0-27"></a>
 <a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">    Args:</span>
@@ -1891,7 +1891,7 @@
 <a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="n">provinces_states</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">records</span><span class="p">()</span>
 <a id="__codelineno-0-43" name="__codelineno-0-43"></a>
 <a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">filter_country_code</span><span class="p">(</span><span class="n">records</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">target_iso_a2_code</span><span class="o">=</span><span class="s2">&quot;CN&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-<a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;filter provincial/state (admin level 1) records for one country</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter provincial/state (admin level 1) records for one country</span>
 <a id="__codelineno-0-46" name="__codelineno-0-46"></a>
 <a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">        Args:</span>
 <a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="sd">            records (shpreader.Reader.records): the records object from cartopy</span>
@@ -1933,7 +1933,7 @@
 
     <div class="doc doc-contents ">
 
-        <p>dump irrelevant info and make records into a GeoDataFrame that matches the PROV_NAMES</p>
+        <p>Dump irrelevant info and make records into a GeoDataFrame that matches the PROV_NAMES</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -2019,7 +2019,7 @@
 <span class="normal"><a href="#__codelineno-0-96">96</a></span>
 <span class="normal"><a href="#__codelineno-0-97">97</a></span>
 <span class="normal"><a href="#__codelineno-0-98">98</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="k">def</span><span class="w"> </span><span class="nf">records_to_data_frame</span><span class="p">(</span><span class="n">records</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;dump irrelevant info and make records into a GeoDataFrame that matches the PROV_NAMES</span>
+<a id="__codelineno-0-73" name="__codelineno-0-73"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Dump irrelevant info and make records into a GeoDataFrame that matches the PROV_NAMES</span>
 <a id="__codelineno-0-74" name="__codelineno-0-74"></a>
 <a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="sd">    Args:</span>
 <a id="__codelineno-0-76" name="__codelineno-0-76"></a><span class="sd">        records (object): the cartopy shpread records from natural earth</span>
@@ -2062,7 +2062,7 @@
 
     <div class="doc doc-contents ">
 
-        <p>save to file</p>
+        <p>Save to file</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -2148,7 +2148,7 @@
 <a id="__codelineno-0-103" name="__codelineno-0-103"></a>    <span class="n">crs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">CRS</span><span class="p">,</span>
 <a id="__codelineno-0-104" name="__codelineno-0-104"></a>    <span class="n">output_file</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">=</span> <span class="n">DEFAULT_SHAPE_OUTPATH</span><span class="p">,</span>
 <a id="__codelineno-0-105" name="__codelineno-0-105"></a><span class="p">):</span>
-<a id="__codelineno-0-106" name="__codelineno-0-106"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;save to file</span>
+<a id="__codelineno-0-106" name="__codelineno-0-106"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Save to file</span>
 <a id="__codelineno-0-107" name="__codelineno-0-107"></a>
 <a id="__codelineno-0-108" name="__codelineno-0-108"></a><span class="sd">    Args:</span>
 <a id="__codelineno-0-109" name="__codelineno-0-109"></a><span class="sd">        provinces_gdf (GeoDataFrame): the cleaned up province records</span>

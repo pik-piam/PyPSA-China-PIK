@@ -2016,17 +2016,62 @@
 
     <div class="doc doc-contents ">
 
-        <p>Determine the simulation timespan in years (so the network object is not needed)
-Args:
-    config (dict): the snakemake config
-    year (int): the year to simulate
-Returns:
+        <p>Determine the simulation timespan in years (so the network object is not needed)</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>config</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the snakemake config</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>year</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the year to simulate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>Returns:
     int: the simulation timespan in years</p>
 
 
             <details class="quote">
               <summary>Source code in <code>workflow/scripts/prepare_existing_capacities.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-26">26</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-25">25</a></span>
+<span class="normal"><a href="#__codelineno-0-26">26</a></span>
 <span class="normal"><a href="#__codelineno-0-27">27</a></span>
 <span class="normal"><a href="#__codelineno-0-28">28</a></span>
 <span class="normal"><a href="#__codelineno-0-29">29</a></span>
@@ -2051,8 +2096,9 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-48">48</a></span>
 <span class="normal"><a href="#__codelineno-0-49">49</a></span>
 <span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="k">def</span><span class="w"> </span><span class="nf">determine_simulation_timespan</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine the simulation timespan in years (so the network object is not needed)</span>
+<span class="normal"><a href="#__codelineno-0-51">51</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="k">def</span><span class="w"> </span><span class="nf">determine_simulation_timespan</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine the simulation timespan in years (so the network object is not needed)</span>
+<a id="__codelineno-0-27" name="__codelineno-0-27"></a>
 <a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">    Args:</span>
 <a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">        config (dict): the snakemake config</span>
 <a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">        year (int): the year to simulate</span>
@@ -2094,7 +2140,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-        <p>distribute vre capacities by grade potential, use up better grades first</p>
+        <p>Distribute vre capacities by grade potential, use up better grades first</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -2182,7 +2228,7 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-200">200</a></span>
 <span class="normal"><a href="#__codelineno-0-201">201</a></span>
 <span class="normal"><a href="#__codelineno-0-202">202</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-169" name="__codelineno-0-169"></a><span class="k">def</span><span class="w"> </span><span class="nf">distribute_vre_by_grade</span><span class="p">(</span><span class="n">cap_by_year</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">grade_capacities</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;distribute vre capacities by grade potential, use up better grades first</span>
+<a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Distribute vre capacities by grade potential, use up better grades first</span>
 <a id="__codelineno-0-171" name="__codelineno-0-171"></a>
 <a id="__codelineno-0-172" name="__codelineno-0-172"></a><span class="sd">    Args:</span>
 <a id="__codelineno-0-173" name="__codelineno-0-173"></a><span class="sd">        cap_by_year (pd.Series): the vre tech potential p_nom_max added per year</span>
