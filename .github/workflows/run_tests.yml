@@ -15,28 +15,42 @@ jobs:
     runs-on: ubuntu-latest  # Set the environment to Ubuntu
 
     steps:
-    # Step 1: Checkout the repository code
+    # Step 1: Checkout the repository
     - uses: actions/checkout@v4
-    # Step 2: Set up Conda
-    - name: Set up Conda
+
+    # Step 2: Install Miniforge (no env creation here)
+    - name: Setup Miniforge
       uses: conda-incubator/setup-miniconda@v3
       with:
-        miniconda-version: 'latest'  # Use the latest version of Miniconda
-        environment-file: workflow/envs/environment.yaml  # Point to your conda environment file (if exists)
+        miniforge-version: latest
+        installation-dir: /home/runner/miniforge3
+        use-mamba: true
         auto-activate-base: false
-        activate-environment: pypsa-china
-    # /3 cache the Conda environment (for faster CI)
-    - name: Cache Conda environment
-      uses: actions/cache@v4  
+        channels: conda-forge,bioconda
+        channel-priority: strict
+        pkgs-dirs: /home/runner/.conda/pkgs
+
+    # Step 3: Restore full Conda environment cache AFTER setup
+    - name: Restore Conda env cache
+      id: env-cache
+      uses: actions/cache@v4
       with:
-        path: ~/miniconda3
-        key: ${{ runner.os }}-conda-${{ hashFiles('workflow/envs/environment.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-conda-
-    # 4/ Run tests using pytest
+        path: |
+          /home/runner/miniforge3/envs/pypsa-china
+          /home/runner/.conda/pkgs
+          /home/runner/.cache/mamba
+        key: ${{ runner.os }}-conda-env-${{ hashFiles('workflow/envs/environment.yaml') }}
+
+    # Step 4: Create env only if cache miss
+    - name: Create env
+      if: steps.env-cache.outputs.cache-hit != 'true'
+      shell: bash -el {0}
+      run: |
+        conda config --add envs_dirs /home/runner/miniforge3/envs
+        mamba env create -n pypsa-china -f workflow/envs/environment.yaml
+
+    # Step 5: Run tests
     - name: Run pytest
       shell: bash -el {0}
       run: |
-        conda install pytest
-        pytest -v -s  # Run pytest (make sure your tests are discovered and run)
-
+        conda run -n pypsa-china pytest -v -s

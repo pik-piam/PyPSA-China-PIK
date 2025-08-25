@@ -1,18 +1,17 @@
-""" 
-Snakemake rule script to calculate the heat pump coefficient of performance 
+"""
+Snakemake rule script to calculate the heat pump coefficient of performance
 with atlite
 """
+
+import logging
+import os
 
 import atlite
 import atlite.cutout
 import pandas as pd
 import scipy as sp
-import logging
-import os
-
 from _helpers import configure_logging, mock_snakemake
 from constants import TIMEZONE
-
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +73,6 @@ def build_cop_profiles(pop_map: pd.DateOffset, cutout: atlite.cutout, output_pat
 
 
 if __name__ == "__main__":
-
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
         snakemake = mock_snakemake("build_cop_profiles")

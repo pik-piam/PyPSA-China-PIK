@@ -1,5 +1,3 @@
-# coding: utf-8
-
 """
 Functions for myopic pathway network generation snakemake rules
 
@@ -10,16 +8,16 @@ Usage:
 - use via a snakemake rule
 - debug: use as standalone with mock_snakemake (reads snakefile)
 """
+
 import logging
-import pandas as pd
-import pypsa
 
 import numpy as np
+import pandas as pd
+import pypsa
 import xarray as xr
-
+from _helpers import configure_logging, mock_snakemake
 from add_existing_baseyear import add_build_year_to_new_assets
-from _helpers import mock_snakemake, configure_logging
-from constants import PROV_NAMES, OFFSHORE_WIND_NODES
+from constants import OFFSHORE_WIND_NODES, PROV_NAMES
 
 idx = pd.IndexSlice
 logger = logging.getLogger(__name__)
@@ -51,7 +49,6 @@ def add_brownfield(n: pypsa.Network, n_p: pypsa.Network, year: int):
         add_build_year_to_new_assets(n_p, 2020)
 
     for c in n_p.iterate_components(["Link", "Generator", "Store"]):
-
         attr = "e" if c.name == "Store" else "p"
 
         # first, remove generators, links and stores that track
@@ -140,7 +137,6 @@ def add_brownfield(n: pypsa.Network, n_p: pypsa.Network, year: int):
 
 
 if __name__ == "__main__":
-
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "add_brownfield",

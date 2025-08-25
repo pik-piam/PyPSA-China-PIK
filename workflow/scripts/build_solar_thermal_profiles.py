@@ -1,12 +1,12 @@
 # TODO add docu
 import logging
+import os
+
 import atlite
 import pandas as pd
 import scipy as sp
-import os
-
-from constants import TIMEZONE
 from _helpers import configure_logging, mock_snakemake
+from constants import TIMEZONE
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def build_solar_thermal_profiles(
     pop_map: pd.DataFrame, cutout: atlite.Cutout, outp_path: os.PathLike
 ) -> None:
-    """build per unit solar thermal time availability profiles and save them to a file
+    """Build per unit solar thermal time availability profiles and save them to a file
 
     Args:
         pop_map (pd.DataFrame): DataFrame with the population map

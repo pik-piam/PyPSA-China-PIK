@@ -4,10 +4,10 @@ Misc collection of functions supporting network prep
 """
 
 import logging
-import pandas as pd
-import pypsa
 from os import PathLike
 
+import pandas as pd
+import pypsa
 from _pypsa_helpers import rename_techs
 from constants import NICE_NAMES_DEFAULT
 

@@ -1,9 +1,8 @@
-import os
-import pytest
 from unittest import mock
-import sys
 
+import pytest
 from _helpers import ConfigManager, GHGConfigHandler, PathManager
+
 
 @pytest.fixture
 def sample_config():
@@ -13,12 +12,12 @@ def sample_config():
             "co2_pathway": ["test_co2_scen"],
             "topology": "test_topo",
             "heating_demand": "test_proj",
-            "foresight": "overnight"
+            "foresight": "overnight",
         },
         "co2_scenarios": {
             "test_co2_scen": {
                 "control": "reduction",
-                "pathway": {"2020": 0.1, "2030": 0.2}
+                "pathway": {"2020": 0.1, "2030": 0.2},
             }
         },
         "run": {"name": "testrun", "is_test": True},
@@ -26,16 +25,14 @@ def sample_config():
         "paths": {
             "results_dir": "results",
             "costs_dir": "",
-            "yearly_regional_load": {"ac": "resources/data/load/Provincial_Load_2020_2060_MWh.csv"}
+            "yearly_regional_load": {"ac": "resources/data/load/Provincial_Load_2020_2060_MWh.csv"},
         },
         "atlite": {
             "cutout_name": "cutout_test",
-            "cutouts": {"cutout_test": {"param": 1}}
+            "cutouts": {"cutout_test": {"param": 1}},
         },
         "enable": {"build_cutout": True},
-        "renewable": {"wind": {"foo": "bar"},
-        "heat_coupling": True
-        },
+        "renewable": {"wind": {"foo": "bar"}, "heat_coupling": True},
     }
 
 
@@ -79,9 +76,7 @@ def test_ghg_handler_invalid_control(sample_config):
 
 def test_ghg_handler_missing_keys(sample_config):
     bad_config = dict(sample_config)
-    bad_config["co2_scenarios"] = {
-        "test_co2_scen": {"control": "reduction"}
-    }
+    bad_config["co2_scenarios"] = {"test_co2_scen": {"control": "reduction"}}
     with pytest.raises(ValueError):
         GHGConfigHandler(bad_config)
 
@@ -96,8 +91,10 @@ def test_path_manager_costs_dir_default(sample_config):
 def test_path_manager_costs_dir_absolute(sample_config):
     pm = PathManager(sample_config)
     sample_config["paths"]["costs_dir"] = "some/rel/path"
-    with mock.patch("os.path.exists", return_value=False), \
-         mock.patch("os.path.abspath", return_value="/abs/path"):
+    with (
+        mock.patch("os.path.exists", return_value=False),
+        mock.patch("os.path.abspath", return_value="/abs/path"),
+    ):
         assert pm.costs_dir() == "/abs/path"
 
 

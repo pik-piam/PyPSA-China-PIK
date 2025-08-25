@@ -8,7 +8,9 @@ import pytz
 import xarray as xr
 import re
 
+import pandas as pd
 import pypsa
+import pytz
 
 # get root logger
 logger = logging.getLogger()
@@ -118,7 +120,7 @@ def aggregate_p(n: pypsa.Network) -> pd.Series:
 def calc_lcoe(
     n: pypsa.Network, grouper=pypsa.statistics.get_carrier_and_bus_carrier, **kwargs
 ) -> pd.DataFrame:
-    """calculate the LCOE for the network: (capex+opex)/supply.
+    """Calculate the LCOE for the network: (capex+opex)/supply.
 
     Args:
         n (pypsa.Network): the network for which LCOE is to be calaculated
@@ -178,13 +180,8 @@ def calc_generation_share(df, n, carrier):
     supply_data = n.statistics.supply(bus_carrier=carrier, comps="Generator")
     total_supply = supply_data.sum()
     gen_shares = (supply_data / total_supply * 100).dropna()
-    carrier_map = {
-        c.lower(): row["nice_name"]
-        for c, row in n.carriers.iterrows()
-    }
-    gen_shares.index = gen_shares.index.map(
-        lambda idx: carrier_map.get(idx.lower(), idx)
-    )
+    carrier_map = {c.lower(): row["nice_name"] for c, row in n.carriers.iterrows()}
+    gen_shares.index = gen_shares.index.map(lambda idx: carrier_map.get(idx.lower(), idx))
     df = df.copy()
     df["GenShare"] = gen_shares
     return df
@@ -272,7 +269,8 @@ def aggregate_costs(
         n (pypsa.Network): the network object
         flatten (bool, optional):merge capex and marginal ? Defaults to False.
         opts (dict, optional): options for the function. Defaults to None.
-        existing_only (bool, optional): use _nom instead of nom_opt. Defaults to False."""
+        existing_only (bool, optional): use _nom instead of nom_opt. Defaults to False.
+    """
 
     components = dict(
         Link=("p_nom", "p0"),
@@ -334,10 +332,12 @@ def calc_atlite_heating_timeshift(date_range: pd.date_range, use_last_ts=False) 
 
 def is_leap_year(year: int) -> bool:
     """Determine whether a year is a leap year.
+
     Args:
         year (int): the year
     Returns:
-        bool: True if leap year, False otherwise"""
+        bool: True if leap year, False otherwise
+    """
     year = int(year)
     return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
@@ -349,7 +349,7 @@ def load_network_for_plots(
     cost_year: int,
     combine_hydro_ps=True,
 ) -> pypsa.Network:
-    """load network object (LEGACY FUNCTION for heat plot)
+    """Load network object (LEGACY FUNCTION for heat plot)
 
     Args:
         network_file (os.PathLike): the path to the network file
@@ -362,7 +362,7 @@ def load_network_for_plots(
         pypsa.Network: the network object
     """
 
-    from add_electricity import update_transmission_costs, load_costs
+    from add_electricity import load_costs, update_transmission_costs
 
     n = pypsa.Network(network_file)
 

@@ -4,11 +4,11 @@ Functions associated with the build_temperature_profiles rule.
 """
 
 import logging
-import scipy as sp
-import pandas as pd
-import atlite
-
 from os import PathLike
+
+import atlite
+import pandas as pd
+import scipy as sp
 from _helpers import configure_logging, mock_snakemake
 from constants import TIMEZONE
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def build_temp_profiles(pop_map: pd.DataFrame, cutout: atlite.Cutout, temperature_out: PathLike):
-    """build the temperature profiles in the cutout, this converts the atlite temperature & weights
+    """Build the temperature profiles in the cutout, this converts the atlite temperature & weights
     the node building process by the population map
 
     Note that atlite only supports a single time zone shift

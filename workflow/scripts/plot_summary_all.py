@@ -9,36 +9,37 @@ Plots energy and cost summaries for solved networks.
 This script collects functions that plot across planning horizons.
 """
 
-import os
 import logging
-import pandas as pd
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-
+import pandas as pd
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
+from _plot_utilities import label_stacked_bars, set_plot_style
 from constants import (
-    PLOT_COST_UNITS,
     COST_UNIT,
-    PLOT_CO2_UNITS,
-    PLOT_CO2_LABEL,
-    PLOT_SUPPLY_UNITS,
-    PLOT_SUPPLY_LABEL,
-    PLOT_CAP_UNITS,
     PLOT_CAP_LABEL,
+    PLOT_CAP_UNITS,
+    PLOT_CO2_LABEL,
+    PLOT_CO2_UNITS,
+    PLOT_COST_UNITS,
+    PLOT_SUPPLY_LABEL,
+    PLOT_SUPPLY_UNITS,
 )
-from _plot_utilities import set_plot_style, label_stacked_bars
 
 logger = logging.getLogger(__name__)
 
 
 # consolidate and rename
 def rename_techs(label: pd.Index) -> pd.Index:
-    """rename techs into grouped categories
+    """Rename techs into grouped categories
 
     Args:
         label (pd.Index | iterable): the index techs to rename
     Returns:
-        pd.Index | iterable: the renamed index / iterable"""
+        pd.Index | iterable: the renamed index / iterable
+    """
     prefix_to_remove = [
         "central ",
         "decentral ",
@@ -90,7 +91,7 @@ def plot_pathway_costs(
     social_discount_rate=0.0,
     fig_name: os.PathLike = None,
 ):
-    """plot the costs
+    """Plot the costs
 
     Args:
         file_list (list): the input csvs from make_summary
@@ -146,7 +147,7 @@ def plot_pathway_costs(
     ax.grid(axis="y")
     # TODO fix this - doesnt work with non-constant interval
     ax.annotate(
-        f"Total cost in bn Eur: {df.sum().sum()*5:.2f}",
+        f"Total cost in bn Eur: {df.sum().sum() * 5:.2f}",
         xy=(0.75, 0.9),
         color="darkgray",
         xycoords="axes fraction",
@@ -171,7 +172,7 @@ def plot_pathway_costs(
 def plot_pathway_capacities(
     file_list: list, config: dict, plot_heat=True, plot_h2=True, fig_name=None
 ):
-    """plot the capacities
+    """Plot the capacities
 
     Args:
         file_list (list): the input csvs from make_summary
@@ -303,7 +304,7 @@ def plot_pathway_capacities(
 def plot_expanded_capacities(
     file_list: list, config: dict, plot_heat=False, plot_h2=True, fig_name=None
 ):
-    """plot the expanded capacities
+    """Plot the expanded capacities
 
     Args:
         file_list (list): the input csvs from make_summary
@@ -324,7 +325,7 @@ def plot_expanded_capacities(
 
 
 def plot_energy(file_list: list, config: dict, fig_name=None):
-    """plot the energy production and consumption
+    """Plot the energy production and consumption
 
     Args:
         file_list (list): the input csvs
@@ -385,7 +386,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
 def plot_electricty_heat_balance(
     file_list: list[os.PathLike], config: dict, fig_dir=None, plot_heat=True
 ):
-    """plot the energy production and consumption
+    """Plot the energy production and consumption
 
     Args:
         file_list (list): the input csvs  from make_dirs([year/supply_energy.csv])
@@ -613,7 +614,7 @@ def plot_prices(
     unit="€/MWh",
     **kwargs,
 ):
-    """plot the prices
+    """Plot the prices
 
     Args:
         file_list (list): the input csvs from make_summary
@@ -745,7 +746,7 @@ def plot_co2_prices(co2_prices: dict, config: dict, fig_name=None):
 
 
 def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
-    """plot the co2 price
+    """Plot the co2 price
 
     Args:
         file_list (list): the input csvs from make_summaries
@@ -837,7 +838,6 @@ def write_data(data_paths: dict, outp_dir: os.PathLike):
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
         snakemake = mock_snakemake(
             "plot_summary",
             topology="current+FCG",
@@ -870,6 +870,7 @@ if __name__ == "__main__":
         co2_prices = None
 
     plot_heat = config.get("heat_coupling", False)
+    plot_h2 = config.get("h2_coupling", True)
     NAN_COLOR = config["plotting"]["nan_color"]
     data_paths = {
         "energy": [os.path.join(p, "energy.csv") for p in paths],

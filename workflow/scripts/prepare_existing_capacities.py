@@ -1,22 +1,21 @@
-# coding: utf-8
 """
 Functions to prepare existing assets for the network
 
 SHORT TERM FIX until PowerPlantMatching is implemented
 - required as split from add_existing_baseyear for remind compat
 """
+
 # TODO improve docstring
 import logging
-import numpy as np
-import pandas as pd
 import os
-
 from types import SimpleNamespace
 
-from constants import YEAR_HRS
-from add_electricity import load_costs
-from _helpers import mock_snakemake, configure_logging
+import numpy as np
+import pandas as pd
+from _helpers import configure_logging, mock_snakemake
 from _pypsa_helpers import make_periodic_snapshots
+from add_electricity import load_costs
+from constants import YEAR_HRS
 
 logger = logging.getLogger(__name__)
 idx = pd.IndexSlice
@@ -25,6 +24,7 @@ spatial = SimpleNamespace()
 
 def determine_simulation_timespan(config: dict, year: int) -> int:
     """Determine the simulation timespan in years (so the network object is not needed)
+
     Args:
         config (dict): the snakemake config
         year (int): the year to simulate
@@ -167,7 +167,7 @@ def assign_year_bins(df: pd.DataFrame, year_bins: list) -> pd.DataFrame:
 
 
 def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series) -> pd.DataFrame:
-    """distribute vre capacities by grade potential, use up better grades first
+    """Distribute vre capacities by grade potential, use up better grades first
 
     Args:
         cap_by_year (pd.Series): the vre tech potential p_nom_max added per year

@@ -4,22 +4,21 @@ Split steps into:
 - ETL
 - disagg (also an ETL op)
 
-to be rebalanced with the remind_coupling package"""
+to be rebalanced with the remind_coupling package
+"""
 
-import pandas as pd
 import logging
 import os.path
 
-from rpycpl.disagg import SpatialDisaggregator
-from rpycpl.etl import ETL_REGISTRY, Transformation, register_etl
+import pandas as pd
+import setup  # sets up paths
+from _helpers import configure_logging
 from generic_etl import ETLRunner
+from readers import read_yearly_load_projections
 
 # import needed for the capacity method to be registered
-from rpycpl import capacities_etl
-
-import setup  # sets up paths
-from readers import read_yearly_load_projections
-from _helpers import configure_logging
+from rpycpl.disagg import SpatialDisaggregator
+from rpycpl.etl import ETL_REGISTRY, Transformation, register_etl
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +79,6 @@ def add_possible_techs_to_paidoff(paidoff: pd.DataFrame, tech_groups: pd.Series)
 
 
 if __name__ == "__main__":
-
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
