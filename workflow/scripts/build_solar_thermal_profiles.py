@@ -17,7 +17,8 @@ def build_solar_thermal_profiles(
     """Build per unit solar thermal time availability profiles and save them to a file
 
     Args:
-        population_map (pd.DataFrame): DataFrame with the population map
+        pop_map (pd.DataFrame): DataFrame with the population map
+        cutout (atlite.Cutout): atlite cutout object with the weather data
         outp_path (os.PathLike): Path to the output file
     """
     pop_matrix = sp.sparse.csr_matrix(pop_map.T)

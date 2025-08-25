@@ -73,7 +73,6 @@ def make_snakemake_test_config(tmp_path_factory) -> dict:
         test_config["enable"] = {k: False for k in test_config["enable"]}
         # set the paths & run name (PathManager reacts to TESTS_RUNNAME)
         test_config["results_dir"] = str(tmp_path_factory.mktemp("results"))
-        test_config["summary_dir"] = str(tmp_path_factory.mktemp("results_summary"))
         test_config["run"]["name"] = TESTS_RUNNAME
         test_config["run"]["is_test"] = True
         test_config["paths"]["costs_dir"] = None

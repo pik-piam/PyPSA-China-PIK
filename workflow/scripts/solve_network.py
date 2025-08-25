@@ -606,6 +606,7 @@ def extra_functionality(n: pypsa.Network, _) -> None:
 
     Args:
         n (pypsa.Network): the network object to optimize
+        _: dummy for compatibility with pypsa solve
     """
     config = n.config
     add_battery_constraints(n)

@@ -666,7 +666,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
             e_nom=effective_capacity,
             e_initial=initial_capacity,
             e_cyclic=True,
-            marginal_cost=config["costs"]["marginal_cost"]["hydro"],
+            marginal_cost=config["hyro"]["marginal_cost"]["reservoir"]  # EUR/MWh"
         )
 
         # add hydro turbines to link stations to provinces
