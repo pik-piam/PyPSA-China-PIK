@@ -333,8 +333,7 @@ def add_conventional_generators(
             p_nom_extendable=True,
             efficiency=costs.at["coal", "efficiency"],
             marginal_cost=costs.at["coal", "marginal_cost"],
-            capital_cost=costs.at["coal", "efficiency"]
-            * costs.at["coal", "capital_cost"],  # NB: capital cost is per MWel
+            capital_cost=costs.at["coal", "capital_cost"],  # NB: capital cost is per MWel
             lifetime=costs.at["coal", "lifetime"],
             ramp_limit_up=ramps["ramp_limit_up"],
             ramp_limit_down=ramps["ramp_limit_down"],
@@ -351,8 +350,7 @@ def add_conventional_generators(
                 p_nom_extendable=True,
                 efficiency=costs.at["coal ccs", "efficiency"],
                 marginal_cost=costs.at["coal ccs", "marginal_cost"],
-                capital_cost=costs.at["coal ccs", "efficiency"]
-                * costs.at["coal ccs", "capital_cost"],  # NB: capital cost is per MWel
+                capital_cost=costs.at["coal ccs", "capital_cost"],  # NB: capital cost is per MWel
                 lifetime=costs.at["coal ccs", "lifetime"],
                 p_max_pu=0.9,  # planned and forced outages
             )
