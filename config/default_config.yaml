@@ -4,7 +4,7 @@
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
-  name: 
+  name: "unamed_default_run"
 foresight: "overnight"
 
 paths:
@@ -69,8 +69,8 @@ logging:
 
 enable:
   build_cutout: false
-  retrieve_cutout: false
-  retrieve_raster: false
+  retrieve_cutout: true
+  retrieve_raster: true
 
 atlite:
   cutout_name: "China-2020c"
@@ -286,13 +286,6 @@ solving:
 
   mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
 
-# brownfield options
-existing_capacities:
-  add: True # whether to add brownfield capacities
-  grouping_years: [1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  collapse_years: False # Treat as a single unit when preparing & solving network 
-  threshold_capacity: 1 # TODO UNIT
-  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear']
 
 # transmission options
 lines:
@@ -303,6 +296,15 @@ lines:
 
 security:
   line_margin: 70 # max percent of line capacity
+  
+# brownfield options
+existing_capacities:
+  add: True # whether to add brownfield capacities
+  grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
+  collapse_years: False # Treat as a single unit when preparing & solving network 
+  threshold_capacity: 1 # TODO UNIT
+  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
+  node_assignment: simple # simple | gps
 
 # contingencies (slower!) -> epsilon is fraction of vre gen or load for which reserves should exist
 operational_reserve:
