@@ -20,6 +20,7 @@ from _plot_utilities import heatmap, annotate_heatmap
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import rename_index, fix_network_names_colors
 from _pypsa_helpers import calc_lcoe, filter_carriers, calc_generation_share
+from matplotlib import gridspec
 from constants import (
     PLOT_CAP_LABEL,
     PLOT_CAP_UNITS,
@@ -43,34 +44,30 @@ def plot_static_per_carrier(
         drop_zero_vals (bool, optional): Drop zeroes from data. Defaults to True.
         add_labels (bool, optional): Add value labels on bars. If None, reads from config. Defaults to None.
     """
+    if not ax:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+
     if drop_zero_vals:
         ds = ds[ds != 0]
     ds = ds.dropna()
     c = colors[ds.index.get_level_values("carrier")]
     ds = ds.pipe(rename_index)
     label = f"{ds.attrs['name']} [{ds.attrs['unit']}]"
-    ds.plot(color=c.values, xlabel=label, ax=ax, kind="barh")
+    ds.plot.barh(color=c.values, xlabel=label, ax=ax)
     if add_labels:
+        ymax = ax.get_xlim()[1] * 1.05
         for i, (index, value) in enumerate(ds.items()):
-            # Center the label at value/2, bold font, and choose text color based on background
-            bg_color = c.values[i]
-            # Convert color to RGB if needed
-            rgb = to_rgb(bg_color) if isinstance(bg_color, str) else bg_color
-            # Calculate luminance (perceived brightness)
-            luminance = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]
-            text_color = "black" if luminance > 0.5 else "white"
-            txt = f"{value:.1f}" if value <= 3000 else f"{value:.1e}"
-            ax.text(
-                value / 2,
-                i,
-                txt,
-                va="center",
-                ha="center",
-                fontsize=8,
-                # fontweight="bold",
-                color=text_color,
-            )
+            align = "left"
+            txt = f"{value:.1f}" if value <= 100 else f"{value:.1e}"
+            ax.text(ymax, i, txt, va="center", ha=align, fontsize=8)
+        # # Add outer y-ticks at the right y-axis frame
+        # ax.tick_params(axis="y", direction="out", right=True, left=False)
     ax.grid(axis="y")
+    fig.tight_layout()
+
+    return fig
 
 
 def add_second_xaxis(data: pd.Series, ax, label, **kwargs):
@@ -372,7 +369,6 @@ if __name__ == "__main__":
 
     attached_carriers = filter_carriers(n, carrier)
     if "capacity_factor" in stats_list:
-        fig, ax = plt.subplots()
         ds = n.statistics.capacity_factor(groupby=["carrier"], nice_names=False).dropna()
         # avoid grouping battery uif same name
         if ("Link", "battery") in ds.index:
@@ -381,10 +377,9 @@ if __name__ == "__main__":
         ds = ds.groupby(level=1).first()
         ds = ds.loc[ds.index.isin(attached_carriers)]
         ds.index = ds.index.map(lambda idx: n.carriers.loc[idx, "nice_name"])
-        plot_static_per_carrier(
-            ds, ax, colors=colors, add_labels=add_label.get("capacity_factor", False)
+        fig = plot_static_per_carrier(
+            ds, ax=None, colors=colors, add_labels=add_label.get("capacity_factor", False)
         )
-        fig.tight_layout()
         fig.savefig(os.path.join(outp_dir, "capacity_factor.png"))
 
     if "installed_capacity" in stats_list:
