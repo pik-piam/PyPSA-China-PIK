@@ -723,12 +723,12 @@
   
   
     <li class="md-nav__item">
-      <a href="../build_province_shapes/" class="md-nav__link">
+      <a href="../build_powerplants/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Build province shapes
+    Build powerplants
     
   </span>
   
@@ -746,12 +746,12 @@
   
   
     <li class="md-nav__item">
-      <a href="../build_renewable_potential/" class="md-nav__link">
+      <a href="../build_province_shapes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Build renewable potential
+    Build province shapes
     
   </span>
   
@@ -959,29 +959,6 @@
   
   <span class="md-ellipsis">
     Make summary
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_heatmap/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Plot heatmap
     
   </span>
   
@@ -1552,10 +1529,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_39" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_38" >
         
           
-          <label class="md-nav__link" for="__nav_4_39" id="__nav_4_39_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4_38" id="__nav_4_38_label" tabindex="">
             
   
   
@@ -1568,8 +1545,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_39_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_39">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_38_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_38">
             <span class="md-nav__icon md-icon"></span>
             Remind coupling
           </label>
@@ -1839,7 +1816,9 @@ Additional constraints require the linopy model and are added in the solve_netwo
 
 
 
+
   <div class="doc doc-children">
+
 
 
 
@@ -4088,7 +4067,7 @@ Args:
 <a id="__codelineno-0-1061" name="__codelineno-0-1061"></a>        <span class="n">solar_thermal</span> <span class="o">=</span> <span class="n">shift_profile_to_planning_year</span><span class="p">(</span><span class="n">solar_thermal</span><span class="p">,</span> <span class="n">planning_year</span><span class="p">)</span>
 <a id="__codelineno-0-1062" name="__codelineno-0-1062"></a>        <span class="n">solar_thermal</span> <span class="o">=</span> <span class="n">solar_thermal</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">snapshots</span><span class="p">]</span>
 <a id="__codelineno-0-1063" name="__codelineno-0-1063"></a>
-<a id="__codelineno-0-1064" name="__codelineno-0-1064"></a>        <span class="k">for</span> <span class="n">cat</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot; decentral &quot;</span><span class="p">]:</span>
+<a id="__codelineno-0-1064" name="__codelineno-0-1064"></a>        <span class="k">for</span> <span class="n">cat</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot; decentral &quot;</span><span class="p">,</span> <span class="s2">&quot; central &quot;</span><span class="p">]:</span>
 <a id="__codelineno-0-1065" name="__codelineno-0-1065"></a>            <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
 <a id="__codelineno-0-1066" name="__codelineno-0-1066"></a>                <span class="s2">&quot;Generator&quot;</span><span class="p">,</span>
 <a id="__codelineno-0-1067" name="__codelineno-0-1067"></a>                <span class="n">nodes</span><span class="p">,</span>
@@ -5637,16 +5616,7 @@ at 1 node per region/province</p>
 <span class="normal"><a href="#__codelineno-0-1518">1518</a></span>
 <span class="normal"><a href="#__codelineno-0-1519">1519</a></span>
 <span class="normal"><a href="#__codelineno-0-1520">1520</a></span>
-<span class="normal"><a href="#__codelineno-0-1521">1521</a></span>
-<span class="normal"><a href="#__codelineno-0-1522">1522</a></span>
-<span class="normal"><a href="#__codelineno-0-1523">1523</a></span>
-<span class="normal"><a href="#__codelineno-0-1524">1524</a></span>
-<span class="normal"><a href="#__codelineno-0-1525">1525</a></span>
-<span class="normal"><a href="#__codelineno-0-1526">1526</a></span>
-<span class="normal"><a href="#__codelineno-0-1527">1527</a></span>
-<span class="normal"><a href="#__codelineno-0-1528">1528</a></span>
-<span class="normal"><a href="#__codelineno-0-1529">1529</a></span>
-<span class="normal"><a href="#__codelineno-0-1530">1530</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1315" name="__codelineno-0-1315"></a><span class="k">def</span><span class="w"> </span><span class="nf">prepare_network</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-1521">1521</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-1315" name="__codelineno-0-1315"></a><span class="k">def</span><span class="w"> </span><span class="nf">prepare_network</span><span class="p">(</span>
 <a id="__codelineno-0-1316" name="__codelineno-0-1316"></a>    <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
 <a id="__codelineno-0-1317" name="__codelineno-0-1317"></a>    <span class="n">costs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
 <a id="__codelineno-0-1318" name="__codelineno-0-1318"></a>    <span class="n">snapshots</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">,</span>
@@ -5734,134 +5704,125 @@ at 1 node per region/province</p>
 <a id="__codelineno-0-1400" name="__codelineno-0-1400"></a>    <span class="c1"># TODO add coal CC? no retrofit option</span>
 <a id="__codelineno-0-1401" name="__codelineno-0-1401"></a>
 <a id="__codelineno-0-1402" name="__codelineno-0-1402"></a>    <span class="k">if</span> <span class="s2">&quot;PHS&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;Techs&quot;</span><span class="p">][</span><span class="s2">&quot;store_techs&quot;</span><span class="p">]:</span>
-<a id="__codelineno-0-1403" name="__codelineno-0-1403"></a>        <span class="c1"># TODO soft-code path</span>
-<a id="__codelineno-0-1404" name="__codelineno-0-1404"></a>        <span class="c1"># pure pumped hydro storage, fixed, 6h energy by default, no inflow</span>
-<a id="__codelineno-0-1405" name="__codelineno-0-1405"></a>        <span class="n">hydrocapa_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;resources/data/hydro/PHS_p_nom.csv&quot;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<a id="__codelineno-0-1406" name="__codelineno-0-1406"></a>        <span class="n">phss</span> <span class="o">=</span> <span class="n">hydrocapa_df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">hydrocapa_df</span><span class="p">[</span><span class="s2">&quot;MW&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
-<a id="__codelineno-0-1407" name="__codelineno-0-1407"></a>        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;hydro&quot;</span><span class="p">][</span><span class="s2">&quot;hydro_capital_cost&quot;</span><span class="p">]:</span>
-<a id="__codelineno-0-1408" name="__codelineno-0-1408"></a>            <span class="n">cc</span> <span class="o">=</span> <span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;PHS&quot;</span><span class="p">,</span> <span class="s2">&quot;capital_cost&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-1409" name="__codelineno-0-1409"></a>        <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-1410" name="__codelineno-0-1410"></a>            <span class="n">cc</span> <span class="o">=</span> <span class="mf">0.0</span>
-<a id="__codelineno-0-1411" name="__codelineno-0-1411"></a>
-<a id="__codelineno-0-1412" name="__codelineno-0-1412"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-<a id="__codelineno-0-1413" name="__codelineno-0-1413"></a>            <span class="s2">&quot;StorageUnit&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1414" name="__codelineno-0-1414"></a>            <span class="n">phss</span><span class="p">,</span>
-<a id="__codelineno-0-1415" name="__codelineno-0-1415"></a>            <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot; PHS&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1416" name="__codelineno-0-1416"></a>            <span class="n">bus</span><span class="o">=</span><span class="n">phss</span><span class="p">,</span>
-<a id="__codelineno-0-1417" name="__codelineno-0-1417"></a>            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;PHS&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1418" name="__codelineno-0-1418"></a>            <span class="n">p_nom_extendable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-1419" name="__codelineno-0-1419"></a>            <span class="c1"># p_nom_max=hydrocapa_df.loc[phss][&quot;MW&quot;],</span>
-<a id="__codelineno-0-1420" name="__codelineno-0-1420"></a>            <span class="n">p_nom</span><span class="o">=</span><span class="n">hydrocapa_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">phss</span><span class="p">][</span><span class="s2">&quot;MW&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-1421" name="__codelineno-0-1421"></a>            <span class="n">p_nom_min</span><span class="o">=</span><span class="n">hydrocapa_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">phss</span><span class="p">][</span><span class="s2">&quot;MW&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-1422" name="__codelineno-0-1422"></a>            <span class="n">max_hours</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;hydro&quot;</span><span class="p">][</span><span class="s2">&quot;PHS_max_hours&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-1423" name="__codelineno-0-1423"></a>            <span class="n">efficiency_store</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;PHS&quot;</span><span class="p">,</span> <span class="s2">&quot;efficiency&quot;</span><span class="p">]),</span>
-<a id="__codelineno-0-1424" name="__codelineno-0-1424"></a>            <span class="n">efficiency_dispatch</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;PHS&quot;</span><span class="p">,</span> <span class="s2">&quot;efficiency&quot;</span><span class="p">]),</span>
-<a id="__codelineno-0-1425" name="__codelineno-0-1425"></a>            <span class="n">cyclic_state_of_charge</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-1426" name="__codelineno-0-1426"></a>            <span class="n">capital_cost</span><span class="o">=</span><span class="n">cc</span><span class="p">,</span>
-<a id="__codelineno-0-1427" name="__codelineno-0-1427"></a>            <span class="n">marginal_cost</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-<a id="__codelineno-0-1428" name="__codelineno-0-1428"></a>        <span class="p">)</span>
-<a id="__codelineno-0-1429" name="__codelineno-0-1429"></a>
-<a id="__codelineno-0-1430" name="__codelineno-0-1430"></a>    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;add_hydro&quot;</span><span class="p">]:</span>
-<a id="__codelineno-0-1431" name="__codelineno-0-1431"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding hydro to network&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-1432" name="__codelineno-0-1432"></a>        <span class="n">add_hydro</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">prov_centroids</span><span class="p">,</span> <span class="n">costs</span><span class="p">,</span> <span class="n">planning_horizons</span><span class="p">)</span>
-<a id="__codelineno-0-1433" name="__codelineno-0-1433"></a>
-<a id="__codelineno-0-1434" name="__codelineno-0-1434"></a>    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;add_H2&quot;</span><span class="p">]:</span>
-<a id="__codelineno-0-1435" name="__codelineno-0-1435"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding H2 buses to network&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-1436" name="__codelineno-0-1436"></a>        <span class="c1"># do beore heat coupling to avoid warning</span>
-<a id="__codelineno-0-1437" name="__codelineno-0-1437"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-<a id="__codelineno-0-1438" name="__codelineno-0-1438"></a>            <span class="s2">&quot;Bus&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1439" name="__codelineno-0-1439"></a>            <span class="n">nodes</span><span class="p">,</span>
-<a id="__codelineno-0-1440" name="__codelineno-0-1440"></a>            <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot; H2&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1441" name="__codelineno-0-1441"></a>            <span class="n">x</span><span class="o">=</span><span class="n">prov_centroids</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
-<a id="__codelineno-0-1442" name="__codelineno-0-1442"></a>            <span class="n">y</span><span class="o">=</span><span class="n">prov_centroids</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
-<a id="__codelineno-0-1443" name="__codelineno-0-1443"></a>            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;H2&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1444" name="__codelineno-0-1444"></a>            <span class="n">location</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
-<a id="__codelineno-0-1445" name="__codelineno-0-1445"></a>        <span class="p">)</span>
-<a id="__codelineno-0-1446" name="__codelineno-0-1446"></a>
-<a id="__codelineno-0-1447" name="__codelineno-0-1447"></a>    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;heat_coupling&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
-<a id="__codelineno-0-1448" name="__codelineno-0-1448"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding heat and CHP to the network&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-1449" name="__codelineno-0-1449"></a>        <span class="n">add_heat_coupling</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">prov_centroids</span><span class="p">,</span> <span class="n">costs</span><span class="p">,</span> <span class="n">planning_horizons</span><span class="p">,</span> <span class="n">paths</span><span class="p">)</span>
-<a id="__codelineno-0-1450" name="__codelineno-0-1450"></a>
-<a id="__codelineno-0-1451" name="__codelineno-0-1451"></a>        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;add_biomass&quot;</span><span class="p">]:</span>
-<a id="__codelineno-0-1452" name="__codelineno-0-1452"></a>            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding biomass to network&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-1453" name="__codelineno-0-1453"></a>            <span class="n">add_co2_capture_support</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">prov_centroids</span><span class="p">)</span>
-<a id="__codelineno-0-1454" name="__codelineno-0-1454"></a>            <span class="n">add_biomass_chp</span><span class="p">(</span>
-<a id="__codelineno-0-1455" name="__codelineno-0-1455"></a>                <span class="n">network</span><span class="p">,</span>
-<a id="__codelineno-0-1456" name="__codelineno-0-1456"></a>                <span class="n">costs</span><span class="p">,</span>
-<a id="__codelineno-0-1457" name="__codelineno-0-1457"></a>                <span class="n">nodes</span><span class="p">,</span>
-<a id="__codelineno-0-1458" name="__codelineno-0-1458"></a>                <span class="n">biomass_potential</span><span class="p">[</span><span class="n">nodes</span><span class="p">],</span>
-<a id="__codelineno-0-1459" name="__codelineno-0-1459"></a>                <span class="n">prov_centroids</span><span class="p">,</span>
-<a id="__codelineno-0-1460" name="__codelineno-0-1460"></a>                <span class="n">add_beccs</span><span class="o">=</span><span class="s2">&quot;beccs&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;Techs&quot;</span><span class="p">][</span><span class="s2">&quot;vre_techs&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-1461" name="__codelineno-0-1461"></a>            <span class="p">)</span>
-<a id="__codelineno-0-1462" name="__codelineno-0-1462"></a>
-<a id="__codelineno-0-1463" name="__codelineno-0-1463"></a>    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;add_H2&quot;</span><span class="p">]:</span>
-<a id="__codelineno-0-1464" name="__codelineno-0-1464"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding H2 to network&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-1465" name="__codelineno-0-1465"></a>        <span class="n">add_H2</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">costs</span><span class="p">)</span>
-<a id="__codelineno-0-1466" name="__codelineno-0-1466"></a>
-<a id="__codelineno-0-1467" name="__codelineno-0-1467"></a>    <span class="k">if</span> <span class="s2">&quot;battery&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;Techs&quot;</span><span class="p">][</span><span class="s2">&quot;store_techs&quot;</span><span class="p">]:</span>
-<a id="__codelineno-0-1468" name="__codelineno-0-1468"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-<a id="__codelineno-0-1469" name="__codelineno-0-1469"></a>            <span class="s2">&quot;Bus&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1470" name="__codelineno-0-1470"></a>            <span class="n">nodes</span><span class="p">,</span>
-<a id="__codelineno-0-1471" name="__codelineno-0-1471"></a>            <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot; battery&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1472" name="__codelineno-0-1472"></a>            <span class="n">x</span><span class="o">=</span><span class="n">prov_centroids</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
-<a id="__codelineno-0-1473" name="__codelineno-0-1473"></a>            <span class="n">y</span><span class="o">=</span><span class="n">prov_centroids</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
-<a id="__codelineno-0-1474" name="__codelineno-0-1474"></a>            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;battery&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1475" name="__codelineno-0-1475"></a>            <span class="n">location</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
-<a id="__codelineno-0-1476" name="__codelineno-0-1476"></a>        <span class="p">)</span>
-<a id="__codelineno-0-1477" name="__codelineno-0-1477"></a>
-<a id="__codelineno-0-1478" name="__codelineno-0-1478"></a>        <span class="c1"># TODO Why no standing loss?: test with</span>
-<a id="__codelineno-0-1479" name="__codelineno-0-1479"></a>        <span class="n">min_charge</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;electricity&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;min_charge&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;battery&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
-<a id="__codelineno-0-1480" name="__codelineno-0-1480"></a>        <span class="n">min_charge</span> <span class="o">=</span> <span class="n">min_charge</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;battery&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-<a id="__codelineno-0-1481" name="__codelineno-0-1481"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-<a id="__codelineno-0-1482" name="__codelineno-0-1482"></a>            <span class="s2">&quot;Store&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1483" name="__codelineno-0-1483"></a>            <span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1484" name="__codelineno-0-1484"></a>            <span class="n">bus</span><span class="o">=</span><span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1485" name="__codelineno-0-1485"></a>            <span class="n">e_cyclic</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-1486" name="__codelineno-0-1486"></a>            <span class="n">e_nom_extendable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-1487" name="__codelineno-0-1487"></a>            <span class="n">e_min_pu</span><span class="o">=</span><span class="n">min_charge</span><span class="p">,</span>
-<a id="__codelineno-0-1488" name="__codelineno-0-1488"></a>            <span class="n">capital_cost</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery storage&quot;</span><span class="p">,</span> <span class="s2">&quot;capital_cost&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-1489" name="__codelineno-0-1489"></a>            <span class="n">lifetime</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery storage&quot;</span><span class="p">,</span> <span class="s2">&quot;lifetime&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-1490" name="__codelineno-0-1490"></a>        <span class="p">)</span>
-<a id="__codelineno-0-1491" name="__codelineno-0-1491"></a>
-<a id="__codelineno-0-1492" name="__codelineno-0-1492"></a>        <span class="c1"># TODO understand/remove sources, data should not be in code</span>
-<a id="__codelineno-0-1493" name="__codelineno-0-1493"></a>        <span class="c1"># Sources:</span>
-<a id="__codelineno-0-1494" name="__codelineno-0-1494"></a>        <span class="c1"># [HP]: Henning, Palzer http://www.sciencedirect.com/science/article/pii/S1364032113006710</span>
-<a id="__codelineno-0-1495" name="__codelineno-0-1495"></a>        <span class="c1"># [B]: Budischak et al. http://www.sciencedirect.com/science/article/pii/S0378775312014759</span>
-<a id="__codelineno-0-1496" name="__codelineno-0-1496"></a>
-<a id="__codelineno-0-1497" name="__codelineno-0-1497"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-<a id="__codelineno-0-1498" name="__codelineno-0-1498"></a>            <span class="s2">&quot;Link&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1499" name="__codelineno-0-1499"></a>            <span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery charger&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1500" name="__codelineno-0-1500"></a>            <span class="n">bus0</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
-<a id="__codelineno-0-1501" name="__codelineno-0-1501"></a>            <span class="n">bus1</span><span class="o">=</span><span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1502" name="__codelineno-0-1502"></a>            <span class="n">efficiency</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery inverter&quot;</span><span class="p">,</span> <span class="s2">&quot;efficiency&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span>
-<a id="__codelineno-0-1503" name="__codelineno-0-1503"></a>            <span class="n">capital_cost</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery inverter&quot;</span><span class="p">,</span> <span class="s2">&quot;efficiency&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-1504" name="__codelineno-0-1504"></a>            <span class="o">*</span> <span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery inverter&quot;</span><span class="p">,</span> <span class="s2">&quot;capital_cost&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-1505" name="__codelineno-0-1505"></a>            <span class="n">p_nom_extendable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-1506" name="__codelineno-0-1506"></a>            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;battery&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1507" name="__codelineno-0-1507"></a>            <span class="n">lifetime</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery inverter&quot;</span><span class="p">,</span> <span class="s2">&quot;lifetime&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-1508" name="__codelineno-0-1508"></a>        <span class="p">)</span>
-<a id="__codelineno-0-1509" name="__codelineno-0-1509"></a>
-<a id="__codelineno-0-1510" name="__codelineno-0-1510"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
-<a id="__codelineno-0-1511" name="__codelineno-0-1511"></a>            <span class="s2">&quot;Link&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1512" name="__codelineno-0-1512"></a>            <span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery discharger&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1513" name="__codelineno-0-1513"></a>            <span class="n">bus0</span><span class="o">=</span><span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1514" name="__codelineno-0-1514"></a>            <span class="n">bus1</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
-<a id="__codelineno-0-1515" name="__codelineno-0-1515"></a>            <span class="n">efficiency</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery inverter&quot;</span><span class="p">,</span> <span class="s2">&quot;efficiency&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span>
-<a id="__codelineno-0-1516" name="__codelineno-0-1516"></a>            <span class="n">marginal_cost</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
-<a id="__codelineno-0-1517" name="__codelineno-0-1517"></a>            <span class="n">p_nom_extendable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-1518" name="__codelineno-0-1518"></a>            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;battery discharger&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-1519" name="__codelineno-0-1519"></a>        <span class="p">)</span>
-<a id="__codelineno-0-1520" name="__codelineno-0-1520"></a>
-<a id="__codelineno-0-1521" name="__codelineno-0-1521"></a>    <span class="c1"># ============= add lines =========</span>
-<a id="__codelineno-0-1522" name="__codelineno-0-1522"></a>    <span class="c1"># The lines are implemented according to the transport model (no KVL) and without losses.</span>
-<a id="__codelineno-0-1523" name="__codelineno-0-1523"></a>    <span class="c1"># see Neumann et al 10.1016/j.apenergy.2022.118859</span>
-<a id="__codelineno-0-1524" name="__codelineno-0-1524"></a>    <span class="c1"># TODO make not lossless optional (? - increases computing cost)</span>
-<a id="__codelineno-0-1525" name="__codelineno-0-1525"></a>
-<a id="__codelineno-0-1526" name="__codelineno-0-1526"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;no_lines&quot;</span><span class="p">]:</span>
-<a id="__codelineno-0-1527" name="__codelineno-0-1527"></a>        <span class="n">add_voltage_links</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
-<a id="__codelineno-0-1528" name="__codelineno-0-1528"></a>
-<a id="__codelineno-0-1529" name="__codelineno-0-1529"></a>    <span class="n">assign_locations</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
-<a id="__codelineno-0-1530" name="__codelineno-0-1530"></a>    <span class="k">return</span> <span class="n">network</span>
+<a id="__codelineno-0-1403" name="__codelineno-0-1403"></a>        <span class="c1"># pure pumped hydro storage, fixed, 6h energy by default, no inflow</span>
+<a id="__codelineno-0-1404" name="__codelineno-0-1404"></a>        <span class="n">cc</span> <span class="o">=</span> <span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;PHS&quot;</span><span class="p">,</span> <span class="s2">&quot;capital_cost&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-1405" name="__codelineno-0-1405"></a>
+<a id="__codelineno-0-1406" name="__codelineno-0-1406"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+<a id="__codelineno-0-1407" name="__codelineno-0-1407"></a>            <span class="s2">&quot;StorageUnit&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1408" name="__codelineno-0-1408"></a>            <span class="n">nodes</span><span class="p">,</span>
+<a id="__codelineno-0-1409" name="__codelineno-0-1409"></a>            <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot; PHS&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1410" name="__codelineno-0-1410"></a>            <span class="n">bus</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+<a id="__codelineno-0-1411" name="__codelineno-0-1411"></a>            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;PHS&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1412" name="__codelineno-0-1412"></a>            <span class="n">p_nom_extendable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-1413" name="__codelineno-0-1413"></a>            <span class="n">max_hours</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;hydro&quot;</span><span class="p">][</span><span class="s2">&quot;PHS_max_hours&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-1414" name="__codelineno-0-1414"></a>            <span class="n">efficiency_store</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;PHS&quot;</span><span class="p">,</span> <span class="s2">&quot;efficiency&quot;</span><span class="p">]),</span>
+<a id="__codelineno-0-1415" name="__codelineno-0-1415"></a>            <span class="n">efficiency_dispatch</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;PHS&quot;</span><span class="p">,</span> <span class="s2">&quot;efficiency&quot;</span><span class="p">]),</span>
+<a id="__codelineno-0-1416" name="__codelineno-0-1416"></a>            <span class="n">cyclic_state_of_charge</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-1417" name="__codelineno-0-1417"></a>            <span class="n">capital_cost</span><span class="o">=</span><span class="n">cc</span><span class="p">,</span>
+<a id="__codelineno-0-1418" name="__codelineno-0-1418"></a>            <span class="n">marginal_cost</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+<a id="__codelineno-0-1419" name="__codelineno-0-1419"></a>        <span class="p">)</span>
+<a id="__codelineno-0-1420" name="__codelineno-0-1420"></a>
+<a id="__codelineno-0-1421" name="__codelineno-0-1421"></a>    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;add_hydro&quot;</span><span class="p">]:</span>
+<a id="__codelineno-0-1422" name="__codelineno-0-1422"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding hydro to network&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-1423" name="__codelineno-0-1423"></a>        <span class="n">add_hydro</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">prov_centroids</span><span class="p">,</span> <span class="n">costs</span><span class="p">,</span> <span class="n">planning_horizons</span><span class="p">)</span>
+<a id="__codelineno-0-1424" name="__codelineno-0-1424"></a>
+<a id="__codelineno-0-1425" name="__codelineno-0-1425"></a>    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;add_H2&quot;</span><span class="p">]:</span>
+<a id="__codelineno-0-1426" name="__codelineno-0-1426"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding H2 buses to network&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-1427" name="__codelineno-0-1427"></a>        <span class="c1"># do beore heat coupling to avoid warning</span>
+<a id="__codelineno-0-1428" name="__codelineno-0-1428"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+<a id="__codelineno-0-1429" name="__codelineno-0-1429"></a>            <span class="s2">&quot;Bus&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1430" name="__codelineno-0-1430"></a>            <span class="n">nodes</span><span class="p">,</span>
+<a id="__codelineno-0-1431" name="__codelineno-0-1431"></a>            <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot; H2&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1432" name="__codelineno-0-1432"></a>            <span class="n">x</span><span class="o">=</span><span class="n">prov_centroids</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+<a id="__codelineno-0-1433" name="__codelineno-0-1433"></a>            <span class="n">y</span><span class="o">=</span><span class="n">prov_centroids</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+<a id="__codelineno-0-1434" name="__codelineno-0-1434"></a>            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;H2&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1435" name="__codelineno-0-1435"></a>            <span class="n">location</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+<a id="__codelineno-0-1436" name="__codelineno-0-1436"></a>        <span class="p">)</span>
+<a id="__codelineno-0-1437" name="__codelineno-0-1437"></a>
+<a id="__codelineno-0-1438" name="__codelineno-0-1438"></a>    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;heat_coupling&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+<a id="__codelineno-0-1439" name="__codelineno-0-1439"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding heat and CHP to the network&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-1440" name="__codelineno-0-1440"></a>        <span class="n">add_heat_coupling</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">prov_centroids</span><span class="p">,</span> <span class="n">costs</span><span class="p">,</span> <span class="n">planning_horizons</span><span class="p">,</span> <span class="n">paths</span><span class="p">)</span>
+<a id="__codelineno-0-1441" name="__codelineno-0-1441"></a>
+<a id="__codelineno-0-1442" name="__codelineno-0-1442"></a>        <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;add_biomass&quot;</span><span class="p">]:</span>
+<a id="__codelineno-0-1443" name="__codelineno-0-1443"></a>            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding biomass to network&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-1444" name="__codelineno-0-1444"></a>            <span class="n">add_co2_capture_support</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">prov_centroids</span><span class="p">)</span>
+<a id="__codelineno-0-1445" name="__codelineno-0-1445"></a>            <span class="n">add_biomass_chp</span><span class="p">(</span>
+<a id="__codelineno-0-1446" name="__codelineno-0-1446"></a>                <span class="n">network</span><span class="p">,</span>
+<a id="__codelineno-0-1447" name="__codelineno-0-1447"></a>                <span class="n">costs</span><span class="p">,</span>
+<a id="__codelineno-0-1448" name="__codelineno-0-1448"></a>                <span class="n">nodes</span><span class="p">,</span>
+<a id="__codelineno-0-1449" name="__codelineno-0-1449"></a>                <span class="n">biomass_potential</span><span class="p">[</span><span class="n">nodes</span><span class="p">],</span>
+<a id="__codelineno-0-1450" name="__codelineno-0-1450"></a>                <span class="n">prov_centroids</span><span class="p">,</span>
+<a id="__codelineno-0-1451" name="__codelineno-0-1451"></a>                <span class="n">add_beccs</span><span class="o">=</span><span class="s2">&quot;beccs&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;Techs&quot;</span><span class="p">][</span><span class="s2">&quot;vre_techs&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-1452" name="__codelineno-0-1452"></a>            <span class="p">)</span>
+<a id="__codelineno-0-1453" name="__codelineno-0-1453"></a>
+<a id="__codelineno-0-1454" name="__codelineno-0-1454"></a>    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;add_H2&quot;</span><span class="p">]:</span>
+<a id="__codelineno-0-1455" name="__codelineno-0-1455"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Adding H2 to network&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-1456" name="__codelineno-0-1456"></a>        <span class="n">add_H2</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">costs</span><span class="p">)</span>
+<a id="__codelineno-0-1457" name="__codelineno-0-1457"></a>
+<a id="__codelineno-0-1458" name="__codelineno-0-1458"></a>    <span class="k">if</span> <span class="s2">&quot;battery&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;Techs&quot;</span><span class="p">][</span><span class="s2">&quot;store_techs&quot;</span><span class="p">]:</span>
+<a id="__codelineno-0-1459" name="__codelineno-0-1459"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+<a id="__codelineno-0-1460" name="__codelineno-0-1460"></a>            <span class="s2">&quot;Bus&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1461" name="__codelineno-0-1461"></a>            <span class="n">nodes</span><span class="p">,</span>
+<a id="__codelineno-0-1462" name="__codelineno-0-1462"></a>            <span class="n">suffix</span><span class="o">=</span><span class="s2">&quot; battery&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1463" name="__codelineno-0-1463"></a>            <span class="n">x</span><span class="o">=</span><span class="n">prov_centroids</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+<a id="__codelineno-0-1464" name="__codelineno-0-1464"></a>            <span class="n">y</span><span class="o">=</span><span class="n">prov_centroids</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+<a id="__codelineno-0-1465" name="__codelineno-0-1465"></a>            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;battery&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1466" name="__codelineno-0-1466"></a>            <span class="n">location</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+<a id="__codelineno-0-1467" name="__codelineno-0-1467"></a>        <span class="p">)</span>
+<a id="__codelineno-0-1468" name="__codelineno-0-1468"></a>
+<a id="__codelineno-0-1469" name="__codelineno-0-1469"></a>        <span class="c1"># TODO Why no standing loss?: test with</span>
+<a id="__codelineno-0-1470" name="__codelineno-0-1470"></a>        <span class="n">min_charge</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;electricity&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;min_charge&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;battery&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+<a id="__codelineno-0-1471" name="__codelineno-0-1471"></a>        <span class="n">min_charge</span> <span class="o">=</span> <span class="n">min_charge</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;battery&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-0-1472" name="__codelineno-0-1472"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+<a id="__codelineno-0-1473" name="__codelineno-0-1473"></a>            <span class="s2">&quot;Store&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1474" name="__codelineno-0-1474"></a>            <span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1475" name="__codelineno-0-1475"></a>            <span class="n">bus</span><span class="o">=</span><span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1476" name="__codelineno-0-1476"></a>            <span class="n">e_cyclic</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-1477" name="__codelineno-0-1477"></a>            <span class="n">e_nom_extendable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-1478" name="__codelineno-0-1478"></a>            <span class="n">e_min_pu</span><span class="o">=</span><span class="n">min_charge</span><span class="p">,</span>
+<a id="__codelineno-0-1479" name="__codelineno-0-1479"></a>            <span class="n">capital_cost</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery storage&quot;</span><span class="p">,</span> <span class="s2">&quot;capital_cost&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-1480" name="__codelineno-0-1480"></a>            <span class="n">lifetime</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery storage&quot;</span><span class="p">,</span> <span class="s2">&quot;lifetime&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-1481" name="__codelineno-0-1481"></a>        <span class="p">)</span>
+<a id="__codelineno-0-1482" name="__codelineno-0-1482"></a>
+<a id="__codelineno-0-1483" name="__codelineno-0-1483"></a>        <span class="c1"># TODO understand/remove sources, data should not be in code</span>
+<a id="__codelineno-0-1484" name="__codelineno-0-1484"></a>        <span class="c1"># Sources:</span>
+<a id="__codelineno-0-1485" name="__codelineno-0-1485"></a>        <span class="c1"># [HP]: Henning, Palzer http://www.sciencedirect.com/science/article/pii/S1364032113006710</span>
+<a id="__codelineno-0-1486" name="__codelineno-0-1486"></a>        <span class="c1"># [B]: Budischak et al. http://www.sciencedirect.com/science/article/pii/S0378775312014759</span>
+<a id="__codelineno-0-1487" name="__codelineno-0-1487"></a>
+<a id="__codelineno-0-1488" name="__codelineno-0-1488"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+<a id="__codelineno-0-1489" name="__codelineno-0-1489"></a>            <span class="s2">&quot;Link&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1490" name="__codelineno-0-1490"></a>            <span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery charger&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1491" name="__codelineno-0-1491"></a>            <span class="n">bus0</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+<a id="__codelineno-0-1492" name="__codelineno-0-1492"></a>            <span class="n">bus1</span><span class="o">=</span><span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1493" name="__codelineno-0-1493"></a>            <span class="n">efficiency</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery inverter&quot;</span><span class="p">,</span> <span class="s2">&quot;efficiency&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span>
+<a id="__codelineno-0-1494" name="__codelineno-0-1494"></a>            <span class="n">capital_cost</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery inverter&quot;</span><span class="p">,</span> <span class="s2">&quot;efficiency&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-1495" name="__codelineno-0-1495"></a>            <span class="o">*</span> <span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery inverter&quot;</span><span class="p">,</span> <span class="s2">&quot;capital_cost&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-1496" name="__codelineno-0-1496"></a>            <span class="n">p_nom_extendable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-1497" name="__codelineno-0-1497"></a>            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;battery&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1498" name="__codelineno-0-1498"></a>            <span class="n">lifetime</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery inverter&quot;</span><span class="p">,</span> <span class="s2">&quot;lifetime&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-1499" name="__codelineno-0-1499"></a>        <span class="p">)</span>
+<a id="__codelineno-0-1500" name="__codelineno-0-1500"></a>
+<a id="__codelineno-0-1501" name="__codelineno-0-1501"></a>        <span class="n">network</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+<a id="__codelineno-0-1502" name="__codelineno-0-1502"></a>            <span class="s2">&quot;Link&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1503" name="__codelineno-0-1503"></a>            <span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery discharger&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1504" name="__codelineno-0-1504"></a>            <span class="n">bus0</span><span class="o">=</span><span class="n">nodes</span> <span class="o">+</span> <span class="s2">&quot; battery&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1505" name="__codelineno-0-1505"></a>            <span class="n">bus1</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+<a id="__codelineno-0-1506" name="__codelineno-0-1506"></a>            <span class="n">efficiency</span><span class="o">=</span><span class="n">costs</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="s2">&quot;battery inverter&quot;</span><span class="p">,</span> <span class="s2">&quot;efficiency&quot;</span><span class="p">]</span> <span class="o">**</span> <span class="mf">0.5</span><span class="p">,</span>
+<a id="__codelineno-0-1507" name="__codelineno-0-1507"></a>            <span class="n">marginal_cost</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+<a id="__codelineno-0-1508" name="__codelineno-0-1508"></a>            <span class="n">p_nom_extendable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-1509" name="__codelineno-0-1509"></a>            <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;battery discharger&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-1510" name="__codelineno-0-1510"></a>        <span class="p">)</span>
+<a id="__codelineno-0-1511" name="__codelineno-0-1511"></a>
+<a id="__codelineno-0-1512" name="__codelineno-0-1512"></a>    <span class="c1"># ============= add lines =========</span>
+<a id="__codelineno-0-1513" name="__codelineno-0-1513"></a>    <span class="c1"># The lines are implemented according to the transport model (no KVL) and without losses.</span>
+<a id="__codelineno-0-1514" name="__codelineno-0-1514"></a>    <span class="c1"># see Neumann et al 10.1016/j.apenergy.2022.118859</span>
+<a id="__codelineno-0-1515" name="__codelineno-0-1515"></a>    <span class="c1"># TODO make not lossless optional (? - increases computing cost)</span>
+<a id="__codelineno-0-1516" name="__codelineno-0-1516"></a>
+<a id="__codelineno-0-1517" name="__codelineno-0-1517"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;no_lines&quot;</span><span class="p">]:</span>
+<a id="__codelineno-0-1518" name="__codelineno-0-1518"></a>        <span class="n">add_voltage_links</span><span class="p">(</span><span class="n">network</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+<a id="__codelineno-0-1519" name="__codelineno-0-1519"></a>
+<a id="__codelineno-0-1520" name="__codelineno-0-1520"></a>    <span class="n">assign_locations</span><span class="p">(</span><span class="n">network</span><span class="p">)</span>
+<a id="__codelineno-0-1521" name="__codelineno-0-1521"></a>    <span class="k">return</span> <span class="n">network</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
