@@ -1,9 +1,9 @@
-""" 
+"""
 test the fixture generation
 """
 
-import yaml
 import pytest
+import yaml
 
 
 def test_make_snakemake_test_config(make_snakemake_test_config):
@@ -23,7 +23,7 @@ def test_make_snakemake_test_config(make_snakemake_test_config):
     indirect=["make_test_config_file"],
 )
 def test_write_config(make_test_config_file, expected_yr, expected_time_res):
-    with open(make_test_config_file, "r") as f:
+    with open(make_test_config_file) as f:
         config_data = yaml.load(f, Loader=yaml.SafeLoader)
     # Perform your tests with config_data here
     assert config_data["scenario"]["planning_horizons"] == expected_yr

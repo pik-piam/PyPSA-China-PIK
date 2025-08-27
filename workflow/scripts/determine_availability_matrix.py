@@ -19,27 +19,25 @@ The natura data must be manually downloaded for now or retrieved with the data b
 
 """
 
-import logging
-import time
 import functools
+import logging
+import os.path
+import time
+from os import mkdir
+
 import atlite
 import geopandas as gpd
 import numpy as np
-import os.path
-from pandas import concat
-from os import mkdir
-
-from readers_geospatial import read_province_shapes, read_offshore_province_shapes
 from _helpers import configure_logging, mock_snakemake
-from constants import PROV_NAMES, OFFSHORE_WIND_NODES
-
+from constants import OFFSHORE_WIND_NODES, PROV_NAMES
+from pandas import concat
+from readers_geospatial import read_offshore_province_shapes, read_province_shapes
 
 logger = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
         snakemake = mock_snakemake("build_availability_matrix", technology="solar")
 
     configure_logging(snakemake)

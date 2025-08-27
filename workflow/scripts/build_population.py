@@ -1,13 +1,13 @@
-""" 
+"""
 Rules for building the population data by region
 """
 
 import logging
-from _helpers import configure_logging, mock_snakemake
-
 import os
+
 import pandas as pd
-from constants import PROV_NAMES, YEARBOOK_DATA2POP, POP_YEAR
+from _helpers import configure_logging, mock_snakemake
+from constants import POP_YEAR, PROV_NAMES, YEARBOOK_DATA2POP
 
 logger = logging.getLogger(__name__)
 

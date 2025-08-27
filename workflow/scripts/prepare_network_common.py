@@ -1,30 +1,22 @@
 # Shared functions for building the China Regional resolution networks
-import pypsa
-import numpy as np
+
 import geopandas as gpd
+import numpy as np
 import pandas as pd
+import pypsa
 import xarray as xr
-from shapely.geometry import Point
-
-import logging
-
 from _pypsa_helpers import shift_profile_to_planning_year
-from functions import HVAC_cost_curve, haversine
-from vresutils.costdata import annuity
-
 from constants import (
-    PROV_NAMES,
     CRS,
-    CO2_HEATING_2020,
-    CO2_EL_2020,
-    LOAD_CONVERSION_FACTOR,
-    INFLOW_DATA_YR,
-    NUCLEAR_EXTENDABLE,
-    NON_LIN_PATH_SCALING,
-    LINE_SECURITY_MARGIN,
     ECON_LIFETIME_LINES,
     FOM_LINES,
+    INFLOW_DATA_YR,
+    LINE_SECURITY_MARGIN,
+    NON_LIN_PATH_SCALING,
 )
+from functions import HVAC_cost_curve, haversine
+from shapely.geometry import Point
+from vresutils.costdata import annuity
 
 
 def add_hydro(
@@ -36,7 +28,6 @@ def add_hydro(
     planning_horizons: int,
     fake_hydro_at_node: bool = False,
 ):
-
     # load dams
     df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
     points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
@@ -116,7 +107,7 @@ def add_hydro(
     for bus0, bus1 in list(zip(dam_buses.iloc[bus0s].index, dam_buses.iloc[bus1s].index)):
         network.add(
             "Link",
-            "{}-{}".format(bus0, bus1) + " spillage",
+            f"{bus0}-{bus1}" + " spillage",
             bus0=bus0,
             bus1=bus1,
             p_nom_extendable=True,
@@ -143,7 +134,6 @@ def add_hydro(
     inflow_stations = [dam for dam in range(len(dams.index)) if dam not in bus1s]
 
     for inflow_station in inflow_stations:
-
         # p_nom = 1 and p_max_pu & p_min_pu = p_pu, compulsory inflow
         p_nom = (inflow / water_consumption_factor).iloc[:, inflow_station].max()
         p_pu = (inflow / water_consumption_factor).iloc[:, inflow_station] / p_nom
@@ -205,7 +195,7 @@ def add_hydro(
 def calc_renewable_pu_avail(
     renewable_ds: xr.Dataset, planning_year: int, snapshots: pd.Index
 ) -> pd.DataFrame:
-    """calaculate the renewable per unit availability
+    """Calaculate the renewable per unit availability
 
     Args:
         renewable_ds (xr.Dataset): the renewable dataset from build_renewable_potential
@@ -224,7 +214,7 @@ def calc_renewable_pu_avail(
 
 
 def add_HV_links(network: pypsa.Network, config: dict, n_years: int):
-    """add high voltage connections as links in the lossy transport model (see Neumann et al)
+    """Add high voltage connections as links in the lossy transport model (see Neumann et al)
 
     Args:
         network (pypsa.Network): the pypsa network

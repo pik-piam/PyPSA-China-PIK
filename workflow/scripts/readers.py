@@ -1,6 +1,7 @@
 """file reading support functions"""
 
 import os
+
 import pandas as pd
 
 
@@ -8,7 +9,7 @@ def read_yearly_load_projections(
     yearly_projections_p: os.PathLike = "resources/data/load/Province_Load_2020_2060.csv",
     conversion=1,
 ) -> pd.DataFrame:
-    """prepare projections for model use
+    """Prepare projections for model use
 
     Args:
         yearly_projections_p (os.PathLike, optional): the data path.
