@@ -1,16 +1,15 @@
-import pytest
 import geopandas as gpd
+import pytest
+from constants import PROV_NAMES
+from fetch_shapes import (
+    eez_by_region,
+    fetch_country_shape,
+    fetch_maritime_eez,
+    fetch_natural_earth_shape,
+    fetch_province_shapes,
+)
 from pandas import DataFrame
 from shapely.geometry import Polygon
-
-from fetch_shapes import (
-    fetch_natural_earth_shape,
-    fetch_country_shape,
-    fetch_province_shapes,
-    fetch_maritime_eez,
-    eez_by_region,
-)
-from constants import PROV_NAMES
 
 
 @pytest.fixture

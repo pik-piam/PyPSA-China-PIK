@@ -1,16 +1,17 @@
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
-""" 
+"""
 Functions to download ERA5/SARAH data and build the atlite cutout for the atlite.
 These functions linked to the build_cutout rule.
 """
+
 import logging
+
 import atlite
 import geopandas as gpd
 import pandas as pd
-
-from _helpers import configure_logging, mock_snakemake, get_cutout_params
+from _helpers import configure_logging, get_cutout_params, mock_snakemake
 from _pypsa_helpers import make_periodic_snapshots
 from constants import TIMEZONE
 
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def cutout_timespan(config: dict, weather_year: int) -> list:
-    """build the cutout timespan. Note that the coutout requests are in UTC (TBC)
+    """Build the cutout timespan. Note that the coutout requests are in UTC (TBC)
 
     Args:
         config (dict): the snakemake config

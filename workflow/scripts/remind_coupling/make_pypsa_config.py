@@ -8,14 +8,12 @@ Example:
 """
 
 # -*- coding: utf-8 -*-
-import os
-import yaml
-import sys
 import logging
-
-import setup  # sets up paths for standalone
+import os
 
 import rpycpl.utils as coupl_utils
+import setup  # sets up paths for standalone
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +24,11 @@ MW_CO2 = 2 * 16 + MW_C  # g/mol
 def read_remind_em_prices(remind_outp_dir: os.PathLike, region: str) -> dict:
     """
     Read relevant REMIND data from the output directory.
+
     Args:
         remind_outp_dir (os.PathLike): Path to the REMIND output directory.
         region (str): Remind region to filter the data by.
+
     Returns:
         dict: Dictionary containing REMIND data.
     """
@@ -46,10 +46,10 @@ def read_remind_em_prices(remind_outp_dir: os.PathLike, region: str) -> dict:
     )  # gC to ton CO2
 
     # get remind version
-    with open(os.path.join(remind_outp_dir, "c_model_version.csv"), "r") as f:
+    with open(os.path.join(remind_outp_dir, "c_model_version.csv")) as f:
         remind_v = f.read().split("\n")[1].replace(",", "").replace(" ", "")
     # get remind run name
-    with open(os.path.join(remind_outp_dir, "c_expname.csv"), "r") as f:
+    with open(os.path.join(remind_outp_dir, "c_expname.csv")) as f:
         remind_exp_name = f.read().split("\n")[1].replace(",", "").replace(" ", "")
 
     return {"co2_prices": co2_p, "version": remind_v, "expname": remind_exp_name}
@@ -76,7 +76,6 @@ def get_currency_conversion(template_cfg: dict) -> float:
 
 
 if __name__ == "__main__":
-
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake("build_run_config")

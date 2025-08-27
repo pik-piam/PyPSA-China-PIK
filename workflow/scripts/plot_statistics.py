@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # SPDX-FileCopyrightText: : 2017-2024 The PyPSA-Eur Authors
 # 2014 Adapted from pypsa-eur by PyPSA-China authors
 #
 # SPDX-License-Identifier: MIT
 
-import matplotlib.pyplot as plt
+import logging
+import os
+
 import matplotlib.axes as axes
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import pypsa
 import seaborn as sns
-import os
-import logging
-from pandas import DataFrame
-import pandas as pd
-import numpy as np
-
-from matplotlib.colors import to_rgb
-from _plot_utilities import heatmap, annotate_heatmap
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import rename_index, fix_network_names_colors
 from _pypsa_helpers import calc_lcoe, filter_carriers, calc_generation_share
@@ -24,9 +20,10 @@ from matplotlib import gridspec
 from constants import (
     PLOT_CAP_LABEL,
     PLOT_CAP_UNITS,
-    PLOT_SUPPLY_UNITS,
     PLOT_SUPPLY_LABEL,
+    PLOT_SUPPLY_UNITS,
 )
+from pandas import DataFrame
 
 sns.set_theme("paper", style="whitegrid")
 logger = logging.getLogger(__name__)
@@ -73,6 +70,7 @@ def plot_static_per_carrier(
 def add_second_xaxis(data: pd.Series, ax, label, **kwargs):
     """
     Add a secondary X-axis to the plot.
+
     Args:
         data (pd.Series): The data to plot. Its values will be plotted on the secondary X-axis.
         ax (matplotlib.axes.Axes): The main matplotlib Axes object.
@@ -120,6 +118,7 @@ def add_second_xaxis(data: pd.Series, ax, label, **kwargs):
 def prepare_capacity_factor_data(n, carrier):
     """
     Prepare Series for actual and theoretical capacity factors per technology.
+
     Returns:
         cf_filtered: Series of actual capacity factors (index: nice_name)
         theo_cf_filtered: Series of theoretical capacity factors (index: nice_name)
@@ -227,6 +226,7 @@ def plot_capacity_factor(
 def prepare_province_peakload_capacity_data(n, attached_carriers=None):
     """
     Prepare DataFrame for province peak load and installed capacity by technology.
+
     Returns:
         df_plot: DataFrame with provinces as index, columns as technologies and 'Peak Load'.
         bar_cols: List of technology columns to plot as bars.
@@ -291,6 +291,7 @@ def prepare_province_peakload_capacity_data(n, attached_carriers=None):
 def plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir):
     """
     Plot province peak load vs installed capacity by technology.
+
     Args:
         df_plot: DataFrame with provinces as index, columns as technologies and 'Peak Load'.
         bar_cols: List of technology columns to plot as bars.
@@ -329,7 +330,6 @@ def plot_province_peakload_capacity(df_plot, bar_cols, color_list, outp_dir):
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
         snakemake = mock_snakemake(
             "plot_statistics",
             carrier="AC",
