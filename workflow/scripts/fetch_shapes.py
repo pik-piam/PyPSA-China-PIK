@@ -2,25 +2,26 @@
 Data fetch operation for region/province/country shapes
 """
 
-import geopandas as gpd
-import cartopy.io.shapereader as shpreader
-import requests
 import logging
-import numpy as np
 from os import PathLike
 from pandas import DataFrame
 import zipfile
 import io
 
+import cartopy.io.shapereader as shpreader
+import geopandas as gpd
+import numpy as np
+import requests
+from _helpers import configure_logging, mock_snakemake
 from constants import (
-    CRS,
     COUNTRY_ISO,
     COUNTRY_NAME,
-    PROV_NAMES,
+    CRS,
     EEZ_PREFIX,
     OFFSHORE_WIND_NODES,
+    PROV_NAMES,
 )
-from _helpers import mock_snakemake, configure_logging
+from pandas import DataFrame
 
 NATURAL_EARTH_RESOLUTION = "10m"
 GDAM_LV1 = "NAME_1"
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 def fetch_natural_earth_shape(
     dataset_name: str, filter_key: str, filter_value="China", region_key=None
 ) -> gpd.GeoDataFrame:
-    """fetch region or country shape from natural earth dataset and filter
+    """Fetch region or country shape from natural earth dataset and filter
 
     Args:
         dataset_name (str): the name of the natural earth dataset to fetch
@@ -75,7 +76,7 @@ def fetch_natural_earth_shape(
 
 
 def fetch_country_shape(outp_path: PathLike):
-    """fetch the country shape from natural earth and save it to the outpath
+    """Fetch the country shape from natural earth and save it to the outpath
 
     Args:
         outp_path (PathLike): the path to save the country shape (geojson)
@@ -87,7 +88,7 @@ def fetch_country_shape(outp_path: PathLike):
 
 
 def fetch_province_shapes() -> gpd.GeoDataFrame:
-    """fetch the province shapes from natural earth and save it to the outpath
+    """Fetch the province shapes from natural earth and save it to the outpath
 
     Returns:
         gpd.GeoDataFrame: the province shapes
@@ -148,7 +149,7 @@ def fetch_gadm(country_code="CHN", level=2):
 
 
 def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
-    """fetch maritime data for a country from Maritime Gazette API#
+    """Fetch maritime data for a country from Maritime Gazette API#
     (Royal marine institute of Flanders data base)
 
     Args:
@@ -352,7 +353,7 @@ def split_provinces(
 def cut_smaller_from_larger(
     row: gpd.GeoSeries, gdf: gpd.GeoDataFrame, overlaps: DataFrame
 ) -> gpd.GeoSeries:
-    """automatically assign overlapping area to the smaller region
+    """Automatically assign overlapping area to the smaller region
 
     Example:
         areas_gdf.apply(cut_smaller_from_larger, args=(areas_gdf, overlaps), axis=1)
@@ -396,7 +397,7 @@ def has_overlap(gdf: gpd.GeoDataFrame) -> DataFrame:
 
 
 def remove_overlaps(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """remove inter row overlaps from a GeoDataFrame, cutting out the smaller region from the larger one
+    """Remove inter row overlaps from a GeoDataFrame, cutting out the smaller region from the larger one
 
     Args:
         gdf (gpd.GeoDataFrame): the geodataframe to be treated
@@ -414,7 +415,7 @@ def eez_by_region(
     prov_key="region",
     simplify_tol=0.5,
 ) -> gpd.GeoDataFrame:
-    """break up the eez by admin1 regions based on voronoi polygons of the centroids
+    """Break up the eez by admin1 regions based on voronoi polygons of the centroids
 
     Args:
         eez (gpd.GeoDataFrame): _description_

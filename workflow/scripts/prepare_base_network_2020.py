@@ -4,53 +4,49 @@
 
 # for pathway network
 
-from vresutils.costdata import annuity
-import pypsa
-from shapely.geometry import Point
-import geopandas as gpd
-import pandas as pd
-import numpy as np
+from logging import DEBUG, getLogger  # INFO
 
-from constants import (
-    PROV_NAMES,
-    CRS,
-    YEAR_HRS,
-    TIMEZONE,
-    LOAD_CONVERSION_FACTOR,
-    INFLOW_DATA_YR,
-    LINE_SECURITY_MARGIN,
-    FOM_LINES,
-    NON_LIN_PATH_SCALING,
-    ECON_LIFETIME_LINES,
-)
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+import pypsa
 from _helpers import (
+    ConfigManager,
     configure_logging,
     mock_snakemake,
-    ConfigManager,
 )
 from _pypsa_helpers import (
     make_periodic_snapshots,
 )
-from functions import HVAC_cost_curve
-from readers_geospatial import read_province_shapes
 from add_electricity import load_costs, sanitize_carriers
-from functions import haversine
+from constants import (
+    CRS,
+    ECON_LIFETIME_LINES,
+    FOM_LINES,
+    INFLOW_DATA_YR,
+    LINE_SECURITY_MARGIN,
+    NON_LIN_PATH_SCALING,
+    PROV_NAMES,
+    TIMEZONE,
+    YEAR_HRS,
+)
+from functions import HVAC_cost_curve, haversine
 from prepare_base_network import (
     add_buses,
-    shift_profile_to_planning_year,
     add_carriers,
     add_co2_constraints_prices,
     add_wind_and_solar,
+    shift_profile_to_planning_year,
 )
-
-from logging import getLogger, DEBUG  # INFO
+from readers_geospatial import read_province_shapes
+from shapely.geometry import Point
+from vresutils.costdata import annuity
 
 logger = getLogger(__name__)
 logger.setLevel(DEBUG)
 
 
 def prepare_network(config: dict, paths: dict):
-
     # derive from the config
     config["add_gas"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "gas" in tech] else False
@@ -117,7 +113,6 @@ def prepare_network(config: dict, paths: dict):
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
 
     if config["heat_coupling"]:
-
         central_fraction = pd.read_hdf(snakemake.input.central_fraction)
         with pd.HDFStore(snakemake.input.heat_demand_profile, mode="r") as store:
             heat_demand = store["heat_demand_profiles"]
@@ -194,7 +189,6 @@ def prepare_network(config: dict, paths: dict):
     # )
 
     if config["add_hydro"]:
-
         # load dams
         df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
         points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
@@ -251,7 +245,7 @@ def prepare_network(config: dict, paths: dict):
             e_nom=effective_capacity,
             e_initial=initial_capacity,
             e_cyclic=True,
-            marginal_cost=config["costs"]["marginal_cost"]["hydro"],
+            marginal_cost=config["hydro"]["marginal_cost"]["reservoir"],
         )
 
         # add hydro turbines to link stations to provinces
@@ -314,7 +308,6 @@ def prepare_network(config: dict, paths: dict):
         ]
 
         for bus0, bus2 in list(zip(dams.index[bus0s], dam_buses.iloc[bus1s].index)):
-
             # normal flow
             network.links.at[bus0 + " turbines", "bus2"] = bus2
             network.links.at[bus0 + " turbines", "efficiency2"] = 1.0
@@ -323,7 +316,7 @@ def prepare_network(config: dict, paths: dict):
         for bus0, bus1 in list(zip(dam_buses.iloc[bus0s].index, dam_buses.iloc[bus1s].index)):
             network.add(
                 "Link",
-                "{}-{}".format(bus0, bus1) + " spillage",
+                f"{bus0}-{bus1}" + " spillage",
                 bus0=bus0,
                 bus1=bus1,
                 p_nom_extendable=True,
@@ -350,7 +343,6 @@ def prepare_network(config: dict, paths: dict):
         inflow_stations = [dam for dam in range(len(dams.index)) if dam not in bus1s]
 
         for inflow_station in inflow_stations:
-
             # p_nom = 1 and p_max_pu & p_min_pu = p_pu, compulsory inflow
 
             p_nom = (inflow / water_consumption_factor).iloc[:, inflow_station].max()
@@ -687,7 +679,6 @@ def prepare_network(config: dict, paths: dict):
 
 
 if __name__ == "__main__":
-
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
         snakemake = mock_snakemake(

@@ -12,35 +12,32 @@ These functions are currently only for the overnight mode. Myopic pathway mode c
 # for non-pathway network
 # TODO WHY DO WE USE VRESUTILS ANNUITY IN ONE PLACE AND OUR OWN CALC ELSEWHERE?
 
-import pypsa
-from vresutils.costdata import annuity
-from shapely.geometry import Point
-import geopandas as gpd
-import pandas as pd
-import numpy as np
-import xarray as xr
+import logging
 import os
 
-import logging
-
-from _helpers import configure_logging, mock_snakemake, ConfigManager
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+import pypsa
+import xarray as xr
+from _helpers import ConfigManager, configure_logging, mock_snakemake
 from _pypsa_helpers import (
-    shift_profile_to_planning_year,
-    make_periodic_snapshots,
     assign_locations,
+    make_periodic_snapshots,
+    shift_profile_to_planning_year,
 )
-from build_biomass_potential import estimate_co2_intensity_xing
-from functions import haversine
 from add_electricity import load_costs, sanitize_carriers
-from readers_geospatial import read_province_shapes
-
+from build_biomass_potential import estimate_co2_intensity_xing
 from constants import (
-    PROV_NAMES,
     CRS,
+    FOM_LINES,
     INFLOW_DATA_YR,
     NUCLEAR_EXTENDABLE,
-    FOM_LINES,
+    PROV_NAMES,
 )
+from functions import haversine
+from readers_geospatial import read_province_shapes
+from shapely.geometry import Point
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +54,7 @@ def add_biomass_chp(
     prov_centroids: gpd.GeoDataFrame,
     add_beccs: bool = True,
 ):
-    """add biomass to the network. Biomass is here a new build (and not a retrofit)
+    """Add biomass to the network. Biomass is here a new build (and not a retrofit)
     and is not co-fired with coal. An optional CC can be added to biomass
 
     NOTE THAT THE CC IS NOT CONSTRAINED TO THE BIOMASS?
@@ -156,7 +153,7 @@ def add_biomass_chp(
 
 
 def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
-    """add the various carriers to the network based on the config file
+    """Add the various carriers to the network based on the config file
 
     Args:
         network (pypsa.Network): the pypsa network
@@ -190,7 +187,7 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
 def add_co2_capture_support(
     network: pypsa.Network, nodes: pd.Index, prov_centroids: gpd.GeoDataFrame
 ):
-    """add the necessary CO2 capture carriers & stores to the network
+    """Add the necessary CO2 capture carriers & stores to the network
     Args:
         network (pypsa.Network): the network object
         nodes (pd.Index): the nodes
@@ -236,7 +233,7 @@ def add_conventional_generators(
     prov_centroids: gpd.GeoDataFrame,
     costs: pd.DataFrame,
 ):
-    """add conventional generators to the network
+    """Add conventional generators to the network
 
     Args:
         network (pypsa.Network): the pypsa network object
@@ -357,7 +354,7 @@ def add_conventional_generators(
 
 
 def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.DataFrame):
-    """add H2 generators, storage and links to the network - currently all or nothing
+    """Add H2 generators, storage and links to the network - currently all or nothing
 
     Args:
         network (pypsa.Network): network object too which H2 comps will be added
@@ -549,7 +546,7 @@ def add_H2(network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.Data
 
 # TODO harmonize with remind
 def add_voltage_links(network: pypsa.Network, config: dict):
-    """add HVDC/AC links (no KVL)
+    """Add HVDC/AC links (no KVL)
 
     Args:
         network (pypsa.Network): the network object
@@ -590,9 +587,7 @@ def add_voltage_links(network: pypsa.Network, config: dict):
 
     line_cost = (
         lengths * costs.at["HVDC overhead", "capital_cost"] * FOM_LINES * n_years
-    ) + costs.at[
-        "HVDC inverter pair", "capital_cost"
-    ]  # /MW
+    ) + costs.at["HVDC inverter pair", "capital_cost"]  # /MW
 
     # ==== lossy transport model (split into 2) ====
     # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk
@@ -686,7 +681,9 @@ def add_wind_and_solar(
                 ds = ds.sel(year=ds.year.min(), drop=True)
 
             timestamps = pd.DatetimeIndex(ds.time)
-            shift_weather_to_planning_yr = lambda t: t.replace(year=int(year))
+            def shift_weather_to_planning_yr(t):
+                """Shift weather data to planning year."""
+                return t.replace(year=int(year))
             timestamps = timestamps.map(shift_weather_to_planning_yr)
             ds = ds.assign_coords(time=timestamps)
 
@@ -703,7 +700,9 @@ def add_wind_and_solar(
         ds = ds.where(ds["p_nom_max"] > cutoff, drop=True)
 
         # bins represent renewable generation grades
-        flatten = lambda t: " grade".join(map(str, t))
+        def flatten(t):
+            """Flatten tuple to string with ' grade' separator."""
+            return " grade".join(map(str, t))
         buses = ds.indexes["bus_bin"].get_level_values("bus")
         bus_bins = ds.indexes["bus_bin"].map(flatten)
 
@@ -738,7 +737,7 @@ def add_heat_coupling(
     planning_year: int,
     paths: dict,
 ):
-    """add the heat-coupling links and generators to the network
+    """Add the heat-coupling links and generators to the network
 
     Args:
         network (pypsa.Network): the network object
@@ -892,7 +891,6 @@ def add_heat_coupling(
             )
 
     if "resistive heater" in config["Techs"]["vre_techs"]:
-
         for cat in [" decentral ", " central "]:
             network.add(
                 "Link",
@@ -1051,7 +1049,6 @@ def add_heat_coupling(
             )
 
     if "solar thermal" in config["Techs"]["vre_techs"]:
-
         # this is the amount of heat collected in W per m^2, accounting
         # for efficiency
         with pd.HDFStore(paths["solar_thermal_name"], mode="r") as store:
@@ -1168,7 +1165,7 @@ def add_hydro(
         e_initial=initial_capacity,
         e_cyclic=True,
         # TODO fix all config["costs"]
-        marginal_cost=config["costs"]["marginal_cost"]["hydro"],
+        marginal_cost=config["hydro"]["marginal_cost"]["reservoir"],
     )
 
     # add hydro turbines to link stations to provinces
@@ -1209,7 +1206,7 @@ def add_hydro(
         bus1 = row[1].end_bus + " station"
         network.add(
             "Link",
-            "{}-{}".format(bus0, bus1) + " spillage",
+            f"{bus0}-{bus1}" + " spillage",
             bus0=bus0,
             bus1=bus1,
             p_nom_extendable=True,
@@ -1242,7 +1239,6 @@ def add_hydro(
     ]
 
     for inflow_station in inflow_stations:
-
         # p_nom = 1 and p_max_pu & p_min_pu = p_pu, compulsory inflow
         p_nom = (inflow / water_consumption_factor)[inflow_station].max()
         p_pu = (inflow / water_consumption_factor)[inflow_station] / p_nom
@@ -1301,7 +1297,8 @@ def generate_periodic_profiles(
 ):
     """Give a 24*7 long list of weekly hourly profiles, generate this
     for each country for the period dt_index, taking account of time
-    zones and Summer Time."""
+    zones and Summer Time.
+    """
 
     weekly_profile = pd.Series(weekly_profile, range(24 * 7))
     # TODO fix, no longer take into accoutn summer time
@@ -1382,7 +1379,6 @@ def prepare_network(
 
     # nuclear is brownfield
     if "nuclear" in config["Techs"]["vre_techs"]:
-
         nuclear_nodes = pd.Index(NUCLEAR_EXTENDABLE)
         network.add(
             "Generator",
@@ -1458,7 +1454,6 @@ def prepare_network(
         add_H2(network, config, nodes, costs)
 
     if "battery" in config["Techs"]["store_techs"]:
-
         network.add(
             "Bus",
             nodes,
@@ -1525,7 +1520,6 @@ def prepare_network(
 
 
 if __name__ == "__main__":
-
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
         snakemake = mock_snakemake(

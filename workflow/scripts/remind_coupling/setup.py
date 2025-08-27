@@ -1,7 +1,8 @@
-""" Setup scripts/remind as standalone for dev
+"""Setup scripts/remind as standalone for dev
 
 - add paths
-- mock snakemake"""
+- mock snakemake
+"""
 
 import os
 import sys
@@ -20,11 +21,11 @@ def setup_paths():
 
 setup_paths()
 # needs to be imported after setup_paths
-from _helpers import mock_snakemake
+from _helpers import mock_snakemake  # noqa: E402
 
 
 def _mock_snakemake(rule_name, **kwargs) -> object:
-    """wrapper around mock snakemake for the remind/ subfoldder
+    """Wrapper around mock snakemake for the remind/ subfoldder
 
     Args:
         rule_name (str): the name of the rule

@@ -6,8 +6,11 @@
 """Functions to add constraints and prepare the network for the solver.
 Associated with the `solve_networks` rule in the Snakefile.
 """
+
 import logging
+
 import numpy as np
+import pandas as pd
 import pypsa
 import xarray as xr
 import pandas as pd
@@ -20,6 +23,7 @@ from _pypsa_helpers import store_duals_to_network
 from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, ConfigManager
 from _pypsa_helpers import mock_solve, filter_carriers
 from constants import YEAR_HRS
+from pandas import DatetimeIndex
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -88,7 +92,7 @@ def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1
 
 
 def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_co2=False):
-    """from pypsa-eur: add GHG price to marginal costs of generators and storage units
+    """From pypsa-eur: add GHG price to marginal costs of generators and storage units
 
     Args:
         n (pypsa.Network): the pypsa network
@@ -191,7 +195,8 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbi
 def prepare_network(
     n: pypsa.Network, solve_opts: dict, config: dict, plan_year: int, co2_pathway: str
 ) -> pypsa.Network:
-    """prepare the network for the solver,
+    """Prepare the network for the solver,
+
     Args:
         n (pypsa.Network): the network object to optimize
         solve_opts (dict): solving options
@@ -411,7 +416,6 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
     # p/e_nom_rcl is the availale paid-off capacity per tech group and is nan for non paid-off (usual) generators.
     # rcl is a legacy name from Aodenweller
     for component in ["Generator", "Link", "Store"]:
-
         prefix = "e" if component == "Store" else "p"
         paid_off_col = f"{prefix}_nom_max_rcl"
 
@@ -456,8 +460,7 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
 
         # techs that only exist as paid-off don't have usual counterparts
-        remind_only_techs = n.config["existing_capacities"].get("remind_only_tech_groups", [])
-        paidoff_comp = paidoff_comp.query("tech_group not in @remind_only_techs")
+        paidoff_comp = paidoff_comp.query("tech_group not in @n.config['existing_capacities'].get('remind_only_tech_groups', [])")
 
         if paidoff_comp.empty:
             continue
@@ -603,6 +606,7 @@ def extra_functionality(n: pypsa.Network, _) -> None:
 
     Args:
         n (pypsa.Network): the network object to optimize
+        _: dummy for compatibility with pypsa solve
     """
     config = n.config
     add_battery_constraints(n)
@@ -623,7 +627,7 @@ def extra_functionality(n: pypsa.Network, _) -> None:
 def solve_network(
     n: pypsa.Network, config: dict, solving: dict, opts: str = "", **kwargs
 ) -> pypsa.Network:
-    """perform the optimisation
+    """Perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
         config (dict): the configuration dictionary

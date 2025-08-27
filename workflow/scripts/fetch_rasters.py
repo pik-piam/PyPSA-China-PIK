@@ -7,11 +7,12 @@ sre not yet integrated into the workflow.
 """
 
 import json
-import jwt
-import time
-import os
-import requests
 import logging
+import os
+import time
+
+import jwt
+import requests
 
 logger = logging.getLogger(__name__)
 # Load saved key from filesystem
@@ -19,7 +20,7 @@ TOKEN_PATH = os.path.expanduser("~/documents/token_land_cover_copernicus.json")
 
 
 def authenticate() -> dict:
-    """authenticae with the copernicus API
+    """Authenticae with the copernicus API
 
     Returns:
         dict: the access token dict
@@ -53,7 +54,7 @@ def authenticate() -> dict:
 
 
 def search_items(json_items: dict, target_name="global-dynamic-land-cover") -> list:
-    """filter items for target name
+    """Filter items for target name
 
     Args:
         json_items (dict): the json response to the seach query
@@ -67,7 +68,7 @@ def search_items(json_items: dict, target_name="global-dynamic-land-cover") -> l
 
 
 def find_dataset_ids(name="global-dynamic-land-cover") -> tuple[str]:
-    """find the catalogue ID of the dataset
+    """Find the catalogue ID of the dataset
 
     Args:
         name (str, optional): dataset product name. Defaults to "global-dynamic-land-cover".
@@ -101,7 +102,7 @@ def find_dataset_ids(name="global-dynamic-land-cover") -> tuple[str]:
 
 
 def post_data_request(token: dict, download_info_id: str, download_id: str) -> tuple[dict, str]:
-    """post the request to the copernicus API
+    """Post the request to the copernicus API
 
     Args:
         token (dict): the access token
@@ -148,7 +149,7 @@ if __name__ == "__main__":
         "https://land.copernicus.eu/api/@datarequest_search?status=Finished_ok",
         headers={
             "Accept": "application/json",
-            "Authorization": f'Bearer {token["access_token"]}',
+            "Authorization": f"Bearer {token['access_token']}",
         },
     )
     download = status.json()[str(task_id)]["DownloadURL"]
