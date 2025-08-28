@@ -171,48 +171,49 @@ def assign_node_from_gps(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame) -> pd.
     return joined
 
 
-def partition_gem_across_nodes(
-    gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame, admin_level=None
-) -> pd.DataFrame:
-    """
-    Partition GEM data across nodes based on geographical coordinates.
-
-    Args:
-        gem_data (pd.DataFrame): DataFrame containing GEM data.
-        nodes (geopandas.GeoDataFrame): GeoDataFrame containing node geometries (nodes as index).
-        admin_level (int, optional): Administrative level for partitioning. Default is None (GPS).
-
-    Returns:
-        pd.DataFrame: DataFrame with GEM data partitioned across nodes.
-    """
-    if admin_level is not None and admin_level not in [0, 1, 2]:
-        raise ValueError("admin_level must be None, 0, 1, or 2")
-
-    # snap to admin_level
-    if admin_level is not None:
-        admin = ADM_COLS[admin_level]
-        gem_data[admin] = gem_data[admin].str.replace(" ", "")
-        uncovered_gem = set(gem_data[ADM_COLS[admin_level]]) - set(nodes.index)
-        if uncovered_gem:
-            logger.warning(
-                f"Some GEM locations are not covered by the nodes at admin level {admin_level}: {uncovered_gem}"
-                ". Consider partitioning with at a different admin_level or with GPS (None)."
-            )
-        gem_data["node"] = gem_data[admin]
-        gem_data.dropna(subset=["node"], inplace=True)
-        return gem_data
-    else:
-        gem_data["geometry"] = gem_data.apply(
-            lambda row: Point(row["Longitude"], row["Latitude"]), axis=1
-        )
-        gem_gdf = gpd.GeoDataFrame(gem_data, geometry="geometry", crs="EPSG:4326")
-        joined = nodes.reset_index(names="node").sjoin_nearest(gem_gdf, how="right")
-        missing = joined[joined.node.isna()]
-        if not missing.empty:
-            logger.warning(
-                f"Some GEM locations are not covered by the nodes at GPS: {missing['Plant name'].head()}"
-            )
-        return joined["node"]
+# FUTURE FEATURE: Partition GEM data across nodes based on admin level or GPS.
+# def partition_gem_across_nodes(
+#     gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame, admin_level=None
+# ) -> pd.DataFrame:
+#     """
+#     Partition GEM data across nodes based on geographical coordinates.
+#
+#     Args:
+#         gem_data (pd.DataFrame): DataFrame containing GEM data.
+#         nodes (geopandas.GeoDataFrame): GeoDataFrame containing node geometries (nodes as index).
+#         admin_level (int, optional): Administrative level for partitioning. Default is None (GPS).
+#
+#     Returns:
+#         pd.DataFrame: DataFrame with GEM data partitioned across nodes.
+#     """
+#     if admin_level is not None and admin_level not in [0, 1, 2]:
+#         raise ValueError("admin_level must be None, 0, 1, or 2")
+#
+#     # snap to admin_level
+#     if admin_level is not None:
+#         admin = ADM_COLS[admin_level]
+#         gem_data[admin] = gem_data[admin].str.replace(" ", "")
+#         uncovered_gem = set(gem_data[ADM_COLS[admin_level]]) - set(nodes.index)
+#         if uncovered_gem:
+#             logger.warning(
+#                 f"Some GEM locations are not covered by the nodes at admin level {admin_level}: {uncovered_gem}"
+#                 ". Consider partitioning with at a different admin_level or with GPS (None)."
+#             )
+#         gem_data["node"] = gem_data[admin]
+#         gem_data.dropna(subset=["node"], inplace=True)
+#         return gem_data
+#     else:
+#         gem_data["geometry"] = gem_data.apply(
+#             lambda row: Point(row["Longitude"], row["Latitude"]), axis=1
+#         )
+#         gem_gdf = gpd.GeoDataFrame(gem_data, geometry="geometry", crs="EPSG:4326")
+#         joined = nodes.reset_index(names="node").sjoin_nearest(gem_gdf, how="right")
+#         missing = joined[joined.node.isna()]
+#         if not missing.empty:
+#             logger.warning(
+#                 f"Some GEM locations are not covered by the nodes at GPS: {missing['Plant name'].head()}"
+#             )
+#         return joined["node"]
 
 
 if __name__ == "__main__":
@@ -251,7 +252,7 @@ if __name__ == "__main__":
         logger.warning(f"Techs from GEM {extra} not covered by existing_baseyear techs.")
 
     # TODO assign nodes
-    assign_mode = config["existing_capacities"].get("node_assignment_mode", "simple")
+    assign_mode = config["existing_capacities"].get("node_assignment", "simple")
     node_cfg = config["nodes"]
 
     if not node_cfg["split_provinces"]:
