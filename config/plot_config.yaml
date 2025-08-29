@@ -6,6 +6,11 @@ plotting:
   transparent: false
   statistics:
     clip_numerical_zeroes: true
+    add_labels:
+      - "capacity_factor"
+      - "installed_capacity"
+      - "lcoe"
+      - "mv_minus_lcoe"
   cost_panel:
     y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
   cost_map:
