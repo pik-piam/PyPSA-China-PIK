@@ -713,7 +713,7 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
-    ax.set_ylim([0, co2_balance_df.sum(axis=1).max() * 1.1])
+    ax.set_ylim([co2_balance_df.min().min() * 1.1, co2_balance_df.sum(axis=1).max() * 1.1])
     fig.tight_layout()
     if fig_name is not None:
         fig.savefig(fig_name, transparent=config["transparent"])
