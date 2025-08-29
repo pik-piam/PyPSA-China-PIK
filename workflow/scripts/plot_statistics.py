@@ -14,9 +14,8 @@ import pandas as pd
 import pypsa
 import seaborn as sns
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
-from _plot_utilities import rename_index, fix_network_names_colors
+from _plot_utilities import rename_index, fix_network_names_colors, heatmap, annotate_heatmap
 from _pypsa_helpers import calc_lcoe, filter_carriers, calc_generation_share
-from matplotlib import gridspec
 from constants import (
     PLOT_CAP_LABEL,
     PLOT_CAP_UNITS,
