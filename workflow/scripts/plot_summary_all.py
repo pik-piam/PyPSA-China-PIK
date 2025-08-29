@@ -713,7 +713,7 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
-    ax.set_ylim([0, co2_balance_df.sum(axis=1).max() * 1.1])
+    ax.set_ylim([co2_balance_df.min().min() * 1.1, co2_balance_df.sum(axis=1).max() * 1.1])
     fig.tight_layout()
     if fig_name is not None:
         fig.savefig(fig_name, transparent=config["transparent"])
@@ -842,12 +842,10 @@ if __name__ == "__main__":
             "plot_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
+            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
             heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            configfiles="resources/tmp/pseudo_coupled.yml",
         )
-
     configure_logging(snakemake)
     set_plot_test_backend(snakemake.config)
     logger.info(snakemake.input)
@@ -870,7 +868,7 @@ if __name__ == "__main__":
         co2_prices = None
 
     plot_heat = config.get("heat_coupling", False)
-    plot_h2 = config.get("h2_coupling", True)
+    plot_h2 = config.get("add_H2", False)
     NAN_COLOR = config["plotting"]["nan_color"]
     data_paths = {
         "energy": [os.path.join(p, "energy.csv") for p in paths],

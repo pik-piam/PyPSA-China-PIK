@@ -17,15 +17,15 @@ logger = logging.getLogger()
 
 # Simplified component mapping - only essential mappings
 COMPONENT_MAPPING = {
-    'generator': 'generators',
-    'link': 'links',
-    'line': 'lines',
-    'store': 'stores',
-    'storageunit': 'storage_units',
-    'bus': 'buses',
-    'globalconstraint': 'global_constraints',
-    'load': 'loads',
-    'transformer': 'transformers',
+    "generator": "generators",
+    "link": "links",
+    "line": "lines",
+    "store": "stores",
+    "storageunit": "storage_units",
+    "bus": "buses",
+    "globalconstraint": "global_constraints",
+    "load": "loads",
+    "transformer": "transformers",
 }
 
 
@@ -497,9 +497,9 @@ def store_duals_to_network(network: pypsa.Network) -> None:
             constraint_type = dual_name
 
         comp_name = COMPONENT_MAPPING.get(component_type.lower())
-        comp_obj = getattr(network, comp_name, None)
-        if comp_obj is None:
+        if comp_name is None or not hasattr(network, comp_name):
             continue
+        comp_obj = getattr(network, comp_name)
 
         # ---- Standardize attr name ----
         attr = f"mu_{re.sub(r'[^a-zA-Z0-9_]', '_', constraint_type)}"
@@ -534,6 +534,3 @@ def store_duals_to_network(network: pypsa.Network) -> None:
                     val = 0.0
                 series = pd.Series(val, index=comp_obj.index)
             comp_obj[attr] = series
-
-
-

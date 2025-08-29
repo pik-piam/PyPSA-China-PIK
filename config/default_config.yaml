@@ -286,7 +286,6 @@ solving:
 
   mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
 
-
 # transmission options
 lines:
   line_length_factor: 1.25
@@ -306,7 +305,7 @@ existing_capacities:
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
   node_assignment: simple # simple | gps
 
-# contingencies (slower!) -> epsilon is fraction of vre gen or load for which reserves should exist
+
 operational_reserve:
   activate: false
   epsilon_load: 0.02

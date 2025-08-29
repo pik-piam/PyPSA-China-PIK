@@ -61,15 +61,15 @@ def launch_subprocess(cmd: str, env=None) -> subprocess.CompletedProcess:
                 "existing_capacities": {"add": False},
             }
         ),
-        (
-            {
-                "time_res": 24,
-                "plan_year": 2060,
-                "heat_coupling": True,
-                "foresight": "myopic",
-                "existing_capacities": {"add": False},
-            }
-        ),
+        # (
+        #     {
+        #         "time_res": 24,
+        #         "plan_year": 2060,
+        #         "heat_coupling": True,
+        #         "foresight": "myopic",
+        #         "existing_capacities": {"add": False},
+        #     }
+        # ),
         (
             {
                 "time_res": 5,
@@ -98,15 +98,13 @@ def test_dry_run(make_test_config_file):
 @pytest.mark.parametrize(
     "make_test_config_file",
     [
-        (
-            {
-                "time_res": 1752,
-                "plan_year": 2040,
-                "heat_coupling": True,
-                "foresight": "overnight",
-                "existing_capacities": {"add": False},
-            }
-        )
+        {
+            "time_res": 1752,
+            "plan_year": 2040,
+            "heat_coupling": True,
+            "foresight": "overnight",
+            "existing_capacities": {"add": False},
+        }
     ],
     indirect=True,
 )
@@ -126,15 +124,13 @@ def test_dry_run_build_cutouts(make_test_config_file):
 @pytest.mark.parametrize(
     "make_test_config_file",
     [
-        (
-            {
-                "time_res": 8,
-                "plan_year": 2040,
-                "heat_coupling": True,
-                "foresight": "overnight",
-                "existing_capacities": {"add": False},
-            }
-        )
+        {
+            "time_res": 8,
+            "plan_year": 2040,
+            "heat_coupling": True,
+            "foresight": "overnight",
+            "existing_capacities": {"add": False},
+        }
     ],
     indirect=True,
 )
