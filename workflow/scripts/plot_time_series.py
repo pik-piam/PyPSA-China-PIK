@@ -18,6 +18,7 @@ from _plot_utilities import (
     fix_network_names_colors,
     set_plot_style,
 )
+from _pypsa_helpers import get_location_and_carrier
 from constants import (
     PLOT_CAP_UNITS,
     PLOT_CAP_LABEL,
