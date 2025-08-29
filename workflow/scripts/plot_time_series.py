@@ -12,6 +12,12 @@ from _helpers import (
     mock_snakemake,
     set_plot_test_backend,
 )
+from _plot_utilities import (
+    get_stat_colors,
+    make_nice_tech_colors,
+    fix_network_names_colors,
+    set_plot_style,
+)
 from constants import (
     PLOT_CAP_UNITS,
     PLOT_CAP_LABEL,
@@ -427,7 +433,11 @@ def plot_price_heatmap(
 
 
 def plot_vre_heatmap(
-    n: pypsa.Network, config: dict, color_map="magma", log_values=True, time_range: pd.Index = None,
+    n: pypsa.Network,
+    config: dict,
+    color_map="magma",
+    log_values=True,
+    time_range: pd.Index = None,
 ):
     """Plot the VRE generation per hour and day as a heatmap
 
@@ -512,10 +522,10 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_snapshots",
             topology="current+FCG",
-            # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            co2_pathway="exp175default",
+            # co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            # configfiles=["resources/tmp/remind_coupled_cg.yaml"],
             planning_horizons="2050",
             winter_day1="12-10 21:00",  # mm-dd HH:MM
             winter_day2="12-17 12:00",  # mm-dd HH:MM

@@ -14,9 +14,8 @@ import pandas as pd
 import pypsa
 import seaborn as sns
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
-from _plot_utilities import rename_index, fix_network_names_colors
+from _plot_utilities import rename_index, fix_network_names_colors, heatmap, annotate_heatmap
 from _pypsa_helpers import calc_lcoe, filter_carriers, calc_generation_share
-from matplotlib import gridspec
 from constants import (
     PLOT_CAP_LABEL,
     PLOT_CAP_UNITS,
@@ -334,12 +333,10 @@ if __name__ == "__main__":
             "plot_statistics",
             carrier="AC",
             planning_horizons="2030",
-            # co2_pathway="exp175default",
-            # planning_horizons="2130",
-            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
+            co2_pathway="exp175default",
             topology="current+FCG",
-            # heating_demand="positive",
-            configfiles="resources/tmp/pseudo_coupled.yml",
+            heating_demand="positive",
+            # configfiles="resources/tmp/pseudo_coupled.yml",
         )
     configure_logging(snakemake)
     set_plot_test_backend(snakemake.config)
