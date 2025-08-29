@@ -1,19 +1,25 @@
+# coding: utf-8
 """
 Functions to add brownfield capacities to the network for a reference year
+- adds VREs per grade and corrects technical potential. Best available grade is chosen
 """
+# SPDX-FileCopyrightText: : 2025 The PyPSA-China-PIK Authors
+#
+# SPDX-License-Identifier: MIT
 
-# TODO improve docstring
+
 import logging
-import re
-from types import SimpleNamespace
-
 import numpy as np
 import pandas as pd
 import pypsa
-from _helpers import configure_logging, mock_snakemake
-from _pypsa_helpers import shift_profile_to_planning_year
-from add_electricity import load_costs
+
+import re
+from types import SimpleNamespace
+
 from constants import YEAR_HRS
+from add_electricity import load_costs
+from _helpers import mock_snakemake, configure_logging, ConfigManager
+from _pypsa_helpers import shift_profile_to_planning_year
 
 # TODO possibly reimplement to have env separation
 from rpycpl.technoecon_etl import to_list
@@ -23,42 +29,8 @@ idx = pd.IndexSlice
 spatial = SimpleNamespace()
 
 
-def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
-    """Add a build year to new assets
-
-    Args:
-        n (pypsa.Network): the network
-        baseyear (int): year in which optimized assets are built
-    """
-
-    # Give assets with lifetimes and no build year the build year baseyear
-    for c in n.iterate_components(["Link", "Generator", "Store"]):
-        attr = "e" if c.name == "Store" else "p"
-
-        assets = c.df.index[(c.df.lifetime != np.inf) & (c.df[attr + "_nom_extendable"] is True)]
-
-        # add -baseyear to name
-        renamed = pd.Series(c.df.index, c.df.index)
-        renamed[assets] += "-" + str(baseyear)
-        c.df.rename(index=renamed, inplace=True)
-
-        assets = c.df.index[
-            (c.df.lifetime != np.inf)
-            & (c.df[attr + "_nom_extendable"] is True)
-            & (c.df.build_year == 0)
-        ]
-        c.df.loc[assets, "build_year"] = baseyear
-
-        # rename time-dependent
-        selection = n.component_attrs[c.name].type.str.contains("series") & n.component_attrs[
-            c.name
-        ].status.str.contains("Input")
-        for attr in n.component_attrs[c.name].index[selection]:
-            c.pnl[attr].rename(columns=renamed, inplace=True)
-
-
 def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series) -> pd.DataFrame:
-    """Distribute vre capacities by grade potential, use up better grades first
+    """distribute vre capacities by grade potential, use up better grades first
 
     Args:
         cap_by_year (pd.Series): the vre tech potential p_nom_max added per year
@@ -93,6 +65,20 @@ def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series)
     return pd.DataFrame(data=allocation, columns=grade_capacities.index, index=availability.index)
 
 
+def add_base_year(n: pypsa.Network, plan_year: int):
+    """Add base year to new builds
+
+    Args:
+        n (pypsa.Network): the network
+        plan_year (int): the plan year
+    """
+
+    for component in ["links", "generators"]:
+        comp = getattr(n, component)
+        mask = comp.query("p_nom_extendable==True").index
+        comp.loc[mask, "build_year"] = plan_year
+
+
 def add_existing_vre_capacities(
     n: pypsa.Network,
     costs: pd.DataFrame,
@@ -124,6 +110,7 @@ def add_existing_vre_capacities(
     df_agg = pd.DataFrame()
 
     for carrier in tech_map:
+
         df = vre_df[vre_df.Tech == carrier].drop(columns=["Tech"])
         df.set_index("bus", inplace=True)
         df.columns = df.columns.astype(int)
@@ -172,7 +159,8 @@ def add_power_capacities_installed_before_baseyear(
     installed_capacities: pd.DataFrame,
 ):
     """
-    Add existing power capacities to the network
+    Add existing power capacities to the network.
+    Note: hydro dams brownfield handled by prepare_network
 
     Args:
         n (pypsa.Network): the network
@@ -203,11 +191,12 @@ def add_power_capacities_installed_before_baseyear(
         "solar thermal": "solar thermal",
         "onwind": "onwind",
         "offwind": "offwind",
-        "coal boiler": "coal boiler",
+        "coal boiler": "coal boiler central",
         "ground-sourced heat pump": "heat pump",
         "ground heat pump": "heat pump",
         "air heat pump": "heat pump",
         "nuclear": "nuclear",
+        "PHS": "PHS",
     }
     costs_map = {
         "coal power plant": "coal",
@@ -233,9 +222,11 @@ def add_power_capacities_installed_before_baseyear(
         df["resource_class"] = ""
     else:
         df.resource_class.fillna("", inplace=True)
-    df.grouping_year = df.grouping_year.astype(int)
+    logger.info(df.grouping_year.unique())
+    df.grouping_year = df.grouping_year.astype(int, errors="ignore")
+    # TODO: exclude collapse of coal & coal CHP IF CCS retrofitting is enabled
     if config["existing_capacities"].get("collapse_years", False):
-        df.grouping_year = "brownwfield"
+        df.grouping_year = "brownfield"
 
     df_ = df.pivot_table(
         index=["grouping_year", "tech_clean", "resource_class"],
@@ -248,33 +239,31 @@ def add_power_capacities_installed_before_baseyear(
 
     defined_carriers = n.carriers.index.unique().to_list()
     vre_carriers = ["solar", "onwind", "offwind"]
-    vre_carriers = ["solar", "onwind", "offwind"]
 
     # TODO do we really need to loop over the years? / so many things?
     # something like df_.unstack(level=0) would be more efficient
     for grouping_year, generator, resource_grade in df_.index:
-        build_year = 0 if grouping_year == "brownwfield" else grouping_year
+        build_year = 0 if grouping_year == "brownfield" else grouping_year
+
         logger.info(f"Adding existing generator {generator} with year grp {grouping_year}")
-        if carrier_map.get(generator, "missing") not in defined_carriers:
+        if not carrier_map.get(generator, "missing") in defined_carriers:
             logger.warning(
-                f"Carrier {carrier_map.get(generator, None)} for {generator} not defined in network - added anyway"
+                f"Carrier {carrier_map.get(generator, None)} for {generator} not defined in network"
+                "Consider adding to the CARRIER_MAP"
             )
         elif costs_map.get(generator) is None:
             raise ValueError(f"{generator} not defined in technoecon map - check costs_map")
 
         # capacity is the capacity in MW at each node for this
-        capacity = df_.loc[grouping_year, generator]
+        capacity = df_.loc[grouping_year, generator, resource_grade]
         if capacity.values.max() == 0:
             continue
-        # fix index for network.add (merge grade to name)
-        capacity = capacity.unstack()
-        capacity = capacity[~capacity.isna()]
         capacity = capacity[capacity > config["existing_capacities"]["threshold_capacity"]].dropna()
-        buses = capacity.index.get_level_values(0)  # nodes
-        capacity.index = (
-            capacity.index.get_level_values(0) + " " + capacity.index.get_level_values(1)
-        )
-        capacity.index = capacity.index.str.rstrip() + " " + costs_map[generator]
+        buses = capacity.index
+        # fix index for network.add (merge grade to name)
+        if resource_grade:
+            capacity.index += " " + resource_grade
+        capacity.index += " " + costs_map[generator]
 
         costs_key = costs_map[generator]
 
@@ -306,6 +295,7 @@ def add_power_capacities_installed_before_baseyear(
                 bus=buses,
                 carrier=carrier_map[generator],
                 p_nom=capacity,
+                p_nom_max=capacity,
                 p_nom_min=capacity,
                 p_nom_extendable=False,
                 p_max_pu=config["nuclear_reactors"]["p_max_pu"] if generator == "nuclear" else 1,
@@ -324,8 +314,8 @@ def add_power_capacities_installed_before_baseyear(
             # ugly fix to register the carrier. Emissions for sub carrier are 0: they are accounted for at gas bus
             n.carriers.loc[carrier_] = {
                 "co2_emissions": 0,
-                "color": snakemake.config["plotting"]["tech_colors"][carrier_],
-                "nice_name": snakemake.config["plotting"]["nice_names"][carrier_],
+                "color": config["plotting"]["tech_colors"][carrier_],
+                "nice_name": config["plotting"]["nice_names"][carrier_],
                 "max_growth": np.inf,
                 "max_relative_growth": 0,
             }
@@ -342,6 +332,7 @@ def add_power_capacities_installed_before_baseyear(
                 # NB: fixed cost is per MWel
                 p_nom=capacity / costs.at[costs_key, "efficiency"],
                 p_nom_min=capacity / costs.at[costs_key, "efficiency"],
+                p_nom_max=capacity / costs.at[costs_key, "efficiency"],
                 p_nom_extendable=False,
                 efficiency=costs.at[costs_key, "efficiency"],
                 build_year=build_year,
@@ -368,6 +359,7 @@ def add_power_capacities_installed_before_baseyear(
                 carrier=carrier_map[generator],
                 p_nom=capacity,
                 p_nom_min=capacity,
+                p_nom_max=capacity,
                 p_nom_extendable=False,
                 marginal_cost=costs.at["central " + generator, "marginal_cost"],
                 p_max_pu=p_max_pu,
@@ -376,14 +368,14 @@ def add_power_capacities_installed_before_baseyear(
                 location=buses,
             )
 
-        elif generator == "CHP coal":
-            bus0 = buses + " coal"
+        elif generator in ["CHP coal", "coal CHP"]:
+            bus0 = buses + " coal fuel"
             # TODO soft-code efficiency !!
             hist_efficiency = 0.37
             n.add(
                 "Link",
                 capacity.index,
-                suffix=f"-{str(grouping_year)}",
+                suffix=f" generator-{str(grouping_year)}",
                 bus0=bus0,
                 bus1=buses,
                 carrier=carrier_map[generator],
@@ -391,6 +383,7 @@ def add_power_capacities_installed_before_baseyear(
                 * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
                 p_nom=capacity / hist_efficiency,
                 p_nom_min=capacity / hist_efficiency,
+                p_nom_max=capacity / hist_efficiency,
                 p_nom_extendable=False,
                 efficiency=hist_efficiency,
                 p_nom_ratio=1.0,
@@ -411,6 +404,7 @@ def add_power_capacities_installed_before_baseyear(
                 * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
                 p_nom=capacity / hist_efficiency * costs.at["central coal CHP", "c_v"],
                 p_nom_min=capacity / hist_efficiency * costs.at["central coal CHP", "c_v"],
+                p_nom_max=capacity / hist_efficiency * costs.at["central coal CHP", "c_v"],
                 p_nom_extendable=False,
                 efficiency=hist_efficiency / costs.at["central coal CHP", "c_v"],
                 build_year=build_year,
@@ -418,18 +412,21 @@ def add_power_capacities_installed_before_baseyear(
                 location=buses,
             )
 
-        elif generator == "CHP gas":
+        elif generator in ["CHP gas", "gas CHP"]:
             hist_efficiency = 0.37
             bus0 = buses + " gas"
             n.add(
                 "Link",
                 capacity.index,
-                suffix=f"-{str(grouping_year)}",
+                suffix=f" generator-{str(grouping_year)}",
                 bus0=bus0,
                 bus1=buses,
                 carrier=carrier_map[generator],
                 marginal_cost=hist_efficiency
                 * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
+                capital_cost=hist_efficiency
+                * costs.at["central gas CHP", "capital_cost"],  # NB: fixed cost is per MWel,
+                p_nom=capacity / hist_efficiency,
                 p_nom_min=capacity / hist_efficiency,
                 p_nom_extendable=False,
                 efficiency=hist_efficiency,
@@ -450,6 +447,7 @@ def add_power_capacities_installed_before_baseyear(
                 * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
                 p_nom=capacity / hist_efficiency * costs.at["central gas CHP", "c_v"],
                 p_nom_min=capacity / hist_efficiency * costs.at["central gas CHP", "c_v"],
+                p_nom_max=capacity / hist_efficiency * costs.at["central gas CHP", "c_v"],
                 p_nom_extendable=False,
                 efficiency=hist_efficiency / costs.at["central gas CHP", "c_v"],
                 build_year=build_year,
@@ -457,26 +455,29 @@ def add_power_capacities_installed_before_baseyear(
                 location=buses,
             )
 
-        elif generator == "coal boiler":
+        elif generator.find("coal boiler") != -1:
             bus0 = buses + " coal"
-            for cat in [" central "]:
-                n.add(
-                    "Link",
-                    capacity.index,
-                    suffix="" + cat + generator + "-" + str(grouping_year),
-                    bus0=bus0,
-                    bus1=buses + cat + "heat",
-                    carrier=carrier_map[generator],
-                    marginal_cost=costs.at[cat.lstrip() + generator, "efficiency"]
-                    * costs.at[cat.lstrip() + generator, "VOM"],
-                    p_nom=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
-                    p_nom_min=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
-                    p_nom_extendable=False,
-                    efficiency=costs.at[cat.lstrip() + generator, "efficiency"],
-                    build_year=build_year,
-                    lifetime=costs.at[cat.lstrip() + generator, "lifetime"],
-                    location=buses,
-                )
+            cat = "central" if generator.find("decentral") == -1 else "decentral"
+            n.add(
+                "Link",
+                capacity.index,
+                suffix="" + cat + generator + "-" + str(grouping_year),
+                bus0=bus0,
+                bus1=capacity.index + cat + "heat",
+                carrier=carrier_map[generator],
+                marginal_cost=costs.at[cat.lstrip() + generator, "efficiency"]
+                * costs.at[cat.lstrip() + generator, "VOM"],
+                capital_cost=costs.at[cat.lstrip() + generator, "efficiency"]
+                * costs.at[cat.lstrip() + generator, "capital_cost"],
+                p_nom=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
+                p_nom_min=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
+                p_nom_max=capacity / costs.at[cat.lstrip() + generator, "efficiency"],
+                p_nom_extendable=False,
+                efficiency=costs.at[cat.lstrip() + generator, "efficiency"],
+                build_year=build_year,
+                lifetime=costs.at[cat.lstrip() + generator, "lifetime"],
+                location=buses,
+            )
 
         # TODO fix read operation in func, fix snakemake in function, make air pumps?
         elif generator == "heat pump":
@@ -492,18 +493,21 @@ def add_power_capacities_installed_before_baseyear(
                 "Link",
                 capacity.index,
                 suffix="-" + str(grouping_year),
-                bus0=buses,
-                bus1=buses + " central heat",
+                bus0=capacity.index,
+                bus1=capacity.index + " central heat",
                 carrier="heat pump",
                 efficiency=(
                     gshp_cop[capacity.index]
                     if config["time_dep_hp_cop"]
                     else costs.at["decentral ground-sourced heat pump", "efficiency"]
                 ),
+                capital_cost=costs.at["decentral ground-sourced heat pump", "efficiency"]
+                * costs.at["decentral ground-sourced heat pump", "capital_cost"],
                 marginal_cost=costs.at["decentral ground-sourced heat pump", "efficiency"]
                 * costs.at["decentral ground-sourced heat pump", "marginal_cost"],
                 p_nom=capacity / costs.at["decentral ground-sourced heat pump", "efficiency"],
                 p_nom_min=capacity / costs.at["decentral ground-sourced heat pump", "efficiency"],
+                p_nom_max=capacity / costs.at["decentral ground-sourced heat pump", "efficiency"],
                 p_nom_extendable=False,
                 build_year=build_year,
                 lifetime=costs.at["decentral ground-sourced heat pump", "lifetime"],
@@ -520,17 +524,19 @@ def add_power_capacities_installed_before_baseyear(
                 carrier="PHS",
                 p_nom=capacity,
                 p_nom_min=capacity,
+                p_nom_max=capacity,
                 p_nom_extendable=False,
                 max_hours=config["hydro"]["PHS_max_hours"],
                 efficiency_store=np.sqrt(costs.at["PHS", "efficiency"]),
                 efficiency_dispatch=np.sqrt(costs.at["PHS", "efficiency"]),
                 cyclic_state_of_charge=True,
                 marginal_cost=0.0,
+                location=buses,
             )
 
         else:
             logger.warning(
-                f"Skipped existing capacitity for {generator}"
+                f"Skipped existing capacitity for '{generator}'"
                 + " - tech not implemented as existing capacity"
             )
 
@@ -589,8 +595,7 @@ def add_paid_off_capacity(
         paid_off_caps (pd.DataFrame): DataFrame with paid off capacities & columns
             [tech_group, Capacity, techs]
         costs (pd.DataFrame): techno-economic data for the technologies
-        cutoff (int, optional): minimum capacity to be considered. Defaults to 100 MW.
-    """
+        cutoff (int, optional): minimum capacity to be considered. Defaults to 100 MW."""
 
     paid_off = paid_off_caps.reset_index()
 
@@ -699,32 +704,32 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "add_existing_baseyear",
             topology="current+FCG",
-            # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
-            planning_horizons="2020",
-            configfiles="resources/tmp/pseudo_coupled.yml",
-            # heating_demand="positive",
+            co2_pathway="exp175default",
+            planning_horizons="2030",
+            # configfiles="resources/tmp/pseudo_coupled.yml",
+            heating_demand="positive",
         )
 
     configure_logging(snakemake, logger=logger)
 
-    vre_techs = ["solar", "onwind", "offwind"]
-
     config = snakemake.config
+    # TODO then collapse everything but coal
+    if config["existing_capacities"].get("collapse_years", False) and config["Techs"].get(
+        "coal_ccs_retrofit", False
+    ):
+        raise ValueError(
+            "Incompatible configuration: collapse_years and coal_ccs_retrofit cannot be both enabled."
+            " Retrofit requires the date information."
+        )
+
     tech_costs = snakemake.input.tech_costs
     cost_year = int(snakemake.wildcards["planning_horizons"])
     data_paths = {k: v for k, v in snakemake.input.items()}
-
-    if config["run"].get("is_remind_coupled", False):
-        baseyear = int(snakemake.wildcards["planning_horizons"])
-    else:
-        baseyear = snakemake.params["baseyear"]
+    vre_techs = snakemake.params["vre_carriers"]
 
     n = pypsa.Network(snakemake.input.network)
+    add_base_year(n, cost_year)
     n_years = n.snapshot_weightings.generators.sum() / YEAR_HRS
-    if snakemake.params["add_baseyear_to_assets"]:
-        # call before adding new assets
-        add_build_year_to_new_assets(n, baseyear)
 
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 

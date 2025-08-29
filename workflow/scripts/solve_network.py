@@ -689,11 +689,11 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
-            planning_horizons="2040",
+            co2_pathway="exp175default",
+            planning_horizons="2025",
             topology="current+FCG",
-            # heating_demand="positive",
-            configfiles="resources/tmp/pseudo_coupled.yml",
+            heating_demand="positive",
+            # configfiles="resources/tmp/pseudo_coupled.yml",
         )
     configure_logging(snakemake)
 
@@ -715,7 +715,6 @@ if __name__ == "__main__":
         tunnel = None
 
     n = pypsa.Network(snakemake.input.network_name)
-
     n = prepare_network(
         n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons, co2_pathway
     )
