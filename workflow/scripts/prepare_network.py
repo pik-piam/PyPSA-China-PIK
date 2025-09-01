@@ -587,7 +587,9 @@ def add_voltage_links(network: pypsa.Network, config: dict):
 
     line_cost = (
         lengths * costs.at["HVDC overhead", "capital_cost"] * FOM_LINES * n_years
-    ) + costs.at["HVDC inverter pair", "capital_cost"]  # /MW
+    ) + costs.at[
+        "HVDC inverter pair", "capital_cost"
+    ]  # /MW
 
     # ==== lossy transport model (split into 2) ====
     # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk
@@ -681,9 +683,11 @@ def add_wind_and_solar(
                 ds = ds.sel(year=ds.year.min(), drop=True)
 
             timestamps = pd.DatetimeIndex(ds.time)
+
             def shift_weather_to_planning_yr(t):
                 """Shift weather data to planning year."""
                 return t.replace(year=int(year))
+
             timestamps = timestamps.map(shift_weather_to_planning_yr)
             ds = ds.assign_coords(time=timestamps)
 
@@ -703,6 +707,7 @@ def add_wind_and_solar(
         def flatten(t):
             """Flatten tuple to string with ' grade' separator."""
             return " grade".join(map(str, t))
+
         buses = ds.indexes["bus_bin"].get_level_values("bus")
         bus_bins = ds.indexes["bus_bin"].map(flatten)
 
@@ -777,6 +782,7 @@ def add_heat_coupling(
     network.add(
         "Load",
         nodes,
+        carrier="heat",
         suffix=" decentral heat",
         bus=nodes + " decentral heat",
         p_set=heat_demand[nodes].multiply(1 - central_fraction[nodes]),
@@ -785,6 +791,7 @@ def add_heat_coupling(
     network.add(
         "Load",
         nodes,
+        carrier="heat",
         suffix=" central heat",
         bus=nodes + " central heat",
         p_set=heat_demand[nodes].multiply(central_fraction[nodes]),
@@ -1525,11 +1532,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "prepare_networks",
             topology="current+FCG",
-            # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-freeze",
+            co2_pathway="exp175default",
+            # co2_pathway="SSP2-PkBudg1000-freeze",
             planning_horizons=2030,
             heating_demand="positive",
-            configfiles="resources/tmp/remind_coupled.yaml",
+            # configfiles="resources/tmp/remind_coupled.yaml",
         )
 
     configure_logging(snakemake)
