@@ -61,7 +61,7 @@ def plot_static_per_carrier(
         ymax = ax.get_xlim()[1] * 1.05
         for i, (index, value) in enumerate(ds.items()):
             align = "left"
-            txt = f"{value:.1f}" if value <= 100 else f"{value:.1e}"
+            txt = f"{value:.2f}" if value <= 100 else f"{value:.1e}"
             ax.text(ymax, i, txt, va="center", ha=align, fontsize=8)
         # # Add outer y-ticks at the right y-axis frame
         # ax.tick_params(axis="y", direction="out", right=True, left=False)
@@ -69,6 +69,22 @@ def plot_static_per_carrier(
     fig.tight_layout()
 
     return fig
+
+
+def filter_small_caps(n: pypsa.Network, threshold=100):
+    """Drop small capacities for plotting (eliminate numerical zeroes)
+    -> this would be more robust based on the objective cost tolerance
+
+    Args:
+        n (pypsa.Network): the pypsa network to remove small comps from
+        threshold (int, optional): the removal threshold. Defaults to 100.
+    """
+    for c in ["links", "generators", "stores", "storage_units"]:
+        attr = "e_nom_opt" if c == "stores" else "p_nom_opt"
+        comp = getattr(n, c)
+        mask = comp[attr] > threshold
+        comp = comp.loc[mask]
+        setattr(n, c, comp)
 
 
 def set_link_output_capacities(n: pypsa.Network, carriers: list) -> pd.DataFrame:
@@ -394,6 +410,8 @@ if __name__ == "__main__":
     if not os.path.exists(outp_dir):
         os.makedirs(outp_dir)
 
+    # remove small capacities
+    filter_small_caps(n, config["capacity_threshold"])
     # backward compat: add missing info to network
     fix_network_names_colors(n, snakemake.config)
     # fix_load_carriers
