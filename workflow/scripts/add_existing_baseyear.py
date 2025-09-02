@@ -734,6 +734,7 @@ if __name__ == "__main__":
     costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
 
     existing_capacities = pd.read_csv(snakemake.input.installed_capacities, index_col=0)
+    # Existing capacities is multi-year frame in remind coupled mode
     if config["run"].get("is_remind_coupled", False) or "year" in existing_capacities.columns:
         existing_capacities = existing_capacities.query("year == @cost_year")
     existing_capacities = filter_capacities(existing_capacities, cost_year)

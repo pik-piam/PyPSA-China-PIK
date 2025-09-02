@@ -460,9 +460,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
 
         # techs that only exist as paid-off don't have usual counterparts
-        paidoff_comp = paidoff_comp.query(
-            "tech_group not in @n.config['existing_capacities'].get('remind_only_tech_groups', [])"
-        )
+        remind_only = n.config["existing_capacities"].get("remind_only_tech_groups", [])  # no qa: F
+        paidoff_comp = paidoff_comp.query("tech_group not in @remind_only")
 
         if paidoff_comp.empty:
             continue
@@ -689,9 +688,13 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
+            co2_pathway="SSP2-PkBudg1000-CHA",
+            planning_horizons="2030",
             co2_pathway="exp175default",
             planning_horizons="2025",
             topology="current+FCG",
+            # heating_demand="positive",
+            configfiles="resources/tmp/remind_coupled_cg.yaml",
             heating_demand="positive",
             # configfiles="resources/tmp/pseudo_coupled.yml",
         )
