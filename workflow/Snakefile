@@ -449,7 +449,7 @@ rule dag:
         snakemake --dag --quiet | sed -n "/digraph/,\$p" > {output.dag_dot}
         dot -Tpdf -o {output.dag_pdf} {output.dag_dot}
         dot -Tpng -o {output.dag_png} {output.dag_dot}
-        snakemake --rulegraph plot_all --quiet | sed -n "/digraph/,\$p" > {output.rules_dot}
+        snakemake --rulegraph --quiet | sed -n "/digraph/,\$p" > {output.rules_dot}
         dot -Tpdf -o {output.rules_pdf} {output.rules_dot}
         dot -Tpng -o {output.rules_png} {output.rules_dot}
         """
