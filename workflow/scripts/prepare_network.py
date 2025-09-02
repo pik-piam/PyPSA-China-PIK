@@ -222,7 +222,7 @@ def add_co2_capture_support(
         nodes + " CO2 capture",
         bus=nodes + " CO2 capture",
         e_nom_extendable=True,
-        carrier="CO2 capture",
+        carrier="CO2",
     )
 
 
@@ -795,6 +795,17 @@ def add_heat_coupling(
         suffix=" central heat",
         bus=nodes + " central heat",
         p_set=heat_demand[nodes].multiply(central_fraction[nodes]),
+    )
+
+    # add Beijing Hebei central heat link
+    network.add(
+        "Link",
+        "Hebei-Beijing heat link",
+        bus0="Hebei central heat",
+        bus1="Beijing central heat",
+        carrier="heat",
+        efficiency=0.9,
+        p_nom_extendable=True,
     )
 
     if "heat pump" in config["Techs"]["vre_techs"]:
