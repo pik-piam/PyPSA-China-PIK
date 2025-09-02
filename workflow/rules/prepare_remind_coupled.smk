@@ -67,22 +67,14 @@ rule disaggregate_remind_data:
         reference_load_year=2025,
         expand_dirs=config["scenario"]["planning_horizons"],
     input:
-        **{
-            f"pypsa_powerplants_{yr}": DERIVED_DATA
-            + f"/existing_infrastructure/capacities_{yr}.csv"
-            for yr in config["scenario"]["planning_horizons"]
-        },
+        pypsa_powerplants=DERIVED_DATA + f"/existing_infrastructure/capacities.csv",
         remind_caps=DERIVED_DATA + "/remind/preinv_capacities.csv",
         remind_tech_groups=DERIVED_DATA + "/remind/tech_groups.csv",
         loads=DERIVED_DATA + "/remind/yrly_loads.csv",
         # todo switch to default?
         reference_load="resources/data/load/Provincial_Load_2020_2060_MWh.csv",
     output:
-        **{
-            f"caps_{yr}": DERIVED_DATA
-            + f"/remind/harmonized_capacities/capacities_{yr}.csv"
-            for yr in config["scenario"]["planning_horizons"]
-        },
+        capacities=DERIVED_DATA + "/remind/harmonized_capacities/capacities.csv",
         paid_off=DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv",
         disagg_load=DERIVED_DATA + "/remind/ac_load_disagg.csv",
     log:

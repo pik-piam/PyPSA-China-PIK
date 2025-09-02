@@ -306,7 +306,7 @@ if config["foresight"] in ["overnight"]:
 
     paidoff_caps = DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv"
     if not config["run"].get("is_remind_coupled", False):
-        paidoff_caps = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv'
+        paidoff_caps = DERIVED_DATA+ '/existing_infrastructure/capacities.csv'
     rule add_existing_baseyear:
         params:
             baseyear = BASEYEAR,
