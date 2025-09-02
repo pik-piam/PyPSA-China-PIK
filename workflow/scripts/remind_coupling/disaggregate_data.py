@@ -83,7 +83,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
             "disaggregate_remind_data",
-            co2_pathway="SSP2-PkBudg1000-CHA-paidoff09",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj_085",
             topology="current+FCG",
             config_files="resources/tmp/remind_coupled_cg.yaml",
             heating_demand="positive",
@@ -107,8 +107,7 @@ if __name__ == "__main__":
         k: readers[k](v) if k in readers else readers["default"](v) for k, v in input_files.items()
     }
 
-    powerplant_data = [k for k in data if k.startswith("pypsa_powerplants_")]
-    data["pypsa_capacities"] = {k.split("pypsa_powerplants_")[-1]: data[k] for k in powerplant_data}
+    data["pypsa_capacities"] = data["pypsa_powerplants"]
     # group techs together for harmonization
     pypsa_tech_groups = (
         data["remind_tech_groups"].set_index("PyPSA_tech")["group"].drop_duplicates()
@@ -118,9 +117,8 @@ if __name__ == "__main__":
             "PyPSA tech groups are not unique. Check the remind_tech_groups.csv"
             " file for remind techs that appear in multiple pypsa techs"
         )
-    for cap_df in data["pypsa_capacities"].values():
-        cap_df["tech_group"] = cap_df.Tech.map(pypsa_tech_groups)
-        cap_df.fillna({"tech_group": ""}, inplace=True)
+    data["pypsa_capacities"]["tech_group"] = data["pypsa_capacities"].Tech.map(pypsa_tech_groups)
+    data["pypsa_capacities"].fillna({"tech_group": ""}, inplace=True)
 
     logger.info(f"Loaded data files {data.keys()}")
     missing = set(input_files.keys()) - set(data.keys())
@@ -165,9 +163,7 @@ if __name__ == "__main__":
         )
     if "harmonize_model_caps" in results:
         logger.info("Exporting harmonized model capacities")
-        for year, df in results["harmonize_model_caps"].items():
-            logger.info(f"Exporting harmonized capacities for year {year}")
-            df.to_csv(outp_files[f"caps_{year}"], index=False)
+        results["harmonize_model_caps"].to_csv(outp_files["capacities"], index=False)
 
     if "available_cap" in results:
         logger.info("Exporting paid off capacities")
