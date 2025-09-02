@@ -79,7 +79,7 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
             ),
         params:
             stat_types=STATISTICS_BARPLOTS,
-            carrier="AC",
+            carriers=["AC", "heat"] if config["heat_coupling"] else ["AC"],
         output:
             stats_dir=directory(RESULTS_DIR + "/plots/statistics_{planning_horizons}"),
         log:
