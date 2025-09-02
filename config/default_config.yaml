@@ -69,8 +69,8 @@ logging:
 
 enable:
   build_cutout: false
-  retrieve_cutout: true
-  retrieve_raster: true
+  retrieve_cutout: false
+  retrieve_raster: false
 
 atlite:
   cutout_name: "China-2020c"
