@@ -508,9 +508,9 @@ if __name__ == "__main__":
             "filename": "LCOE.png",
         },
         "mv_minus_lcoe": {
-            "calc": lambda **x: lambda: calc_lcoe(n, groupby=None)["profit_pu"],
+            "calc": lambda **x: calc_lcoe(n, groupby=None)["profit_pu"],
             "pre": None,
-            "post": lambda ds: ds.groupby(["carrier", "bus_carrier"]).first(),
+            "post": lambda ds: ds.groupby(["carrier"]).first(),
             "unit": "€/MWh",
             "extra": None,
             "filename": "MV_minus_LCOE.png",
@@ -543,17 +543,22 @@ if __name__ == "__main__":
         if settings.get("post"):
             ds = settings["post"](ds)
 
+        ds.attrs.update({"name": stat, "unit": settings.get("unit", "")})
+
         # perform plotting
         ds = ds.reset_index()
         if "bus_carrier" in ds.columns:
             plot_carriers = ds.bus_carrier.unique()
         else:
-            plot_carriers = "AC"
+            plot_carriers = ["AC"]
             ds.loc[:, "bus_carrier"] = "AC"
 
         for plot_carrier in plot_carriers:
             ds_plot = ds.query("bus_carrier==@plot_carrier").set_index("carrier")
-            ds_plot.rename(columns={0: "value", "objective": "value"}, inplace=True)
+            ds_plot.rename(
+                columns={0: "value", "objective": "value", "LCOE": "value", "profit_pu": "value"},
+                inplace=True,
+            )
             ds_plot = ds_plot["value"]
             fig, ax = plt.subplots(**settings.get("fig_opts", {}))
             plot_static_per_carrier(
