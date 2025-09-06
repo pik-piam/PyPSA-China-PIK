@@ -22,6 +22,86 @@ from rpycpl.etl import ETL_REGISTRY, Transformation, register_etl
 
 logger = logging.getLogger(__name__)
 
+@register_etl("disagg_multisector_ref")
+def disagg_multisector_using_ref(
+    data: pd.DataFrame,
+    reference_data: pd.DataFrame,
+    reference_year: int | str,
+) -> pd.DataFrame:
+    """Spatially disaggregate multi-sector loads using reference data.
+
+    Args:
+        data (pd.DataFrame): Load data with columns [province, sector, year, value].
+        reference_data (pd.DataFrame): Reference data for spatial disaggregation.
+        reference_year (int | str): Year to use as baseline for disaggregation.
+
+    Returns:
+        pd.DataFrame: Disaggregated load data (Province x Sector x Year).
+    """
+
+    logger.info("Starting multi-sector load disaggregation")
+
+    default_reference = reference_data[int(reference_year)]
+    default_reference /= default_reference.sum()
+
+    loads_data = data["loads"]
+    all_results = []
+
+    for sector, sector_data in loads_data.groupby("load"):
+        year_results = []
+        for year, year_data in sector_data.groupby("year"):
+            ref = _get_sector_reference(sector, data, default_reference, year=year)
+
+            disagg = SpatialDisaggregator().use_static_reference(
+                year_data["value"], ref
+            )
+            disagg = disagg.squeeze()
+            disagg.name = int(year)
+            year_results.append(disagg)
+
+        wide_df = pd.concat(year_results, axis=1)
+        wide_df.insert(0, "province", wide_df.index)
+        wide_df.insert(1, "sector", sector)
+        wide_df.reset_index(drop=True, inplace=True)
+
+        all_results.append(wide_df)
+
+    result = pd.concat(all_results, ignore_index=True)
+    return result
+
+
+def _get_sector_reference(
+    sector: str, data: dict, default_reference: pd.Series, year: int = None
+) -> pd.Series:
+    """Select sector-specific reference data or fallback to default.
+
+    Args:
+        sector (str): Sector name.
+        data (dict): Input data dictionary containing reference series or DataFrames.
+        default_reference (pd.Series): Default reference distribution.
+        year (int, optional): Year to select from reference data.
+
+    Returns:
+        pd.Series: Reference distribution for the given sector.
+    """
+    if sector == "ac":
+        return default_reference
+
+    ref_data = data.get(f"{sector}_reference")
+    if ref_data is None:
+        return default_reference
+
+    if isinstance(ref_data, pd.DataFrame):
+        ref_data = ref_data.set_index(ref_data.columns[0]) if "Unnamed: 0" in ref_data.columns else ref_data
+        ref_data = ref_data.astype(float)
+        col = str(int(year)) if year is not None and str(int(year)) in ref_data.columns.astype(str) else ref_data.columns[-1]
+        return ref_data[col]
+
+    if isinstance(ref_data, pd.Series):
+        return ref_data.astype(float)
+
+    return default_reference
+
 
 @register_etl("disagg_acload_ref")
 def disagg_ac_using_ref(
@@ -76,6 +156,7 @@ def add_possible_techs_to_paidoff(paidoff: pd.DataFrame, tech_groups: pd.Series)
     possibilities = df.groupby("group").PyPSA_tech.apply(lambda x: list(x.unique()))
     paidoff["techs"] = paidoff.tech_group.map(possibilities)
     return paidoff
+
 
 
 if __name__ == "__main__":
@@ -140,6 +221,15 @@ if __name__ == "__main__":
                 reference_data=data["reference_load"],
                 reference_year=params["reference_load_year"],
             )
+        elif step.method == "disagg_multisector_ref":
+            # multi-sector disaggregation method
+            logger.info("Using multi-sector disaggregation method")
+            result = ETLRunner.run(
+                step,
+                data,
+                reference_data=data["reference_load"],
+                reference_year=params["reference_load_year"],
+            )
         elif step.method == "harmonize_capacities":
             # TODO loop over years
             result = ETLRunner.run(
@@ -162,6 +252,7 @@ if __name__ == "__main__":
         logger.info(f"Exporting disaggregated load to {outp_files['disagg_load']}")
         results["disagg_load"].to_csv(
             outp_files["disagg_load"],
+            index=False
         )
     if "harmonize_model_caps" in results:
         logger.info("Exporting harmonized model capacities")

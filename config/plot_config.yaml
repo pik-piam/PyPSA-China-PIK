@@ -102,6 +102,8 @@ plotting:
     home battery charger: '#5e8032'
     home battery discharger: '#3c5221'
     BEV charger: '#baf238'
+    BEV_pass_charger: '#e41a1c' 
+    BEV_freight_charger: '#fb6a4a' 
     V2G: '#e5ffa8'
     land transport EV: '#baf238'
     Li ion: '#baf238'
@@ -412,6 +414,8 @@ plotting:
     # generatord
     battery: "Battery Storage"
     battery discharger: "Battery Discharger"
+    BEV_pass_charger: "BEV Passenger Charger"
+    BEV_freight_charger: "BEV Freight Charger"
     # coal: "Coal"
     coal: "Coal Power Plant"
     coal cc: "Coal with carbon capture"
@@ -434,6 +438,8 @@ plotting:
   - electric load
   - heat load
   - Load
+  - BEV_pass_charger
+  - BEV_freight_charger
   - Transmission Lines
   - transmission lines
   - transmission losses

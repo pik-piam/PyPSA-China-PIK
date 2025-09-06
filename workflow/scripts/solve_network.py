@@ -458,9 +458,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             continue
         else:
             paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
-
-        # techs that only exist as paid-off don't have usual counterparts
-        paidoff_comp = paidoff_comp.query("tech_group not in @n.config['existing_capacities'].get('remind_only_tech_groups', [])")
+        remind_only_techs = n.config["existing_capacities"].get("remind_only_tech_groups", [])
+        paidoff_comp = paidoff_comp.query("tech_group not in @remind_only_techs")
 
         if paidoff_comp.empty:
             continue

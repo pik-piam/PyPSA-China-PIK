@@ -18,7 +18,7 @@ import xarray as xr
 
 # from remind_coupling.disaggregate_data import get_ev_provincial_shares
 
-from _helpers import set_scenario_config, configure_logging
+from _helpers import configure_logging 
 from _pypsa_helpers import generate_periodic_profiles,make_periodic_snapshots
 
 logger = logging.getLogger(__name__)
@@ -319,7 +319,6 @@ if __name__ == "__main__":
 
         snakemake = mock_snakemake("build_transport_demand", clusters=128)
     configure_logging(snakemake)
-    set_scenario_config(snakemake)
 
     from constants import PROV_NAMES
 

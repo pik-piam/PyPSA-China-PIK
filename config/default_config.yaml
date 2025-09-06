@@ -69,8 +69,8 @@ logging:
 
 enable:
   build_cutout: false
-  retrieve_cutout: true
-  retrieve_raster: true
+  retrieve_cutout: false
+  retrieve_raster: false
 
 atlite:
   cutout_name: "China-2020c"
@@ -347,3 +347,45 @@ fetch_regions:
   simplify_tol: 
     eez: 0.5
     land: 0.05
+
+EV_pass:
+  enable: true
+  dsm: false  # 不开启DSM
+  vehicle_type: "passenger"  # 指定车类型
+  annual_consumption: 3.0  # MWh/年
+  charge_rate: 0.011  # MW
+  share_charger: 0.8  # 充电器比例
+  battery_size: 0.06  # MWh
+  dsm_availability: 1  # DSM可用性
+  initial_soc: 0.2  # 初始电池状态（50%）
+
+EV_freight:
+  enable: true
+  dsm: false  # 不开启DSM
+  vehicle_type: "freight"  # 指定车类型
+  annual_consumption: 40.0  # MWh/年
+  charge_rate: 0.15  # MW
+  share_charger: 0.1  # 充电器比例
+  battery_size: 0.3  # MWh
+  dsm_availability: 1  # DSM可用性
+  initial_soc: 0.2  # 初始电池状态（50%）
+
+# 交通需求配置
+transport_demand:
+  energy_per_100km_passenger: 0.015  # MWh/100km
+  energy_per_100km_freight: 0.2  # MWh/100km
+  passenger_charging_power_kw: 7
+  freight_charging_power_kw: 50
+  reset_hour: 7
+  initial_soc: 0.2
+  cdf_column_passenger: "Private car"
+  cdf_column_freight: "SPV"
+  bev_dsm_restriction_time: 7
+  bev_dsm_restriction_value: 0.8
+
+
+ev_availability:
+  carry_mode: continuous        # 或 continuous（决定 Tj 是否日内清零）
+  carry_backlog: true
+  reset_hour: 7                 # 日初重置时间（0-23），默认0点，设为3点可避免午夜不连续
+  initial_soc: 0.8        

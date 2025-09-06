@@ -12,6 +12,8 @@ import pandas as pd
 import pypsa
 import pytz
 
+from constants import PROV_NAMES
+
 # get root logger
 logger = logging.getLogger()
 
@@ -72,6 +74,25 @@ def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Lin
     if bus_carrier not in carriers:
         carriers += [bus_carrier]
     return carriers
+
+# TODO fix timezones/centralsie, think Shanghai won't work on its own
+def generate_periodic_profiles(
+    dt_index=None,
+    col_tzs=pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]),
+    weekly_profile=range(24 * 7),
+):
+    """Give a 24*7 long list of weekly hourly profiles, generate this
+    for each country for the period dt_index, taking account of time
+    zones and Summer Time."""
+
+    weekly_profile = pd.Series(weekly_profile, range(24 * 7))
+    # TODO fix, no longer take into accoutn summer time
+    # ALSO ADD A TODO in base_network
+    week_df = pd.DataFrame(index=dt_index, columns=col_tzs.index)
+    for ct in col_tzs.index:
+        week_df[ct] = [24 * dt.weekday() + dt.hour for dt in dt_index.tz_localize(None)]
+        week_df[ct] = week_df[ct].map(weekly_profile)
+    return week_df
 
 
 def assign_locations(n: pypsa.Network):
