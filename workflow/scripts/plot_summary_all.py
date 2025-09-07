@@ -842,10 +842,9 @@ if __name__ == "__main__":
             "plot_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
+            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
             heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            configfiles="resources/tmp/pseudo_coupled_cg.yml",
         )
 
     configure_logging(snakemake)
