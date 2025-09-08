@@ -166,42 +166,6 @@ def assign_year_bins(df: pd.DataFrame, year_bins: list) -> pd.DataFrame:
     return df_.fillna(0)
 
 
-def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series) -> pd.DataFrame:
-    """Distribute vre capacities by grade potential, use up better grades first
-
-    Args:
-        cap_by_year (pd.Series): the vre tech potential p_nom_max added per year
-        grade_capacities (pd.Series): the vre grade potential for the tech and bus
-    Returns:
-        pd.DataFrame: DataFrame with the distributed vre capacities (shape: years x buses)
-    """
-
-    availability = cap_by_year.sort_index(ascending=False)
-    to_distribute = grade_capacities.fillna(0).sort_index()
-    n_years = len(to_distribute)
-    n_sources = len(availability)
-
-    # To store allocation per year per source (shape: sources x years)
-    allocation = np.zeros((n_sources, n_years), dtype=int)
-    remaining = availability.values
-
-    for j in range(n_years):
-        needed = to_distribute.values[j]
-        cumsum = np.cumsum(remaining)
-        used_up = cumsum < needed
-        cutoff = np.argmax(cumsum >= needed)
-
-        allocation[used_up, j] = remaining[used_up]
-
-        if needed > (cumsum[cutoff - 1] if cutoff > 0 else 0):
-            allocation[cutoff, j] = needed - (cumsum[cutoff - 1] if cutoff > 0 else 0)
-
-        # Subtract what was used from availability
-        remaining -= allocation[:, j]
-
-    return pd.DataFrame(data=allocation, columns=grade_capacities.index, index=availability.index)
-
-
 def convert_CHP_to_poweronly(capacities: pd.DataFrame) -> pd.DataFrame:
     """Convert CHP capacities to power-only capacities by removing the heat part
 

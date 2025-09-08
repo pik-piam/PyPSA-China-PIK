@@ -29,6 +29,8 @@ config = config_manager.handle_scenarios()
 # ====== set global parameters =======
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 CUTOUT_NAME= config["atlite"]["cutout_name"]
+# for pathways, first point should be near-fixed by existing capacities and is baseyear
+# for overnight it refers to existing infrastructure
 BASEYEAR = min([int(y) for y in config["scenario"]["planning_horizons"]])
 
 # ====== make paths =======
@@ -325,7 +327,6 @@ if config["foresight"] in ["overnight"]:
     rule solve_networks:
         params:
             solving = config["solving"],
-            add_baseyear_assets = False,
         input:
             network_name=RESULTS_DIR+ f'/prenetworks{add_brownfield}/' +'ntwk_{planning_horizons}.nc',
         output:

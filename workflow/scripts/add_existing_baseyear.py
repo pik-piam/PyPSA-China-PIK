@@ -23,38 +23,19 @@ idx = pd.IndexSlice
 spatial = SimpleNamespace()
 
 
-def add_build_year_to_new_assets(n: pypsa.Network, baseyear: int):
-    """Add a build year to new assets
+def add_build_year(n: pypsa.Network, plan_year: int):
+    """Add build year to new builds
 
     Args:
         n (pypsa.Network): the network
-        baseyear (int): year in which optimized assets are built
+        plan_year (int): the plan year
     """
 
-    # Give assets with lifetimes and no build year the build year baseyear
-    for c in n.iterate_components(["Link", "Generator", "Store"]):
-        attr = "e" if c.name == "Store" else "p"
-
-        assets = c.df.index[(c.df.lifetime != np.inf) & (c.df[attr + "_nom_extendable"] is True)]
-
-        # add -baseyear to name
-        renamed = pd.Series(c.df.index, c.df.index)
-        renamed[assets] += "-" + str(baseyear)
-        c.df.rename(index=renamed, inplace=True)
-
-        assets = c.df.index[
-            (c.df.lifetime != np.inf)
-            & (c.df[attr + "_nom_extendable"] is True)
-            & (c.df.build_year == 0)
-        ]
-        c.df.loc[assets, "build_year"] = baseyear
-
-        # rename time-dependent
-        selection = n.component_attrs[c.name].type.str.contains("series") & n.component_attrs[
-            c.name
-        ].status.str.contains("Input")
-        for attr in n.component_attrs[c.name].index[selection]:
-            c.pnl[attr].rename(columns=renamed, inplace=True)
+    # build_year = 0 is default
+    for component in ["links", "generators"]:
+        comp = getattr(n, component)
+        mask = comp.query("p_nom_extendable==True & build_year==0").index
+        comp.loc[mask, "build_year"] = plan_year
 
 
 def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series) -> pd.DataFrame:
@@ -235,7 +216,7 @@ def add_power_capacities_installed_before_baseyear(
         df.resource_class.fillna("", inplace=True)
     df.grouping_year = df.grouping_year.astype(int)
     if config["existing_capacities"].get("collapse_years", False):
-        df.grouping_year = "brownwfield"
+        df.grouping_year = 1 # 0 is default
 
     df_ = df.pivot_table(
         index=["grouping_year", "tech_clean", "resource_class"],
@@ -253,7 +234,7 @@ def add_power_capacities_installed_before_baseyear(
     # TODO do we really need to loop over the years? / so many things?
     # something like df_.unstack(level=0) would be more efficient
     for grouping_year, generator, resource_grade in df_.index:
-        build_year = 0 if grouping_year == "brownwfield" else grouping_year
+        build_year = 0 if grouping_year == "brownfield" else grouping_year
         logger.info(f"Adding existing generator {generator} with year grp {grouping_year}")
         if carrier_map.get(generator, "missing") not in defined_carriers:
             logger.warning(
@@ -378,8 +359,6 @@ def add_power_capacities_installed_before_baseyear(
 
         elif generator == "CHP coal":
             bus0 = buses + " coal"
-            # TODO soft-code efficiency !!
-            hist_efficiency = 0.37
             n.add(
                 "Link",
                 capacity.index,
@@ -394,7 +373,7 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom_extendable=False,
                 efficiency=hist_efficiency,
                 p_nom_ratio=1.0,
-                c_b=0.75,
+                c_b=0.96,
                 build_year=build_year,
                 lifetime=costs.at["central coal CHP", "lifetime"],
                 location=buses,
@@ -673,7 +652,7 @@ def add_paid_off_capacity(
     # TODO go through the pypsa-EUR fuel drops for the new ppmatching style
 
 
-def filter_capacities(existing_df: pd.DataFrame, plan_year: int) -> pd.DataFrame:
+def filter_brownfield_capacities(existing_df: pd.DataFrame, plan_year: int) -> pd.DataFrame:
     """
     Filter brownfield capacities to remove retired/not yet built plants .
     Parameters:
@@ -713,7 +692,7 @@ if __name__ == "__main__":
 
     config = snakemake.config
     tech_costs = snakemake.input.tech_costs
-    cost_year = int(snakemake.wildcards["planning_horizons"])
+    plan_year = int(snakemake.wildcards["planning_horizons"]) # plan_year]
     data_paths = {k: v for k, v in snakemake.input.items()}
 
     if config["run"].get("is_remind_coupled", False):
@@ -723,17 +702,21 @@ if __name__ == "__main__":
 
     n = pypsa.Network(snakemake.input.network)
     n_years = n.snapshot_weightings.generators.sum() / YEAR_HRS
-    if snakemake.params["add_baseyear_to_assets"]:
-        # call before adding new assets
-        add_build_year_to_new_assets(n, baseyear)
+    if snakemake.params["add_build_year_to_new_assets"]:
+        # call before adding brownfield (for retrofit brownfield could be extendable)
+        add_build_year(n, plan_year)
 
-    costs = load_costs(tech_costs, config["costs"], config["electricity"], cost_year, n_years)
+    costs = load_costs(tech_costs, config["costs"], config["electricity"], plan_year, n_years)
 
     existing_capacities = pd.read_csv(snakemake.input.installed_capacities, index_col=0)
-    # Existing capacities is multi-year frame in remind coupled mode
+
+    # TODO check needed for coupled mode
+    existing_capacities = filter_brownfield_capacities(existing_capacities, plan_year)
+    # In coupled mode, capacities from REMIND are passed to PyPSA for each plan year.
+    #  The harmonized capacities file then has an extra 'year' column to keep track 
+    #  of the model year (needed because REMIND can actively retire). Select year here
     if config["run"].get("is_remind_coupled", False) or "year" in existing_capacities.columns:
-        existing_capacities = existing_capacities.query("year == @cost_year")
-    existing_capacities = filter_capacities(existing_capacities, cost_year)
+        existing_capacities = existing_capacities.query("year == @plan_year")
 
     vre_caps = existing_capacities.query("Tech in @vre_techs | Fueltype in @vre_techs")
     # vre_caps.loc[:, "Country"] = coco.CountryConverter().convert(["China"], to="iso2")
@@ -752,7 +735,7 @@ if __name__ == "__main__":
     ):
         logger.info("Adding paid-off REMIND capacities to the network")
         paid_off_caps = pd.read_csv(snakemake.input.paid_off_capacities_remind, index_col=0)
-        yr = int(cost_year)
+        yr = int(plan_year)
         paid_off_caps = paid_off_caps.query("year == @yr")
         # add to network
         add_paid_off_capacity(n, paid_off_caps, costs)
