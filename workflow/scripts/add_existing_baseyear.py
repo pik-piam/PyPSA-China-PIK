@@ -715,8 +715,8 @@ if __name__ == "__main__":
     # In coupled mode, capacities from REMIND are passed to PyPSA for each plan year.
     #  The harmonized capacities file then has an extra 'year' column to keep track 
     #  of the model year (needed because REMIND can actively retire). Select year here
-    if config["run"].get("is_remind_coupled", False) or "year" in existing_capacities.columns:
-        existing_capacities = existing_capacities.query("year == @plan_year")
+    if config["run"].get("is_remind_coupled", False) or "remind_year" in existing_capacities.columns:
+        existing_capacities = existing_capacities.query("remind_year == @plan_year")
 
     vre_caps = existing_capacities.query("Tech in @vre_techs | Fueltype in @vre_techs")
     # vre_caps.loc[:, "Country"] = coco.CountryConverter().convert(["China"], to="iso2")
