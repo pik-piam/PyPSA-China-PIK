@@ -6,6 +6,7 @@ sort:
   ignore_case: true 
 nav:
   PyPSA-PIK: index.md
+  Model: model.md
   Getting started: installation
   Configuration: configuration.md
   Tutorials: tutorials
