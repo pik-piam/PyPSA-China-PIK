@@ -65,4 +65,4 @@ dependencies:
     - tsam>=1.1.0
     - gurobipy==11.0.3
     - jwt
-    - remind-pypsa-coupling=1.1.1
+    - remind-pypsa-coupling>=1.1.1
