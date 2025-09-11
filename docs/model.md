@@ -47,13 +47,14 @@ A global constraint
 - brownfield capacities are derived from the Global Energy Monitor Integrated Plant tracker data set. The included operation/pipeline statuses can be selected in the `global_energy_monitor.yaml` config. 
 - only plants that have been built before the plan_year and not retired by the plan year are added to the model
 
-Technologies:
+Technologies Brownfield:
 - OCGT
+- CCGT
 - CHP CCGT
 - CHP coal
 - coal power
 - hydro (always on)
-- nuclear (always on)
+- nuclear
 - PHS
 - solar & wind (considered to have filled the best capacity factor)
 - transmission
