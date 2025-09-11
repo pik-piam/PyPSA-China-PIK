@@ -155,7 +155,7 @@ def _disagg_multisector_load(
     loads_data = data["loads"]
     all_results = []
 
-    for sector, sector_data in loads_data.groupby("load"):
+    for sector, sector_data in loads_data.groupby("sector"):
         year_results = []
         for year, year_data in sector_data.groupby("year"):
             ref = _get_sector_reference(sector, data, default_reference, year=year)
@@ -167,7 +167,9 @@ def _disagg_multisector_load(
 
         wide_df = pd.concat(year_results, axis=1)
         wide_df.insert(0, "province", wide_df.index)
-        wide_df.insert(1, "sector", sector)
+        # Convert sector names to lowercase for consistency
+        sector_name = sector.lower()  # EV_pass -> ev_pass, AC -> ac
+        wide_df.insert(1, "sector", sector_name)
         wide_df.reset_index(drop=True, inplace=True)
 
         all_results.append(wide_df)
@@ -252,8 +254,11 @@ if __name__ == "__main__":
         logger.warning(f"Warning: Missing data files {missing}")
 
     # ==== transform remind data =======
-    # Check if sector coupling is enabled from snakemake config
-    sector_coupling_enabled = snakemake.config.get("sector_coupling", {}).get("enable", False)
+    # Check if any sector coupling is enabled
+    sectors_config = snakemake.config.get("sectors", {})
+    sector_coupling_enabled = sectors_config.get("electric_vehicles", False) or sectors_config.get(
+        "heat_coupling", False
+    )
     logger.info(f"Sector coupling configuration: {sector_coupling_enabled}")
 
     steps = config.get("disagg", [])
@@ -268,15 +273,6 @@ if __name__ == "__main__":
                 reference_data=data["reference_load"],
                 reference_year=params["reference_load_year"],
                 sector_coupling_enabled=sector_coupling_enabled,
-            )
-        elif step.method == "disagg_multisector_ref":
-            # Legacy method - redirect to disagg_acload_ref with sector coupling enabled
-            result = ETLRunner.run(
-                step,
-                data,
-                reference_data=data["reference_load"],
-                reference_year=params["reference_load_year"],
-                sector_coupling_enabled=True,
             )
         elif step.method == "harmonize_capacities":
             # TODO loop over years

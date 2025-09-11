@@ -6,7 +6,7 @@ REMIND_REGION = config["run"].get("remind", {}).get("region")
 
 
 # Only generate EV references if sector coupling is enabled
-if config.get("sector_coupling", {}).get("enable", False):
+if config.get("sectors", {}).get("electric_vehicles", False):
     rule generate_regional_references:
         """
         Generate reference data files for different departments
