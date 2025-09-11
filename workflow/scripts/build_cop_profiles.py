@@ -17,12 +17,17 @@ logger = logging.getLogger(__name__)
 
 
 # TODO cleanup
-def build_cop_profiles(pop_map: pd.DateOffset, cutout: atlite.cutout, output_path: os.PathLike):
+def build_cop_profiles(
+        pop_map: pd.DataFrame,
+        cutout: atlite.Cutout,
+        temperature: pd.DataFrame,
+        output_path: os.PathLike):
     """Build COP time profiles with atlite and write outputs to output_path as hf5
 
     Args:
         pop_map (pd.DataFrame): the population map (node resolution)
         cutout (atlite.cutout): the atlite cutout (weather data)
+        temperature (pd.DataFrame): the temperature data (node resolution)
         output_path (os.PathLike): the path to write the output to as hdf5
     """
 
@@ -38,10 +43,8 @@ def build_cop_profiles(pop_map: pd.DateOffset, cutout: atlite.cutout, output_pat
         .values
     )
 
-    with pd.HDFStore(snakemake.input.temp, mode="r") as store:
-        temp = store["temperature"]
 
-    source_T = temp
+    source_T = temperature
     source_soil_T = soil_temp.to_pandas().divide(pop_map.sum())
 
     # quadratic regression based on Staffell et al. (2012)
@@ -78,11 +81,14 @@ if __name__ == "__main__":
         snakemake = mock_snakemake("build_cop_profiles")
     configure_logging(snakemake, logger=logger)
 
+    with pd.HDFStore(snakemake.input.temperature, mode="r") as store:
+        temperature = store["temperature"]
+
     with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
         pop_map = store["population_gridcell_map"]
 
     cutout = atlite.Cutout(snakemake.input.cutout)
 
-    build_cop_profiles(pop_map, cutout, snakemake.output.cop)
+    build_cop_profiles(pop_map, cutout, temperature, snakemake.output.cop)
 
     logger.info("COP profiles successfully built")

@@ -460,7 +460,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
 
         # techs that only exist as paid-off don't have usual counterparts
-        paidoff_comp = paidoff_comp.query("tech_group not in @n.config['existing_capacities'].get('remind_only_tech_groups', [])")
+        remind_only = n.config["existing_capacities"].get("remind_only_tech_groups", [])  # no qa: F
+        paidoff_comp = paidoff_comp.query("tech_group not in @remind_only")
 
         if paidoff_comp.empty:
             continue
@@ -633,7 +634,7 @@ def solve_network(
         config (dict): the configuration dictionary
         solving (dict): the solving configuration dictionary
         opts (str): optional wildcards such as ll (not used in pypsa-china)
-        
+
     Returns:
         pypsa.Network: the optimized network
     """
@@ -687,11 +688,11 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
-            planning_horizons="2040",
+            co2_pathway="SSP2-PkBudg1000-CHA",
+            planning_horizons="2030",
             topology="current+FCG",
             # heating_demand="positive",
-            configfiles="resources/tmp/pseudo_coupled.yml",
+            configfiles="resources/tmp/remind_coupled_cg.yaml",
         )
     configure_logging(snakemake)
 
@@ -741,7 +742,7 @@ if __name__ == "__main__":
     if not is_test:
         # Extract export_duals flag from config in main
         export_duals_flag = snakemake.params.solving["options"].get("export_duals", False)
-        
+
         n = solve_network(
             n,
             config=snakemake.config,
@@ -749,7 +750,7 @@ if __name__ == "__main__":
             opts=opts,
             log_fn=snakemake.log.solver,
         )
-        
+
         # Store dual variables in network components for netcdf export
         if export_duals_flag:
             store_duals_to_network(n)

@@ -112,6 +112,42 @@ def fetch_province_shapes() -> gpd.GeoDataFrame:
     return filtered.sort_index()
 
 
+def fetch_gadm(country_code="CHN", level=2):
+    """
+    fetch GADM shapefile for a given country and administrative level.
+    https://gadm.org/download_country.html
+
+    Parameters:
+        country_code (str): ISO3 country code (e.g., 'CHN', 'USA').
+        level (int): Administrative level (0=country, 1=region, etc.).
+
+    Returns:
+        geopandas.GeoDataFrame: Loaded shapefile as GeoDataFrame.
+    """
+    # Construct the URL
+    url = f"https://geodata.ucdavis.edu/gadm/gadm4.1/shp/gadm41_{country_code}_shp.zip"
+
+    # Download the zip file
+    response = requests.get(url)
+    if response.status_code != 200:
+        raise ValueError(
+            f"Failed to download data for {country_code} - Status code: {response.status_code}"
+        )
+
+    # Extract the zip file in memory
+    with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+        # Filter to the desired level shapefile
+        level_filename = f"gadm41_{country_code}_{level}.shp"
+        if level_filename not in z.namelist():
+            raise ValueError(f"Level {level} shapefile not found for {country_code}.")
+
+        shp_dir = "resources/data/province_shapes"
+        z.extractall(shp_dir)
+        gdf = gpd.read_file(f"{shp_dir}/{level_filename}")
+    
+    return gdf
+
+
 def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
     """Fetch maritime data for a country from Maritime Gazette API#
     (Royal marine institute of Flanders data base)
@@ -176,42 +212,7 @@ def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
     eez = gpd.GeoDataFrame.from_features(data["features"])
     return eez.set_crs(epsg=crs)
 
-
-def fetch_gadm(country_code="CHN", level=2):
-    """
-    fetch GADM shapefile for a given country and administrative level.
-    https://gadm.org/download_country.html
-
-    Parameters:
-        country_code (str): ISO3 country code (e.g., 'CHN', 'USA').
-        level (int): Administrative level (0=country, 1=region, etc.).
-
-    Returns:
-        geopandas.GeoDataFrame: Loaded shapefile as GeoDataFrame.
-    """
-    # Construct the URL
-    url = f"https://geodata.ucdavis.edu/gadm/gadm4.1/shp/gadm41_{country_code}_shp.zip"
-
-    # Download the zip file
-    response = requests.get(url)
-    if response.status_code != 200:
-        raise ValueError(
-            f"Failed to download data for {country_code} - Status code: {response.status_code}"
-        )
-
-    # Extract the zip file in memory
-    with zipfile.ZipFile(io.BytesIO(response.content)) as z:
-        # Filter to the desired level shapefile
-        level_filename = f"gadm41_{country_code}_{level}.shp"
-        if level_filename not in z.namelist():
-            raise ValueError(f"Level {level} shapefile not found for {country_code}.")
-
-        shp_dir = "resources/data/province_shapes"
-        z.extractall(shp_dir)
-        gdf = gpd.read_file(f"{shp_dir}/{level_filename}")
-        return gdf
-
-
+ 
 def fetch_prefecture_shapes(
     fixes={
         GDAM_LV1: {

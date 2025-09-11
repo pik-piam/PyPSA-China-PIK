@@ -7,8 +7,8 @@ from pathlib import Path
 from snakemake.utils import min_version
 import logging
 import os.path
+import logging
 
-from os.path import abspath, getctime
 from scripts._helpers import PathManager, get_cutout_params, ConfigManager
 
 # NB: duplicated parameters will be overwritten by the last read cfg
@@ -16,8 +16,9 @@ from scripts._helpers import PathManager, get_cutout_params, ConfigManager
 configfile: "config/default_config.yaml"
 configfile: "config/technology_config.yaml"
 configfile: "config/plot_config.yaml"
+configfile: "config/global_energy_monitor.yaml"
 
-# for dev of remind with mocksnakemake, activate this
+# for dev of remind with mocksnakemake, can activate this
 # configfile: "resources/tmp/remind_coupled_cg.yaml"
 
 
@@ -28,6 +29,9 @@ config = config_manager.handle_scenarios()
 # ====== set global parameters =======
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 CUTOUT_NAME= config["atlite"]["cutout_name"]
+# for pathways, first point should be near-fixed by existing capacities and is baseyear
+# for overnight it refers to existing infrastructure
+BASEYEAR = min([int(y) for y in config["scenario"]["planning_horizons"]])
 
 # ====== make paths =======
 path_manager = PathManager(config)
@@ -123,6 +127,24 @@ rule build_population_gridcell_map:
     resources: mem_mb=35000
     script: "scripts/build_population_gridcell_map.py"
 
+# TODO merge all techs into a single csv
+# TODO add node wildcard/id
+brownfield_techs = config["existing_capacities"]["techs"]
+rule build_powerplants:
+    """ Groups power plants by node"""
+    params:
+        nodes = config["nodes"],
+        gem = config["global_energy_monitor_plants"],
+    input:
+        GEM_plant_tracker="resources/data/existing_infrastructure/gem_data_raw/Global-integrated-Plant-Tracker-July-2025_china.xlsx",
+        nodes=DERIVED_COMMON + "/regions/provinces_onshore.geojson",
+    output:
+        **{tech : DERIVED_COMMON + f"/existing_infrastructure/{tech}_capacity.csv" for tech in brownfield_techs},
+    log: LOGS_COMMON + "/build_powerplants.log"
+    threads: 2 #TODO 1?
+    script: "scripts/build_powerplants.py"
+
+# TODO find a way to turn off if heat coupling is off 
 rule build_solar_thermal_profiles:
     input:
         cutout=CUTOUT_PATH,
@@ -149,7 +171,7 @@ rule build_cop_profiles:
     input:
         population_map=DERIVED_COMMON+"/"+"population/population_gridcell_map.h5",
         cutout=CUTOUT_PATH,
-        temp=DERIVED_CUTOUT + "/heating/temperature.h5"
+        temperature=DERIVED_CUTOUT + "/heating/temperature.h5"
     output:
         cop= DERIVED_CUTOUT + "/heating/hp_cop.h5"
     threads: 8
@@ -240,18 +262,21 @@ rule build_biomass_potential:
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
 
-# TODO switch to hdf5? merge all years in single csv?
+# TODO add node wildcard/id
+# NOTE: lifetimes are for the BASEYEAR and not brownfield construction year DateIn!
+#       This could be changed if costs are merged into a single file
 rule prepare_baseyear_capacities:
     """prepare inputs for add_existing_baseyear (optional in overnight mode)"""
     params:
         last_pypsa_cost_year = 2060,
         CHP_to_elec = not config.get("heat_coupling", False),
     input:
-        tech_costs=path_manager.costs_dir() + "/costs_{planning_horizons}.csv",
-        **{f"{tech}": f"resources/data/existing_infrastructure/{tech} capacity.csv"
+        # historical lifetimes from base year technoeconomic data
+        tech_costs=path_manager.costs_dir() + f"/costs_{BASEYEAR}.csv",
+        **{f"{tech}": DERIVED_COMMON + f"/existing_infrastructure/{tech}_capacity.csv"
             for tech in config['existing_capacities']['techs']},
     output: 
-        installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv',
+        installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities.csv',
     threads: 1
     resources: mem_mb=2000
     script: "scripts/prepare_existing_capacities.py"
@@ -283,16 +308,16 @@ if config["foresight"] in ["overnight"]:
 
     paidoff_caps = DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv"
     if not config["run"].get("is_remind_coupled", False):
-        paidoff_caps = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv'
+        paidoff_caps = DERIVED_DATA+ '/existing_infrastructure/capacities.csv'
     rule add_existing_baseyear:
         params:
-            baseyear = config["scenario"]["planning_horizons"][0],
+            baseyear = BASEYEAR,
             add_baseyear_to_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
-            installed_capacities = path_manager.infrastructure() + '/capacities_{planning_horizons}.csv',
+            installed_capacities = path_manager.infrastructure() + '/capacities.csv',
             paid_off_capacities_remind = paidoff_caps,
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         threads: 1
@@ -302,7 +327,6 @@ if config["foresight"] in ["overnight"]:
     rule solve_networks:
         params:
             solving = config["solving"],
-            add_baseyear_assets = False,
         input:
             network_name=RESULTS_DIR+ f'/prenetworks{add_brownfield}/' +'ntwk_{planning_horizons}.nc',
         output:
@@ -362,7 +386,7 @@ elif config["foresight"] == "myopic":
 
     rule add_existing_baseyear:
         params:
-            baseyear = config["scenario"]["planning_horizons"][0],
+            baseyear = BASEYEAR,
             add_baseyear_to_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
@@ -430,7 +454,7 @@ rule dag:
         snakemake --dag --quiet | sed -n "/digraph/,\$p" > {output.dag_dot}
         dot -Tpdf -o {output.dag_pdf} {output.dag_dot}
         dot -Tpng -o {output.dag_png} {output.dag_dot}
-        snakemake --rulegraph plot_all --quiet | sed -n "/digraph/,\$p" > {output.rules_dot}
+        snakemake --rulegraph --quiet | sed -n "/digraph/,\$p" > {output.rules_dot}
         dot -Tpdf -o {output.rules_pdf} {output.rules_dot}
         dot -Tpng -o {output.rules_png} {output.rules_dot}
         """
@@ -441,8 +465,6 @@ onerror:
         os.makedirs(res_dir)
     try:
         yaml.dump(config, open(res_dir + "/run_config.yaml", "w"))
-    except FileNotFoundError as e:
-        logging.warning(f"Could not copy log file: {e}")
     except TypeError as e:
         logging.warning(f"Could not copy config file: {e}")
 

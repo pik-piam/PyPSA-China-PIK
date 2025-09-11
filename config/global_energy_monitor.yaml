@@ -1,0 +1,52 @@
+global_energy_monitor_plants:
+
+  # split GEM CHP plants into separate CHP technology
+  CHP:
+    split: true
+    aliases: ["CHP", "cogeneration", "cogen", "heat", "heating"]
+
+  tech_map: 
+  # map GEM Type based on technology
+  #       Type: technology: rename_to
+  # Set rename_to: null to drop
+  # default is a * wildcard (except pre-defined). 
+      gas: 
+          combined cycle: CCGT
+          default: OCGT
+      wind: 
+          Onshore: onwind
+          Offshore hard mount: offwind
+          Offshore floating: offwind
+      solar: 
+          Solar Thermal: solar thermal
+          PV: solar
+          default: null
+      # tricky because some conventional is also PHS
+      hydropower:
+          pumped storage: PHS
+          # run-of-river: ror
+          default: hydro
+          
+  # level of brownfield
+  base_year: 2020  # units retired before this date will be dropped
+  status:
+      - operating
+      - retired
+      # - construction
+  # for more brownfield add `construction`, `pre-construction` and/or `announced`
+
+  relevant_columns:
+    - "Type"
+    - "Plant name"
+    - "Technology"
+    - "Fuel"
+    - "CHP"
+    - "Capacity (MW)"
+    - "Start year"
+    - "Retired year"
+    - "Subregion"
+    - "Region"
+    - "Local area (taluk, county)"
+    - "Major area (prefecture, district)"
+    - "Subnational unit (state, province)"
+    - "Status"

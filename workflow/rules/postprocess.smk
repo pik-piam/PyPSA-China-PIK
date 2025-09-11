@@ -14,6 +14,7 @@ STATISTICS_BARPLOTS = [
     "market_value",
     "lcoe",
     "province_peakload_capacity",
+    "mv_minus_lcoe",
 ]
 
 
@@ -26,7 +27,7 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
                 "postnetworks/ntwk_{planning_horizons}.nc",
             ),
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
-            province_shape="resources/data/province_shapes/CHN_adm1.shp",
+            province_shape=DERIVED_COMMON + "/province_shapes/CHN_adm1.shp",
         output:
             cost_map=RESULTS_DIR + "/plots/networks/ntwk_{planning_horizons}-cost.png",
             el_supply_map=RESULTS_DIR

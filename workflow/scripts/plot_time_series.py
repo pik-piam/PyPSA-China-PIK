@@ -12,6 +12,13 @@ from _helpers import (
     mock_snakemake,
     set_plot_test_backend,
 )
+from _plot_utilities import (
+    get_stat_colors,
+    make_nice_tech_colors,
+    fix_network_names_colors,
+    set_plot_style,
+)
+from _pypsa_helpers import get_location_and_carrier
 from constants import (
     PLOT_CAP_UNITS,
     PLOT_CAP_LABEL,
