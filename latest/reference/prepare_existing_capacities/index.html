@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../../assets/img/pypsa_china.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.19">
     
     
       
@@ -1265,15 +1265,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#prepare_existing_capacities.distribute_vre_by_grade" class="md-nav__link">
-    <span class="md-ellipsis">
-      distribute_vre_by_grade
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#prepare_existing_capacities.fix_existing_capacities" class="md-nav__link">
     <span class="md-ellipsis">
       fix_existing_capacities
@@ -1931,53 +1922,53 @@
 
             <details class="quote">
               <summary>Source code in <code>workflow/scripts/prepare_existing_capacities.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-205">205</a></span>
-<span class="normal"><a href="#__codelineno-0-206">206</a></span>
-<span class="normal"><a href="#__codelineno-0-207">207</a></span>
-<span class="normal"><a href="#__codelineno-0-208">208</a></span>
-<span class="normal"><a href="#__codelineno-0-209">209</a></span>
-<span class="normal"><a href="#__codelineno-0-210">210</a></span>
-<span class="normal"><a href="#__codelineno-0-211">211</a></span>
-<span class="normal"><a href="#__codelineno-0-212">212</a></span>
-<span class="normal"><a href="#__codelineno-0-213">213</a></span>
-<span class="normal"><a href="#__codelineno-0-214">214</a></span>
-<span class="normal"><a href="#__codelineno-0-215">215</a></span>
-<span class="normal"><a href="#__codelineno-0-216">216</a></span>
-<span class="normal"><a href="#__codelineno-0-217">217</a></span>
-<span class="normal"><a href="#__codelineno-0-218">218</a></span>
-<span class="normal"><a href="#__codelineno-0-219">219</a></span>
-<span class="normal"><a href="#__codelineno-0-220">220</a></span>
-<span class="normal"><a href="#__codelineno-0-221">221</a></span>
-<span class="normal"><a href="#__codelineno-0-222">222</a></span>
-<span class="normal"><a href="#__codelineno-0-223">223</a></span>
-<span class="normal"><a href="#__codelineno-0-224">224</a></span>
-<span class="normal"><a href="#__codelineno-0-225">225</a></span>
-<span class="normal"><a href="#__codelineno-0-226">226</a></span>
-<span class="normal"><a href="#__codelineno-0-227">227</a></span>
-<span class="normal"><a href="#__codelineno-0-228">228</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-205" name="__codelineno-0-205"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_CHP_to_poweronly</span><span class="p">(</span><span class="n">capacities</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<a id="__codelineno-0-206" name="__codelineno-0-206"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert CHP capacities to power-only capacities by removing the heat part</span>
-<a id="__codelineno-0-207" name="__codelineno-0-207"></a>
-<a id="__codelineno-0-208" name="__codelineno-0-208"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-209" name="__codelineno-0-209"></a><span class="sd">        capacities (pd.DataFrame): DataFrame with existing capacities</span>
-<a id="__codelineno-0-210" name="__codelineno-0-210"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-211" name="__codelineno-0-211"></a><span class="sd">        pd.DataFrame: DataFrame with converted capacities</span>
-<a id="__codelineno-0-212" name="__codelineno-0-212"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-213" name="__codelineno-0-213"></a>    <span class="c1"># Convert CHP to power-only by removing the heat part</span>
-<a id="__codelineno-0-214" name="__codelineno-0-214"></a>    <span class="n">chp_mask</span> <span class="o">=</span> <span class="n">capacities</span><span class="o">.</span><span class="n">Tech</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;CHP&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-215" name="__codelineno-0-215"></a>    <span class="n">capacities</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">chp_mask</span><span class="p">,</span> <span class="s2">&quot;Fueltype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-<a id="__codelineno-0-216" name="__codelineno-0-216"></a>        <span class="n">capacities</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">chp_mask</span><span class="p">,</span> <span class="s2">&quot;Fueltype&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-217" name="__codelineno-0-217"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;central coal CHP&quot;</span><span class="p">,</span> <span class="s2">&quot;coal power plant&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-218" name="__codelineno-0-218"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;central gas CHP&quot;</span><span class="p">,</span> <span class="s2">&quot;gas CCGT&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-219" name="__codelineno-0-219"></a>    <span class="p">)</span>
-<a id="__codelineno-0-220" name="__codelineno-0-220"></a>    <span class="c1"># update the Tech field based on the converted Fueltype</span>
-<a id="__codelineno-0-221" name="__codelineno-0-221"></a>    <span class="n">capacities</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">chp_mask</span><span class="p">,</span> <span class="s2">&quot;Tech&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-<a id="__codelineno-0-222" name="__codelineno-0-222"></a>        <span class="n">capacities</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">chp_mask</span><span class="p">,</span> <span class="s2">&quot;Fueltype&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-223" name="__codelineno-0-223"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; CHP&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-224" name="__codelineno-0-224"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;CHP &quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
-<a id="__codelineno-0-225" name="__codelineno-0-225"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;gas &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-226" name="__codelineno-0-226"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;coal power plant&quot;</span><span class="p">,</span> <span class="s2">&quot;coal&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-227" name="__codelineno-0-227"></a>    <span class="p">)</span>
-<a id="__codelineno-0-228" name="__codelineno-0-228"></a>    <span class="k">return</span> <span class="n">capacities</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-169">169</a></span>
+<span class="normal"><a href="#__codelineno-0-170">170</a></span>
+<span class="normal"><a href="#__codelineno-0-171">171</a></span>
+<span class="normal"><a href="#__codelineno-0-172">172</a></span>
+<span class="normal"><a href="#__codelineno-0-173">173</a></span>
+<span class="normal"><a href="#__codelineno-0-174">174</a></span>
+<span class="normal"><a href="#__codelineno-0-175">175</a></span>
+<span class="normal"><a href="#__codelineno-0-176">176</a></span>
+<span class="normal"><a href="#__codelineno-0-177">177</a></span>
+<span class="normal"><a href="#__codelineno-0-178">178</a></span>
+<span class="normal"><a href="#__codelineno-0-179">179</a></span>
+<span class="normal"><a href="#__codelineno-0-180">180</a></span>
+<span class="normal"><a href="#__codelineno-0-181">181</a></span>
+<span class="normal"><a href="#__codelineno-0-182">182</a></span>
+<span class="normal"><a href="#__codelineno-0-183">183</a></span>
+<span class="normal"><a href="#__codelineno-0-184">184</a></span>
+<span class="normal"><a href="#__codelineno-0-185">185</a></span>
+<span class="normal"><a href="#__codelineno-0-186">186</a></span>
+<span class="normal"><a href="#__codelineno-0-187">187</a></span>
+<span class="normal"><a href="#__codelineno-0-188">188</a></span>
+<span class="normal"><a href="#__codelineno-0-189">189</a></span>
+<span class="normal"><a href="#__codelineno-0-190">190</a></span>
+<span class="normal"><a href="#__codelineno-0-191">191</a></span>
+<span class="normal"><a href="#__codelineno-0-192">192</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-169" name="__codelineno-0-169"></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_CHP_to_poweronly</span><span class="p">(</span><span class="n">capacities</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert CHP capacities to power-only capacities by removing the heat part</span>
+<a id="__codelineno-0-171" name="__codelineno-0-171"></a>
+<a id="__codelineno-0-172" name="__codelineno-0-172"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-173" name="__codelineno-0-173"></a><span class="sd">        capacities (pd.DataFrame): DataFrame with existing capacities</span>
+<a id="__codelineno-0-174" name="__codelineno-0-174"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="sd">        pd.DataFrame: DataFrame with converted capacities</span>
+<a id="__codelineno-0-176" name="__codelineno-0-176"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-177" name="__codelineno-0-177"></a>    <span class="c1"># Convert CHP to power-only by removing the heat part</span>
+<a id="__codelineno-0-178" name="__codelineno-0-178"></a>    <span class="n">chp_mask</span> <span class="o">=</span> <span class="n">capacities</span><span class="o">.</span><span class="n">Tech</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s2">&quot;CHP&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-179" name="__codelineno-0-179"></a>    <span class="n">capacities</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">chp_mask</span><span class="p">,</span> <span class="s2">&quot;Fueltype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-180" name="__codelineno-0-180"></a>        <span class="n">capacities</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">chp_mask</span><span class="p">,</span> <span class="s2">&quot;Fueltype&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-181" name="__codelineno-0-181"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;central coal CHP&quot;</span><span class="p">,</span> <span class="s2">&quot;coal power plant&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-182" name="__codelineno-0-182"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;central gas CHP&quot;</span><span class="p">,</span> <span class="s2">&quot;gas CCGT&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-183" name="__codelineno-0-183"></a>    <span class="p">)</span>
+<a id="__codelineno-0-184" name="__codelineno-0-184"></a>    <span class="c1"># update the Tech field based on the converted Fueltype</span>
+<a id="__codelineno-0-185" name="__codelineno-0-185"></a>    <span class="n">capacities</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">chp_mask</span><span class="p">,</span> <span class="s2">&quot;Tech&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-186" name="__codelineno-0-186"></a>        <span class="n">capacities</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">chp_mask</span><span class="p">,</span> <span class="s2">&quot;Fueltype&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-187" name="__codelineno-0-187"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; CHP&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-188" name="__codelineno-0-188"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;CHP &quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
+<a id="__codelineno-0-189" name="__codelineno-0-189"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;gas &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-190" name="__codelineno-0-190"></a>        <span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;coal power plant&quot;</span><span class="p">,</span> <span class="s2">&quot;coal&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-191" name="__codelineno-0-191"></a>    <span class="p">)</span>
+<a id="__codelineno-0-192" name="__codelineno-0-192"></a>    <span class="k">return</span> <span class="n">capacities</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2111,144 +2102,6 @@
 <div class="doc doc-object doc-function">
 
 
-<h2 id="prepare_existing_capacities.distribute_vre_by_grade" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">distribute_vre_by_grade</span><span class="p">(</span><span class="n">cap_by_year</span><span class="p">,</span> <span class="n">grade_capacities</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Distribute vre capacities by grade potential, use up better grades first</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>cap_by_year</code>
-            </td>
-            <td>
-                  <code><span title="pandas.Series">Series</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the vre tech potential p_nom_max added per year</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>grade_capacities</code>
-            </td>
-            <td>
-                  <code><span title="pandas.Series">Series</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the vre grade potential for the tech and bus</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-        <p>Returns:
-    pd.DataFrame: DataFrame with the distributed vre capacities (shape: years x buses)</p>
-
-
-            <details class="quote">
-              <summary>Source code in <code>workflow/scripts/prepare_existing_capacities.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-169">169</a></span>
-<span class="normal"><a href="#__codelineno-0-170">170</a></span>
-<span class="normal"><a href="#__codelineno-0-171">171</a></span>
-<span class="normal"><a href="#__codelineno-0-172">172</a></span>
-<span class="normal"><a href="#__codelineno-0-173">173</a></span>
-<span class="normal"><a href="#__codelineno-0-174">174</a></span>
-<span class="normal"><a href="#__codelineno-0-175">175</a></span>
-<span class="normal"><a href="#__codelineno-0-176">176</a></span>
-<span class="normal"><a href="#__codelineno-0-177">177</a></span>
-<span class="normal"><a href="#__codelineno-0-178">178</a></span>
-<span class="normal"><a href="#__codelineno-0-179">179</a></span>
-<span class="normal"><a href="#__codelineno-0-180">180</a></span>
-<span class="normal"><a href="#__codelineno-0-181">181</a></span>
-<span class="normal"><a href="#__codelineno-0-182">182</a></span>
-<span class="normal"><a href="#__codelineno-0-183">183</a></span>
-<span class="normal"><a href="#__codelineno-0-184">184</a></span>
-<span class="normal"><a href="#__codelineno-0-185">185</a></span>
-<span class="normal"><a href="#__codelineno-0-186">186</a></span>
-<span class="normal"><a href="#__codelineno-0-187">187</a></span>
-<span class="normal"><a href="#__codelineno-0-188">188</a></span>
-<span class="normal"><a href="#__codelineno-0-189">189</a></span>
-<span class="normal"><a href="#__codelineno-0-190">190</a></span>
-<span class="normal"><a href="#__codelineno-0-191">191</a></span>
-<span class="normal"><a href="#__codelineno-0-192">192</a></span>
-<span class="normal"><a href="#__codelineno-0-193">193</a></span>
-<span class="normal"><a href="#__codelineno-0-194">194</a></span>
-<span class="normal"><a href="#__codelineno-0-195">195</a></span>
-<span class="normal"><a href="#__codelineno-0-196">196</a></span>
-<span class="normal"><a href="#__codelineno-0-197">197</a></span>
-<span class="normal"><a href="#__codelineno-0-198">198</a></span>
-<span class="normal"><a href="#__codelineno-0-199">199</a></span>
-<span class="normal"><a href="#__codelineno-0-200">200</a></span>
-<span class="normal"><a href="#__codelineno-0-201">201</a></span>
-<span class="normal"><a href="#__codelineno-0-202">202</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-169" name="__codelineno-0-169"></a><span class="k">def</span><span class="w"> </span><span class="nf">distribute_vre_by_grade</span><span class="p">(</span><span class="n">cap_by_year</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">grade_capacities</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<a id="__codelineno-0-170" name="__codelineno-0-170"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Distribute vre capacities by grade potential, use up better grades first</span>
-<a id="__codelineno-0-171" name="__codelineno-0-171"></a>
-<a id="__codelineno-0-172" name="__codelineno-0-172"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-173" name="__codelineno-0-173"></a><span class="sd">        cap_by_year (pd.Series): the vre tech potential p_nom_max added per year</span>
-<a id="__codelineno-0-174" name="__codelineno-0-174"></a><span class="sd">        grade_capacities (pd.Series): the vre grade potential for the tech and bus</span>
-<a id="__codelineno-0-175" name="__codelineno-0-175"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-176" name="__codelineno-0-176"></a><span class="sd">        pd.DataFrame: DataFrame with the distributed vre capacities (shape: years x buses)</span>
-<a id="__codelineno-0-177" name="__codelineno-0-177"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-178" name="__codelineno-0-178"></a>
-<a id="__codelineno-0-179" name="__codelineno-0-179"></a>    <span class="n">availability</span> <span class="o">=</span> <span class="n">cap_by_year</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<a id="__codelineno-0-180" name="__codelineno-0-180"></a>    <span class="n">to_distribute</span> <span class="o">=</span> <span class="n">grade_capacities</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
-<a id="__codelineno-0-181" name="__codelineno-0-181"></a>    <span class="n">n_years</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_distribute</span><span class="p">)</span>
-<a id="__codelineno-0-182" name="__codelineno-0-182"></a>    <span class="n">n_sources</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">availability</span><span class="p">)</span>
-<a id="__codelineno-0-183" name="__codelineno-0-183"></a>
-<a id="__codelineno-0-184" name="__codelineno-0-184"></a>    <span class="c1"># To store allocation per year per source (shape: sources x years)</span>
-<a id="__codelineno-0-185" name="__codelineno-0-185"></a>    <span class="n">allocation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_sources</span><span class="p">,</span> <span class="n">n_years</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-<a id="__codelineno-0-186" name="__codelineno-0-186"></a>    <span class="n">remaining</span> <span class="o">=</span> <span class="n">availability</span><span class="o">.</span><span class="n">values</span>
-<a id="__codelineno-0-187" name="__codelineno-0-187"></a>
-<a id="__codelineno-0-188" name="__codelineno-0-188"></a>    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_years</span><span class="p">):</span>
-<a id="__codelineno-0-189" name="__codelineno-0-189"></a>        <span class="n">needed</span> <span class="o">=</span> <span class="n">to_distribute</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-<a id="__codelineno-0-190" name="__codelineno-0-190"></a>        <span class="n">cumsum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">remaining</span><span class="p">)</span>
-<a id="__codelineno-0-191" name="__codelineno-0-191"></a>        <span class="n">used_up</span> <span class="o">=</span> <span class="n">cumsum</span> <span class="o">&lt;</span> <span class="n">needed</span>
-<a id="__codelineno-0-192" name="__codelineno-0-192"></a>        <span class="n">cutoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">cumsum</span> <span class="o">&gt;=</span> <span class="n">needed</span><span class="p">)</span>
-<a id="__codelineno-0-193" name="__codelineno-0-193"></a>
-<a id="__codelineno-0-194" name="__codelineno-0-194"></a>        <span class="n">allocation</span><span class="p">[</span><span class="n">used_up</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">remaining</span><span class="p">[</span><span class="n">used_up</span><span class="p">]</span>
-<a id="__codelineno-0-195" name="__codelineno-0-195"></a>
-<a id="__codelineno-0-196" name="__codelineno-0-196"></a>        <span class="k">if</span> <span class="n">needed</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">cumsum</span><span class="p">[</span><span class="n">cutoff</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">cutoff</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">):</span>
-<a id="__codelineno-0-197" name="__codelineno-0-197"></a>            <span class="n">allocation</span><span class="p">[</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">needed</span> <span class="o">-</span> <span class="p">(</span><span class="n">cumsum</span><span class="p">[</span><span class="n">cutoff</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">cutoff</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
-<a id="__codelineno-0-198" name="__codelineno-0-198"></a>
-<a id="__codelineno-0-199" name="__codelineno-0-199"></a>        <span class="c1"># Subtract what was used from availability</span>
-<a id="__codelineno-0-200" name="__codelineno-0-200"></a>        <span class="n">remaining</span> <span class="o">-=</span> <span class="n">allocation</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span>
-<a id="__codelineno-0-201" name="__codelineno-0-201"></a>
-<a id="__codelineno-0-202" name="__codelineno-0-202"></a>    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">allocation</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">grade_capacities</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">availability</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
 <h2 id="prepare_existing_capacities.fix_existing_capacities" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">fix_existing_capacities</span><span class="p">(</span><span class="n">existing_df</span><span class="p">,</span> <span class="n">costs</span><span class="p">,</span> <span class="n">year_bins</span><span class="p">,</span> <span class="n">baseyear</span><span class="p">)</span></code>
 
@@ -2257,7 +2110,8 @@
 
     <div class="doc doc-contents ">
 
-        <p>add/fill missing dateIn, drop expired assets, drop too new assets</p>
+        <p>add/fill missing dateIn, discretize lifetime to grouping year, rename columns
+drop plants that were retired before the smallest sim timeframe</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -2313,22 +2167,6 @@
             <td>
               <div class="doc-md-description">
                 <p>the year groups</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>baseyear</code>
-            </td>
-            <td>
-                  <code><span title="int">int</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>the base year (run year)</p>
               </div>
             </td>
             <td>
@@ -2415,51 +2253,51 @@
 <span class="normal"><a href="#__codelineno-0-149">149</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-101" name="__codelineno-0-101"></a><span class="k">def</span><span class="w"> </span><span class="nf">fix_existing_capacities</span><span class="p">(</span>
 <a id="__codelineno-0-102" name="__codelineno-0-102"></a>    <span class="n">existing_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">costs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">year_bins</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">baseyear</span><span class="p">:</span> <span class="nb">int</span>
 <a id="__codelineno-0-103" name="__codelineno-0-103"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<a id="__codelineno-0-104" name="__codelineno-0-104"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;add/fill missing dateIn, drop expired assets, drop too new assets</span>
-<a id="__codelineno-0-105" name="__codelineno-0-105"></a>
-<a id="__codelineno-0-106" name="__codelineno-0-106"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-107" name="__codelineno-0-107"></a><span class="sd">        existing_df (pd.DataFrame): the existing capacities</span>
-<a id="__codelineno-0-108" name="__codelineno-0-108"></a><span class="sd">        costs (pd.DataFrame): the technoeconomic data</span>
-<a id="__codelineno-0-109" name="__codelineno-0-109"></a><span class="sd">        year_bins (list): the year groups</span>
-<a id="__codelineno-0-110" name="__codelineno-0-110"></a><span class="sd">        baseyear (int): the base year (run year)</span>
+<a id="__codelineno-0-104" name="__codelineno-0-104"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;add/fill missing dateIn, discretize lifetime to grouping year, rename columns</span>
+<a id="__codelineno-0-105" name="__codelineno-0-105"></a><span class="sd">    drop plants that were retired before the smallest sim timeframe</span>
+<a id="__codelineno-0-106" name="__codelineno-0-106"></a>
+<a id="__codelineno-0-107" name="__codelineno-0-107"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-108" name="__codelineno-0-108"></a><span class="sd">        existing_df (pd.DataFrame): the existing capacities</span>
+<a id="__codelineno-0-109" name="__codelineno-0-109"></a><span class="sd">        costs (pd.DataFrame): the technoeconomic data</span>
+<a id="__codelineno-0-110" name="__codelineno-0-110"></a><span class="sd">        year_bins (list): the year groups</span>
 <a id="__codelineno-0-111" name="__codelineno-0-111"></a>
-<a id="__codelineno-0-112" name="__codelineno-0-112"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-113" name="__codelineno-0-113"></a><span class="sd">        pd.DataFrame: fixed capacities</span>
-<a id="__codelineno-0-114" name="__codelineno-0-114"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-115" name="__codelineno-0-115"></a>    <span class="n">existing_df</span><span class="o">.</span><span class="n">DateIn</span> <span class="o">=</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">DateIn</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-<a id="__codelineno-0-116" name="__codelineno-0-116"></a>    <span class="c1"># add/fill missing dateIn</span>
-<a id="__codelineno-0-117" name="__codelineno-0-117"></a>    <span class="k">if</span> <span class="s2">&quot;DateOut&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-<a id="__codelineno-0-118" name="__codelineno-0-118"></a>        <span class="n">existing_df</span><span class="p">[</span><span class="s2">&quot;DateOut&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-<a id="__codelineno-0-119" name="__codelineno-0-119"></a>    <span class="c1"># names matching costs split across FuelType and Tech, apply to both. Fillna means no overwrite</span>
-<a id="__codelineno-0-120" name="__codelineno-0-120"></a>    <span class="n">lifetimes</span> <span class="o">=</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">Fueltype</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">lifetime</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span>
-<a id="__codelineno-0-121" name="__codelineno-0-121"></a>        <span class="n">existing_df</span><span class="o">.</span><span class="n">Tech</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">lifetime</span><span class="p">)</span>
-<a id="__codelineno-0-122" name="__codelineno-0-122"></a>    <span class="p">)</span>
-<a id="__codelineno-0-123" name="__codelineno-0-123"></a>    <span class="k">if</span> <span class="n">lifetimes</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-<a id="__codelineno-0-124" name="__codelineno-0-124"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-125" name="__codelineno-0-125"></a>            <span class="sa">f</span><span class="s2">&quot;Some assets have no lifetime assigned: </span><span class="se">\n</span><span class="si">{</span><span class="n">lifetimes</span><span class="p">[</span><span class="n">lifetimes</span><span class="o">.</span><span class="n">isna</span><span class="p">()]</span><span class="si">}</span><span class="s2">. &quot;</span>
-<a id="__codelineno-0-126" name="__codelineno-0-126"></a>            <span class="s2">&quot;Please check the costs file for the missing lifetimes.&quot;</span>
-<a id="__codelineno-0-127" name="__codelineno-0-127"></a>        <span class="p">)</span>
-<a id="__codelineno-0-128" name="__codelineno-0-128"></a>    <span class="n">existing_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s2">&quot;DateOut&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">DateOut</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">lifetimes</span><span class="p">)</span> <span class="o">+</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">DateIn</span>
-<a id="__codelineno-0-129" name="__codelineno-0-129"></a>
-<a id="__codelineno-0-130" name="__codelineno-0-130"></a>    <span class="c1"># TODO go through the pypsa-EUR fuel drops for the new ppmatching style</span>
-<a id="__codelineno-0-131" name="__codelineno-0-131"></a>    <span class="c1"># drop assets which are already phased out / decommissioned</span>
-<a id="__codelineno-0-132" name="__codelineno-0-132"></a>    <span class="n">phased_out</span> <span class="o">=</span> <span class="n">existing_df</span><span class="p">[</span><span class="n">existing_df</span><span class="p">[</span><span class="s2">&quot;DateOut&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">baseyear</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
-<a id="__codelineno-0-133" name="__codelineno-0-133"></a>    <span class="n">existing_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">phased_out</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-112" name="__codelineno-0-112"></a>
+<a id="__codelineno-0-113" name="__codelineno-0-113"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-114" name="__codelineno-0-114"></a><span class="sd">        pd.DataFrame: fixed capacities</span>
+<a id="__codelineno-0-115" name="__codelineno-0-115"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-116" name="__codelineno-0-116"></a>    <span class="n">existing_df</span><span class="o">.</span><span class="n">DateIn</span> <span class="o">=</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">DateIn</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<a id="__codelineno-0-117" name="__codelineno-0-117"></a>    <span class="c1"># add/fill missing dateIn</span>
+<a id="__codelineno-0-118" name="__codelineno-0-118"></a>    <span class="k">if</span> <span class="s2">&quot;DateOut&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+<a id="__codelineno-0-119" name="__codelineno-0-119"></a>        <span class="n">existing_df</span><span class="p">[</span><span class="s2">&quot;DateOut&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+<a id="__codelineno-0-120" name="__codelineno-0-120"></a>
+<a id="__codelineno-0-121" name="__codelineno-0-121"></a>    <span class="c1"># names matching costs split across FuelType and Tech, apply to both. Fillna means no overwrite</span>
+<a id="__codelineno-0-122" name="__codelineno-0-122"></a>    <span class="n">lifetimes</span> <span class="o">=</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">Fueltype</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">lifetime</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span>
+<a id="__codelineno-0-123" name="__codelineno-0-123"></a>        <span class="n">existing_df</span><span class="o">.</span><span class="n">Tech</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">costs</span><span class="o">.</span><span class="n">lifetime</span><span class="p">)</span>
+<a id="__codelineno-0-124" name="__codelineno-0-124"></a>    <span class="p">)</span>
+<a id="__codelineno-0-125" name="__codelineno-0-125"></a>    <span class="k">if</span> <span class="n">lifetimes</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+<a id="__codelineno-0-126" name="__codelineno-0-126"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-127" name="__codelineno-0-127"></a>            <span class="sa">f</span><span class="s2">&quot;Some assets have no lifetime assigned: </span><span class="se">\n</span><span class="si">{</span><span class="n">lifetimes</span><span class="p">[</span><span class="n">lifetimes</span><span class="o">.</span><span class="n">isna</span><span class="p">()]</span><span class="si">}</span><span class="s2">. &quot;</span>
+<a id="__codelineno-0-128" name="__codelineno-0-128"></a>            <span class="s2">&quot;Please check the costs file for the missing lifetimes.&quot;</span>
+<a id="__codelineno-0-129" name="__codelineno-0-129"></a>        <span class="p">)</span>
+<a id="__codelineno-0-130" name="__codelineno-0-130"></a>    <span class="n">existing_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s2">&quot;DateOut&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">DateOut</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">lifetimes</span><span class="p">)</span> <span class="o">+</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">DateIn</span>
+<a id="__codelineno-0-131" name="__codelineno-0-131"></a>
+<a id="__codelineno-0-132" name="__codelineno-0-132"></a>    <span class="n">existing_df</span><span class="p">[</span><span class="s2">&quot;lifetime&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">DateOut</span> <span class="o">-</span> <span class="n">existing_df</span><span class="p">[</span><span class="s2">&quot;grouping_year&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-133" name="__codelineno-0-133"></a>    <span class="n">existing_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cluster_bus&quot;</span><span class="p">:</span> <span class="s2">&quot;bus&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <a id="__codelineno-0-134" name="__codelineno-0-134"></a>
-<a id="__codelineno-0-135" name="__codelineno-0-135"></a>    <span class="n">newer_assets</span> <span class="o">=</span> <span class="p">(</span><span class="n">existing_df</span><span class="o">.</span><span class="n">DateIn</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">year_bins</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-<a id="__codelineno-0-136" name="__codelineno-0-136"></a>    <span class="k">if</span> <span class="n">newer_assets</span><span class="p">:</span>
-<a id="__codelineno-0-137" name="__codelineno-0-137"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-<a id="__codelineno-0-138" name="__codelineno-0-138"></a>            <span class="sa">f</span><span class="s2">&quot;There are </span><span class="si">{</span><span class="n">newer_assets</span><span class="si">}</span><span class="s2"> assets with build year &quot;</span>
-<a id="__codelineno-0-139" name="__codelineno-0-139"></a>            <span class="sa">f</span><span class="s2">&quot;after last power grouping year </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">year_bins</span><span class="p">)</span><span class="si">}</span><span class="s2">. &quot;</span>
-<a id="__codelineno-0-140" name="__codelineno-0-140"></a>            <span class="s2">&quot;These assets are dropped and not considered.&quot;</span>
-<a id="__codelineno-0-141" name="__codelineno-0-141"></a>            <span class="s2">&quot;Consider to redefine the grouping years to keep them.&quot;</span>
-<a id="__codelineno-0-142" name="__codelineno-0-142"></a>        <span class="p">)</span>
-<a id="__codelineno-0-143" name="__codelineno-0-143"></a>        <span class="n">to_drop</span> <span class="o">=</span> <span class="n">existing_df</span><span class="p">[</span><span class="n">existing_df</span><span class="o">.</span><span class="n">DateIn</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">year_bins</span><span class="p">)]</span><span class="o">.</span><span class="n">index</span>
-<a id="__codelineno-0-144" name="__codelineno-0-144"></a>        <span class="n">existing_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">to_drop</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-145" name="__codelineno-0-145"></a>
-<a id="__codelineno-0-146" name="__codelineno-0-146"></a>    <span class="n">existing_df</span><span class="p">[</span><span class="s2">&quot;lifetime&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">existing_df</span><span class="o">.</span><span class="n">DateOut</span> <span class="o">-</span> <span class="n">existing_df</span><span class="p">[</span><span class="s2">&quot;grouping_year&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-147" name="__codelineno-0-147"></a>
-<a id="__codelineno-0-148" name="__codelineno-0-148"></a>    <span class="n">existing_df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cluster_bus&quot;</span><span class="p">:</span> <span class="s2">&quot;bus&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-135" name="__codelineno-0-135"></a>    <span class="n">phased_out</span> <span class="o">=</span> <span class="n">existing_df</span><span class="p">[</span><span class="n">existing_df</span><span class="p">[</span><span class="s2">&quot;DateOut&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">baseyear</span><span class="p">]</span><span class="o">.</span><span class="n">index</span>
+<a id="__codelineno-0-136" name="__codelineno-0-136"></a>    <span class="n">existing_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">phased_out</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-137" name="__codelineno-0-137"></a>
+<a id="__codelineno-0-138" name="__codelineno-0-138"></a>    <span class="c1"># check the grouping years are appropriate</span>
+<a id="__codelineno-0-139" name="__codelineno-0-139"></a>    <span class="n">newer_assets</span> <span class="o">=</span> <span class="p">(</span><span class="n">existing_df</span><span class="o">.</span><span class="n">DateIn</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">year_bins</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<a id="__codelineno-0-140" name="__codelineno-0-140"></a>    <span class="k">if</span> <span class="n">newer_assets</span><span class="p">:</span>
+<a id="__codelineno-0-141" name="__codelineno-0-141"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-142" name="__codelineno-0-142"></a>            <span class="sa">f</span><span class="s2">&quot;There are </span><span class="si">{</span><span class="n">newer_assets</span><span class="si">}</span><span class="s2"> assets with build year &quot;</span>
+<a id="__codelineno-0-143" name="__codelineno-0-143"></a>            <span class="sa">f</span><span class="s2">&quot;after last power grouping year </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">year_bins</span><span class="p">)</span><span class="si">}</span><span class="s2">. &quot;</span>
+<a id="__codelineno-0-144" name="__codelineno-0-144"></a>            <span class="s2">&quot;These assets are dropped and not considered.&quot;</span>
+<a id="__codelineno-0-145" name="__codelineno-0-145"></a>            <span class="s2">&quot;Redefine the grouping years to keep them or&quot;</span>
+<a id="__codelineno-0-146" name="__codelineno-0-146"></a>            <span class="s2">&quot; remove pre-construction/construction/... states.&quot;</span>
+<a id="__codelineno-0-147" name="__codelineno-0-147"></a>        <span class="p">)</span>
+<a id="__codelineno-0-148" name="__codelineno-0-148"></a>
 <a id="__codelineno-0-149" name="__codelineno-0-149"></a>    <span class="k">return</span> <span class="n">existing_df</span>
 </code></pre></div></td></tr></table></div>
             </details>
