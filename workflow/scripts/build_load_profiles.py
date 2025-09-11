@@ -185,7 +185,7 @@ def build_heat_demand_profile(
     snapshots: pd.DatetimeIndex,
     intraday_profiles: pd.Series,
     planning_horizons: int | str,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Downscale the daily heat demand to hourly heat demand using pre-defined intraday profiles
 
     Args:
@@ -195,8 +195,7 @@ def build_heat_demand_profile(
         planning_horizons (int | str): the planning year
 
     Returns:
-        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-            heat, space_heat, water_heat demands
+        tuple[pd.DataFrame, pd.DataFrame]: space_heat_demand, domestic hot water demand
     """
     # drop leap day
     daily_hd = daily_hd[~((daily_hd.index.month == 2) & (daily_hd.index.day == 29))]
@@ -221,9 +220,7 @@ def build_heat_demand_profile(
     space_heat_demand = intraday_year_profiles.mul(heat_demand_hourly)
     water_heat_demand = intraday_year_profiles.mul(hot_water_per_day)
 
-    heat_demand = space_heat_demand + water_heat_demand
-
-    return heat_demand, space_heat_demand, water_heat_demand
+    return space_heat_demand, water_heat_demand
 
 
 def scale_degree_day_to_reference(
@@ -423,7 +420,7 @@ if __name__ == "__main__":
             downscale_by_pop(hot_water_total.loc[planning_horizons], population_count) / 365
         )
 
-        heat_demand, space_heat_demand, water_heat_demand = build_heat_demand_profile(
+        space_heat_demand, domestic_hot_water = build_heat_demand_profile(
             daily_heat_demand,
             hot_water_per_day,
             date_range,
@@ -432,7 +429,8 @@ if __name__ == "__main__":
         )
 
         with pd.HDFStore(snakemake.output.heat_demand_profile, mode="w", complevel=4) as store:
-            store["heat_demand_profiles"] = heat_demand
+            store["heat_demand_profiles"] = space_heat_demand
+            store["hot_water_demand"] = domestic_hot_water
 
         with pd.HDFStore(snakemake.output.energy_totals_name, mode="w") as store:
             store["space_heating_per_hdd"] = daily_heat_demand
