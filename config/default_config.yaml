@@ -69,8 +69,8 @@ logging:
 
 enable:
   build_cutout: false
-  retrieve_cutout: true
-  retrieve_raster: true
+  retrieve_cutout: false
+  retrieve_raster: false
 
 atlite:
   cutout_name: "China-2020c"
@@ -178,7 +178,7 @@ Techs:
   coal_ccs_retrofit: true # currently myopic pathway only.  CC = co2 cap 
 
 ## add components (overwrites vre tech choice)
-heat_coupling: false
+heat_coupling: true
 add_biomass: True
 add_hydro: True
 add_H2: True
