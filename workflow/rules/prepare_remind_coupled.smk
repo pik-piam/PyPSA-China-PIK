@@ -94,11 +94,7 @@ rule disaggregate_remind_data:
         expand_dirs=config["scenario"]["planning_horizons"],
         separate_loads=config["run"].get("separate_loads", False),
     input:
-        **{
-            f"pypsa_powerplants_{yr}": DERIVED_DATA
-            + f"/existing_infrastructure/capacities_{yr}.csv"
-            for yr in config["scenario"]["planning_horizons"]
-        },
+        pypsa_powerplants=DERIVED_DATA + f"/existing_infrastructure/capacities.csv",
         remind_caps=DERIVED_DATA + "/remind/preinv_capacities.csv",
         remind_tech_groups=DERIVED_DATA + "/remind/tech_groups.csv",
         loads=DERIVED_DATA + "/remind/yrly_loads.csv",
@@ -107,11 +103,7 @@ rule disaggregate_remind_data:
         ev_pass_reference=DERIVED_DATA + "/remind/references/ev_passenger_shares.csv",
         ev_freight_reference=DERIVED_DATA + "/remind/references/ev_freight_shares.csv",
     output:
-        **{
-            f"caps_{yr}": DERIVED_DATA
-            + f"/remind/harmonized_capacities/capacities_{yr}.csv"
-            for yr in config["scenario"]["planning_horizons"]
-        },
+        capacities=DERIVED_DATA + "/remind/harmonized_capacities/capacities.csv",
         paid_off=DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv",
         disagg_load=DERIVED_DATA + "/remind/ac_load_disagg.csv",
     log:
