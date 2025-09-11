@@ -758,6 +758,8 @@ def add_heat_coupling(
         # TODO fix this if not working
         heat_demand.index = heat_demand.index.tz_localize(None)
         heat_demand = heat_demand.loc[network.snapshots]
+        hot_water_demand = store.get("hot_water_demand")
+        hot_water_demand = hot_water_demand.loc[network.snapshots]
 
     network.add(
         "Bus",
@@ -785,7 +787,7 @@ def add_heat_coupling(
         carrier="heat",
         suffix=" decentral heat",
         bus=nodes + " decentral heat",
-        p_set=heat_demand[nodes].multiply(1 - central_fraction[nodes]),
+        p_set=heat_demand[nodes].multiply(1 - central_fraction[nodes]) + hot_water_demand[nodes],
     )
 
     network.add(
