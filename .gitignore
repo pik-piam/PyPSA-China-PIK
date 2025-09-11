@@ -14,8 +14,8 @@ __pycache__
 
 /site/**
 !/resources/data/shapefiles/
-# !/resources/**/*.csv
-# /resources/**/*
+!/resources/**/*.csv
+/resources/**/*
 /resources/derived_data/
 /resources/data/province_shapes
 /resources/data/landuse_availability/World_EEZ/*eez*
