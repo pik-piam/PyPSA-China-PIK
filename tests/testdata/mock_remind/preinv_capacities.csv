@@ -1,0 +1,9 @@
+region,technology,year,capacity_GW,retirement_GW
+Beijing,solar,2030,10,0
+Beijing,wind,2030,5,0
+Beijing,solar,2040,15,2
+Beijing,wind,2040,8,1
+Shanghai,solar,2030,12,0
+Shanghai,wind,2030,6,0
+Shanghai,solar,2040,18,3
+Shanghai,wind,2040,10,2

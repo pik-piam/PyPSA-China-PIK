@@ -82,6 +82,27 @@ def launch_subprocess(cmd: str, env=None) -> subprocess.CompletedProcess:
                 "existing_capacities": {"add": False},
             }
         ),
+        # Test with existing capacities enabled
+        (
+            {
+                "time_res": 1752,
+                "plan_year": 2050,
+                "heat_coupling": True,
+                "foresight": "overnight",
+                "existing_capacities": {"add": True},
+            }
+        ),
+        # Test REMIND coupling without transport (using mock data)
+        (
+            {
+                "time_res": 1752,
+                "plan_year": 2030,
+                "heat_coupling": False,
+                "foresight": "overnight",
+                "existing_capacities": {"add": False},
+                "run": {"is_remind_coupled": True},
+            }
+        ),
     ],
     indirect=True,
 )

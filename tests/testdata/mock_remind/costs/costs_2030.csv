@@ -1,0 +1,5 @@
+region,technology,year,investment_cost,fixed_cost,variable_cost,efficiency,co2_price
+Beijing,solar,2030,1000,50,0,1.0,50
+Beijing,wind,2030,1200,60,0,1.0,50
+Shanghai,solar,2030,1000,50,0,1.0,50
+Shanghai,wind,2030,1200,60,0,1.0,50
