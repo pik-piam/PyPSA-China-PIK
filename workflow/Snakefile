@@ -29,6 +29,9 @@ config = config_manager.handle_scenarios()
 # ====== set global parameters =======
 ATLITE_NPROCESSES = config['atlite'].get('nprocesses', 4)
 CUTOUT_NAME= config["atlite"]["cutout_name"]
+# for pathways, first point should be near-fixed by existing capacities and is baseyear
+# for overnight it refers to existing infrastructure
+BASEYEAR = min([int(y) for y in config["scenario"]["planning_horizons"]])
 
 # ====== make paths =======
 path_manager = PathManager(config)
@@ -141,6 +144,7 @@ rule build_powerplants:
     threads: 2 #TODO 1?
     script: "scripts/build_powerplants.py"
 
+# TODO find a way to turn off if heat coupling is off 
 rule build_solar_thermal_profiles:
     input:
         cutout=CUTOUT_PATH,
@@ -258,19 +262,21 @@ rule build_biomass_potential:
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_biomass_potential.py"
 
-# TODO merge all techs into a single csv
 # TODO add node wildcard/id
+# NOTE: lifetimes are for the BASEYEAR and not brownfield construction year DateIn!
+#       This could be changed if costs are merged into a single file
 rule prepare_baseyear_capacities:
     """prepare inputs for add_existing_baseyear (optional in overnight mode)"""
     params:
         last_pypsa_cost_year = 2060,
         CHP_to_elec = not config.get("heat_coupling", False),
     input:
-        tech_costs=path_manager.costs_dir() + "/costs_{planning_horizons}.csv",
+        # historical lifetimes from base year technoeconomic data
+        tech_costs=path_manager.costs_dir() + f"/costs_{BASEYEAR}.csv",
         **{f"{tech}": DERIVED_COMMON + f"/existing_infrastructure/{tech}_capacity.csv"
             for tech in config['existing_capacities']['techs']},
     output: 
-        installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv',
+        installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities.csv',
     threads: 1
     resources: mem_mb=2000
     script: "scripts/prepare_existing_capacities.py"
@@ -302,16 +308,16 @@ if config["foresight"] in ["overnight"]:
 
     paidoff_caps = DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv"
     if not config["run"].get("is_remind_coupled", False):
-        paidoff_caps = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv'
+        paidoff_caps = DERIVED_DATA+ '/existing_infrastructure/capacities.csv'
     rule add_existing_baseyear:
         params:
-            baseyear = config["scenario"]["planning_horizons"][0],
+            baseyear = BASEYEAR,
             add_baseyear_to_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
-            installed_capacities = path_manager.infrastructure() + '/capacities_{planning_horizons}.csv',
+            installed_capacities = path_manager.infrastructure() + '/capacities.csv',
             paid_off_capacities_remind = paidoff_caps,
         output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
         threads: 1
@@ -321,7 +327,6 @@ if config["foresight"] in ["overnight"]:
     rule solve_networks:
         params:
             solving = config["solving"],
-            add_baseyear_assets = False,
         input:
             network_name=RESULTS_DIR+ f'/prenetworks{add_brownfield}/' +'ntwk_{planning_horizons}.nc',
         output:
@@ -381,7 +386,7 @@ elif config["foresight"] == "myopic":
 
     rule add_existing_baseyear:
         params:
-            baseyear = config["scenario"]["planning_horizons"][0],
+            baseyear = BASEYEAR,
             add_baseyear_to_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',

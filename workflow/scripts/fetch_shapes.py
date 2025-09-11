@@ -212,7 +212,7 @@ def fetch_maritime_eez(zone_name: str) -> gpd.GeoDataFrame:
     eez = gpd.GeoDataFrame.from_features(data["features"])
     return eez.set_crs(epsg=crs)
 
-  
+ 
 def fetch_prefecture_shapes(
     fixes={
         GDAM_LV1: {
