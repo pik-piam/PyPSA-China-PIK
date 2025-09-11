@@ -679,11 +679,11 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
-            planning_horizons="2040",
+            co2_pathway="SSP2-PkBudg1000-CHA",
+            planning_horizons="2030",
             topology="current+FCG",
             # heating_demand="positive",
-            configfiles="resources/tmp/pseudo_coupled.yml",
+            configfiles="resources/tmp/remind_coupled_cg.yaml",
         )
     configure_logging(snakemake)
 

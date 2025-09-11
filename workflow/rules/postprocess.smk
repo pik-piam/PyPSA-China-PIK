@@ -14,6 +14,7 @@ STATISTICS_BARPLOTS = [
     "market_value",
     "lcoe",
     "province_peakload_capacity",
+    "mv_minus_lcoe",
 ]
 
 
