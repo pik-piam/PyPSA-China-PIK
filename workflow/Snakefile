@@ -289,6 +289,9 @@ if config["foresight"] in ["overnight"]:
 
     rule prepare_networks:
         input:
+            # TODO add a constant element for industry
+            # TODO revisit central and decentral fractions
+            # TODO revisit heating demand per provinces
             heat_demand_profile=DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
             solar_thermal_name=DERIVED_CUTOUT+f"/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
@@ -437,7 +440,7 @@ elif config["foresight"] == "myopic":
         script: "scripts/solve_network_myopic.py"
 
 
-# run with `snakemake results/dag/rules_graph.png -f`
+# run with `snakemake results/dag/rules_graph.png -f --cores 1`
 rule dag:
     message:
         "Creating DAG of workflow."
@@ -456,9 +459,9 @@ rule dag:
         snakemake --dag --quiet | sed -n "/digraph/,\$p" > {output.dag_dot}
         dot -Tpdf -o {output.dag_pdf} {output.dag_dot}
         dot -Tpng -o {output.dag_png} {output.dag_dot}
-        snakemake --rulegraph plot_all --quiet | sed -n "/digraph/,\$p" > {output.rules_dot}
+        snakemake --rulegraph --quiet | sed -n "/digraph/,\$p" > {output.rules_dot}
         dot -Tpdf -o {output.rules_pdf} {output.rules_dot}
-        dot -Tsvg -o {output.rules_pdf} {output.rules_dot}
+        dot -Tsvg -o {output.rules_svg} {output.rules_dot}
         dot -Tpng -o {output.rules_png} {output.rules_dot}
         """
 

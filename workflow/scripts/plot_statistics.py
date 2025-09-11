@@ -394,7 +394,7 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_statistics",
             carrier="AC",
-            planning_horizons="2020",
+            planning_horizons="2060",
             co2_pathway="exp175default",
             topology="current+FCG",
             heating_demand="positive",
@@ -464,9 +464,8 @@ if __name__ == "__main__":
         },
         "optimal_capacity": {
             "calc": n.statistics.optimal_capacity,
-            "pre": lambda ds: _handle_battery(ds),
+            "pre": lambda ds: _handle_battery(ds).abs(),
             "post": lambda ds: ds.groupby(["carrier", "bus_carrier"]).sum(),
-            "unit": PLOT_CAP_LABEL,
             "conversion": PLOT_CAP_UNITS,
             "extra": None,
             "filename": "optimal_capacity.png",
@@ -518,7 +517,7 @@ if __name__ == "__main__":
         },
         "lcoe": {
             # ugly kwargs trick
-            "calc": lambda **x: calc_lcoe(n, groupby=None)["LCOE"],
+            "calc": lambda **x: calc_lcoe(n)["LCOE"],
             "pre": None,
             "post": lambda ds: ds.groupby(["carrier"]).first(),
             "unit": "€/MWh",
@@ -526,7 +525,7 @@ if __name__ == "__main__":
             "filename": "LCOE.png",
         },
         "mv_minus_lcoe": {
-            "calc": lambda **x: calc_lcoe(n, groupby=None)["profit_pu"],
+            "calc": lambda **x: calc_lcoe(n)["profit_pu"],
             "pre": None,
             "post": lambda ds: ds.groupby(["carrier"]).first(),
             "unit": "€/MWh",
@@ -538,10 +537,17 @@ if __name__ == "__main__":
     # Helper functions for special handling
     def _handle_battery(ds):
         if ("Link", "battery") in ds.index:
+            ds.loc[("Link", "battery charger", "AC")] = ds.loc[("Link", "battery", "AC")]
+            ds.drop(index=("Link", "battery"), inplace=True)
+        return ds
+
+    def _handle_water_tanks(ds):
+        if ("Link", "battery") in ds.index:
             ds.loc[("Link", "battery charger")] = ds.loc[("Link", "battery")]
             ds.drop(index=("Link", "battery"), inplace=True)
         return ds
 
+    end_carriers = ["H2", "heat", "AC"]
     # Main loop for statistics
     for stat in stats_list:
         if stat not in STATS_SETTINGS:
@@ -549,14 +555,17 @@ if __name__ == "__main__":
             continue
         settings = STATS_SETTINGS[stat]
 
+        if stat == "optimal_capacity":
+            pass
         # Calculate
         ds = settings["calc"](groupby=grouper, bus_carrier=carriers, nice_names=False).dropna()
+
         conversion = settings.get("conversion", 1)
         ds /= conversion
-        ds = ds.reset_index()
         # Preprocess
         if settings.get("pre"):
             ds = settings["pre"](ds)
+        ds = ds.reset_index()
         # Postprocess
         if settings.get("post"):
             ds = settings["post"](ds)
@@ -567,6 +576,7 @@ if __name__ == "__main__":
         ds = ds.reset_index()
         if "bus_carrier" in ds.columns:
             plot_carriers = ds.bus_carrier.unique()
+            plot_carriers = [car for car in plot_carriers if car in end_carriers]
         else:
             plot_carriers = ["AC"]
             ds.loc[:, "bus_carrier"] = "AC"

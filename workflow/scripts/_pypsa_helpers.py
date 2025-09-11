@@ -5,12 +5,10 @@ import pandas as pd
 import numpy as np
 import logging
 import pytz
-import xarray as xr
 import re
 
-import pandas as pd
 import pypsa
-import pytz
+
 
 # get root logger
 logger = logging.getLogger()
@@ -123,7 +121,10 @@ def aggregate_p(n: pypsa.Network) -> pd.Series:
 
 
 def calc_lcoe(
-    n: pypsa.Network, grouper=pypsa.statistics.get_carrier_and_bus_carrier, **kwargs
+    n: pypsa.Network,
+    grouper=pypsa.statistics.get_carrier_and_bus_carrier,
+    carriers=["AC", "heat"],  # noqa: F
+    **kwargs,
 ) -> pd.DataFrame:
     """Calculate the LCOE for the network: (capex+opex)/supply.
 
@@ -132,6 +133,7 @@ def calc_lcoe(
         grouper (function | list, optional): function to group the data in network.statistics.
                 Overwritten if groupby is passed in kwargs.
                 Defaults to pypsa.statistics.get_carrier_and_bus_carrier.
+        carriers (list, optional): list of carriers to include for generators. Defaults to ["AC", "heat"].
         **kwargs: other arguments to be passed to network.statistics
     Returns:
         pd.DataFrame: The LCOE for the network with or without brownfield CAPEX, MV and delta
@@ -140,13 +142,16 @@ def calc_lcoe(
     if "groupby" in kwargs:
         grouper = kwargs.pop("groupby")
 
-    # store marginal costs we will manipulate to merge gas costs
+    # store marginal costs we will manipulate to merge fuel costs
     original_marginal_costs = n.links.marginal_cost.copy()
-    # TODO remve the != Inner Mongolia gas, there for backward compat with a bug
-    gas_links = n.links.query("carrier.str.contains('gas') & bus0 != 'Inner Mongolia gas'").index
-    fuel_costs = n.generators.loc[n.links.loc[gas_links, "bus0"] + " fuel"].marginal_cost.values
-    # eta is applied by statistics
-    n.links.loc[gas_links, "marginal_cost"] += fuel_costs
+    for carr in ["coal", "gas", "coal ccs"]:
+        fueled_links = n.links.query(f"carrier.str.contains('{carr}', case=False)").index
+        suffix = " fuel" if carr == "gas" else ""
+        fuel_costs = n.generators.loc[
+            n.links.loc[fueled_links, "bus0"] + suffix
+        ].marginal_cost.values
+        # eta is applied by statistics
+        n.links.loc[fueled_links, "marginal_cost"] += fuel_costs
     # TODO same with BECCS? & other links?
     rev = n.statistics.revenue(groupby=grouper, **kwargs)
     opex = n.statistics.opex(groupby=grouper, **kwargs)
@@ -165,9 +170,38 @@ def calc_lcoe(
         axis=1,
         keys=["OPEX", "CAPEX", "CAPEX_wBROWN", "Revenue", "supply"],
     ).fillna(0)
-    outputs["rev-costs"] = outputs.apply(lambda row: row.Revenue - row.CAPEX - row.OPEX, axis=1)
-    outputs["LCOE"] = (outputs.CAPEX + outputs.OPEX) / outputs.supply
-    outputs["LCOE_wbrownfield"] = (outputs.CAPEX_wBROWN + outputs.OPEX) / outputs.supply
+
+    # remove generators that are not of interest (eg. coal fuel)
+    if "bus_carrier" in outputs.index.names and "carrier" in outputs.index.names:
+        outputs = outputs.query(
+            "(component == 'Generator' and bus_carrier in @carriers) or component!='Generator'"
+        )
+        outputs = outputs.sort_index()
+        # in case of links costs can be assigned to a different bus_carrier
+        outputs["supp_frac"] = (
+            outputs.groupby(["component", "carrier"])
+            .apply(lambda x: x.supply / x.supply.sum())
+            .values
+        )
+        outputs.fillna({"supp_frac": 0}, inplace=True)
+        outputs["cost"] = (
+            outputs.groupby(["component", "carrier"])
+            .apply(lambda x: (x.CAPEX + x.OPEX).sum() * x.supp_frac)
+            .values
+        )
+        outputs["cost_w_brownfield"] = (
+            outputs.groupby(["component", "carrier"])
+            .apply(lambda x: (x.CAPEX_wBROWN + x.OPEX).sum() * x.supp_frac)
+            .values
+        )
+        outputs = outputs[outputs.supp_frac != 0]
+    else:
+        outputs["cost"] = outputs["CAPEX"] + outputs["OPEX"]
+        outputs["cost_w_brownfield"] = outputs["CAPEX_wBROWN"] + outputs["OPEX"]
+
+    outputs["LCOE"] = outputs["cost"] / (outputs["supply"])
+    outputs["LCOE_wbrownfield"] = outputs["cost_w_brownfield"] / (outputs["supply"])
+    outputs["rev-costs"] = outputs.apply(lambda row: row.Revenue - row.cost, axis=1)
     outputs["MV"] = outputs.apply(lambda row: row.Revenue / row.supply, axis=1)
     outputs["profit_pu"] = outputs["rev-costs"] / outputs.supply
     outputs.sort_values("profit_pu", ascending=False, inplace=True)
@@ -194,7 +228,7 @@ def calc_generation_share(df, n, carrier):
 
 # TODO is thsi really good? useful?
 # TODO make a standard apply/str op instead ofmap in add_electricity.sanitize_carriers
-def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
+def rename_techs(label: str, nice_names: dict | pd.Series | None = None) -> str:
     """Rename technology labels for better readability. Removes some prefixes
         and renames if certain conditions  defined in function body are met.
 
@@ -265,7 +299,7 @@ def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
 def aggregate_costs(
     n: pypsa.Network,
     flatten=False,
-    opts: dict = None,
+    opts: dict | None = None,
     existing_only=False,
 ) -> pd.Series | pd.DataFrame:
     """LEGACY FUNCTION used in pypsa heating plots - unclear what it does
