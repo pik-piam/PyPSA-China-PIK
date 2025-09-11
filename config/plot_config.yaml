@@ -111,6 +111,11 @@ plotting:
     BEV_freight_charger: '#fb6a4a'
     BEV_passenger_discharger: '#ff7f7f'
     BEV_freight_discharger: '#ff9f9f'
+    # Title case versions (after .title() transformation in plot_time_series.py)
+    Bev_Passenger_Charger: '#e41a1c'
+    Bev_Freight_Charger: '#fb6a4a'
+    Bev_Passenger_Discharger: '#ff7f7f'
+    Bev_Freight_Discharger: '#ff9f9f'
     V2G: '#e5ffa8'
     land transport EV: '#baf238'
     Li ion: '#baf238'
@@ -425,6 +430,10 @@ plotting:
     BEV_freight_charger: "BEV Freight Charger"
     BEV_passenger_discharger: "BEV Passenger Discharger"
     BEV_freight_discharger: "BEV Freight Discharger"
+    Bev_Passenger_Charger: "BEV Passenger Charger"
+    Bev_Freight_Charger: "BEV Freight Charger"
+    Bev_Passenger_Discharger: "BEV Passenger Discharger"
+    Bev_Freight_Discharger: "BEV Freight Discharger"
     # coal: "Coal"
     coal: "Coal Power Plant"
     coal cc: "Coal with carbon capture"
@@ -451,6 +460,10 @@ plotting:
   - BEV_freight_charger
   - BEV_passenger_discharger
   - BEV_freight_discharger
+  - Bev_Passenger_Charger
+  - Bev_Freight_Charger
+  - Bev_Passenger_Discharger
+  - Bev_Freight_Discharger
   - Transmission Lines
   - transmission lines
   - transmission losses
