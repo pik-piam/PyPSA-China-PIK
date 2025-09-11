@@ -1,4 +1,9 @@
-# TODO add docu
+"""Build solar thermal profiles for heating demand modeling.
+
+This module generates solar thermal collector profiles and heat demand time series
+for residential and commercial sectors in the PyPSA-China energy system model.
+"""
+
 import logging
 import os
 

@@ -430,6 +430,16 @@ def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFram
 
 # TODO what does this actually do? is it needed?
 def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame) -> pd.DataFrame:
+    """Calculate energy production/consumption by carrier from network components.
+
+    Args:
+        n (pypsa.Network): PyPSA Network object
+        label (str): Label for the energy calculation scenario
+        energy (pd.DataFrame): DataFrame to store energy results
+
+    Returns:
+        pd.DataFrame: Updated energy DataFrame with calculated values
+    """
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         if c.name in n.one_port_components:
             c_energies = (
@@ -796,6 +806,15 @@ if __name__ == "__main__":
     df["metrics"].loc["total costs"] = df["costs"].sum()
 
     def to_csv(dfs, dir):
+        """Save DataFrames to CSV files in specified directory.
+
+        Args:
+            dfs (dict): Dictionary of DataFrames to save
+            dir (str): Output directory path
+
+        Returns:
+            None: Saves files to disk
+        """
         os.makedirs(dir, exist_ok=True)
         for key, df in dfs.items():
             df.to_csv(os.path.join(dir, f"{key}.csv"))

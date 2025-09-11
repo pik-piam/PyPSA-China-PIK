@@ -4,13 +4,14 @@
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
-  name: "unamed_default_run"
+  name: "unamed_run"
+  is_remind_coupled: false  # Set to true when using REMIND data
 foresight: "overnight"
 
 paths:
   results_dir: "results/"
   costs_dir: "resources/data/costs/default"
-  yearly_regional_load: 
+  yearly_regional_load:
     ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
     # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
@@ -20,8 +21,8 @@ edge_paths:
   current+FCG: "resources/data/grids/edges_current_FCG.csv"
   current+Neighbor: "resources/data/grids/edges_current_neighbor.csv"
 
-    
-scenario: 
+
+scenario:
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
@@ -36,7 +37,7 @@ scenario:
   heating_demand: ["positive"]
 
 # emission reduction scenarios (can be selected with scenario.co2_pathway)
-co2_scenarios: 
+co2_scenarios:
   exp175default:
     control: "reduction" # price | reduction | budget | None
     pathway:
@@ -90,7 +91,7 @@ atlite:
       dy: 5
       weather_year: 2020
 
-# renewable potentials and availabilities from Atlite. 
+# renewable potentials and availabilities from Atlite.
 # !CARE cutout should match atlite.cutout_name above
 renewable:
   onwind:
@@ -101,7 +102,7 @@ renewable:
     # bin by capacity factor
     resource_classes:
       min_cf_delta: 0.05
-      n: 3  
+      n: 3
     capacity_per_sqkm: 3 # ScholzPhd Tab 4.3.1: 10MW/km^2
     potential: simple # or conservative
     natura: false
@@ -170,21 +171,24 @@ Techs:
   ## tech selection
   #TODO: rework vre_techs to split with clean_techs. Merge vre with non_dispatchable
   vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier","H2 CHP", "fuel cell"]
-  non_dispatchable: ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential', "Solar Thermal"]
   conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
   store_techs: ["H2","battery","water tanks","PHS"]
   non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
   hydrogen_lines: true
-  coal_ccs_retrofit: true # currently myopic pathway only.  CC = co2 cap 
+  coal_ccs_retrofit: true # currently myopic pathway only.  CC = co2 cap
 
 ## add components (overwrites vre tech choice)
-heat_coupling: false
 add_biomass: True
 add_hydro: True
 add_H2: True
 add_methanation: True
 line_losses: True
 no_lines: False
+
+## sector coupling configuration
+sectors:
+  heat_coupling: false
+  electric_vehicles: true  # Master switch for transport sector coupling
 
 hydro_dams:
   dams_path: "resources/data/hydro/dams_large.csv"
@@ -296,12 +300,12 @@ lines:
 
 security:
   line_margin: 70 # max percent of line capacity
-  
+
 # brownfield options
 existing_capacities:
-  add: True # whether to add brownfield capacities
+  add: true # whether to add brownfield capacities
   grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  collapse_years: False # Treat as a single unit when preparing & solving network 
+  collapse_years: False # Treat as a single unit when preparing & solving network
   threshold_capacity: 1 # TODO UNIT
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
   node_assignment: simple # simple | gps
@@ -314,20 +318,20 @@ operational_reserve:
   contingency: 300000 # MW. Additional reserves on top of fractions
 
 # TODO integrate in workflow: split_provinces is currently not supported by build_loads and reporting
-nodes: 
+nodes:
   split_provinces: False # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
   # exclude currently only applies if split_provinces is True, will be fixed with integrartion to workflow
   exclude_provinces: ["Macau", "HongKong"] # list of provinces to exclude from splitting
   splits:
     # adminl2 groups per adminl1. {adminl1: {custom_name: [adminl2_names],..}}
     InnerMongolia:
-      West: 
+      West:
         - "Hulunbuir"
         - "Xing'an"
         - "Tongliao"
         - "Chifeng"
         - "Xilin Gol"
-      East: 
+      East:
         - "Alxa"
         - "Baotou"
         - "Baynnur"
@@ -343,49 +347,43 @@ io:
     zlib: True
 
 # simplification of shapes to save memory. If using GPS for plant node assignment a lower value is preferable.
-fetch_regions:  
-  simplify_tol: 
+fetch_regions:
+  simplify_tol:
     eez: 0.5
     land: 0.05
 
-EV_pass:
-  enable: true
-  dsm: false  # 不开启DSM
-  vehicle_type: "passenger"  # 指定车类型
-  annual_consumption: 3.0  # MWh/年
-  charge_rate: 0.011  # MW
-  share_charger: 0.8  # 充电器比例
-  battery_size: 0.06  # MWh
-  dsm_availability: 1  # DSM可用性
-  initial_soc: 0.2  # 初始电池状态（50%）
+# Transport sector configuration (only active when sectors.electric_vehicles: true)
+transport:
+  passenger_bev:
+    on: true
+    # Network modeling parameters
+    dsm: false  # DSM switch
+    dsm_availability: 1  # DSM availability
+    annual_consumption: 3.0  # MWh/year
+    charge_rate: 0.011  # MW
+    share_charger: 0.8  # charger sharing ratio
+    battery_size: 0.06  # MWh
+    # Demand modeling parameters
+    energy_per_100km: 0.015  # MWh/100km
+    cdf_column: "Private car"  # CDF data column name
+    initial_soc: 0.2  # initial state of charge
 
-EV_freight:
-  enable: true
-  dsm: false  # 不开启DSM
-  vehicle_type: "freight"  # 指定车类型
-  annual_consumption: 40.0  # MWh/年
-  charge_rate: 0.15  # MW
-  share_charger: 0.1  # 充电器比例
-  battery_size: 0.3  # MWh
-  dsm_availability: 1  # DSM可用性
-  initial_soc: 0.2  # 初始电池状态（50%）
+  freight_bev:
+    on: true
+    # Network modeling parameters
+    dsm: false  # DSM switch
+    dsm_availability: 1  # DSM availability
+    annual_consumption: 40.0  # MWh/year
+    charge_rate: 0.15  # MW
+    share_charger: 0.1  # charger sharing ratio
+    battery_size: 0.3  # MWh
+    # Demand modeling parameters
+    energy_per_100km: 0.2  # MWh/100km
+    cdf_column: "SPV"  # CDF data column name
+    initial_soc: 0.2  # initial state of charge
 
-# 交通需求配置
-transport_demand:
-  energy_per_100km_passenger: 0.015  # MWh/100km
-  energy_per_100km_freight: 0.2  # MWh/100km
-  passenger_charging_power_kw: 7
-  freight_charging_power_kw: 50
-  reset_hour: 7
-  initial_soc: 0.2
-  cdf_column_passenger: "Private car"
-  cdf_column_freight: "SPV"
-  bev_dsm_restriction_time: 7
-  bev_dsm_restriction_value: 0.8
-
-
-ev_availability:
-  carry_mode: continuous        # 或 continuous（决定 Tj 是否日内清零）
-  carry_backlog: true
-  reset_hour: 7                 # 日初重置时间（0-23），默认0点，设为3点可避免午夜不连续
-  initial_soc: 0.8        
+# DSM Common Configuration - Shared by All EV Types
+DSM_config:
+  reset_hour: 7  # daily reset time / DSM restriction time (0-23)
+  reset_daily: true  # whether to reset battery state daily
+  restriction_value: 0.8  # DSM restriction value

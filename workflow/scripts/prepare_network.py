@@ -683,9 +683,11 @@ def add_wind_and_solar(
                 ds = ds.sel(year=ds.year.min(), drop=True)
 
             timestamps = pd.DatetimeIndex(ds.time)
+
             def shift_weather_to_planning_yr(t):
                 """Shift weather data to planning year."""
                 return t.replace(year=int(year))
+
             timestamps = timestamps.map(shift_weather_to_planning_yr)
             ds = ds.assign_coords(time=timestamps)
 
@@ -705,6 +707,7 @@ def add_wind_and_solar(
         def flatten(t):
             """Flatten tuple to string with ' grade' separator."""
             return " grade".join(map(str, t))
+
         buses = ds.indexes["bus_bin"].get_level_values("bus")
         bus_bins = ds.indexes["bus_bin"].map(flatten)
 
@@ -1290,163 +1293,6 @@ def add_hydro(
         ),
     )
 
-def cycling_shift(df, steps=1):
-    """
-    Cyclic shift on index of pd.Series|pd.DataFrame by number of steps.
-    """
-    df = df.copy()
-    new_index = np.roll(df.index, steps)
-    df.values[:] = df.reindex(index=new_index).values
-    return df
-
-
-def attach_EV_REMIND(
-    n: pypsa.Network,
-    avail_profile: pd.DataFrame,
-    dsm_profile: pd.DataFrame,
-    p_set: pd.DataFrame,
-    nodes: pd.Index,
-    options: dict,
-    type: str,
-) -> None:
-    """
-    Attach EV components (passenger or freight) to a PyPSA network.
-
-    Logic
-    -----
-    - DSM OFF: Direct charging mode, p_set = charging demand
-    - DSM ON : Storage mode, p_set = driving demand
-               (load satisfied by store discharge; charging constrained by availability)
-
-    Parameters
-    ----------
-    n : pypsa.Network
-        PyPSA network to modify
-    avail_profile : pd.DataFrame
-        Charging availability profile (snapshots × nodes)
-    dsm_profile : pd.DataFrame
-        DSM state-of-charge profile (snapshots × nodes)
-    p_set : pd.DataFrame
-        EV demand profile (snapshots × nodes)
-    nodes : pd.Index
-        Node names (typically province names)
-    options : dict
-        Required keys:
-        - dsm (bool)
-        - annual_consumption (float, MWh/year per vehicle)
-        - charge_rate (float, MW per vehicle)
-        - share_charger (float)
-        - battery_size (float, MWh per vehicle)
-        - dsm_availability (float)
-    type : str
-        "pass" or "freight"
-    """
-    if type not in ("pass", "freight"):
-        raise ValueError("type must be 'pass' or 'freight'")
-
-    dsm_enabled = options["dsm"]
-
-    # --- 1. Compute EV numbers from demand ---
-    total_energy = p_set.sum().sum()
-    annual_consumption_per_ev = options["annual_consumption"]
-
-    total_number_evs = max(total_energy / max(annual_consumption_per_ev, 1e-6), 0.0)
-    node_energy_ratio = p_set.sum() / total_energy
-    number_evs = node_energy_ratio * total_number_evs
-
-    charge_power = (number_evs * options["charge_rate"] * options["share_charger"]).clip(lower=0.001)
-    battery_energy = (number_evs * options["battery_size"]).clip(lower=0.001)
-
-    logger.info(
-        f"EV {type} - DSM {'ON' if dsm_enabled else 'OFF'}, "
-        f"Total energy: {total_energy:.1f} MWh, "
-        f"Total EVs: {int(total_number_evs):,}"
-    )
-
-    # --- 2. Add buses ---
-    ev_load_bus = nodes + f" EV_load_{type}"
-    n.add("Carrier", f"EV_load_{type}")
-    n.add("Bus", ev_load_bus, location=nodes,
-          carrier=f"EV_load_{type}", unit="MWh_el")
-
-    if dsm_enabled:
-        carrier_name = f"EV_{type}_battery"
-        ev_battery_bus = nodes + " " + carrier_name
-        n.add("Carrier", carrier_name)
-        n.add("Bus", ev_battery_bus, location=nodes,
-              carrier=carrier_name, unit="MWh_el")
-
-    # --- 3. Add load ---
-    n.add(
-        "Load",
-        nodes,
-        suffix=f" land transport EV {type}",
-        bus=ev_load_bus,
-        carrier=f"land_transport_EV_{type}",
-        p_set=p_set.loc[n.snapshots, nodes],
-    )
-
-    # --- 4. Add components depending on DSM ---
-    if dsm_enabled:
-        # Charger: Grid -> Battery
-        n.add(
-            "Link",
-            nodes,
-            suffix=f" BEV {type} charger",
-            bus0=nodes,
-            bus1=ev_battery_bus,
-            p_nom=charge_power * options["dsm_availability"],
-            carrier=f"BEV_{type}_charger",
-            p_max_pu=avail_profile.loc[n.snapshots, nodes].clip(0, 1),
-            efficiency=1.0,
-        )
-
-        # Discharger: Battery -> EV load
-        n.add(
-            "Link",
-            nodes,
-            suffix=f" BEV {type} discharger",
-            bus0=ev_battery_bus,
-            bus1=ev_load_bus,
-            carrier=f"BEV_{type}_discharger",
-            efficiency=1.0,
-            p_nom_extendable=True,
-        )
-
-        # Battery Store
-        n.add(
-            "Store",
-            nodes,
-            suffix=f" EV_{type}_battery",
-            bus=ev_battery_bus,
-            carrier=f"EV_{type}_battery",
-            e_cyclic=True,
-            e_nom=battery_energy * options["dsm_availability"],
-            e_max_pu=1.0,
-            e_min_pu=dsm_profile.loc[n.snapshots, nodes].clip(0, 1),
-        )
-
-        logger.info(f"✅ DSM-enabled EV {type}: {int(total_number_evs):,} vehicles with storage")
-
-    else:
-        # Direct charger: Grid -> EV load
-        n.add(
-            "Link",
-            nodes,
-            suffix=f" BEV {type} charger",
-            bus0=nodes,
-            bus1=ev_load_bus,
-            carrier=f"BEV_{type}_charger",
-            efficiency=1.0,
-            p_nom=charge_power,
-            p_max_pu=1.0,
-        )
-
-        logger.info(f"✅ Direct EV {type}: {int(total_number_evs):,} vehicles, direct charging")
-
-    logger.info(f"EV {type} setup complete: {'DSM storage' if dsm_enabled else 'Direct charging'} mode")
-
-
 
 def prepare_network(
     config: dict,
@@ -1509,50 +1355,9 @@ def prepare_network(
 
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
 
-    # EV components setup
-    dsm_profile = pd.read_csv(paths["dsm_profile"], index_col=0, parse_dates=True)
-
-    # Passenger EVs
-    if config.get("EV_pass", {}).get("enable", False):
-        logger.info("adding passenger EV components")
-
-        charging_demand_pass = pd.read_csv(paths["transport_demand_passenger"], index_col=0, parse_dates=True)
-        driving_demand_pass  = pd.read_csv(paths["driving_demand_passenger"], index_col=0, parse_dates=True)
-        avail_profile_pass   = pd.read_csv(paths["avail_profile_passenger"], index_col=0, parse_dates=True)
-
-        options_pass = config["EV_pass"]
-        p_set_pass = driving_demand_pass if options_pass["dsm"] else charging_demand_pass
-
-        attach_EV_REMIND(
-            n=network,
-            avail_profile=avail_profile_pass,
-            dsm_profile=dsm_profile,
-            p_set=p_set_pass,
-            nodes=nodes,
-            options=options_pass,
-            type="pass",
-        )
-
-    # Freight EVs
-    if config.get("EV_freight", {}).get("enable", False):
-        logger.info("adding freight EV components")
-
-        charging_demand_freight = pd.read_csv(paths["transport_demand_freight"], index_col=0, parse_dates=True)
-        driving_demand_freight  = pd.read_csv(paths["driving_demand_freight"], index_col=0, parse_dates=True)
-        avail_profile_freight   = pd.read_csv(paths["avail_profile_freight"], index_col=0, parse_dates=True)
-
-        options_freight = config["EV_freight"]
-        p_set_freight = driving_demand_freight if options_freight["dsm"] else charging_demand_freight
-
-        attach_EV_REMIND(
-            n=network,
-            avail_profile=avail_profile_freight,
-            dsm_profile=dsm_profile,
-            p_set=p_set_freight,
-            nodes=nodes,
-            options=options_freight,
-            type="freight",
-        )
+    # NOTE: EV components are now handled by add_sectors rule (add_sectors.py)
+    # This allows the workflow to run with or without sector coupling
+    logger.info("EV components will be added by add_sectors rule if sector coupling is enabled")
 
     ws_carriers = [c for c in config["Techs"]["vre_techs"] if c.find("wind") >= 0 or c == "solar"]
     add_wind_and_solar(network, ws_carriers, paths, planning_horizons, costs)

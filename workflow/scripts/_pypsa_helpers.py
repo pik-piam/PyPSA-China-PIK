@@ -1,17 +1,13 @@
 """Helper functions for pypsa network handling"""
 
-import os
-import pandas as pd
-import numpy as np
 import logging
-import pytz
-import xarray as xr
+import os
 import re
 
+import numpy as np
 import pandas as pd
 import pypsa
 import pytz
-
 from constants import PROV_NAMES
 
 # get root logger
@@ -19,15 +15,15 @@ logger = logging.getLogger()
 
 # Simplified component mapping - only essential mappings
 COMPONENT_MAPPING = {
-    'generator': 'generators',
-    'link': 'links',
-    'line': 'lines',
-    'store': 'stores',
-    'storageunit': 'storage_units',
-    'bus': 'buses',
-    'globalconstraint': 'global_constraints',
-    'load': 'loads',
-    'transformer': 'transformers',
+    "generator": "generators",
+    "link": "links",
+    "line": "lines",
+    "store": "stores",
+    "storageunit": "storage_units",
+    "bus": "buses",
+    "globalconstraint": "global_constraints",
+    "load": "loads",
+    "transformer": "transformers",
 }
 
 
@@ -53,7 +49,7 @@ def get_location_and_carrier(
 
 
 def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Link"]) -> list:
-    """filter carriers for links that attach to a bus of the target carrier
+    """Filter carriers for links that attach to a bus of the target carrier
 
     Args:
         n (pypsa.Network): the pypsa network object
@@ -75,15 +71,23 @@ def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Lin
         carriers += [bus_carrier]
     return carriers
 
+
 # TODO fix timezones/centralsie, think Shanghai won't work on its own
 def generate_periodic_profiles(
     dt_index=None,
     col_tzs=pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]),
     weekly_profile=range(24 * 7),
 ):
-    """Give a 24*7 long list of weekly hourly profiles, generate this
-    for each country for the period dt_index, taking account of time
-    zones and Summer Time."""
+    """Generate weekly hourly profiles for each province, from pypsa-eur workflow.
+
+    Args:
+        dt_index: Time index for the profiles
+        col_tzs: Time zones for each province
+        weekly_profile: 168-hour weekly profile pattern
+
+    Returns:
+        pd.DataFrame: Weekly profiles for each province
+    """
 
     weekly_profile = pd.Series(weekly_profile, range(24 * 7))
     # TODO fix, no longer take into accoutn summer time
@@ -555,6 +559,3 @@ def store_duals_to_network(network: pypsa.Network) -> None:
                     val = 0.0
                 series = pd.Series(val, index=comp_obj.index)
             comp_obj[attr] = series
-
-
-

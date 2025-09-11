@@ -4,9 +4,9 @@ Generates reference data for the EV sector using a simplified Gompertz model.
 """
 
 import logging
-import pandas as pd
+
 import numpy as np
-from pathlib import Path
+import pandas as pd
 from scipy.optimize import curve_fit
 
 logger = logging.getLogger(__name__)
@@ -14,25 +14,43 @@ logger = logging.getLogger(__name__)
 
 class GompertzModel:
     """Simplified Gompertz model"""
-    
+
     def __init__(self, saturation_level: float = 500, alpha: float = -5.58):
         self.saturation_level = saturation_level
         self.alpha = alpha
         self.beta = None
         self.fitted = False
-    
+
     def gompertz_function(self, pgdp: np.ndarray, beta: float) -> np.ndarray:
-        """Gompertz function"""
+        """Calculate Gompertz function values for vehicle ownership prediction.
+
+        Args:
+            pgdp: Per-capita GDP values
+            beta: Fitted parameter
+
+        Returns:
+            np.ndarray: Predicted vehicle ownership per capita
+        """
         return self.saturation_level * np.exp(self.alpha * np.exp(beta * pgdp))
-    
+
     def fit_model(self, pgdp_data: np.ndarray, vehicle_data: np.ndarray) -> bool:
-        """Fit model parameter beta"""
+        """Fit Gompertz model beta parameter to historical data.
+
+        Args:
+            pgdp_data: Historical per-capita GDP data
+            vehicle_data: Historical vehicle ownership data
+
+        Returns:
+            bool: True if fitting successful, False otherwise
+        """
         try:
+
             def objective_function(pgdp, beta):
                 return self.gompertz_function(pgdp, beta)
-            
-            popt, _ = curve_fit(objective_function, pgdp_data, vehicle_data, 
-                                p0=[-0.0001], bounds=([-1], [0]))
+
+            popt, _ = curve_fit(
+                objective_function, pgdp_data, vehicle_data, p0=[-0.0001], bounds=([-1], [0])
+            )
             self.beta = popt[0]
             self.fitted = True
             logger.info(f"Gompertz model fitted successfully - α: {self.alpha}, β: {self.beta:.6f}")
@@ -40,21 +58,43 @@ class GompertzModel:
         except Exception as e:
             logger.error(f"Gompertz model fitting failed: {e}")
             return False
-    
+
     def predict_vehicles(self, pgdp: float, population: float) -> float:
-        """Predict vehicle numbers (10,000 vehicles)"""
+        """Predict total vehicle numbers using fitted model.
+
+        Args:
+            pgdp: Per-capita GDP
+            population: Population (in 10,000 persons)
+
+        Returns:
+            float: Predicted vehicles (in 10,000 vehicles)
+        """
         if not self.fitted:
             raise ValueError("Model not fitted")
-        
+
         vehicle_per_capita = self.gompertz_function(np.array([pgdp]), self.beta)[0]
         return vehicle_per_capita * population / 1000  # output in 10,000 vehicles
 
 
 def _load_historical_data(input_files: dict) -> pd.DataFrame:
-    """Load historical data (per-capita GDP, vehicle per 1000 people)"""
-    gdp = pd.read_csv(input_files['historical_gdp'], index_col=0, encoding="gbk", comment='#') 
-    pop = pd.read_csv(input_files['historical_pop'], index_col=0, encoding="gbk", comment='#')
-    cars = pd.read_csv(input_files['historical_cars'], index_col=0, encoding="gbk", comment='#')
+    """Load and process historical data for GDP, population, and vehicle ownership.
+
+    Args:
+        input_files (dict): Dictionary containing paths to historical data files with keys:
+            - 'historical_gdp': Path to historical GDP CSV file (GBK encoding)
+            - 'historical_pop': Path to historical population CSV file (GBK encoding)
+            - 'historical_cars': Path to historical vehicle ownership CSV file (GBK encoding)
+
+    Returns:
+        pd.DataFrame: Processed DataFrame with columns:
+            - province: Province name (with standardized naming)
+            - year: Year (as integer, filtered for valid numeric years)
+            - pgdp: Per-capita GDP (gdp/population)
+            - vehicle_per_capita: Vehicles per 1000 people
+    """
+    gdp = pd.read_csv(input_files["historical_gdp"], index_col=0, encoding="gbk", comment="#")
+    pop = pd.read_csv(input_files["historical_pop"], index_col=0, encoding="gbk", comment="#")
+    cars = pd.read_csv(input_files["historical_cars"], index_col=0, encoding="gbk", comment="#")
 
     province_mapping = {"Innermonglia": "InnerMongolia", "Innermongolia": "InnerMongolia"}
     gdp.rename(index=province_mapping, inplace=True)
@@ -69,8 +109,9 @@ def _load_historical_data(input_files: dict) -> pd.DataFrame:
     pop_long.columns = ["province", "year", "population"]
     cars_long.columns = ["province", "year", "cars"]
 
-    df = gdp_long.merge(pop_long, on=["province", "year"], how="inner") \
-                 .merge(cars_long, on=["province", "year"], how="inner")
+    df = gdp_long.merge(pop_long, on=["province", "year"], how="inner").merge(
+        cars_long, on=["province", "year"], how="inner"
+    )
 
     df = df[df["year"].str.isdigit()]
     df["year"] = df["year"].astype(int)
@@ -82,12 +123,27 @@ def _load_historical_data(input_files: dict) -> pd.DataFrame:
 
 
 def _load_future_data(input_files: dict, years: list) -> pd.DataFrame:
-    """Load future projections (population, GDP, per-capita GDP)"""
-    pop_data = pd.read_excel(input_files['ssp2_pop'], sheet_name='SSP2', index_col=0)
-    gdp_data = pd.read_excel(input_files['ssp2_gdp'], sheet_name='SSP2', index_col=0)
+    """Load and process future projections for population, GDP, and per-capita GDP.
+
+    Args:
+        input_files (dict): Dictionary containing paths to SSP2 data files with keys:
+            - 'ssp2_pop': Path to SSP2 population Excel file
+            - 'ssp2_gdp': Path to SSP2 GDP Excel file
+        years (list): List of target years to extract from the data
+
+    Returns:
+        pd.DataFrame: Processed DataFrame with columns:
+            - province: Province name
+            - year: Year (as integer)
+            - population: Population in 10,000 persons
+            - gdp: GDP values
+            - pgdp: Per-capita GDP (gdp/population)
+    """
+    pop_data = pd.read_excel(input_files["ssp2_pop"], sheet_name="SSP2", index_col=0)
+    gdp_data = pd.read_excel(input_files["ssp2_gdp"], sheet_name="SSP2", index_col=0)
     pop_data.columns = pop_data.columns.map(str)
     gdp_data.columns = gdp_data.columns.map(str)
-    
+
     province_mapping = {"Innermonglia": "InnerMongolia", "Innermongolia": "InnerMongolia"}
     pop_data.rename(index=province_mapping, inplace=True)
     gdp_data.rename(index=province_mapping, inplace=True)
@@ -103,7 +159,7 @@ def _load_future_data(input_files: dict, years: list) -> pd.DataFrame:
 
     df = pd.merge(pop_long, gdp_long, on=["province", "year"], how="inner")
 
-    df["population"] = df["population"] / 10000   # in 10,000 persons
+    df["population"] = df["population"] / 10000  # in 10,000 persons
     df["pgdp"] = df["gdp"] / df["population"]
     df["year"] = df["year"].astype(int)
 
@@ -111,34 +167,45 @@ def _load_future_data(input_files: dict, years: list) -> pd.DataFrame:
 
 
 def generate_reference(years: list, input_files: dict, output_dir: str, config: dict = None):
-    """Generate EV sector reference data"""
+    """Generate EV sector reference data using Gompertz model.
+
+    Args:
+        years: Target years for projections
+        input_files: Dictionary of input data file paths
+        output_dir: Output directory for results
+        config: Optional configuration parameters
+    """
     logger.info("Generating EV sector reference data")
-    
+
     model = GompertzModel(
-        saturation_level=config.get('saturation_level', 500) if config else 500, # Nature Geoscience: https://doi.org/10.1038/s41561-023-01350-9
-        alpha=config.get('alpha', -5.58) if config else -5.58 #Energy Policy: https://doi.org/10.1016/j.enpol.2011.01.043
+        saturation_level=config.get("saturation_level", 500)
+        if config
+        else 500,  # Nature Geoscience: https://doi.org/10.1038/s41561-023-01350-9
+        alpha=config.get("alpha", -5.58)
+        if config
+        else -5.58,  # Energy Policy: https://doi.org/10.1016/j.enpol.2011.01.043
     )
-    
+
     historical_data = _load_historical_data(input_files)
-    pgdp_data = historical_data['pgdp'].values
-    vehicle_data = historical_data['vehicle_per_capita'].values
+    pgdp_data = historical_data["pgdp"].values
+    vehicle_data = historical_data["vehicle_per_capita"].values
     model.fit_model(pgdp_data, vehicle_data)
-    
+
     future_data = _load_future_data(input_files, years)
-    
-    future_data['vehicles'] = future_data.apply(
-        lambda row: model.predict_vehicles(row['pgdp'], row['population']), axis=1
+
+    future_data["vehicles"] = future_data.apply(
+        lambda row: model.predict_vehicles(row["pgdp"], row["population"]), axis=1
     )
-    
+
     shares_by_year = {}
     for year in years:
-        year_data = future_data[future_data['year'] == year]
-        total_vehicles = year_data['vehicles'].sum()
-        shares = year_data['vehicles'] / total_vehicles
-        shares_by_year[year] = dict(zip(year_data['province'], shares))
-    
+        year_data = future_data[future_data["year"] == year]
+        total_vehicles = year_data["vehicles"].sum()
+        shares = year_data["vehicles"] / total_vehicles
+        shares_by_year[year] = dict(zip(year_data["province"], shares))
+
     shares_df = pd.DataFrame(shares_by_year)
     shares_df.to_csv(f"{output_dir}/ev_passenger_shares.csv")
     shares_df.to_csv(f"{output_dir}/ev_freight_shares.csv")
-    
+
     logger.info(f"EV reference data saved to {output_dir}")

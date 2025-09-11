@@ -1,3 +1,10 @@
+"""Plot network maps and energy system visualizations.
+
+This module creates geographical network maps showing generation capacities,
+transmission lines, energy flows, and other network characteristics for
+the PyPSA-China energy system model.
+"""
+
 import logging
 import os
 

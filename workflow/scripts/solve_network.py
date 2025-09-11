@@ -13,17 +13,10 @@ import numpy as np
 import pandas as pd
 import pypsa
 import xarray as xr
-import pandas as pd
-
-from pypsa.descriptors import get_switchable_as_dense as get_as_dense
-import os
-
-
-from _pypsa_helpers import store_duals_to_network
-from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, ConfigManager
-from _pypsa_helpers import mock_solve, filter_carriers
+from _helpers import ConfigManager, configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env
+from _pypsa_helpers import filter_carriers, mock_solve, store_duals_to_network
 from constants import YEAR_HRS
-from pandas import DatetimeIndex
+from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -79,7 +72,7 @@ def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1
         con_type = "expansion_cost" if kind == "c" else "volume_expansion"
         rhs = float(factor) ** n_years * ref
         logger.info(
-            f"Adding global transmission limit for {kind} to {float(factor)**n_years} current value"
+            f"Adding global transmission limit for {kind} to {float(factor) ** n_years} current value"
         )
         n.add(
             "GlobalConstraint",
@@ -458,8 +451,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             continue
         else:
             paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
-        remind_only_techs = n.config["existing_capacities"].get("remind_only_tech_groups", [])
-        paidoff_comp = paidoff_comp.query("tech_group not in @remind_only_techs")
+        _remind_only_techs = n.config["existing_capacities"].get("remind_only_tech_groups", [])
+        paidoff_comp = paidoff_comp.query("tech_group not in @_remind_only_techs")
 
         if paidoff_comp.empty:
             continue
@@ -512,16 +505,16 @@ def add_operational_reserve_margin(n: pypsa.network, config):
             contingency: 400000 # MW
     """
     reserve_config = config["operational_reserve"]
-    VRE_TECHS = config["Techs"].get("non_dispatchable", ["onwind", "offwind", "solar"])
+    _VRE_TECHS = config["Techs"].get("non_dispatchable", ["onwind", "offwind", "solar"])
     EPSILON_LOAD, EPSILON_VRES = reserve_config["epsilon_load"], reserve_config["epsilon_vres"]
     CONTINGENCY = float(reserve_config["contingency"])
 
     # AC producers
     ac_mask = n.generators.bus.map(n.buses.carrier) == "AC"
-    ac_buses = n.buses.query("carrier =='AC'").index
-    attached_carriers = filter_carriers(n, "AC")
+    _ac_buses = n.buses.query("carrier =='AC'").index
+    _attached_carriers = filter_carriers(n, "AC")
     # conceivably a link could have a negative efficiency and flow towards bus0 - don't consider
-    prod_links = n.links.query("carrier in @attached_carriers & not bus0 in @ac_buses")
+    prod_links = n.links.query("carrier in @_attached_carriers & not bus0 in @_ac_buses")
     transport_links = prod_links.bus0.map(n.buses.carrier) == prod_links.bus1.map(n.buses.carrier)
     prod_links = prod_links.loc[transport_links == False]
     prod_gen = n.generators.loc[ac_mask]
@@ -533,7 +526,7 @@ def add_operational_reserve_margin(n: pypsa.network, config):
     n.model.add_variables(0, np.inf, coords=[n.snapshots, prod_links.index], name="Link-r")
 
     # Define Reserve and weigh VRES by their mean availability ("capacity credit")
-    vres_gen = prod_gen.query("carrier in @VRE_TECHS")
+    vres_gen = prod_gen.query("carrier in @_VRE_TECHS")
     non_vre = prod_gen.index.difference(vres_gen.index)
     # full capacity credit for non-VRE producers (questionable, maybe should be weighted by availability)
     summed_reserve = (n.model["Link-r"] * prod_links.efficiency).sum("Link") + n.model[
@@ -632,7 +625,7 @@ def solve_network(
         config (dict): the configuration dictionary
         solving (dict): the solving configuration dictionary
         opts (str): optional wildcards such as ll (not used in pypsa-china)
-        
+
     Returns:
         pypsa.Network: the optimized network
     """
@@ -740,7 +733,7 @@ if __name__ == "__main__":
     if not is_test:
         # Extract export_duals flag from config in main
         export_duals_flag = snakemake.params.solving["options"].get("export_duals", False)
-        
+
         n = solve_network(
             n,
             config=snakemake.config,
@@ -748,7 +741,7 @@ if __name__ == "__main__":
             opts=opts,
             log_fn=snakemake.log.solver,
         )
-        
+
         # Store dual variables in network components for netcdf export
         if export_duals_flag:
             store_duals_to_network(n)

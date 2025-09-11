@@ -8,54 +8,37 @@ availability and demand-side management constraints.
 """
 
 import logging
-import os
-from pathlib import Path
-from constants import TIMEZONE
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 # from remind_coupling.disaggregate_data import get_ev_provincial_shares
-
-from _helpers import configure_logging 
-from _pypsa_helpers import generate_periodic_profiles,make_periodic_snapshots
+from _helpers import configure_logging
+from _pypsa_helpers import generate_periodic_profiles, make_periodic_snapshots
+from constants import PROV_NAMES, TIMEZONE
 
 logger = logging.getLogger(__name__)
 
+
 def build_transport_demand(
     traffic_fn: str,
-    airtemp_fn: str,   # ⚠️ 如果完全不用温度修正，可以删掉这个参数
     nodes: list,
     sector_load_data: pd.DataFrame,
     snapshots: pd.DatetimeIndex,
-    options: dict,
     nyears: int,
 ) -> pd.DataFrame:
     """
     Build transport demand time series (unit: MWh), given provincial annual totals.
 
-    Parameters
-    ----------
-    traffic_fn : str
-        Path to driving ratio data (CSV with 'count' column).
-    airtemp_fn : str
-        (unused if no temperature correction)
-    nodes : list
-        List of nodes (provinces).
-    sector_load_data : pd.DataFrame
-        Annual transport load data by province (index) and year (columns).
-    snapshots : pd.DatetimeIndex
-        Time series index.
-    options : dict
-        (unused if no temperature correction)
-    nyears : int
-        Number of simulated years.
+    Args:
+        traffic_fn (str): Path to driving ratio data (CSV with 'count' column).
+        nodes (list): List of nodes (provinces).
+        sector_load_data (pd.DataFrame): Annual transport load data by province (index) and year (columns).
+        snapshots (pd.DatetimeIndex): Time series index.
+        nyears (int): Number of simulated years.
 
-    Returns
-    -------
-    pd.DataFrame
-        Provincial transport demand time series (MWh), total per node = input annual total.
+    Returns:
+        pd.DataFrame: Provincial transport demand time series (MWh), total per node = input annual total.
     """
 
     # 1. Load and normalize traffic profile
@@ -77,104 +60,35 @@ def build_transport_demand(
     for node in nodes:
         total = nodal_totals[node]
         shape = base_shape[node] / base_shape[node].sum()  # normalize
-        result[node] = shape * total  
+        result[node] = shape * total
 
     return result
 
 
-def transport_degree_factor(
-    temperature,
-    deadband_lower=15,
-    deadband_upper=20,
-    lower_degree_factor=0.5,
-    upper_degree_factor=1.6,
-):
+# TODO: transport_degree_factor function was removed as temperature correction
+#       was not being used. If needed in future, restore from git history.
+
+
+def bev_dsm_profile(
+    snapshots: pd.DatetimeIndex, nodes: list, reset_hour: int, restriction_value: float
+) -> pd.DataFrame:
     """
-    Work out how much energy demand in vehicles increases due to heating and
-    cooling.
+    Creates a weekly repeating profile where DSM restrictions are applied at a specific
+    hour each day.
 
-    There is a deadband where there is no increase. Degree factors are %
-    increase in demand compared to no heating/cooling fuel consumption.
-    Returns per unit increase in demand for each place and time
-    """
+    Args:
+        snapshots (pd.DatetimeIndex): Time index for the simulation period.
+        nodes (list): List of network nodes (provinces/regions).
+        reset_hour (int): Hour of day (0-23) when DSM restrictions are applied.
+        restriction_value (float): DSM restriction value (0-1, where 1 = full restriction).
 
-    dd = temperature.copy()
-
-    dd[(temperature > deadband_lower) & (temperature < deadband_upper)] = 0.0
-
-    dT_lower = deadband_lower - temperature[temperature < deadband_lower]
-    dd[temperature < deadband_lower] = lower_degree_factor / 100 * dT_lower
-
-    dT_upper = temperature[temperature > deadband_upper] - deadband_upper
-    dd[temperature > deadband_upper] = upper_degree_factor / 100 * dT_upper
-
-    return dd
-
-
-def bev_availability_profile(fn, snapshots, nodes, options):
-    """
-    Generate EV charging availability profiles from weekly ratio data.
-
-    Parameters
-    ----------
-    fn : str
-        Path to availability data file (contains "count" column).
-    snapshots : pd.DatetimeIndex
-        Time index.
-    nodes : list
-        List of nodes.
-    options : dict
-        Additional options.
-
-    Returns
-    -------
-    pd.DataFrame
-        EV charging availability (0–1) for all nodes.
-    """
-    availability = pd.read_csv(fn, usecols=["count"]).squeeze("columns")
-
-    # Normalize if values are not ratios
-    if availability.max() > 1.0:
-        availability = availability / availability.max()
-    availability = availability.clip(0, 1).fillna(availability.mean())
-
-    # Repeat weekly pattern over full horizon
-    repeat_count = len(snapshots) // 168
-    remainder = len(snapshots) % 168
-    repeated = np.tile(availability.values, repeat_count)
-    if remainder > 0:
-        repeated = np.concatenate([repeated, availability.values[:remainder]])
-
-    profile = pd.DataFrame(repeated, index=snapshots)
-    profile = pd.concat([profile]*len(nodes), axis=1)
-    profile.columns = nodes
-    return profile
-
-
-
-def bev_dsm_profile(snapshots, nodes, options):
-    """
-    Generate DSM restriction profile for EVs.
-
-    Parameters
-    ----------
-    snapshots : pd.DatetimeIndex
-        Time index.
-    nodes : list
-        List of nodes.
-    options : dict
-        Must include:
-            - bev_dsm_restriction_time : int (hour of day)
-            - bev_dsm_restriction_value : float (restriction value)
-
-    Returns
-    -------
-    pd.DataFrame
-        DSM restriction profile for all nodes.
+    Returns:
+        pd.DataFrame: DSM restriction profile with snapshots as index and nodes as columns.
+            Values represent the restriction value at each time step.
     """
     dsm_week = np.zeros(24 * 7)
-    idx = np.arange(0, 7) * 24 + options["bev_dsm_restriction_time"]
-    dsm_week[idx] = options["bev_dsm_restriction_value"]
+    idx = np.arange(0, 7) * 24 + reset_hour
+    dsm_week[idx] = restriction_value
 
     repeat_count = len(snapshots) // 168
     remainder = len(snapshots) % 168
@@ -194,12 +108,35 @@ def _compute_cv_eff_series(
     e_kwh_per_km: float,
     p_eff_kw: float,
     reset_daily: bool,
-    carry_backlog: bool = False,
     reset_hour: int = 0,
     initial_soc: float = 0.5,
 ) -> np.ndarray:
     """
-    Compute causal EV availability profile (Δt=1h).
+    Compute causal electric vehicle charging availability profile using a fleet simulation model.
+
+    This function implements a detailed causal model that tracks individual vehicle states
+    over time to determine when EVs are available for charging. It considers driving patterns,
+    energy consumption, charging requirements, and battery state-of-charge dynamics.
+
+    The model simulates a fleet of J vehicles with different daily driving distances (dj_km)
+    and tracks their charging needs based on 'actual' driving behavior and parking availability.
+
+    Args:
+        p_park_series (np.ndarray): Time series of parking probability (0-1) for each hour.
+            Length N represents the simulation time horizon in hours.
+        dj_km (np.ndarray): Daily driving distances for J vehicle samples (km).
+            Represents the heterogeneity in driving patterns across the vehicle fleet.
+        e_kwh_per_km (float): Energy consumption per kilometer (kWh/km).
+        p_eff_kw (float): Charging power efficiency (kW). Maximum charging rate per vehicle.
+        reset_daily (bool): If True, reset battery state-of-charge daily at reset_hour.
+            If False, carry forward battery state between days.
+        reset_hour (int, optional): Hour of day (0-23) when daily reset occurs. Defaults to 0.
+        initial_soc (float, optional): Initial state of charge as fraction (0-1). Defaults to 0.5.
+
+    Returns:
+        np.ndarray: Charging availability profile of length N. Each element represents
+            the expected fraction of the vehicle fleet available for charging at that hour.
+            Values range from 0 (no vehicles available) to 1 (all vehicles available).
     """
     p_park_series = np.clip(p_park_series, 0.0, 1.0)
     p_run_series = 1.0 - p_park_series
@@ -212,7 +149,6 @@ def _compute_cv_eff_series(
 
     # per-vehicle state
     Tj = np.zeros(J, dtype=float)
-    Bj = np.zeros(J, dtype=float)
 
     cum_run_day = np.zeros(J, dtype=float)
     den_run_day = np.ones(J, dtype=float)
@@ -238,10 +174,7 @@ def _compute_cv_eff_series(
         H_cum = alpha * dj_km * S_d + 0.1
 
         # remaining demand
-        if carry_backlog:
-            Rj = np.maximum(Bj + H_cum, 0.0)
-        else:
-            Rj = np.maximum(H_cum, 0.0)
+        Rj = np.maximum(H_cum, 0.0)
 
         wj = np.minimum(Rj, 1.0)
 
@@ -252,10 +185,6 @@ def _compute_cv_eff_series(
         # update states
         Tj += p_park_d_t * wj
         cum_run_day += p_run_d_t
-
-        # update backlog at day end
-        if carry_backlog and ((t - reset_hour) % 24 == 23 or t == N - 1):
-            Bj = np.maximum(Bj + alpha * dj_km - Tj, 0.0)
 
     return cv_eff
 
@@ -270,19 +199,37 @@ def build_availability_profile_via_cdf(
     parking_ratio_csv: str,
     J: int = 200,
     reset_daily: bool = True,
-    carry_backlog: bool = False,
     reset_hour: int = 0,
-    initial_soc: float = 0.5,
+    initial_soc: float = 0.2,
 ) -> pd.DataFrame:
     """
-    Build EV charging availability profile using trip-distance CDF and parking ratio.
+    Build electric vehicle charging availability profile using driving patterns.
+
+    Combines trip-distance cumulative distribution function (CDF) with parking ratios
+    to calculate when EVs are available for charging. Uses a causal model that tracks
+    individual vehicle states and charging needs based on daily driving patterns.
+
+    Args:
+        snapshots (pd.DatetimeIndex): Time index for the simulation period.
+        nodes (list): List of network nodes (provinces/regions).
+        cdf_csv (str): Path to CSV file containing trip distance CDF data.
+        cdf_column (str): Column name in CDF file for the specific vehicle type.
+        e_mwh_per_100km (float): Energy consumption per 100km in MWh.
+        p_eff_kw (float): Charging power efficiency in kW.
+        parking_ratio_csv (str): Path to CSV file with weekly parking availability ratios.
+        J (int, optional): Number of vehicle samples for CDF interpolation. Defaults to 200.
+        reset_daily (bool, optional): Whether to reset battery state daily. Defaults to True.
+        reset_hour (int, optional): Hour of day (0-23) for daily reset. Defaults to 0.
+        initial_soc (float, optional): Initial state of charge (0-1). Defaults to 0.5.
+
+    Returns:
+        pd.DataFrame: Charging availability profile with snapshots as index and nodes as columns.
+            Values represent the fraction of EVs available for charging at each time step.
     """
 
     # 1. Parking profile (weekly, 168h)
     p_park_week = (
-        pd.read_csv(parking_ratio_csv, usecols=["count"])
-        .squeeze("columns")
-        .to_numpy(float)
+        pd.read_csv(parking_ratio_csv, usecols=["count"]).squeeze("columns").to_numpy(float)
     )
     p_park_week = np.clip(p_park_week, 0.0, 1.0)
     p_park_series = np.tile(p_park_week, int(np.ceil(len(snapshots) / 168)))[: len(snapshots)]
@@ -304,7 +251,6 @@ def build_availability_profile_via_cdf(
         e_kwh_per_km,
         p_eff_kw,
         reset_daily=reset_daily,
-        carry_backlog=carry_backlog,
         reset_hour=reset_hour,
         initial_soc=initial_soc,
     )
@@ -320,12 +266,12 @@ if __name__ == "__main__":
         snakemake = mock_snakemake("build_transport_demand", clusters=128)
     configure_logging(snakemake)
 
-    from constants import PROV_NAMES
-
     nodes = list(PROV_NAMES)
 
-    transport_config = snakemake.params.transport_demand
-    
+    ev_pass_config = snakemake.params.EV_pass
+    ev_freight_config = snakemake.params.EV_freight
+    dsm_config = snakemake.params.DSM_config
+
     yr = int(snakemake.wildcards.planning_horizons)
     snapshots = make_periodic_snapshots(
         year=yr,
@@ -334,108 +280,66 @@ if __name__ == "__main__":
         end_day_hour="12-31 23:00",
         bounds="both",
     )
-    
-    temperature_correction = transport_config.get("temperature_correction", {})
-    options = {
-        "transport_heating_deadband_lower": temperature_correction.get("heating_deadband_lower", 15.0),
-        "transport_heating_deadband_upper": temperature_correction.get("heating_deadband_upper", 20.0),
-        "ICE_lower_degree_factor": temperature_correction.get("ice_lower_degree_factor", 0.375),
-        "ICE_upper_degree_factor": temperature_correction.get("ice_upper_degree_factor", 1.6),
-        "bev_dsm_restriction_time": transport_config.get("bev_dsm_restriction_time", 7),
-        "bev_dsm_restriction_value": transport_config.get("bev_dsm_restriction_value", 0.8),
-    }
 
-    passenger_e_mwh_per_100km = transport_config.get("energy_per_100km_passenger", 0.015)
-    freight_e_mwh_per_100km = transport_config.get("energy_per_100km_freight", 0.2)
-    passenger_charging_power_kw = transport_config.get("passenger_charging_power_kw", 7.0)
-    freight_charging_power_kw = transport_config.get("freight_charging_power_kw", 50.0)
-    
     nyears = len(snapshots) / 8760.0
 
+    # Load REMIND sectoral data (required for transport demand)
+    logger.info("Using REMIND sectoral load data")
     sectoral_load = pd.read_csv(snakemake.input.sectoral_load)
-    
+
     ev_passenger_load = sectoral_load[sectoral_load["sector"] == "ev_pass"].copy()
     ev_passenger_load = ev_passenger_load.drop("sector", axis=1)
     ev_passenger_load.set_index("province", inplace=True)
-    
+
     ev_freight_load = sectoral_load[sectoral_load["sector"] == "ev_freight"].copy()
     ev_freight_load = ev_freight_load.drop("sector", axis=1)
     ev_freight_load.set_index("province", inplace=True)
 
     driving_demand_passenger = build_transport_demand(
-        snakemake.input.driving_data_passenger,
-        snakemake.input.temperature,
-        nodes,
-        ev_passenger_load,
-        snapshots,
-        options,
-        nyears
+        snakemake.input.driving_data_passenger, nodes, ev_passenger_load, snapshots, nyears
     )
 
     driving_demand_freight = build_transport_demand(
-        snakemake.input.driving_data_freight,
-        snakemake.input.temperature,
-        nodes,
-        ev_freight_load,
-        snapshots,
-        options,
-        nyears
+        snakemake.input.driving_data_freight, nodes, ev_freight_load, snapshots, nyears
     )
 
     charging_demand_passenger = build_transport_demand(
-        snakemake.input.charging_data_passenger,
-        snakemake.input.temperature,
-        nodes,
-        ev_passenger_load,
-        snapshots,
-        options,
-        nyears
+        snakemake.input.charging_data_passenger, nodes, ev_passenger_load, snapshots, nyears
     )
 
     charging_demand_freight = build_transport_demand(
-        snakemake.input.charging_data_freight,
-        snakemake.input.temperature,
-        nodes,
-        ev_freight_load,
-        snapshots,
-        options,
-        nyears
+        snakemake.input.charging_data_freight, nodes, ev_freight_load, snapshots, nyears
     )
-
-    reset_hour_cfg = transport_config.get("reset_hour", 7)
-    initial_soc_cfg = transport_config.get("initial_soc", 0.2)
-    cdf_column_passenger = transport_config.get("cdf_column_passenger", "Private car")
-    cdf_column_freight = transport_config.get("cdf_column_freight", "SPV")
 
     avail_profile_passenger = build_availability_profile_via_cdf(
         snapshots=snapshots,
         nodes=nodes,
-        cdf_csv=snakemake.input.cdf_data_passenger,                 # CDF 文件
-        cdf_column=cdf_column_passenger,                             # CDF 列
-        e_mwh_per_100km=passenger_e_mwh_per_100km,                  # 能耗
-        p_eff_kw=passenger_charging_power_kw,                       # 充电功率
-        parking_ratio_csv=snakemake.input.availability_data_passenger, # 停车比例
-        reset_daily=True,
-        carry_backlog=False,
-        reset_hour=reset_hour_cfg,
-        initial_soc=initial_soc_cfg
+        cdf_csv=snakemake.input.cdf_data_passenger,
+        cdf_column=ev_pass_config["cdf_column"],
+        e_mwh_per_100km=ev_pass_config["energy_per_100km"],
+        p_eff_kw=ev_pass_config["charge_rate"] * 1000,  # MW -> kW
+        parking_ratio_csv=snakemake.input.availability_data_passenger,
+        reset_daily=dsm_config["reset_daily"],
+        reset_hour=dsm_config["reset_hour"],
+        initial_soc=ev_pass_config["initial_soc"],
     )
 
     avail_profile_freight = build_availability_profile_via_cdf(
         snapshots=snapshots,
         nodes=nodes,
-        cdf_csv=snakemake.input.cdf_data_freight,                   # CDF 文件
-        cdf_column=cdf_column_freight,                               # CDF 列
-        e_mwh_per_100km=freight_e_mwh_per_100km,                    # 能耗
-        p_eff_kw=freight_charging_power_kw,                         # 充电功率
-        parking_ratio_csv=snakemake.input.availability_data_freight, # 停车比例
-        reset_daily=True,
-        carry_backlog=False,
-        reset_hour=reset_hour_cfg,
-        initial_soc=initial_soc_cfg
+        cdf_csv=snakemake.input.cdf_data_freight,
+        cdf_column=ev_freight_config["cdf_column"],
+        e_mwh_per_100km=ev_freight_config["energy_per_100km"],
+        p_eff_kw=ev_freight_config["charge_rate"] * 1000,  # MW -> kW
+        parking_ratio_csv=snakemake.input.availability_data_freight,
+        reset_daily=dsm_config["reset_daily"],
+        reset_hour=dsm_config["reset_hour"],
+        initial_soc=ev_freight_config["initial_soc"],
     )
 
-    dsm_profile = bev_dsm_profile(snapshots, nodes, options)
+    dsm_profile = bev_dsm_profile(
+        snapshots, nodes, dsm_config["reset_hour"], dsm_config["restriction_value"]
+    )
 
     driving_demand_passenger.to_csv(snakemake.output.driving_demand_passenger)
     driving_demand_freight.to_csv(snakemake.output.driving_demand_freight)

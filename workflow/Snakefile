@@ -59,7 +59,7 @@ storage:
 if config["run"].get("is_test", False):
     rule test_workflow:
         input:
-            expand(RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc',   
+            expand(RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc',
             **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
             ),
 
@@ -72,7 +72,7 @@ elif config["foresight"] in ["overnight", "myopic"]:
             ),
             # network plot
             expand(
-                RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.png",      
+                RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.png",
                 **config["scenario"]
             ),
             expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"]),
@@ -246,33 +246,43 @@ rule build_load_profiles:
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_load_profiles.py"
 
-rule build_transport_demand:
-    params:
-        snapshots=config["snapshots"],
-        transport_demand=config.get("transport_demand", {}),
-    input:
-        driving_data_passenger="resources/data/load/driving_ratio_passenger.csv",
-        driving_data_freight="resources/data/load/driving_ratio_freight.csv",
-        charging_data_passenger="resources/data/load/charging_ratio_passenger.csv",
-        charging_data_freight="resources/data/load/charging_ratio_freight.csv",
-        availability_data_passenger="resources/data/load/availability_ratio_passenger.csv",
-        availability_data_freight="resources/data/load/availability_ratio_freight.csv",
-        temperature=DERIVED_COMMON + "/heating/temperature.h5",
-        sectoral_load=DERIVED_DATA + "/remind/ac_load_disagg.csv",
-        cdf_data_passenger="resources/data/load/transport_cdf.csv",
-        cdf_data_freight="resources/data/load/transport_cdf.csv",
-    output:
-        driving_demand_passenger=DERIVED_DATA + "/transport/driving_demand_passenger_{planning_horizons}.csv",
-        driving_demand_freight=DERIVED_DATA + "/transport/driving_demand_freight_{planning_horizons}.csv",
-        charging_demand_passenger=DERIVED_DATA + "/transport/charging_demand_passenger_{planning_horizons}.csv",
-        charging_demand_freight=DERIVED_DATA + "/transport/charging_demand_freight_{planning_horizons}.csv",
-        avail_profile_passenger=DERIVED_DATA + "/transport/avail_profile_passenger_{planning_horizons}.csv",
-        avail_profile_freight=DERIVED_DATA + "/transport/avail_profile_freight_{planning_horizons}.csv",
-        dsm_profile=DERIVED_DATA + "/transport/dsm_profile_{planning_horizons}.csv",
-    threads: 1
-    resources: mem_mb=2000
-    log: LOG_DIR + "/build_transport_demand/transport_demand_{planning_horizons}.log"
-    script: "scripts/build_transport_demand.py"
+# Only build transport demand if electric vehicles are enabled
+if config.get("sectors", {}).get("electric_vehicles", False):
+    if not config["run"].get("is_remind_coupled", False):
+        raise ValueError(
+            "Electric vehicles require REMIND data for transport demand.\n"
+            "Please choose one of the following:\n"
+            "1. Set 'run.is_remind_coupled: true' and provide REMIND data files\n"
+            "2. Set 'sectors.electric_vehicles: false' to run electricity-only model"
+        )
+    rule build_transport_demand:
+        params:
+            snapshots=config["snapshots"],
+            EV_pass=config.get("transport", {}).get("passenger_bev", {}),
+            EV_freight=config.get("transport", {}).get("freight_bev", {}),
+            DSM_config=config.get("DSM_config", {}),
+        input:
+            driving_data_passenger="resources/data/load/driving_ratio_passenger.csv",
+            driving_data_freight="resources/data/load/driving_ratio_freight.csv",
+            charging_data_passenger="resources/data/load/charging_ratio_passenger.csv",
+            charging_data_freight="resources/data/load/charging_ratio_freight.csv",
+            availability_data_passenger="resources/data/load/availability_ratio_passenger.csv",
+            availability_data_freight="resources/data/load/availability_ratio_freight.csv",
+            sectoral_load=DERIVED_DATA + "/remind/ac_load_disagg.csv" if config["run"].get("is_remind_coupled", False) else DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
+            cdf_data_passenger="resources/data/load/transport_cdf.csv",
+            cdf_data_freight="resources/data/load/transport_cdf.csv",
+        output:
+            driving_demand_passenger=DERIVED_DATA + "/transport/driving_demand_passenger_{planning_horizons}.csv",
+            driving_demand_freight=DERIVED_DATA + "/transport/driving_demand_freight_{planning_horizons}.csv",
+            charging_demand_passenger=DERIVED_DATA + "/transport/charging_demand_passenger_{planning_horizons}.csv",
+            charging_demand_freight=DERIVED_DATA + "/transport/charging_demand_freight_{planning_horizons}.csv",
+            avail_profile_passenger=DERIVED_DATA + "/transport/avail_profile_passenger_{planning_horizons}.csv",
+            avail_profile_freight=DERIVED_DATA + "/transport/avail_profile_freight_{planning_horizons}.csv",
+            dsm_profile=DERIVED_DATA + "/transport/dsm_profile_{planning_horizons}.csv",
+        threads: 1
+        resources: mem_mb=2000
+        log: LOG_DIR + "/build_transport_demand/transport_demand_{planning_horizons}.log"
+        script: "scripts/build_transport_demand.py"
 
 
 rule build_biomass_potential:
@@ -298,7 +308,7 @@ rule prepare_baseyear_capacities:
         tech_costs=path_manager.costs_dir() + "/costs_{planning_horizons}.csv",
         **{f"{tech}": DERIVED_COMMON + f"/existing_infrastructure/{tech}_capacity.csv"
             for tech in config['existing_capacities']['techs']},
-    output: 
+    output:
         installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities_{planning_horizons}.csv',
     threads: 1
     resources: mem_mb=2000
@@ -310,6 +320,7 @@ resource_class_cfg = {tech: config["renewable"][tech]["resource_classes"] for te
 rsc_params = {key : "_".join([f"{k}{v}" for k, v in resource_class_cfg[key].items()]) for key in resource_class_cfg}
 if config["foresight"] in ["overnight"]:
     add_brownfield = "-brownfield" if config["existing_capacities"].get("add", False) else ""
+    add_sectors = "-sector" if config.get("sectors", {}).get("electric_vehicles", False) else ""
 
     rule prepare_networks:
         input:
@@ -323,18 +334,29 @@ if config["foresight"] in ["overnight"]:
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
             biomass_potential=DERIVED_COMMON+f"{'/p_nom/biomass_potential.h5' if config["add_biomass"] else ''}",
             **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" for tech in config['renewable']},
-            transport_demand_passenger=DERIVED_DATA + "/transport/charging_demand_passenger_{planning_horizons}.csv",
-            transport_demand_freight=DERIVED_DATA + "/transport/charging_demand_freight_{planning_horizons}.csv",
-            driving_demand_passenger=DERIVED_DATA + "/transport/driving_demand_passenger_{planning_horizons}.csv",
-            driving_demand_freight=DERIVED_DATA + "/transport/driving_demand_freight_{planning_horizons}.csv",
-            avail_profile_passenger=DERIVED_DATA + "/transport/avail_profile_passenger_{planning_horizons}.csv",
-            avail_profile_freight=DERIVED_DATA + "/transport/avail_profile_freight_{planning_horizons}.csv",
-            dsm_profile=DERIVED_DATA + "/transport/dsm_profile_{planning_horizons}.csv",
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         threads: 1
         resources: mem_mb=10000
         script: "scripts/prepare_network.py"
+
+    # Only create sector network rule if electric vehicles are enabled
+    if config.get("sectors", {}).get("electric_vehicles", False):
+        rule add_sectors:
+            input:
+                network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
+                transport_demand_passenger=DERIVED_DATA + "/transport/charging_demand_passenger_{planning_horizons}.csv",
+                transport_demand_freight=DERIVED_DATA + "/transport/charging_demand_freight_{planning_horizons}.csv",
+                driving_demand_passenger=DERIVED_DATA + "/transport/driving_demand_passenger_{planning_horizons}.csv",
+                driving_demand_freight=DERIVED_DATA + "/transport/driving_demand_freight_{planning_horizons}.csv",
+                avail_profile_passenger=DERIVED_DATA + "/transport/avail_profile_passenger_{planning_horizons}.csv",
+                avail_profile_freight=DERIVED_DATA + "/transport/avail_profile_freight_{planning_horizons}.csv",
+                dsm_profile=DERIVED_DATA + "/transport/dsm_profile_{planning_horizons}.csv",
+            output:
+                network=RESULTS_DIR+ '/prenetworks-sector/ntwk_{planning_horizons}.nc',
+            threads: 1
+            resources: mem_mb=8000
+            script: "scripts/add_sectors.py"
 
     paidoff_caps = DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv"
     if not config["run"].get("is_remind_coupled", False):
@@ -344,12 +366,12 @@ if config["foresight"] in ["overnight"]:
             baseyear = config["scenario"]["planning_horizons"][0],
             add_baseyear_to_assets = False,
         input:
-            network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
+            network=RESULTS_DIR+ f'/prenetworks{add_sectors}/' +'ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
             cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
             installed_capacities = path_manager.infrastructure() + '/capacities_{planning_horizons}.csv',
             paid_off_capacities_remind = paidoff_caps,
-        output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
+        output: RESULTS_DIR+ f'/prenetworks{add_sectors}{add_brownfield}/' +'ntwk_{planning_horizons}.nc'
         threads: 1
         resources: mem_mb=2000
         script: "scripts/add_existing_baseyear.py"
@@ -359,7 +381,7 @@ if config["foresight"] in ["overnight"]:
             solving = config["solving"],
             add_baseyear_assets = False,
         input:
-            network_name=RESULTS_DIR+ f'/prenetworks{add_brownfield}/' +'ntwk_{planning_horizons}.nc',
+            network_name=RESULTS_DIR+ f'/prenetworks{add_sectors}{add_brownfield}/' +'ntwk_{planning_horizons}.nc',
         output:
             network_name=RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc'
         log:
@@ -382,7 +404,7 @@ elif config["foresight"] == "myopic":
             # TODO: metadata for file, why does it need to be h5?
             tech_costs= COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON +"/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
+            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc"
                 for tech in config['renewable']},
 
         output:
@@ -404,7 +426,7 @@ elif config["foresight"] == "myopic":
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             tech_costs= COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
+            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc"
                 for tech in config['renewable']},
 
         output:
@@ -502,7 +524,9 @@ onerror:
 onsuccess:
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
     try:
+        import os
+        os.makedirs(res_dir, exist_ok=True)
         with open(res_dir + "/run_config.yaml", "w") as f:
             yaml.dump(config, f )
-    except TypeError as e:
+    except (TypeError, FileNotFoundError) as e:
         logging.warning(f"Could not copy config file: {e}")
