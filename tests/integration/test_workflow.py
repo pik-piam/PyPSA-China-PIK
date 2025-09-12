@@ -1,3 +1,10 @@
+"""
+Integration tests for the workflow.
+
+This module contains tests to verify that the Snakemake workflow runs end-to-end
+with a minimal configuration.
+"""
+
 import logging
 import os
 import shutil
@@ -99,7 +106,6 @@ def launch_subprocess(cmd: str, env=None) -> subprocess.CompletedProcess:
                 "plan_year": 2030,
                 "heat_coupling": False,
                 "foresight": "overnight",
-                "existing_capacities": {"add": False},
                 "run": {"is_remind_coupled": True},
             }
         ),
@@ -157,6 +163,12 @@ def test_dry_run_build_cutouts(make_test_config_file):
     indirect=True,
 )
 def test_workflow(make_test_config_file):
+    """
+    Run the full workflow with a test configuration.
+
+    Ensures that the workflow completes without errors on a reduced network size.
+    """
+
     logging.info("Starting workflow test")
     # reduce network size
 
