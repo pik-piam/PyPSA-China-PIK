@@ -266,7 +266,7 @@ central coal CHP,2035,FOM,1.63,%/year,"Danish Energy Agency, technology_data_for
 central coal CHP,2035,VOM,2.81,EUR/MWh,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",01 Coal CHP:  Variable O&M
 central coal CHP,2035,c_b,1.01,50oC/100oC,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",01 Coal CHP:  Cb coefficient
 central coal CHP,2035,c_v,0.15,50oC/100oC,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",01 Coal CHP:  Cv coefficient
-central coal CHP,2035,efficiency,0.4647502047502047,per unit,Linear increase from Xiang et al nat energy 2023 to DKEA catalogue 2023 value for 2060,"01 Coal CHP:  Electricity efficiency, condensation mode, net"
+central coal CHP,2035,efficiency,0.4687498051948051,per unit,Linear increase from Xiang et al nat energy 2023 to DKEA catalogue 2023 value for 2060,"01 Coal CHP:  Electricity efficiency, condensation mode, net"
 central coal CHP,2035,investment,1841.32,EUR/kW,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",01 Coal CHP:  Nominal investment
 central coal CHP,2035,lifetime,25.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",01 Coal CHP:  Technical lifetime
 central gas CHP,2035,FOM,3.35,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","04 Gas turb. simple cycle, L:  Fixed O&M"
@@ -345,7 +345,7 @@ clean water tank storage,2035,lifetime,30.0,years,"Caldera et al 2016: Local cos
 coal,2035,CO2 intensity,0.34,tCO2/MWh_th,Entwicklung der spezifischen Kohlendioxid-Emissionen des deutschen Strommix in den Jahren 1990 - 2018,
 coal,2035,FOM,1.6,%/year,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 coal,2035,VOM,3.5,EUR/MWh_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
-coal,2035,efficiency,0.4325,per unit,Linear increase from Xiang et al nat energy 2023 to DKEA catalogue 2023 value for 2060,
+coal,2035,efficiency,0.46968824324324315,per unit,Linear increase from Xiang et al nat energy 2023 to DKEA catalogue 2023 value for 2060,
 coal,2035,fuel,8.15,EUR/MWh_th,BP 2019,
 coal,2035,investment,3845.51,EUR/kW_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 coal,2035,lifetime,40.0,years,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
