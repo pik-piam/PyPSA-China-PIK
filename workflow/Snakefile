@@ -144,7 +144,7 @@ rule build_powerplants:
     threads: 2 #TODO 1?
     script: "scripts/build_powerplants.py"
 
-# TODO find a way to turn off if heat coupling is off 
+# TODO find a way to turn off if heat coupling is off
 rule build_solar_thermal_profiles:
     input:
         cutout=CUTOUT_PATH,
@@ -314,7 +314,7 @@ rule prepare_baseyear_capacities:
         tech_costs=path_manager.costs_dir() + f"/costs_{BASEYEAR}.csv",
         **{f"{tech}": DERIVED_COMMON + f"/existing_infrastructure/{tech}_capacity.csv"
             for tech in config['existing_capacities']['techs']},
-    output: 
+    output:
         installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities.csv',
     threads: 1
     resources: mem_mb=2000
@@ -362,7 +362,7 @@ if config["foresight"] in ["overnight"]:
                 network=RESULTS_DIR+ '/prenetworks-sector/ntwk_{planning_horizons}.nc',
             threads: 1
             resources: mem_mb=8000
-            script: "scripts/add_sectors.py"
+            script: "scripts/add_sectors_improved.py"
 
     paidoff_caps = DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv"
     if not config["run"].get("is_remind_coupled", False):
@@ -392,7 +392,7 @@ if config["foresight"] in ["overnight"]:
         log:
             solver = LOG_DIR + "/solve_network_postnetworks/ntwk_{planning_horizons}.log"
         threads: 4
-        resources: mem_mb=35000
+        resources: mem_mb=120000
         script: "scripts/solve_network.py"
 
 

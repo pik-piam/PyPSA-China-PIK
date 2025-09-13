@@ -303,7 +303,7 @@ security:
 
 # brownfield options
 existing_capacities:
-  add: true # whether to add brownfield capacities
+  add: false # whether to add brownfield capacities
   grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
   collapse_years: False # Treat as a single unit when preparing & solving network
   threshold_capacity: 1 # TODO UNIT
@@ -314,7 +314,7 @@ existing_capacities:
 existing_capacities:
   add: True # whether to add brownfield capacities
   grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  collapse_years: False # Treat as a single unit when preparing & solving network 
+  collapse_years: False # Treat as a single unit when preparing & solving network
   threshold_capacity: 1 # TODO UNIT
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
   node_assignment: simple # simple | gps

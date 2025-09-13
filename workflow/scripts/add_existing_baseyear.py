@@ -216,7 +216,7 @@ def add_power_capacities_installed_before_baseyear(
         df.resource_class.fillna("", inplace=True)
     df.grouping_year = df.grouping_year.astype(int)
     if config["existing_capacities"].get("collapse_years", False):
-        df.grouping_year = 1 # 0 is default
+        df.grouping_year = 1  # 0 is default
 
     df_ = df.pivot_table(
         index=["grouping_year", "tech_clean", "resource_class"],
@@ -490,7 +490,6 @@ def add_power_capacities_installed_before_baseyear(
             )
 
         elif generator == "PHS":
-
             # pure pumped hydro storage, fixed, 6h energy by default, no inflow
             n.add(
                 "StorageUnit",
@@ -692,7 +691,7 @@ if __name__ == "__main__":
 
     config = snakemake.config
     tech_costs = snakemake.input.tech_costs
-    plan_year = int(snakemake.wildcards["planning_horizons"]) # plan_year]
+    plan_year = int(snakemake.wildcards["planning_horizons"])  # plan_year]
     data_paths = {k: v for k, v in snakemake.input.items()}
 
     if config["run"].get("is_remind_coupled", False):
@@ -702,7 +701,7 @@ if __name__ == "__main__":
 
     n = pypsa.Network(snakemake.input.network)
     n_years = n.snapshot_weightings.generators.sum() / YEAR_HRS
-    if snakemake.params["add_build_year_to_new_assets"]:
+    if snakemake.params["add_baseyear_to_assets"]:
         # call before adding brownfield (for retrofit brownfield could be extendable)
         add_build_year(n, plan_year)
 
@@ -713,9 +712,12 @@ if __name__ == "__main__":
     # TODO check needed for coupled mode
     existing_capacities = filter_brownfield_capacities(existing_capacities, plan_year)
     # In coupled mode, capacities from REMIND are passed to PyPSA for each plan year.
-    #  The harmonized capacities file then has an extra 'year' column to keep track 
+    #  The harmonized capacities file then has an extra 'year' column to keep track
     #  of the model year (needed because REMIND can actively retire). Select year here
-    if config["run"].get("is_remind_coupled", False) or "remind_year" in existing_capacities.columns:
+    if (
+        config["run"].get("is_remind_coupled", False)
+        or "remind_year" in existing_capacities.columns
+    ):
         existing_capacities = existing_capacities.query("remind_year == @plan_year")
 
     vre_caps = existing_capacities.query("Tech in @vre_techs | Fueltype in @vre_techs")
