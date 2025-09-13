@@ -1,22 +1,21 @@
 """
-Script to conditionally add sector coupling components (EV, heat, etc.) to PyPSA networks.
-
-This script serves as a bridge between pure electricity-only networks and full sector-coupled
-networks. It allows the workflow to run with or without sector coupling by selectively adding
-transport (EV) and heating components based on configuration flags.
-
+核心逻辑版：向 PyPSA 网络添加电动车 (EV) 部门耦合组件
+自动注册所需的 carrier，避免警告
 """
 
-# SPDX-FileCopyrightText: : 2025 The PyPSA-China Authors
-# SPDX-License-Identifier: MIT
-
 import logging
-
 import pandas as pd
 import pypsa
 from _helpers import configure_logging, mock_snakemake
 
 logger = logging.getLogger(__name__)
+
+
+def add_carrier_if_missing(n: pypsa.Network, carrier_name: str):
+    """如果 carrier 不存在则添加"""
+    if carrier_name not in n.carriers.index:
+        n.add("Carrier", carrier_name)
+        logger.debug(f"Carrier '{carrier_name}' added to network.")
 
 
 def attach_EV_components(
@@ -26,231 +25,133 @@ def attach_EV_components(
     p_set: pd.DataFrame,
     nodes: pd.Index,
     options: dict,
-    type: str,
-) -> None:
-    """
-    Attach electric vehicle components to a PyPSA network for energy system modeling.
+    ev_type: str,
+):
+    """向网络添加 EV 组件，支持直充模式和 DSM 模式"""
 
-    Adds EV buses, loads, chargers, and optionally battery storage components to model
-    either direct charging or demand-side management (DSM) with storage flexibility.
-    The function scales EV fleet size based on annual energy demand and creates
-    appropriate network components for passenger or freight vehicles.
-
-    Two modeling modes:
-    - DSM OFF: Direct charging mode where p_set represents charging demand
-    - DSM ON: Storage mode where p_set represents driving demand, with charging
-              constrained by availability and load satisfied by battery discharge
-
-    Args:
-        n (pypsa.Network): PyPSA network object to modify in-place.
-        avail_profile (pd.DataFrame): EV charging availability profile (0-1) with
-            snapshots as index and nodes as columns.
-        dsm_profile (pd.DataFrame): DSM state-of-charge profile (0-1) with
-            snapshots as index and nodes as columns.
-        p_set (pd.DataFrame): EV energy demand profile in MWh with snapshots as
-            index and nodes as columns.
-        nodes (pd.Index): Network node names (typically province/region names).
-        options (dict): EV configuration parameters containing:
-            - dsm (bool): Enable demand-side management with battery storage
-            - annual_consumption (float): Annual energy consumption per vehicle in MWh/year
-            - charge_rate (float): Maximum charging power per vehicle in MW
-            - share_charger (float): Fraction of vehicles with access to chargers (0-1)
-            - battery_size (float): Battery capacity per vehicle in MWh
-            - dsm_availability (float): Fraction of battery capacity available for DSM (0-1)
-        type (str): Vehicle type identifier, either "passenger" or "freight".
-
-    Raises:
-        ValueError: If type is not "passenger" or "freight".
-    """
-    if type not in ("passenger", "freight"):
-        raise ValueError("type must be 'passenger' or 'freight'")
+    if ev_type not in ("passenger", "freight"):
+        raise ValueError("ev_type must be 'passenger' or 'freight'")
 
     dsm_enabled = options["dsm"]
 
-    # --- 1. Compute EV numbers from demand ---
+    # --- 1. 规模计算 ---
     total_energy = p_set.sum().sum()
-    annual_consumption_per_ev = options["annual_consumption"]
+    total_number_evs = total_energy / max(options["annual_consumption"], 1e-6)
+    node_ratio = p_set.sum() / max(total_energy, 1e-6)
+    number_evs = node_ratio * total_number_evs
 
-    total_number_evs = max(total_energy / max(annual_consumption_per_ev, 1e-6), 0.0)
-    node_energy_ratio = p_set.sum() / total_energy
-    number_evs = node_energy_ratio * total_number_evs
-
-    charge_power = (number_evs * options["charge_rate"] * options["share_charger"]).clip(
-        lower=0.001
-    )
+    charge_power = (number_evs * options["charge_rate"] * options["share_charger"]).clip(lower=0.001)
     battery_energy = (number_evs * options["battery_size"]).clip(lower=0.001)
 
-    logger.info(
-        f"EV {type} - DSM {'ON' if dsm_enabled else 'OFF'}, "
-        f"Total energy: {total_energy:.1f} MWh, "
-        f"Total EVs: {int(total_number_evs):,}"
-    )
+    logger.info(f"EV {ev_type}: DSM {'ON' if dsm_enabled else 'OFF'}, {int(total_number_evs):,} vehicles")
 
-    # --- 2. Add buses ---
-    ev_load_bus = nodes + f" EV_load_{type}"
-    n.add("Carrier", f"EV_load_{type}")
-    n.add("Bus", ev_load_bus, location=nodes, carrier=f"EV_load_{type}", unit="MWh_el")
+    # --- 2. EV 负荷总线 ---
+    ev_load_carrier = f"EV_{ev_type}_load"
+    add_carrier_if_missing(n, ev_load_carrier)
+    ev_load_bus = nodes + f" EV_{ev_type}_load"
+    n.add("Bus", nodes, suffix=f" EV_{ev_type}_load", carrier=ev_load_carrier)
 
+    # --- 3. DSM 电池总线（可选） ---
     if dsm_enabled:
-        carrier_name = f"EV_{type}_battery"
-        ev_battery_bus = nodes + " " + carrier_name
-        n.add("Carrier", carrier_name)
-        n.add("Bus", ev_battery_bus, location=nodes, carrier=carrier_name, unit="MWh_el")
+        ev_batt_carrier = f"EV_{ev_type}_battery"
+        add_carrier_if_missing(n, ev_batt_carrier)
+        ev_batt_bus = nodes + f" EV_{ev_type}_battery"
+        n.add("Bus", nodes, suffix=f" EV_{ev_type}_battery", carrier=ev_batt_carrier)
 
-    # --- 3. Add load ---
+    # --- 4. EV 负荷 ---
     n.add(
         "Load",
         nodes,
-        suffix=f" land transport EV {type}",
+        suffix=f" EV_{ev_type}_load",
         bus=ev_load_bus,
-        carrier=f"land_transport_EV_{type}",
+        carrier=ev_load_carrier,
         p_set=p_set.loc[n.snapshots, nodes],
     )
 
-    # --- 4. Add components depending on DSM ---
+    # --- 5. 充电/放电组件 ---
     if dsm_enabled:
-        # Charger: Grid -> Battery
+        # Charger: AC -> Battery
+        charger_carrier = f"EV_{ev_type}_charger"
+        add_carrier_if_missing(n, charger_carrier)
         n.add(
             "Link",
             nodes,
-            suffix=f" BEV {type} charger",
+            suffix=f" EV_{ev_type}_charger",
             bus0=nodes,
-            bus1=ev_battery_bus,
+            bus1=ev_batt_bus,
+            carrier=charger_carrier,
             p_nom=charge_power * options["dsm_availability"],
-            carrier=f"BEV_{type}_charger",
-            p_max_pu=avail_profile.loc[n.snapshots, nodes].clip(0, 1),
+            p_max_pu=avail_profile.loc[n.snapshots, nodes],
             efficiency=1.0,
         )
 
-        # Discharger: Battery -> EV load
+        # Discharger: Battery -> Load
+        discharger_carrier = f"EV_{ev_type}_discharger"
+        add_carrier_if_missing(n, discharger_carrier)
         n.add(
             "Link",
             nodes,
-            suffix=f" BEV {type} discharger",
-            bus0=ev_battery_bus,
+            suffix=f" EV_{ev_type}_discharger",
+            bus0=ev_batt_bus,
             bus1=ev_load_bus,
-            carrier=f"BEV_{type}_discharger",
+            carrier=discharger_carrier,
+            p_nom=charge_power,
             efficiency=1.0,
-            p_nom_extendable=True,
         )
 
-        # Battery Store
+        # Battery
         n.add(
             "Store",
             nodes,
-            suffix=f" EV_{type}_battery",
-            bus=ev_battery_bus,
-            carrier=f"EV_{type}_battery",
-            e_cyclic=True,
+            suffix=f" EV_{ev_type}_battery",
+            bus=ev_batt_bus,
+            carrier=ev_batt_carrier,
             e_nom=battery_energy * options["dsm_availability"],
+            e_cyclic=True,
             e_max_pu=1.0,
-            e_min_pu=dsm_profile.loc[n.snapshots, nodes].clip(0, 1),
+            e_min_pu=dsm_profile.loc[n.snapshots, nodes],
         )
-
-        logger.info(f"✅ DSM-enabled EV {type}: {int(total_number_evs):,} vehicles with storage")
-
     else:
-        # Direct charger: Grid -> EV load
+        # Direct charger: AC -> Load
+        charger_carrier = f"EV_{ev_type}_charger"
+        add_carrier_if_missing(n, charger_carrier)
         n.add(
             "Link",
             nodes,
-            suffix=f" BEV {type} charger",
+            suffix=f" EV_{ev_type}_charger",
             bus0=nodes,
             bus1=ev_load_bus,
-            carrier=f"BEV_{type}_charger",
-            efficiency=1.0,
+            carrier=charger_carrier,
             p_nom=charge_power,
-            p_max_pu=1.0,
+            efficiency=1.0,
         )
-
-        logger.info(f"✅ Direct EV {type}: {int(total_number_evs):,} vehicles, direct charging")
-
-    logger.info(
-        f"EV {type} setup complete: {'DSM storage' if dsm_enabled else 'Direct charging'} mode"
-    )
 
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-        snakemake = mock_snakemake(
-            "add_sectors",
-            planning_horizons="2030",
-        )
-
+        snakemake = mock_snakemake("add_sectors", planning_horizons="2030")
     configure_logging(snakemake)
 
-    logger.info("Preparing sector-coupled network")
-
-    # Load base network
     network = pypsa.Network(snakemake.input.network)
     nodes = network.buses.query("carrier == 'AC'").index
-
-    # Add transport (EV) components
-    logger.info("Adding EV components to sector-coupled network")
-
-    # Load DSM profile
     dsm_profile = pd.read_csv(snakemake.input.dsm_profile, index_col=0, parse_dates=True)
 
     # Passenger EVs
     if snakemake.config.get("transport", {}).get("passenger_bev", {}).get("on", True):
-        logger.info("Adding passenger EV components")
-
-        charging_demand_pass = pd.read_csv(
-            snakemake.input.transport_demand_passenger, index_col=0, parse_dates=True
-        )
-        driving_demand_pass = pd.read_csv(
-            snakemake.input.driving_demand_passenger, index_col=0, parse_dates=True
-        )
-        avail_profile_pass = pd.read_csv(
-            snakemake.input.avail_profile_passenger, index_col=0, parse_dates=True
-        )
-
-        options_pass = snakemake.config["transport"]["passenger_bev"]
-        p_set_pass = driving_demand_pass if options_pass["dsm"] else charging_demand_pass
-
-        attach_EV_components(
-            n=network,
-            avail_profile=avail_profile_pass,
-            dsm_profile=dsm_profile,
-            p_set=p_set_pass,
-            nodes=nodes,
-            options=options_pass,
-            type="passenger",
-        )
+        charging = pd.read_csv(snakemake.input.transport_demand_passenger, index_col=0, parse_dates=True)
+        driving = pd.read_csv(snakemake.input.driving_demand_passenger, index_col=0, parse_dates=True)
+        avail = pd.read_csv(snakemake.input.avail_profile_passenger, index_col=0, parse_dates=True)
+        opts = snakemake.config["transport"]["passenger_bev"]
+        p_set = driving if opts["dsm"] else charging
+        attach_EV_components(network, avail, dsm_profile, p_set, nodes, opts, "passenger")
 
     # Freight EVs
     if snakemake.config.get("transport", {}).get("freight_bev", {}).get("on", True):
-        logger.info("Adding freight EV components")
+        charging = pd.read_csv(snakemake.input.transport_demand_freight, index_col=0, parse_dates=True)
+        driving = pd.read_csv(snakemake.input.driving_demand_freight, index_col=0, parse_dates=True)
+        avail = pd.read_csv(snakemake.input.avail_profile_freight, index_col=0, parse_dates=True)
+        opts = snakemake.config["transport"]["freight_bev"]
+        p_set = driving if opts["dsm"] else charging
+        attach_EV_components(network, avail, dsm_profile, p_set, nodes, opts, "freight")
 
-        charging_demand_freight = pd.read_csv(
-            snakemake.input.transport_demand_freight, index_col=0, parse_dates=True
-        )
-        driving_demand_freight = pd.read_csv(
-            snakemake.input.driving_demand_freight, index_col=0, parse_dates=True
-        )
-        avail_profile_freight = pd.read_csv(
-            snakemake.input.avail_profile_freight, index_col=0, parse_dates=True
-        )
-
-        options_freight = snakemake.config["transport"]["freight_bev"]
-        p_set_freight = (
-            driving_demand_freight if options_freight["dsm"] else charging_demand_freight
-        )
-
-        attach_EV_components(
-            n=network,
-            avail_profile=avail_profile_freight,
-            dsm_profile=dsm_profile,
-            p_set=p_set_freight,
-            nodes=nodes,
-            options=options_freight,
-            type="freight",
-        )
-
-    # Add heat sector components (future extension)
-    if snakemake.config.get("sectors", {}).get("heat_coupling", False):
-        logger.info("Heat coupling components would be added here")
-
-    # Save modified network
-    logger.info(f"Saving sector-coupled network to {snakemake.output.network}")
     network.export_to_netcdf(snakemake.output.network)

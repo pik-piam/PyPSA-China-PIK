@@ -16,7 +16,7 @@ import pandas as pd
 import pypsa
 import xarray as xr
 from _helpers import configure_logging, mock_snakemake
-from add_existing_baseyear import add_build_year_to_assets
+from add_existing_baseyear import add_baseyear_to_assets
 from constants import OFFSHORE_WIND_NODES, PROV_NAMES
 
 idx = pd.IndexSlice
@@ -46,7 +46,7 @@ def add_brownfield(n: pypsa.Network, n_p: pypsa.Network, year: int):
     ]
 
     if year == 2025:
-        add_build_year_to_assets(n_p, 2020)
+        add_baseyear_to_assets(n_p, 2020)
 
     for c in n_p.iterate_components(["Link", "Generator", "Store"]):
         attr = "e" if c.name == "Store" else "p"
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
     n = pypsa.Network(snakemake.input.network)
 
-    add_build_year_to_assets(n, year)
+    add_baseyear_to_assets(n, year)
 
     n_p = pypsa.Network(snakemake.input.network_p)
 

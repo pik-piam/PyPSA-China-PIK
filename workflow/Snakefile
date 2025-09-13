@@ -362,7 +362,7 @@ if config["foresight"] in ["overnight"]:
                 network=RESULTS_DIR+ '/prenetworks-sector/ntwk_{planning_horizons}.nc',
             threads: 1
             resources: mem_mb=8000
-            script: "scripts/add_sectors_improved.py"
+            script: "scripts/add_sectors.py"
 
     paidoff_caps = DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv"
     if not config["run"].get("is_remind_coupled", False):
@@ -392,7 +392,7 @@ if config["foresight"] in ["overnight"]:
         log:
             solver = LOG_DIR + "/solve_network_postnetworks/ntwk_{planning_horizons}.log"
         threads: 4
-        resources: mem_mb=120000
+        resources: mem_mb=90000
         script: "scripts/solve_network.py"
 
 

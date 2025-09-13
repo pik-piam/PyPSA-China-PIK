@@ -590,26 +590,36 @@ def calculate_weighted_prices(
     Returns:
         pd.DataFrame: updated weighted_prices
     """
-    entries = pd.Index(["electricity", "heat", "H2", "CO2 capture", "gas", "biomass"])
-    weighted_prices = weighted_prices.reindex(entries)
+    # --- baseline entries ---
+    baseline_entries = pd.Index(["electricity", "heat", "H2", "CO2 capture", "gas", "biomass"])
 
-    # loads
+    # --- loads ---
     load_rev = -1 * n.statistics.revenue(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
-    prices = load_rev / n.statistics.withdrawal(
-        comps="Load", groupby=pypsa.statistics.get_bus_carrier
-    )
-    prices.rename(index={"AC": "electricity"}, inplace=True)
+    load_withdrawal = n.statistics.withdrawal(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
+    prices = (load_rev / load_withdrawal).rename(index={"AC": "electricity"})
 
-    # stores
+    # --- stores ---
     w = n.statistics.withdrawal(comps="Store")
-    # biomass stores have no withdrawal for some reason
-    if not w[w == 0].empty:
-        w[w == 0] = n.statistics.supply(comps="Store")[w == 0]
-
+    if not w.empty:
+        w[w == 0] = n.statistics.supply(comps="Store")[w == 0]  # fallback
     store_rev = n.statistics.revenue(comps="Store")
-    mask = store_rev > load_rev.sum() / 400  # remove small
-    wp_stores = store_rev[mask] / w[mask]
-    weighted_prices[label] = pd.concat([prices, wp_stores.rename({"stations": "reservoir inflow"})])
+
+    if not w.empty and not store_rev.empty:
+        common_idx = w.index.intersection(store_rev.index)
+        wp_stores = store_rev.reindex(common_idx) / w.reindex(common_idx)
+    else:
+        wp_stores = pd.Series(dtype=float)
+
+    # --- combine ---
+    all_prices = pd.concat([prices, wp_stores])
+    all_prices = all_prices[~all_prices.index.duplicated(keep="first")]
+
+    # --- reindex weighted_prices with baseline + dynamic ---
+    all_entries = baseline_entries.union(all_prices.index)  # 保证基准有，同时动态扩展
+    weighted_prices = weighted_prices.reindex(all_entries)
+
+    weighted_prices[label] = all_prices
+
     return weighted_prices
 
 
