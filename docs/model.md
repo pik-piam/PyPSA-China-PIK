@@ -22,7 +22,7 @@ subject to
 ## Renewable resources
 Renewable resources are computed using the `atlite` package which comptues potentials and availability series from ERA5 weather data (0.25x0.25 degree^2 cells). 
 
-Renewable supply is described at subprovincial resolution by default, with binning of cells
+Renewable supply is described at subprovincial resolution by default, with user-set binning of cells.
 
 ## Emission budgets & prices
 
@@ -79,3 +79,12 @@ Technologies Brownfield:
 
 ## Operational reserves
 It is possible to toggle operational reserves in the configuration. The reserves are determined by a contigency + a fraction of the load and VRE dispatch at time $t$ 
+
+## Key strenghts
+- multi sector, fully open model
+- highly configurable code, easy to extend
+- easy to replace data
+
+## Key limitations
+- The full electrical network data is not open and HVAC is there not described. This means operational planning is coarse.
+- Connections of renewable generators: HV connections to load centers are not currently included
