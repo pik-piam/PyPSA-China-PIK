@@ -26,17 +26,31 @@ Renewable supply is described at subprovincial resolution by default, with binni
 
 ## Emission budgets & prices
 
-A global constraint
+There are two options to penalise emissions. 
+
+1. A global constraint can be added (as reduction vs a reference year or budget). This is a a hard bound
+2. An emission price can be added.
+
+Currently, only CO2 is controlled but it is straightforward to add new GHGs or harmful emissions.
 
 ## Electricity Demand
+Historical hourly electricity demand for each province is scaled according to future demand projections/scenarios. The default historical data is NDRC data for the year https://doi.org/10.5281/zenodo.8322210, which includes peak/valley daily demands and typical hourly profiles. It is possible to split projections by sectors.
 
 ### REMIND coupling
-- scaling
-- eVs can be separated
+In coupled runs, sectoral or total demands are provided by the REMIND IAM. Hourly profiles for each sector are scaled by the REMIND total
 
 ### EV
+In REMIND coupled mode, Electric Vehicle demand can be separated from the main AC demand. Details to be added.
 
 ## Heat demand
+
+Heating demand is split into domestic hot water, centralised space heating and decentralised space heating. In a future release centralised heating will include demand from light industry. Space heating is considered to be seasonal and switched off outside a user-set heating window. Within this window, the profile is determined by the heating degree day (HDD) model. All HDD parameters can be set by the user in the configuration.
+
+- centralised vs de-centralised fraction: is an exogenous input. By default, this data comes from the 2020 Statistics year book.
+- SPH provincial demand: is an exogenous input. By default, this data comes from the 2020 Statistics year book.
+- DHW: is currently being re-worked. 
+- totals: the China totals are scaled according to future demand projections. This is currently being re-worked
+
 
 ## Combined heat and power
 - Coal CHP plants are considered to be extraction mode, with a flexible but constrained heat to power ratio. The ratio at time $t$ and for region $r$ is a model decision variable.
