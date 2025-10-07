@@ -1,6 +1,5 @@
 
 site_name: PyPSA China (PIK) #(PIK edition) Documentation
-site_url: https://irr-github.github.io/PyPSA-China-PIK/
 
 theme:
   name: "material"
