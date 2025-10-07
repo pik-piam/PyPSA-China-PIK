@@ -312,7 +312,7 @@ if config["foresight"] in ["overnight"]:
     rule add_existing_baseyear:
         params:
             baseyear = BASEYEAR,
-            add_baseyear_to_assets = False,
+            add_build_year_to_new_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
@@ -387,7 +387,7 @@ elif config["foresight"] == "myopic":
     rule add_existing_baseyear:
         params:
             baseyear = BASEYEAR,
-            add_baseyear_to_assets = False,
+            add_build_year_to_new_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
