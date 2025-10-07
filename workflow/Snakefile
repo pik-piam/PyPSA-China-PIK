@@ -68,7 +68,7 @@ elif config["foresight"] in ["overnight", "myopic"]:
     rule plot_all:
         input:
             expand(
-                RESULTS_DIR+ '/plots/summary/pathway_costs.png',
+                RESULTS_DIR+ '/plots/_summary/pathway_costs.png',
                 **{k: v for k, v in config["scenario"].items() if k != "planning_horizons"},
             ),
             # network plot
