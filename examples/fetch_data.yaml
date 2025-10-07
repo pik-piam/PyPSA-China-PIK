@@ -1,0 +1,11 @@
+
+# only overwrite necessary attributes
+
+run:
+  name: example_data_fetch
+
+# !SLOW!
+enable:
+  build_cutout: true
+  retrieve_cutout: true
+  retrieve_raster: true

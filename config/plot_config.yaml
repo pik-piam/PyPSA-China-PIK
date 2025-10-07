@@ -9,8 +9,11 @@ plotting:
     add_labels:
       - "capacity_factor"
       - "installed_capacity"
+      - "optimal_capacity"
       - "lcoe"
       - "mv_minus_lcoe"
+      - "supply"
+      - "market_value"
   cost_panel:
     y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
   cost_map:
@@ -60,9 +63,10 @@ plotting:
   capacity_tracking:
     stores: ['water tanks','battery', "Battery Storage", "H2" ]
     drop_links : ['battery', "battery charger", 'water tanks', "battery discharger", "H2"]
+  # REMOVE ITEMS SMALLER THAN FROM PLOTS
   costs_threshold: 2.e+6 # Eur
   energy_threshold: 5.e+6 # MWh
-  capacity_threshold: 1.e+4 # MW
+  capacity_threshold: 1.e+2 # MW
   market_value:
       min_gen_share: 0.01
   loads: ['electricity', 'decentral heat', 'central heat']
@@ -276,6 +280,7 @@ plotting:
     ror: '#3dbfb0'
     run of river: '#3dbfb0'
     hydroelectricity: '#298c81'
+    hydro_inflow: '#298c81'
     PHS: '#51dbcc'
     Pumped Hydro Storage: '#51dbcc'
     pumped hydro storage: '#51dbcc'
