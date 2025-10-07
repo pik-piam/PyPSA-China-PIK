@@ -15,7 +15,7 @@ sort:
 nav: 
   - PyPSA-China-PIK: index.md
   - Model: model.md
-  - Getting started: installation
+  - Setup: installation/quick_start.md
   - Configuration: configuration.md
   - Tutorials: tutorials
   - Reference: reference
