@@ -269,6 +269,12 @@ central coal CHP,2060,c_v,0.15,50oC/100oC,"Danish Energy Agency, technology_data
 central coal CHP,2060,efficiency,0.51948,per unit,Linear increase from Xiang et al nat energy 2023 to DKEA catalogue 2023 value for 2060,"01 Coal CHP:  Electricity efficiency, condensation mode, net"
 central coal CHP,2060,investment,1783.87,EUR/kW,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",01 Coal CHP:  Nominal investment
 central coal CHP,2060,lifetime,25.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",01 Coal CHP:  Technical lifetime
+central coal boiler,2060,FOM,2.5,%/year,IRENA_Remap_2030_technology_cost,
+central coal boiler,2060,VOM,1.1,EUR/MWh_th,same as gas boiler,
+central coal boiler,2060,efficiency,0.9,per unit,IRENA_Remap_2030_technology_cost,
+central coal boiler,2060,investment,270.0,USD/kW_th,IRENA_Remap_2030_technology_cost,
+central coal boiler,2060,lifetime,25.0,years,IRENA_Remap_2030_technology_cost,
+central coal boiler,2060,hist_efficiency,0.78,p.u.,expert guess for brownfield,OPOP H4EKO class C
 central gas CHP,2060,FOM,3.46,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","04 Gas turb. simple cycle, L:  Fixed O&M"
 central gas CHP,2060,VOM,4.0,EUR/MWh,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","04 Gas turb. simple cycle, L:  Variable O&M"
 central gas CHP,2060,c_b,1.0,50oC/100oC,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","04 Gas turb. simple cycle, L:  Cb coefficient"
@@ -288,11 +294,6 @@ central gas boiler,2060,VOM,1.0,EUR/MWh_th,"Danish Energy Agency, technology_dat
 central gas boiler,2060,efficiency,1.04,per unit,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","44 Natural Gas DH Only:  Total efficiency , net, annual average"
 central gas boiler,2060,investment,50.0,EUR/kW_th,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",44 Natural Gas DH Only:  Nominal investment
 central gas boiler,2060,lifetime,25.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",44 Natural Gas DH Only:  Technical lifetime
-central coal boiler,2060,FOM,2.5,%/year,IRENA_Remap_2030_technology_cost,
-central coal boiler,2060,VOM,1.1,EUR/MWh_th,same as gas boiler,
-central coal boiler,2060,efficiency,0.9,per unit,IRENA_Remap_2030_technology_cost,
-central coal boiler,2060,investment,270.0,USD/kW_th,IRENA_Remap_2030_technology_cost,
-central coal boiler,2060,lifetime,25.0,years,IRENA_Remap_2030_technology_cost,
 central ground-sourced heat pump,2060,FOM,0.44,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","40 Absorption heat pump, DH:  Fixed O&M"
 central ground-sourced heat pump,2060,VOM,1.43,EUR/MWh_th,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","40 Absorption heat pump, DH:  Variable O&M"
 central ground-sourced heat pump,2060,efficiency,1.75,per unit,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","40 Absorption heat pump, DH:  Total efficiency , net, annual average"
@@ -367,16 +368,17 @@ decentral air-sourced heat pump,2060,discount rate,0.04,per unit,Palzer thesis, 
 decentral air-sourced heat pump,2060,efficiency,3.8,per unit,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx","207.3 Air to water existing:  Heat efficiency, annual average, net, radiators, existing one family house"
 decentral air-sourced heat pump,2060,investment,760.0,EUR/kW_th,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",207.3 Air to water existing:  Specific investment
 decentral air-sourced heat pump,2060,lifetime,18.0,years,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",207.3 Air to water existing:  Technical lifetime
-decentral gas boiler,2060,FOM,6.73,%/year,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",202 Natural gas boiler:  Fixed O&M
-decentral gas boiler,2060,discount rate,0.04,per unit,Palzer thesis, from old pypsa cost assumptions
-decentral gas boiler,2060,efficiency,0.99,per unit,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx","202 Natural gas boiler:  Total efficiency, annual average, net"
-decentral gas boiler,2060,investment,268.51,EUR/kW_th,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",202 Natural gas boiler:  Specific investment
-decentral gas boiler,2060,lifetime,20.0,years,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",202 Natural gas boiler:  Technical lifetime
 decentral coal boiler,2060,FOM,3.49,%/year,IRENA_Remap_2030_technology_cost,
 decentral coal boiler,2060,discount rate,0.04,per unit,same as gas boiler,
 decentral coal boiler,2060,efficiency,0.9,per unit,IRENA_Remap_2030_technology_cost,
 decentral coal boiler,2060,investment,161.0,USD/kW_th,IRENA_Remap_2030_technology_cost,
 decentral coal boiler,2060,lifetime,20.0,years,same as gas boiler,
+decentral coal boiler,2060,hist_efficiency,0.78,p.u.,expert guess for brownfield,OPOP H4EKO class C
+decentral gas boiler,2060,FOM,6.73,%/year,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",202 Natural gas boiler:  Fixed O&M
+decentral gas boiler,2060,discount rate,0.04,per unit,Palzer thesis, from old pypsa cost assumptions
+decentral gas boiler,2060,efficiency,0.99,per unit,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx","202 Natural gas boiler:  Total efficiency, annual average, net"
+decentral gas boiler,2060,investment,268.51,EUR/kW_th,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",202 Natural gas boiler:  Specific investment
+decentral gas boiler,2060,lifetime,20.0,years,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",202 Natural gas boiler:  Technical lifetime
 decentral gas boiler connection,2060,investment,167.82,EUR/kW_th,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",:  Possible additional specific investment
 decentral gas boiler connection,2060,lifetime,50.0,years,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",:  Technical lifetime
 decentral ground-sourced heat pump,2060,FOM,1.99,%/year,"Danish Energy Agency, technologydatafor_heating_installations_marts_2018.xlsx",207.7 Ground source existing:  Fixed O&M
@@ -570,6 +572,9 @@ onwind,2060,FOM,1.18,%/year,"Danish Energy Agency, technology_data_for_el_and_dh
 onwind,2060,VOM,1.22,EUR/MWh,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Variable O&M
 onwind,2060,investment,371.39,EUR/kW,zhu et.al.2025,20 Onshore turbines:  Nominal investment
 onwind,2060,lifetime,30.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Technical lifetime
+retrofit,2060,VOM,69.0,USD/tCO2,"Lockwood T. A compararitive review of next-generation carbon capture technologies for coal-fired power plant[J]. Energy procedia, 2017, 114: 2658-2670.",
+retrofit,2060,investment,180.0,USD/kW,"Fan J L, Xu M, Li F, et al. Carbon capture and storage (CCS) retrofit potential of coal-fired power plants in China: the technology lock-in and cost optimization perspective[J]. Applied energy, 2018, 229: 326-334.",
+retrofit,2060,lifetime,40.0,years,same as coal power plants,
 ror,2060,FOM,2.0,%/year,DIW DataDoc http://hdl.handle.net/10419/80348, from old pypsa cost assumptions
 ror,2060,efficiency,0.9,per unit,DIW DataDoc http://hdl.handle.net/10419/80348, from old pypsa cost assumptions
 ror,2060,investment,3312.24,EUR/kWel,DIW DataDoc http://hdl.handle.net/10419/80348, from old pypsa cost assumptions
@@ -630,6 +635,3 @@ waste CHP CC,2060,investment,7068.89,EUR/kW_e,"Danish Energy Agency, technology_
 waste CHP CC,2060,lifetime,25.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","08 WtE CHP, Large, 50 degree:  Technical lifetime"
 water tank charger,2060,efficiency,0.84,per unit,"Danish Energy Agency, technology_data_catalogue_for_energy_storage.xlsx",:  efficiency from sqr(Round trip efficiency)
 water tank discharger,2060,efficiency,0.84,per unit,"Danish Energy Agency, technology_data_catalogue_for_energy_storage.xlsx",:  efficiency from sqr(Round trip efficiency)
-retrofit,2060,investment,180.0,USD/kW,"Fan J L, Xu M, Li F, et al. Carbon capture and storage (CCS) retrofit potential of coal-fired power plants in China: the technology lock-in and cost optimization perspective[J]. Applied energy, 2018, 229: 326-334.",
-retrofit,2060,lifetime,40.0,years,same as coal power plants,
-retrofit,2060,VOM,69.0,USD/tCO2,"Lockwood T. A compararitive review of next-generation carbon capture technologies for coal-fired power plant[J]. Energy procedia, 2017, 114: 2658-2670.",
