@@ -10,7 +10,7 @@ theme:
     - navigation.tabs
     - navigation.sections
     - toc.integrate
-    - navigation.top
+    # - navigation.top
     - search.suggest
     - search.highlight
     - content.tabs.link
@@ -33,6 +33,9 @@ theme:
       accent: amber
 
 docs_dir: "./docs"
+nav:
+  - .nav.yml
+  - tutorials/.nav.yml
 
 # Version configuration
 extra:
@@ -47,16 +50,15 @@ plugins:
       - docs/autogen_ref_pages.py
   # - literate-nav:
   #     nav_file: reference_nav.yml
+  - search
+  - awesome-nav
   - mkdocstrings:
       default_handler: python
       handlers:
         python:
           paths: ["./workflow/scripts"]
-  - search
-  - awesome-nav:
-      collapse_single_pages: false
-nav:
-  - .nav.yaml
+
+
 
 extra_css:
   - docs/assets/styles/extra.css
