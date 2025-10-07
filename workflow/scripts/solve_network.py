@@ -284,9 +284,73 @@ def add_battery_constraints(n: pypsa.Network):
     n.model.add_constraints(lhs == 0, name="Link-charger_ratio")
 
 
+def add_chp_constraints_new_attempt(n: pypsa.Network):
+    """Add constraints to couple the heat and electricity output of CHP plants.
+      Simplified treatment of extraction plant with max heat to power ratio.
+      Ignore the minimum electric power for heat output (aggregate over all units).
+
+
+    Args:
+        n (pypsa.Network): the pypsa network object to which's model the constraints are added
+    """
+
+    elec = n.links.query("index.str.contains('chp', case=False) & index.str.contains('generator')")
+    heat = n.links.query("index.str.contains('chp', case=False) & index.str.contains('boiler')")
+
+    if not elec.shape == heat.shape:
+        raise ValueError(
+            "Incorrect definition of CHP units, check link names."
+            " Each 'CHP generator' needs an associated 'CHP boiler'."
+        )
+
+    # elec = n.links.index.str.contains("CHP") & n.links.index.str.contains("generator")
+    # heat = n.links.index.str.contains("CHP") & n.links.index.str.contains("boiler")
+
+    elec_ext = sorted(elec.query("p_nom_extendable").index)
+    heat_ext = sorted(heat.query("p_nom_extendable").index)
+
+    elec_fix = elec.query("~p_nom_extendable").index
+    heat_fix = heat.query("~p_nom_extendable").index
+
+    p = n.model["Link-p"]  # dimension: [time, link]
+    p_nom = n.model["Link-p_nom"]
+
+    # maximum capacity of heat set by ratio between heat and electricity
+    if not elec.query("p_nom_extendable").empty:
+        # maximising heat power under constraints that Pel/eta_el + Pth/eta_th <= p_nom_link
+        # & noting that pypsa link powers are defined by input (fuel)
+        # yields: p_nom_heat = p_nom_el * htpr / (htpr+eta_h/eta_el)
+        htpr = n.links.p_nom_ratio[elec_ext].values
+        alpha = n.links.efficiency[heat_ext].values / n.links.efficiency[elec_ext].values
+        lhs = p_nom.loc[elec_ext] * htpr / (htpr + alpha) - p_nom.loc[heat_ext]
+        n.model.add_constraints(lhs == 0, name="chplink-fix_max_heat")
+
+        # top_iso_fuel_line ext (is it still relevant?)
+        rename = {"Link-ext": "Link"}
+        lhs = p.loc[:, elec_ext] + p.loc[:, heat_ext] - p_nom.rename(rename).loc[elec_ext]
+        n.model.add_constraints(lhs <= 0, name="chplink-top_iso_fuel_line_ext")
+
+    # max heat to power ratio
+    grouper_heat = pd.concat([heat.location, heat.build_year], axis=1)
+    grouper_elec = pd.concat([elec.location, elec.build_year], axis=1)
+    p_heat = n.model["Link-p"].loc[:, heat.index]
+    p_elec = n.model["Link-p"].loc[:, elec.index]
+    lhs = (p_heat * heat.efficiency).groupby(grouper_heat).sum()
+    rhs = (p_elec * elec.efficiency * elec.p_nom_ratio.fillna(1)).groupby(grouper_elec).sum()
+    n.model.add_constraints(lhs <= rhs, name="chplink-max_heat_to_power")
+
+    # top_iso_fuel_line for fixed (is it still relevant?)
+    if not elec_fix.empty:
+        lhs = p.loc[:, elec_fix] + p.loc[:, heat_fix]
+        rhs = n.links.p_nom[elec_fix]
+        n.model.add_constraints(lhs <= rhs, name="chplink-top_iso_fuel_line_fix")
+
+
 def add_chp_constraints(n: pypsa.Network):
-    """Add constraints to couple the heat and electricity output of CHP plants
-         (using the cb and cv parameter). See the DEA technology cataloge
+    """Add constraints to couple the heat and electricity output of CHP plants.
+      Simplified treatment of extraction plant with Cb/Cv coeffs as per DKEA catalogue.
+      Ignore the minimum electric power for heat output (aggregate over all units).
+
 
     Args:
         n (pypsa.Network): the pypsa network object to which's model the constraints are added
@@ -308,7 +372,7 @@ def add_chp_constraints(n: pypsa.Network):
 
         lhs = (
             p_nom.loc[electric_ext]
-            * (n.links.p_nom_ratio * n.links.efficiency)[electric_ext].values
+            * (n.links.heat_to_power * n.links.efficiency)[electric_ext].values
             - p_nom.loc[heat_ext] * n.links.efficiency[heat_ext].values
         )
         n.model.add_constraints(lhs == 0, name="chplink-fix_p_nom_ratio")
@@ -323,12 +387,12 @@ def add_chp_constraints(n: pypsa.Network):
         rhs = n.links.p_nom[electric_fix]
         n.model.add_constraints(lhs <= rhs, name="chplink-top_iso_fuel_line_fix")
 
-    # back-pressure
+    # max heat to power ratio (simplified extraction plant w/o min heat output in extraction mode)
+    # heat can drop to zero to represent condensation mode
     if not n.links[electric].index.empty:
-        lhs = (
-            p.loc[:, heat] * (n.links.efficiency[heat] * n.links.c_b[electric].values)
-            - p.loc[:, electric] * n.links.efficiency[electric]
-        )
+        lhs = p.loc[:, heat] * n.links.efficiency[heat] - p.loc[:, electric] * n.links.efficiency[
+            electric
+        ] * n.links.heat_to_power[electric].fillna(1)
         n.model.add_constraints(lhs <= 0, name="chplink-backpressure")
 
 
@@ -370,6 +434,73 @@ def add_land_use_constraint(n: pypsa.Network, planning_horizons: str | int) -> N
         ]
 
     n.generators["p_nom_max"] = n.generators["p_nom_max"].clip(lower=0)
+
+
+def add_water_tank_charger_constraints(n: pypsa.Network, config: dict):
+    """
+    Add constraint ensuring that centra water tank charger = discharger & limit p_nom/e_nom ratio, i.e.
+    Args:
+        n (pypsa.Network): the network object to optimize
+        config (dict): the snakemake configuration dictionary
+    """
+
+    discharger_bool = n.links.index.str.contains(
+        "water tanks discharger & not index.str.contains('decentral')"
+    )
+    charger_bool = n.links.index.str.contains(
+        "water tanks charger & not index.str.contains('decentral')"
+    )
+
+    dischargers_ext = n.links[discharger_bool].query("p_nom_extendable").index
+    chargers_ext = n.links[charger_bool].query("p_nom_extendable").index
+
+    eff = n.links.efficiency[dischargers_ext].values
+    lhs = n.model["Link-p_nom"].loc[chargers_ext] - n.model["Link-p_nom"].loc[dischargers_ext] * eff
+
+    n.model.add_constraints(lhs == 0, name="Link-water-tank-charger_ratio")
+
+    # limit the p_nom/e_nom ratio
+    central_tanks = n.stores.query("carrier == 'water tanks' & not index.str.contains('decentral')")
+    central_dischargers_ext = n.links.query(
+        "carrier == 'water tanks' and index.str.contains('discharger') and not index.str.contains('decentral')"
+    ).query("p_nom_extendable")
+
+    grouper_s = central_tanks.location.rename_axis("Store-ext")
+    grouper_l = central_dischargers_ext.rename_axis("Link-ext").location
+    p_nom_over_e_nom = config["water_tanks"].get("p_nom_over_e_nom", 0.2)
+    lhs = (
+        n.model["Store-e_nom"].loc[central_tanks.index].groupby(grouper_s).sum() * p_nom_over_e_nom
+        - n.model["Link-p_nom"].loc[central_dischargers_ext.index].groupby(grouper_l).sum()
+    )
+    n.model.add_constraints(lhs >= 0, name="Central_Water_Tank_p_nom_over_e_nom")
+
+    # limit the p_nom/e_nom ratio to 1 for decentral tanks
+    decentral_tanks = n.stores.query("carrier == 'water tanks' & index.str.contains('decentral')")
+    decentral_dischargers_ext = n.links.query(
+        "carrier == 'water tanks' and index.str.contains('discharger') and index.str.contains('decentral')"
+    ).query("p_nom_extendable")
+    decentral_chargers_ext = n.links.query(
+        "carrier == 'water tanks' and not index.str.contains('discharger') and index.str.contains('decentral')"
+    ).query("p_nom_extendable")
+
+    grouper_s = decentral_tanks.location.rename_axis("Store-ext")
+    grouper_l = decentral_dischargers_ext.rename_axis("Link-ext").location
+    lhs = (
+        n.model["Store-e_nom"].loc[decentral_tanks.index].groupby(grouper_s).sum()
+        - n.model["Link-p_nom"].loc[decentral_dischargers_ext.index].groupby(grouper_l).sum()
+    )
+
+    n.model.add_constraints(lhs >= 0, name="Decentral_Water_Tank_p_nom_over_e_nom")
+    lhs = (
+        n.model["Store-e_nom"].loc[decentral_tanks.index].groupby(grouper_s).sum()
+        - n.model["Link-p_nom"].loc[decentral_dischargers_ext.index].groupby(grouper_l).sum()
+    )
+    grouper_l = decentral_chargers_ext.rename_axis("Link-ext").location
+    lhs = (
+        n.model["Store-e_nom"].loc[decentral_tanks.index].groupby(grouper_s).sum()
+        - n.model["Link-p_nom"].loc[decentral_chargers_ext.index].groupby(grouper_l).sum()
+    )
+    n.model.add_constraints(lhs >= 0, name="Decentral_Water_Tank_p_nom_over_e_nom_charger")
 
 
 def add_transmission_constraints(n: pypsa.Network):
@@ -612,7 +743,10 @@ def extra_functionality(n: pypsa.Network, _) -> None:
     config = n.config
     add_battery_constraints(n)
     add_transmission_constraints(n)
-    add_chp_constraints(n)
+    if config["heat_coupling"]:
+        add_water_tank_charger_constraints(n, config)
+        add_chp_constraints(n)
+        # add_chp_constraints_new_attempt(n)
     if config["run"].get("is_remind_coupled", False):
         logger.info("Adding remind paid off constraints")
         add_remind_paid_off_constraints(n)
@@ -688,15 +822,13 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-CHA",
+            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
             planning_horizons="2030",
-            co2_pathway="exp175default",
-            planning_horizons="2025",
             topology="current+FCG",
             # heating_demand="positive",
-            configfiles="resources/tmp/remind_coupled_cg.yaml",
+            # configfiles="resources/tmp/remind_coupled_cg.yaml",
             heating_demand="positive",
-            # configfiles="resources/tmp/pseudo_coupled.yml",
+            configfiles="resources/tmp/pseudo-coupled.yaml",
         )
     configure_logging(snakemake)
 
