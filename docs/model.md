@@ -20,21 +20,20 @@ subject to
 
 
 ## Renewable resources
-Renewable resources are computed using the `atlite` package which comptues potentials and availability series from ERA5 weather data (0.25x0.25 degree^2 cells). 
-
-Renewable supply is described at subprovincial resolution by default, with user-set binning of cells.
+Renewable resources are computed using the `atlite` package which comptues potentials and availability series from ERA5 weather data (0.25x0.25 degree<sup>2</sup> cells). 
+Renewable supply is described at subprovincial resolution by default, with user-set binning of cells. Each bin is aggregated into a generator with it's own potential and availability curve.
 
 ## Emission budgets & prices
 
 There are two options to penalise emissions. 
 
-1. A global constraint can be added (as reduction vs a reference year or budget). This is a a hard bound
+1. A global constraint can be added (as reduction vs a reference year or budget). This is a hard bound.
 2. An emission price can be added.
 
 Currently, only CO2 is controlled but it is straightforward to add new GHGs or harmful emissions.
 
 ## Electricity Demand
-Historical hourly electricity demand for each province is scaled according to future demand projections/scenarios. The default historical data is NDRC data for the year https://doi.org/10.5281/zenodo.8322210, which includes peak/valley daily demands and typical hourly profiles. It is possible to split projections by sectors.
+Historical hourly electricity demand for each province is scaled according to future demand projections/scenarios. The default historical data is NDRC data for the [year 2019](https://doi.org/10.5281/zenodo.8322210), which includes peak/valley daily demands and typical hourly profiles. It is possible to split projections by sectors.
 
 ### REMIND coupling
 In coupled runs, sectoral or total demands are provided by the REMIND IAM. Hourly profiles for each sector are scaled by the REMIND total
@@ -48,8 +47,9 @@ Heating demand is split into domestic hot water, centralised space heating and d
 
 - centralised vs de-centralised fraction: is an exogenous input. By default, this data comes from the 2020 Statistics year book.
 - SPH provincial demand: is an exogenous input. By default, this data comes from the 2020 Statistics year book.
-- DHW: is currently being re-worked. 
-- totals: the China totals are scaled according to future demand projections. This is currently being re-worked
+- SPH national projections: from the [PyPSA-China paper](https://doi.org/10.1049/ein2.12011) "positive or constant". To be reworked
+- DHW: demand is exogenous. By default it is based on iea demand projections (An Energy Sector Roadmap to Carbon Neutrality in China, IEA, 2021). Demand is considered constant after 2060
+- Totals: the China totals are scaled according to (exogenous) future demand projections.
 
 
 ## Combined heat and power
@@ -61,7 +61,8 @@ Heating demand is split into domestic hot water, centralised space heating and d
 - brownfield capacities are derived from the Global Energy Monitor Integrated Plant tracker data set. The included operation/pipeline statuses can be selected in the `global_energy_monitor.yaml` config. 
 - only plants that have been built before the plan_year and not retired by the plan year are added to the model
 
-Technologies Brownfield:
+Technologies available for Brownfield:
+
 - OCGT
 - CCGT
 - CHP CCGT
@@ -70,8 +71,8 @@ Technologies Brownfield:
 - hydro (always on)
 - nuclear
 - PHS
-- solar & wind (considered to have filled the best capacity factor)
-- transmission
+- solar & wind (considered to have filled the best available capacity factor)
+- inter provincial transmission
 - & more
 
 ## Transmission
@@ -102,4 +103,5 @@ Data input sources are currently either hardcoded `snakefile` or in the config `
 
 ### Limitations
 - The full electrical network data is not open and HVAC is there not described. This means operational planning is coarse.
-- Connections of renewable generators: HV connections to load centers are not currently included
+- Connections of renewable generators: HV connections to load centers are not currently included.
+- Default projections for demand do not account for future regional variations.
