@@ -19,18 +19,18 @@ theme:
     - navigation.footer
   language: en
   palette:
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode    
+      primary: black
+      accent: amber
     - scheme: default
       toggle:
         icon: material/toggle-switch-off-outline 
         name: Switch to dark mode
       # primary: deep purple
       accent: blue 
-    - scheme: slate 
-      toggle:
-        icon: material/toggle-switch
-        name: Switch to light mode    
-      primary: black
-      accent: amber
 
 docs_dir: "./docs"
 nav:

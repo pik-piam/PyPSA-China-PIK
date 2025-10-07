@@ -12,7 +12,7 @@ $$
 
 subject to
 - meeting energy demand for each region *r* and time *t*
-- transmission constraints between nodes
+- transmission constraints between nodes (volume or cost expansion)
 - wind, solar and hydro availability for all *r, t*
 - respecting geographical potentials for renewables
 - emission budget (or pricing added to OPEX)
@@ -80,11 +80,26 @@ Technologies Brownfield:
 ## Operational reserves
 It is possible to toggle operational reserves in the configuration. The reserves are determined by a contigency + a fraction of the load and VRE dispatch at time $t$ 
 
-## Key strenghts
+## Workflow
+The workflow consists of gathering and preparing relevant data, formulating the problem as a PyPSA network object, minimising the system costs using a solver and post-processing the data. An example workflow can be found below.
+
+![PyPSA-China Workflow](./assets/img/pypsa-china-workflow.png)
+
+Each operation is represented by a snakemake `rule`. The `.yaml` configuration options determine which snakemake `rule`s will be executed. This means that the workflow graph will depend on your activated sectors (eg `heat_coupling=False`) and whether coupling to an IAM is selected.
+
+### snakemake
+
+The `snakefile` and included `*.smk` blocks contain the rule declarations. The rules are linked by their inputs and outputs. These links determine the execution order.  All execution options are controlled by the setting files, therefore the `snakefile` does not need to be edited unless you want to *change data inputs* or *extend the model*. 
+
+Data input sources are currently either hardcoded `snakefile` or in the config `paths` section. 
+
+## Key strenghts & limitations
+
+### Strengths
 - multi sector, fully open model
 - highly configurable code, easy to extend
 - easy to replace data
 
-## Key limitations
+### Limitations
 - The full electrical network data is not open and HVAC is there not described. This means operational planning is coarse.
 - Connections of renewable generators: HV connections to load centers are not currently included
