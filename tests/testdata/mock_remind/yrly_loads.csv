@@ -1,0 +1,9 @@
+region,sector,year,load_TWh
+Beijing,industry,2030,100
+Beijing,buildings,2030,50
+Beijing,industry,2040,110
+Beijing,buildings,2040,55
+Shanghai,industry,2030,120
+Shanghai,buildings,2030,60
+Shanghai,industry,2040,130
+Shanghai,buildings,2040,65
