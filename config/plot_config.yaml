@@ -236,9 +236,10 @@ plotting:
     coal heat: '#8a7f7d'
     gas CHP: '#8f6e6a'
     CHP gas: '#8f6e6a'
-    central gas CHP: '#8f6e6a'
-    CHP gas generator: '#8f6e6a'
-    CHP gas boiler: '#8f6e6a'
+    CHP OCGT gas: '#745b78'
+    central gas CHP: '#745b78'
+    CHP gas generator: '#745b78'
+    CHP gas boiler: '#745b78'
     CHP CC: '#634643'
     urban central gas CHP CC: '#6e4e4c'
     CHP heat: '#8a5751'
@@ -439,10 +440,14 @@ plotting:
     onwind: "Onshore Wind"
     solar: "Solar"
     solar thermal: "Solar Thermal"
+    heat decentral: "Decentral Heat"
+
 
   preferred_order:
   - electric load
   - heat load
+  - heat
+  - heat decentral
   - Load
   - Transmission Lines
   - transmission lines
