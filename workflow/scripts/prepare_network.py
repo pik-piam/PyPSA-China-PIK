@@ -830,6 +830,7 @@ def add_heat_coupling(
         nodes,
         suffix=" decentral heat",
         bus=nodes + " decentral heat",
+        carrier = "heat",
         p_set=heat_demand[nodes].multiply(1 - central_fraction[nodes]),
     )
 
@@ -838,6 +839,7 @@ def add_heat_coupling(
         nodes,
         suffix=" central heat",
         bus=nodes + " central heat",
+        carrier="heat",
         p_set=heat_demand[nodes].multiply(central_fraction[nodes]),
     )
 
