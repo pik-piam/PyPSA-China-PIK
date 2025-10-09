@@ -433,7 +433,6 @@ def add_power_capacities_installed_before_baseyear(
                 p_nom_extendable=False,
                 efficiency=costs.at["central gas CHP CC", "efficiency"] * (1 - eff_penalty_hist),
                 heat_to_power=config["chp_parameters"]["gas"]["heat_to_power"],
-                c_b=costs.at["central gas CHP CC", "c_b"],
                 build_year=build_year,
                 lifetime=costs.at["central gas CHP CC", "lifetime"],
                 location=buses,
