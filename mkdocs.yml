@@ -57,8 +57,6 @@ plugins:
         python:
           paths: ["./workflow/scripts"]
 
-
-
 extra_css:
   - docs/assets/styles/extra.css
 extra_javascript:
