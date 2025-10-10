@@ -1,5 +1,5 @@
 ---
-title: "PyPSA-China: an open-source model of the energy transition in China" 
+title: "PyPSA-China-PIK: an open-source model of the energy transition in China" 
 
 
 tags:
@@ -17,37 +17,37 @@ authors:
   - name: Ivan Ramirez
     affiliation: '1'
     contributions: development, project direction, code review, documentation, validation
-    orcid: #TODO
+    orcid: 0009-0008-7531-7586
 
   - name: Yanlei Zhu
     affiliation: '2' # also 1?
     contributions: development, code review, documentation #TODO
-    orcid: #TODO
+    orcid: 0009-0004-3178-1222
 
   - name: Falko Ueckerdt
     affiliation: '1'
     contributions: project direction
-    orcid: #TODO
+    orcid: 0000-0001-5585-030X
 
   - name: Adrian Odenweller
     affiliation: '1'
     contributions: development (IAM coupling)
-    orcid: #TODO
+    orcid: 0000-0002-1123-8124
 
   - name: Chen Chris Gong
     affiliation: '1'
     contributions: #TODO
-    orcid: #TODO
+    orcid: 0000-0002-6406-6266
 
   - name: Robert Pietzcker
     affiliation: '1'
     contributions: validation
-    orcid: #TODO
+    orcid: 0000-0002-9403-6711
 
   - name: Gunnar Luderer
     affiliation: '1'
     contributions: #TODO
-    orcid: #TODO
+    orcid: 0000-0002-9057-6155
 
 affiliations:
   - index: 1
@@ -55,65 +55,67 @@ affiliations:
   - index: 2
     name: College of Environmental Sciences and Engineering, Peking University, Beijing, China
 ---
+# Summary 
+Open-source energy system models are essential for understanding and planning future energy systems, as well as for providing a transparent knowledge basis for evidence-based decision-making [@pfenningerImportanceOpenData2017]. Yet, such open-source, open-data models remain scarce for China. To fill this gap, we present `PyPSA-China-PIK`  - a fully open-source, open-data model of China's current and future power sector. The model co-optimizes investments in electricity generation, storage and grid transmission capacity, together with their dispatch to minimize the total cost of supplying electricity and other energy carriers. Optimization is subject to user-defined constraints including environmental –policies such as carbon prices or emissions budgets,   as well as operational reserve margins to ensure system reliability.
 
+`PyPSA-China-PIK` operates at high spatio-temporal resolution, enabling accurate assessment of the benefits, challenges and solutions  associated with high shares of variable renewable energy. Uniquely , the model can incorporate results such as capacity expansion decisions from the [REMIND](https://www.pik-potsdam.de/en/institute/departments/transformation-pathways/models/remind ) [@baumstarkREMIND2021]  Integrated Assessment Model (IAM) as input data. This coupling improves the plausibility of long-term transition pathways.
 
-# Summary
-<!-- Required section 
-A summary describing the high-level functionality and purpose of the software for a diverse, non-specialist audience.
--->
-
-Open-source energy system models are key tools for fostering transparent and productive discussions on how the energy transition should proceed. However, no such model exists specifically for China. To adress this gap we present **PyPSA-China-PIK** - a fully open-source, open-data model of China's electricity sector. The model minimises the operation and investment costs of supplying electricity and other energy carriers subject to user-set constraints. These constraints can include  environmental limits - such as carbon prices or emisisons budgets - as well as operational reserve margins to ensure a realiable supply.
-
-Importantly, PyPSA-China runs at a high spatio-temporal resolution, enabling accurate assessment of the benefits and challenges of high renewable energy penetration. The presented version builds upon a previously published model but incorporates significant upgrades and has been restructured to support ease of use and community development. Uniquely, the model can also be coupled with the REMIND Integrated Assessment Model [@baumstarkREMIND2021], enhancing the plausibility of long-term transition pathways.
+The  model uses the PyPSA framework [@PyPSA] and builds upon previously published work[@zhouMultienergySystemHorizon2024] but incorporates significant upgrades - e.g. to renewable energy generation and power reserves -  and has been restructured to support ease of use and community development .
 
 # Statement of need
-<!-- Required section -->
-Internationally agreed emission reduction targets and the rapidly decreasing costs of renewable energy generation and storage mean that electricity systems around the world are poised for major transformation. Nowhere is this truer than in China, the world's largest electricity producer, largest greenhouse gas emitter and fastest increasing renewable capacity. As in all other countries, China’s energy transformation involves myriad actors with different motivations and interests. Finding cost-efficient solutions, transparently assessing risks and determining how -and if - likely winners and losers should be compensated requires an open debate. 
+Internationally agreed climate targets, combined with declining costs and rapid deployment of renewable energy generation and storage, are fundamentally transforming electricity systems worldwide. This is especially true for China - the world's largest power system, biggest greenhouse gas emitter and global leader in renewable energy installations. Open and transparent modeling is essential to identify opportunities, bottlenecks and challenges in a non-partisan manner . Yet, most studies rely on expensive commercial software (e.g. PLEXOS [@abhyankarAchieving80Carbonfree2022]) or proprietary code (sometimes available on request) and/or data ([@zhuoCostIncreaseElectricity2022], [@heRapidCostDecrease2020], [@luoCosteffectivenessRemovingLast2025])
 
-Yet there few, if any, open-source tools available to inform the debate in China and verify claims based on close-sourced results. High-quality studies have used expensive commercial software (e.g. PLEXOS [@abhyankarAchieving80Carbonfree2022] ) or proprietary code (sometimes available on request ) and data []. 
+To the best of the authors’ knowledge, only three fully-open models of China’s power system currently exist, each with provincial resolution. `SWITCH-China`[@heSWITCHChinaSystemsApproach2016a] derives medium-term pathways with limited temporal detail (two typical days of 6 hour-long time slices per month). The related `CHEER/power` works similarly but has the advantage that long-term demand projections are generated by the CHEER macro-economic model[@anRepositioningCoalPower2025]. Seasonal storage is, however, not implemented . Neither model covers heat, which is strongly coupled to electricity generation through important combined-heat-and-power capacities in Northern China. This coupling can act as a coal lock-in [@liuDiversifyingHeatSources2024]. `PyPSA-China` [@zhouMultienergySystemHorizon2024], models full years of 8760 hours of the year and covers heat and electricity. Investment periods can be linked sequentially with “myopic foresight” .  Despite these solid foundations, `PyPSA-China` has limitations, which are addressed by the following improvements in the newer `PyPSA-China-PIK` 
+-	**Operational reserves for contingency planning**
+-	**Sub-provincial representation of renewable generator capacity and availability**: this avoids smoothing of profiles and capacity factors over very large areas
+-	**Fully configurable**: no hard-coded variables, all modes and options controlled by `yaml` configs.
+-	**Extensive reporting**: comprehensive analysis and plotting methods for the spatial, economics and temporal results, including impact of constraints
+-	**Coupling [interface](https://github.com/pik-piam/Remind-PyPSA-coupling) to long-term Integrated Assessment models    ** (REMIND) for improved pathway plausibility
+-	**Data pipelines**: increased source transparency, flexible data replacement and updated defaults. 
+-	Added existing combined heat-and-power coal plants to model
+-	**Community use focus**: addition of documentation and example configurations to help modelers get started. Code-base streamlined and refocused for collaborative development 
+-	**Quality assurance**: automated tests and code formatting/audits. 
 
-`PyPSA-China` stands out due to its open-source philosophy and focus on China [@zhouMultienergySystemHorizon2024]. We introduce a restructured version PyPSA-China-PIK, aimed at collaborative development and modelling, that supports coupling to macro-economic models, and with significant upgrades. 
-<!-- In what terms to talk about coupling ? -->
-
-
-<!--- RESEARCH APPLICATION 
-- need obvious research application 
- 
-- Your software should be a significant contribution to the available open source software that either enables some new research challenges to be addressed or makes addressing research challenges significantly better (e.g., faster, easier, simpler).
-
--->
 
 # Model Overview
-PyPSA-China (PIK) is best understood as a workflow built the Python Power System Analysis ([PyPSA](https://pypsa.readthedocs.io/en/stable/)) modeling framework[@PyPSA]. The workflow collects relevant energy systems data, then formulates it into a PyPSA least-cost optimization problem and finally analyses the solution. [Framework described a number of times]. The cost minimization is separate and can be performed by a number of standalone solvers. The workflow is orchestrated by the `snakemake` management system and is highly modular. All execution options are controlled by `yaml` configuration files. 
+![overview of the `PyPSA-China-PIK` workflow](figures/rules_graph_simplified.pdf)
+`PyPSA-China-PIK`    is best understood as a workflow built on-top of the Python Power System Analysis ([PyPSA](https://pypsa.readthedocs.io/en/stable/)) modeling framework[@PyPSA]. The four steps  are: 
 
-Officially available data for load (demand) is limited to Provincial and autonomous region resolution. This fixes the spatial network resolution to 32 nodes, which is adequate for long-term capacity expansion planning but not for analysing high-voltage AC power flows. Time resolution is flexible down to 1 hour. 
+1.	Data fetch of open energy systems (existing power system infrastructure, weather and land-use) data.
+2.	Preparation of a PyPSA least-cost linear optimization problem
+3.	Solve with the user’s preferred solver (e.g. Gurobi or HigHS)
+4.	Post-process: Analysing & reporting the solution
 
-[docs/workflow]
-Figure 1 the workflow
 
-# Functionalities
+## Key data
+-	Load: the NDRC ministry published provincial peak-valley daily demand data and typical day profiles for each province. This limits the spatial network resolution to 31  nodes, which is sufficient for long-term capacity expansion planning (e.g [@wuHourlyElectricPower2023]).
+-	Weather data is collected from ECMWF’s ERA5 by `atlite`[@atlite2021]. Renewable potentials and hourly availability are aggregated by capacity factor at sub-provincial resolution.
+-	Land-use availability: is obtained from the Copernicus land classification survey[@GlobalDynamicLand]
+-	Existing power plant capacities are from the Global Energy Monitor Integrated Power Tracke[@GlobalIntegratedPower2025].
 
-The core PyPSA-China PIK functionalities are:
-- Optimisation of electricity generation, transmisision and storage capacity expansion. Least-cost dispatch.
-- Modelling of renewable availability and potential based on historical weather data using the `atlite` package [@atlite2021]. Renewable resources can be aggregated by capacity factor at sub-node resolution, which is essential for large provinces such as Inner Mongolia.
-- Modelling of hydroelectricity based on atlite and dam cascades[@liuRoleHydroPower2019].
-- Co-optimisation of electricity and heat. Heat storage, production and combined heat-and-power generation can be included.
-- electric vehicles ? @beijingzyl to add the non-flex implementation?
-- Operational reserves margins scaling with VRE supply and load. This allows for the optimisation of contigencies.
-- Reporting of supply & demand time series, yearly costs, energy balances, capacities and more. 
 
-## Pathways
-An advanced feature is using a transformation pathway from the REMIND macro-economic integrated assessment model [@baumstarkREMIND2021]
+
+# Functionalities  
+The core `PyPSA-China-PIK` functionalities are:
+- Co-optimisation of dispatch and investment for electricity generation, transmission and storage down to hourly resolution for a full year for all 31 Chinese mainland provinces and regions.
+- Greenfield and brownfield energy systems
+- Modelling of renewable availability using the `atlite` package [@atlite2021]. Aggregation by capacity factor at sub-node resolution, which is essential for large provinces such as Inner Mongolia.
+- Modelling of hydroelectricity based on `atlite` and dam cascades[@liuRoleHydroPower2019].
+- Co-optimisation of electricity and heat. Heat storage, production and combined heat-and-power generation can be included. There is flexibility to add further energy carriers and loads such as electric vehicles as done in PyPSA-EUR [REF].
+-  Transition pathways: myopic [#TODO] or informed by IAM scenario results
+
+## Pathways  
+An advanced feature is the ability to incorporate transformation pathways from the REMIND integrated assessment model [@baumstarkREMIND2021] as input data, reflecting long-term demand and investment trends, and evolution of techno-economic parameters, such as endogenously declining solar photovoltaics costs, including endogenous cost-decreases from learning. This allows embedding the detailed assessment of power system variability, flexibility, and reliability into long-term pathways consistent with climate targets.
 
 # Validation
-- China dispatch is not based on merit order
-- show 2020 data? do we want to add a PM2.5 limit for some regions to dispatch gas?
-- good agreement, key difference is gas as noted by others
-- this is because gas dispatch is set by limitations on PM2.5 for heating
+Unlike in our model, power dispatch in China is not currently based on least-cost principles[@xiangAssessingRolesEfficient2023].  Nonetheless, `PyPSA-China-PIK` is able to reproduce historical data with high accuracy (figure 2). A key difference concerns gas power, which the model does not select for dispatch due to its high fuel costs. This has been noted by others [@xiangAssessingRolesEfficient2023]. The choice of gas is usually linked to PM2.5 emission reduction efforts in densely populated areas [@liuDiversifyingHeatSources2024].    
+  
 
-# Related work <!-- (include?) -->
-- pypsa-eur
-- pypsa-earth
+<!-- Figure 2 placeholder; replace with an actual image when available -->
+![historical results when the model is informed by REMIND]()
+
 
 # Acknowledgements
-Energy Foundation China grant <ID> #TODO
+This work was made possible thanks to funding from the Energy Foundation China, grant <ID> #TODO 
+
+# References
