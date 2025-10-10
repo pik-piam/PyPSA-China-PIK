@@ -432,8 +432,12 @@ def setup_gurobi_tunnel_and_env(
         logger.error("SSH tunnel communication timed out.")
 
     os.environ["https_proxy"] = f"socks5://127.0.0.1:{port}"
-    os.environ["SSL_CERT_FILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
-    os.environ["GRB_CAFILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+    os.environ["SSL_CERT_FILE"] = tunnel_config.get(
+        "ssl_cert", "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+    )
+    os.environ["GRB_CAFILE"] = tunnel_config.get(
+        "grb_cafile", "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+    )
 
     # Set up Gurobi environment variables
     # TODO soft code

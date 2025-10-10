@@ -253,6 +253,8 @@
       license_path: "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
       verbose: "1"
       timeout: "10"
+      ssl_cert: "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+      grb_cafile: "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
 
     solver_options:
       highs-default:
