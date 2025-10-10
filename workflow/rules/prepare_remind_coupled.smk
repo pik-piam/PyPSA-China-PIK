@@ -18,7 +18,7 @@ rule build_run_config:
         expname_max_len=20,
         currency_conv=0.912,
     input:
-        remind_output=config["paths"].get("remind_outpt_dir", ""),
+        remind_output=config["paths"].get("remind_outpt_dir", "dummy.yaml"),
         config_template="config/templates/remind_cpled.yml",
     output:
         coupled_config="resources/tmp/remind_coupled.yaml",
@@ -40,7 +40,7 @@ rule transform_remind_data:
         use_gdx=False,
     input:
         pypsa_costs=path_manager.costs_dir(ignore_remind=True),
-        remind_output_dir=config["paths"].get("remind_outpt_dir", ""),
+        remind_output_dir=config["paths"].get("remind_outpt_dir", "dummy"),
     output:
         **{
             f"costs_{yr}": DERIVED_DATA + f"/remind/costs/costs_{yr}.csv"
