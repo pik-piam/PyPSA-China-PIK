@@ -1,348 +1,377 @@
-# SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
-#
-# SPDX-License-Identifier: CC0-1.0
-# DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
+  # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
+  #
+  # SPDX-License-Identifier: CC0-1.0
+  # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
-run:
-  name: "unamed_default_run"
-foresight: "overnight"
+  run:
+    name: "heat_couple_test_new_chp_h2_2019weather"
+  foresight: "overnight"
 
-paths:
-  results_dir: "results/"
-  costs_dir: "resources/data/costs/default"
-  yearly_regional_load: 
-    ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
-    # conversion factor to MWh in case ac load file in another unit
-    ac_to_mwh: 1
-#TODO merge into paths
-edge_paths:
-  current: "resources/data/grids/edges_current.csv"
-  current+FCG: "resources/data/grids/edges_current_FCG.csv"
-  current+Neighbor: "resources/data/grids/edges_current_neighbor.csv"
+  paths:
+    results_dir: "results/"
+    costs_dir: "resources/data/costs/default"
+    yearly_regional_load: 
+      ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+      # conversion factor to MWh in case ac load file in another unit
+      ac_to_mwh: 1
+  #TODO merge into paths
+  edge_paths:
+    current: "resources/data/grids/edges_current.csv"
+    current+FCG: "resources/data/grids/edges_current_FCG.csv"
+    current+Neighbor: "resources/data/grids/edges_current_neighbor.csv"
 
+      
+  scenario: 
+    co2_pathway: ["exp175default"] # co2_scenarios that will be used
+    topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
+    planning_horizons:
+      - 2020
+      - 2025
+      - 2030
+      - 2035
+      - 2040
+      - 2045
+      - 2050
+      - 2055
+      - 2060
+    heating_demand: ["positive"]
+
+  # emission reduction scenarios (can be selected with scenario.co2_pathway)
+  co2_scenarios: 
+    exp175default:
+      control: "reduction" # price | reduction | budget | None
+      pathway:
+        '2020': 0.0
+        '2025': 0.22623418
+        '2030': 0.41175086
+        '2035': 0.56387834
+        '2040': 0.688626
+        '2045': 0.79092165
+        '2050': 0.87480618
+        '2055': 0.94359322
+        '2060': 1
+    SSP2-PkBudg1000:
+      pathway:
+        2020: 9.320018181818183
+        2025: 12.5
+        2030: 41.29172727272728
+        2035: 56.363727272727274
+        2040: 81.00627272727272
+        2045: 119.62745454545455
+        2050: 176.63645454545454
+        2055: 200.14990909090906
+        2060: 223.6630909090909
+        2070: 270.6897272727273
+        2080: 317.71636363636367
+        2090: 317.71636363636367
+        2100: 317.71636363636367
+        2110: 317.71636363636367
+        2130: 317.71636363636367
+        2150: 317.71636363636367
+      control: price
+
+  # Time dimension
+  # TODO Need to test functionality of end_year_plus1
+  snapshots:
+    start: "01-01 00:00"
+    end: "12-31 23:00"
+    bounds: 'both'
+    freq: '5h' # down to 1h
+    # for weighings -> to be improved
+    frequency: 5.
+    # in case snapshots cross the planning horizon year
+    end_year_plus1: false
+
+  logging_level: INFO
+  logging:
+    level: INFO
+    format: '%(levelname)s:%(name)s:%(message)s'
+
+  enable:
+    build_cutout: true
+    retrieve_cutout: false
+    retrieve_raster: true
+
+  atlite:
+    cutout_name: "China-2019"
+    freq: "h"
+    nprocesses: 1
+    show_progress: true
+    monthly_requests: true
+    cutouts:
+      China-2020c:
+        module: era5
+        dx: 0.25
+        dy: 0.25
+        weather_year: 2020
+      China-2019:
+        module: era5
+        dx: 0.25
+        dy: 0.25
+        weather_year: 2019
+      China-tests-cutout:
+        module: era5
+        dx: 5
+        dy: 5
+        weather_year: 2020
+
+  # renewable potentials and availabilities from Atlite. 
+  # !CARE cutout should match atlite.cutout_name above
+  renewable:
+    onwind:
+      cutout: China-2020c
+      resource:
+        method: wind
+        turbine: Vestas_V112_3MW
+      # bin by capacity factor
+      resource_classes:
+        min_cf_delta: 0.05
+        n: 3  
+      capacity_per_sqkm: 3 # ScholzPhd Tab 4.3.1: 10MW/km^2
+      potential: simple # or conservative
+      natura: false
+      clip_p_max_pu: 1.e-2
+      min_p_nom_max: 1.e-2
+    offwind:
+      cutout: China-2020c
+      resource:
+        method: wind
+        turbine: NREL_ReferenceTurbine_5MW_offshore
+      resource_classes:
+        min_cf_delta: 0.05
+        n: 3
+      capacity_per_sqkm: 2 # ScholzPhd Tab 4.3.1: 20MW/km^2
+      correction_factor: 0.8855
+      potential: simple # or conservative
+      natura: true
+      max_depth: 50
+      clip_p_max_pu: 1.e-2
+      min_p_nom_max: 1.e-2
+    solar:
+      cutout: China-2020c
+      resource:
+        method: pv
+        panel: CSi
+        orientation:
+          slope: 35.
+          azimuth: 180.
+      resource_classes:
+        min_cf_delta: 0.02
+        n: 2
+      capacity_per_sqkm: 5.1 # ScholzPhd Tab 4.3.1: 170 MW/km^2 3%
+      potential: simple # or conservative
+      correction_factor: 0.85
+      natura: false
+      clip_p_max_pu: 1.e-2
+      min_p_nom_max: 1.e-2
+  renewable_potential_cutoff: 200 # MW, skip low potentials
+
+  heat_demand:
+    start_day : "01-04" # dd-mm
+    end_day : "30-09" # dd-mm
+    heating_start_temp : 15.0  # c
+    heating_lin_slope : 1  # slope
+    heating_offet : 0  # linear model offset
+  solar_thermal_angle: 45
+
+  reporting:
+    # Whether to adjust link capacities by efficiency for AC-side reporting
+    # pypsa links capacity defined by input but nameplate capacity often AC
+    # This ensures consistent capacity reporting across the network
+    adjust_link_capacities_by_efficiency: true
+
+
+  # Network carriers and technologies
+  bus_suffix: [""," central heat"," decentral heat"," gas"," coal"] #TODO check used
+  bus_carrier: {
+      "": "AC",
+      " central heat": "heat",
+      " decentral heat": "heat",
+      " gas": "gas",
+      " coal": "coal",
+  }
+
+  Techs:
+    ## tech selection
+    #TODO: rework vre_techs to split with clean_techs. Merge vre with non_dispatchable
+    vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier", "fuel cell", "H2 CHP"]
+    non_dispatchable: ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential', "Solar Thermal"]
+    conv_techs: ["CCGT", "CHP gas", "CHP OCGT gas", "gas boiler","coal boiler","coal power plant","CHP coal"] # "OCGT",
+    store_techs: ["H2","battery","water tanks","PHS"]
+    non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
+    hydrogen_lines: true
+    coal_ccs_retrofit: false # currently myopic pathway only.  CC = co2 cap 
+
+  ## add components (overwrites vre tech choice)
+  heat_coupling: true
+  add_biomass: True
+  add_hydro: True
+  add_H2: True
+  add_methanation: True
+  line_losses: True
+  no_lines: False
+
+  hydro_dams:
+    dams_path: "resources/data/hydro/dams_large.csv"
+    inflow_path: "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
+    inflow_date_start: "1979-01-01"
+    inflow_date_end: "2017-01-01" # uses left for inclusive
+    reservoir_initial_capacity_path: "resources/data/hydro/reservoir_initial_capacity.pickle"
+    reservoir_effective_capacity_path: "resources/data/hydro/reservoir_effective_capacity.pickle"
+    river_links_stations : "" # TODO
+    p_nom_path: "resources/data/p_nom/hydro_p_nom.h5"
+    p_max_pu_path: "resources/data/p_nom/hydro_p_max_pu.h5"
+    p_max_pu_key : "hydro_p_max_pu"
+    damn_flows_path: "resources/data/hydro/dam_flow_links.csv"
+  H2:
+    geo_storage_nodes: [ "Sichuan", "Chongqing", "Hubei", "Jiangxi", "Anhui", "Jiangsu", "Shandong", "Guangdong" ]
+
+  solving:
+    options:
+  #    clip_p_max_pu: 1.e-2
+  #    seed: 123
+      formulation: kirchhoff
+      load_shedding: false
+      voll: 1e5 # EUR/MWh
+      noisy_costs: false
+      min_iterations: 4
+      max_iterations: 6
+      clip_p_max_pu: 0.01
+      skip_iterations: false
+      track_iterations: false
+      export_duals: true   # Single switch for dual functionality
+
+    solver:
+      name: gurobi
+      options: gurobi-default
+    gurobi_hpc_tunnel:
+      use_tunnel: True
+      tunnel_port: 27000
+      timeout_s: 15
+      login_node: "03"
+      gurobi_home: "/p/projects/rd3mod/gurobi1103/linux64"
+      license_path: "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
+      verbose: "1"
+      timeout: "10"
+
+    solver_options:
+      highs-default:
+        # refer to https://ergo-code.github.io/HiGHS/options/definitions.html#solver
+        threads: 4
+        solver: "ipm"
+        run_crossover: "off"
+        small_matrix_value: 1e-6
+        large_matrix_value: 1e9
+        primal_feasibility_tolerance: 1e-5
+        dual_feasibility_tolerance: 1e-5
+        ipm_optimality_tolerance: 1e-4
+        parallel: "on"
+        random_seed: 123
+      gurobi-default:
+        threads: 8
+        method: 2 # barrier
+        crossover: 0
+        BarConvTol: 1.e-5
+        FeasibilityTol: 1.e-6
+        AggFill: 0
+        PreDual: 0
+        GURO_PAR_BARDENSETHRESH: 200
+        DualReductions: 0
+  #      BarConvTol: 1.e-6
+  #      Seed: 123
+  #      AggFill: 0
+  #      PreDual: 0
+  #      seed: 10              # Consistent seed for all plattforms
+      gurobi-numeric-focus:
+        name: gurobi
+        NumericFocus: 3       # Favour numeric stability over speed
+        method: 2             # barrier
+        crossover: 0          # do not use crossover
+        BarHomogeneous: 1     # Use homogeneous barrier if standard does not converge
+        BarConvTol: 1.e-5
+        FeasibilityTol: 1.e-4
+        OptimalityTol: 1.e-4
+        ObjScale: -0.5
+        threads: 8
+        Seed: 123
+      gurobi-fallback:        # Use gurobi defaults
+        name: gurobi
+        crossover: 0
+        method: 2             # barrier
+        BarHomogeneous: 1     # Use homogeneous barrier if standard does not converge
+        BarConvTol: 1.e-5
+        FeasibilityTol: 1.e-5
+        OptimalityTol: 1.e-5
+        Seed: 123
+        threads: 8
+      cplex-default:
+        threads: 4
+        lpmethod: 4 # barrier
+        solutiontype: 2 # non basic solution, ie no crossover
+        barrier.convergetol: 1.e-5
+        feasopt.tolerance: 1.e-6
+      cbc-default: {} # Used in CI
+      glpk-default: {} # Used in CI
+
+    mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
+
+  # transmission options
+  lines:
+    line_length_factor: 1.25
+    expansion:
+      transmission_limit: vopt # opt for optimal (unconstrained), v for volume, c for cost. eg. c1.25 limits cost increase to 25% of the base year
+      base_year: 2020 # base step year, the exp limit is relative to this year
+
+  security:
+    line_margin: 70 # max percent of line capacity
     
-scenario: 
-  co2_pathway: ["exp175default"] # co2_scenarios that will be used
-  topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
-  planning_horizons:
-    - 2025
-    - 2030
-    - 2035
-    - 2040
-    - 2045
-    - 2050
-    - 2055
-    - 2060
-  heating_demand: ["positive"]
-
-# emission reduction scenarios (can be selected with scenario.co2_pathway)
-co2_scenarios: 
-  exp175default:
-    control: "reduction" # price | reduction | budget | None
-    pathway:
-      '2020': 0.0
-      '2025': 0.22623418
-      '2030': 0.41175086
-      '2035': 0.56387834
-      '2040': 0.688626
-      '2045': 0.79092165
-      '2050': 0.87480618
-      '2055': 0.94359322
-      '2060': 1
-
-# Time dimension
-# TODO Need to test functionality of end_year_plus1
-snapshots:
-  start: "01-01 00:00"
-  end: "12-31 23:00"
-  bounds: 'both'
-  freq: '5h' # down to 1h
-  # for weighings -> to be improved
-  frequency: 5.
-  # in case snapshots cross the planning horizon year
-  end_year_plus1: false
-
-logging_level: INFO
-logging:
-  level: INFO
-  format: '%(levelname)s:%(name)s:%(message)s'
-
-enable:
-  build_cutout: false
-  retrieve_cutout: false
-  retrieve_raster: false
-
-atlite:
-  cutout_name: "China-2020c"
-  freq: "h"
-  nprocesses: 1
-  show_progress: true
-  monthly_requests: true
-  cutouts:
-    China-2020c:
-      module: era5
-      dx: 0.25
-      dy: 0.25
-      weather_year: 2020
-    China-tests-cutout:
-      module: era5
-      dx: 5
-      dy: 5
-      weather_year: 2020
-
-# renewable potentials and availabilities from Atlite. 
-# !CARE cutout should match atlite.cutout_name above
-renewable:
-  onwind:
-    cutout: China-2020c
-    resource:
-      method: wind
-      turbine: Vestas_V112_3MW
-    # bin by capacity factor
-    resource_classes:
-      min_cf_delta: 0.05
-      n: 3  
-    capacity_per_sqkm: 3 # ScholzPhd Tab 4.3.1: 10MW/km^2
-    potential: simple # or conservative
-    natura: false
-    clip_p_max_pu: 1.e-2
-    min_p_nom_max: 1.e-2
-  offwind:
-    cutout: China-2020c
-    resource:
-      method: wind
-      turbine: NREL_ReferenceTurbine_5MW_offshore
-    resource_classes:
-      min_cf_delta: 0.05
-      n: 3
-    capacity_per_sqkm: 2 # ScholzPhd Tab 4.3.1: 20MW/km^2
-    correction_factor: 0.8855
-    potential: simple # or conservative
-    natura: true
-    max_depth: 50
-    clip_p_max_pu: 1.e-2
-    min_p_nom_max: 1.e-2
-  solar:
-    cutout: China-2020c
-    resource:
-      method: pv
-      panel: CSi
-      orientation:
-        slope: 35.
-        azimuth: 180.
-    resource_classes:
-      min_cf_delta: 0.02
-      n: 2
-    capacity_per_sqkm: 5.1 # ScholzPhd Tab 4.3.1: 170 MW/km^2 3%
-    potential: simple # or conservative
-    correction_factor: 0.85
-    natura: false
-    clip_p_max_pu: 1.e-2
-    min_p_nom_max: 1.e-2
-renewable_potential_cutoff: 200 # MW, skip low potentials
-
-heat_demand:
-  start_day : "01-04" # dd-mm
-  end_day : "30-09" # dd-mm
-  heating_start_temp : 15.0  # c
-  heating_lin_slope : 1  # slope
-  heating_offet : 0  # linear model offset
-solar_thermal_angle: 45
-
-reporting:
-  # Whether to adjust link capacities by efficiency for AC-side reporting
-  # pypsa links capacity defined by input but nameplate capacity often AC
-  # This ensures consistent capacity reporting across the network
-  adjust_link_capacities_by_efficiency: true
+  # brownfield options
+  existing_capacities:
+    add: True # whether to add brownfield capacities
+    grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
+    collapse_years: True # Treat as a single unit when preparing & solving network 
+    threshold_capacity: 80 # MW
+    techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
+    node_assignment: simple # simple | gps
 
 
-# Network carriers and technologies
-bus_suffix: [""," central heat"," decentral heat"," gas"," coal"] #TODO check used
-bus_carrier: {
-    "": "AC",
-    " central heat": "heat",
-    " decentral heat": "heat",
-    " gas": "gas",
-    " coal": "coal",
-}
+  operational_reserve:
+    activate: false
+    epsilon_load: 0.02
+    epsilon_vres: 0.02
+    contingency: 300000 # MW. Additional reserves on top of fractions
 
-Techs:
-  ## tech selection
-  #TODO: rework vre_techs to split with clean_techs. Merge vre with non_dispatchable
-  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier","H2 CHP", "fuel cell"]
-  non_dispatchable: ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential', "Solar Thermal"]
-  conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
-  store_techs: ["H2","battery","water tanks","PHS"]
-  non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
-  hydrogen_lines: true
-  coal_ccs_retrofit: true # currently myopic pathway only.  CC = co2 cap 
+  # TODO integrate in workflow: split_provinces is currently not supported by build_loads and reporting
+  nodes: 
+    split_provinces: False # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
+    # exclude currently only applies if split_provinces is True, will be fixed with integrartion to workflow
+    exclude_provinces: ["Macau", "HongKong"] # list of provinces to exclude from splitting
+    splits:
+      # adminl2 groups per adminl1. {adminl1: {custom_name: [adminl2_names],..}}
+      InnerMongolia:
+        West: 
+          - "Hulunbuir"
+          - "Xing'an"
+          - "Tongliao"
+          - "Chifeng"
+          - "Xilin Gol"
+        East: 
+          - "Alxa"
+          - "Baotou"
+          - "Baynnur"
+          - "Hohhot"
+          - "Ordos"
+          - "Ulaan Chab"
+          - "Wuhai"
 
-## add components (overwrites vre tech choice)
-heat_coupling: true
-add_biomass: True
-add_hydro: True
-add_H2: True
-add_methanation: True
-line_losses: True
-no_lines: False
+  # compression of netcdf network objects
+  io:
+    nc_compression:
+      level: 4
+      zlib: True
 
-hydro_dams:
-  dams_path: "resources/data/hydro/dams_large.csv"
-  inflow_path: "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
-  inflow_date_start: "1979-01-01"
-  inflow_date_end: "2017-01-01" # uses left for inclusive
-  reservoir_initial_capacity_path: "resources/data/hydro/reservoir_initial_capacity.pickle"
-  reservoir_effective_capacity_path: "resources/data/hydro/reservoir_effective_capacity.pickle"
-  river_links_stations : "" # TODO
-  p_nom_path: "resources/data/p_nom/hydro_p_nom.h5"
-  p_max_pu_path: "resources/data/p_nom/hydro_p_max_pu.h5"
-  p_max_pu_key : "hydro_p_max_pu"
-  damn_flows_path: "resources/data/hydro/dam_flow_links.csv"
-H2:
-  geo_storage_nodes: [ "Sichuan", "Chongqing", "Hubei", "Jiangxi", "Anhui", "Jiangsu", "Shandong", "Guangdong" ]
-
-solving:
-  options:
-#    clip_p_max_pu: 1.e-2
-#    seed: 123
-    formulation: kirchhoff
-    load_shedding: false
-    voll: 1e5 # EUR/MWh
-    noisy_costs: false
-    min_iterations: 4
-    max_iterations: 6
-    clip_p_max_pu: 0.01
-    skip_iterations: false
-    track_iterations: false
-    export_duals: true   # Single switch for dual functionality
-
-  solver:
-    name: gurobi
-    options: gurobi-default
-  gurobi_hpc_tunnel:
-    use_tunnel: True
-    tunnel_port: 27000
-    timeout_s: 15
-    login_node: "03"
-
-  solver_options:
-    highs-default:
-      # refer to https://ergo-code.github.io/HiGHS/options/definitions.html#solver
-      threads: 4
-      solver: "ipm"
-      run_crossover: "off"
-      small_matrix_value: 1e-6
-      large_matrix_value: 1e9
-      primal_feasibility_tolerance: 1e-5
-      dual_feasibility_tolerance: 1e-5
-      ipm_optimality_tolerance: 1e-4
-      parallel: "on"
-      random_seed: 123
-    gurobi-default:
-      threads: 8
-      method: 2 # barrier
-      crossover: 0
-      BarConvTol: 1.e-5
-      FeasibilityTol: 1.e-6
-      AggFill: 0
-      PreDual: 0
-      GURO_PAR_BARDENSETHRESH: 200
-      DualReductions: 0
-#      BarConvTol: 1.e-6
-#      Seed: 123
-#      AggFill: 0
-#      PreDual: 0
-#      seed: 10              # Consistent seed for all plattforms
-    gurobi-numeric-focus:
-      name: gurobi
-      NumericFocus: 3       # Favour numeric stability over speed
-      method: 2             # barrier
-      crossover: 0          # do not use crossover
-      BarHomogeneous: 1     # Use homogeneous barrier if standard does not converge
-      BarConvTol: 1.e-5
-      FeasibilityTol: 1.e-4
-      OptimalityTol: 1.e-4
-      ObjScale: -0.5
-      threads: 8
-      Seed: 123
-    gurobi-fallback:        # Use gurobi defaults
-      name: gurobi
-      crossover: 0
-      method: 2             # barrier
-      BarHomogeneous: 1     # Use homogeneous barrier if standard does not converge
-      BarConvTol: 1.e-5
-      FeasibilityTol: 1.e-5
-      OptimalityTol: 1.e-5
-      Seed: 123
-      threads: 8
-    cplex-default:
-      threads: 4
-      lpmethod: 4 # barrier
-      solutiontype: 2 # non basic solution, ie no crossover
-      barrier.convergetol: 1.e-5
-      feasopt.tolerance: 1.e-6
-    cbc-default: {} # Used in CI
-    glpk-default: {} # Used in CI
-
-  mem: 80000 #memory in MB; 20 GB enough for 50+B+I+H2; 100 GB for 181+B+I+H2
-
-# transmission options
-lines:
-  line_length_factor: 1.25
-  expansion:
-    transmission_limit: vopt # opt for optimal (unconstrained), v for volume, c for cost. eg. c1.25 limits cost increase to 25% of the base year
-    base_year: 2020 # base step year, the exp limit is relative to this year
-
-security:
-  line_margin: 70 # max percent of line capacity
-  
-# brownfield options
-existing_capacities:
-  add: True # whether to add brownfield capacities
-  grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  collapse_years: False # Treat as a single unit when preparing & solving network 
-  threshold_capacity: 80 # MW
-  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
-  node_assignment: simple # simple | gps
-
-
-operational_reserve:
-  activate: false
-  epsilon_load: 0.02
-  epsilon_vres: 0.02
-  contingency: 300000 # MW. Additional reserves on top of fractions
-
-# TODO integrate in workflow: split_provinces is currently not supported by build_loads and reporting
-nodes: 
-  split_provinces: False # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
-  # exclude currently only applies if split_provinces is True, will be fixed with integrartion to workflow
-  exclude_provinces: ["Macau", "HongKong"] # list of provinces to exclude from splitting
-  splits:
-    # adminl2 groups per adminl1. {adminl1: {custom_name: [adminl2_names],..}}
-    InnerMongolia:
-      West: 
-        - "Hulunbuir"
-        - "Xing'an"
-        - "Tongliao"
-        - "Chifeng"
-        - "Xilin Gol"
-      East: 
-        - "Alxa"
-        - "Baotou"
-        - "Baynnur"
-        - "Hohhot"
-        - "Ordos"
-        - "Ulaan Chab"
-        - "Wuhai"
-
-# compression of netcdf network objects
-io:
-  nc_compression:
-    level: 4
-    zlib: True
-
-# simplification of shapes to save memory. If using GPS for plant node assignment a lower value is preferable.
-fetch_regions:  
-  simplify_tol: 
-    eez: 0.5
-    land: 0.05
+  # simplification of shapes to save memory. If using GPS for plant node assignment a lower value is preferable.
+  fetch_regions:  
+    simplify_tol: 
+      eez: 0.5
+      land: 0.05
