@@ -111,6 +111,14 @@ def make_test_config_file(make_snakemake_test_config, tmpdir_factory, request):
     # Generate the test config
     test_config = make_snakemake_test_config(time_res=time_res, plan_year=plan_year, **kwargs)
 
+    # If REMIND coupling is enabled, point to mock data
+    if test_config.get("run", {}).get("is_remind_coupled", False):
+        import pathlib
+
+        mock_remind_dir = str(pathlib.Path(__file__).parent / "testdata" / "mock_remind")
+        test_config["paths"] = test_config.get("paths", {})
+        test_config["paths"]["remind_outpt_dir"] = mock_remind_dir
+
     # Generate a unique filename based on the arguments
     config_filename = generate_filename(time_res=time_res, plan_year=plan_year)
 
