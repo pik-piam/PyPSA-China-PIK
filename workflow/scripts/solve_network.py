@@ -752,8 +752,11 @@ if __name__ == "__main__":
         )
 
         # Store dual variables in network components for netcdf export
-        if export_duals_flag:
-            store_duals_to_network(n)
+        try:
+            if export_duals_flag:
+                store_duals_to_network(n)
+        except Exception as e:
+            logging.error(f"Error storing dual variables: {e}")
     else:
         logging.info("Mocking the solve step")
         n = mock_solve(n)

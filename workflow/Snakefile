@@ -312,7 +312,7 @@ if config["foresight"] in ["overnight"]:
     rule add_existing_baseyear:
         params:
             baseyear = BASEYEAR,
-            add_baseyear_to_assets = False,
+            add_build_year_to_new_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
@@ -387,7 +387,7 @@ elif config["foresight"] == "myopic":
     rule add_existing_baseyear:
         params:
             baseyear = BASEYEAR,
-            add_baseyear_to_assets = False,
+            add_build_year_to_new_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
@@ -446,6 +446,7 @@ rule dag:
         dag_png="results/dag/dag.png",
         rules_dot="results/dag/rules_graph.dot",
         rules_pdf="results/dag/rules_graph.pdf",
+        rules_svg="results/dag/rules_graph.svg",
         rules_png="results/dag/rules_graph.png",
     conda:
         "envs/environment.yaml"
@@ -456,6 +457,7 @@ rule dag:
         dot -Tpng -o {output.dag_png} {output.dag_dot}
         snakemake --rulegraph --quiet | sed -n "/digraph/,\$p" > {output.rules_dot}
         dot -Tpdf -o {output.rules_pdf} {output.rules_dot}
+        dot -Tsvg -o {output.rules_pdf} {output.rules_dot}
         dot -Tpng -o {output.rules_png} {output.rules_dot}
         """
 

@@ -251,7 +251,7 @@ def add_power_capacities_installed_before_baseyear(
         capacity = capacity.unstack()
         capacity = capacity[~capacity.isna()]
         capacity = capacity[capacity > config["existing_capacities"]["threshold_capacity"]].dropna()
-        buses = capacity.index.get_level_values(0)
+        buses = capacity.index.get_level_values(0)  # nodes
         capacity.index = (
             capacity.index.get_level_values(0) + " " + capacity.index.get_level_values(1)
         )
@@ -364,7 +364,7 @@ def add_power_capacities_installed_before_baseyear(
                 capacity.index,
                 suffix=f"-{str(grouping_year)}",
                 bus0=bus0,
-                bus1=capacity.index,
+                bus1=buses,
                 carrier=carrier_map[generator],
                 marginal_cost=hist_efficiency
                 * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
@@ -384,7 +384,7 @@ def add_power_capacities_installed_before_baseyear(
                 capacity.index,
                 suffix=f" boiler-{str(grouping_year)}",
                 bus0=bus0,
-                bus1=capacity.index + " central heat",
+                bus1=buses + " central heat",
                 carrier=carrier_map[generator],
                 marginal_cost=hist_efficiency
                 * costs.at["central coal CHP", "VOM"],  # NB: VOM is per MWel
@@ -405,7 +405,7 @@ def add_power_capacities_installed_before_baseyear(
                 capacity.index,
                 suffix=f"-{str(grouping_year)}",
                 bus0=bus0,
-                bus1=capacity.index,
+                bus1=buses,
                 carrier=carrier_map[generator],
                 marginal_cost=hist_efficiency
                 * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
@@ -423,7 +423,7 @@ def add_power_capacities_installed_before_baseyear(
                 capacity.index,
                 suffix=f" boiler-{str(grouping_year)}",
                 bus0=bus0,
-                bus1=capacity.index + " central heat",
+                bus1=buses + " central heat",
                 carrier=carrier_map[generator],
                 marginal_cost=hist_efficiency
                 * costs.at["central gas CHP", "VOM"],  # NB: VOM is per MWel
@@ -444,7 +444,7 @@ def add_power_capacities_installed_before_baseyear(
                     capacity.index,
                     suffix="" + cat + generator + "-" + str(grouping_year),
                     bus0=bus0,
-                    bus1=capacity.index + cat + "heat",
+                    bus1=buses + cat + "heat",
                     carrier=carrier_map[generator],
                     marginal_cost=costs.at[cat.lstrip() + generator, "efficiency"]
                     * costs.at[cat.lstrip() + generator, "VOM"],
@@ -471,8 +471,8 @@ def add_power_capacities_installed_before_baseyear(
                 "Link",
                 capacity.index,
                 suffix="-" + str(grouping_year),
-                bus0=capacity.index,
-                bus1=capacity.index + " central heat",
+                bus0=buses,
+                bus1=buses + " central heat",
                 carrier="heat pump",
                 efficiency=(
                     gshp_cop[capacity.index]
@@ -490,7 +490,6 @@ def add_power_capacities_installed_before_baseyear(
             )
 
         elif generator == "PHS":
-
             # pure pumped hydro storage, fixed, 6h energy by default, no inflow
             n.add(
                 "StorageUnit",
@@ -681,7 +680,7 @@ if __name__ == "__main__":
             topology="current+FCG",
             # co2_pathway="exp175default",
             co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
-            planning_horizons="2040",
+            planning_horizons="2020",
             configfiles="resources/tmp/pseudo_coupled.yml",
             # heating_demand="positive",
         )
