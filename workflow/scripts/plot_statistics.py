@@ -20,8 +20,8 @@ import pandas as pd
 import pypsa
 import seaborn as sns
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
-from _plot_utilities import rename_index, fix_network_names_colors, heatmap, annotate_heatmap
-from _pypsa_helpers import calc_lcoe, filter_carriers, calc_generation_share
+from _plot_utilities import annotate_heatmap, fix_network_names_colors, heatmap, rename_index
+from _pypsa_helpers import calc_generation_share, calc_lcoe, filter_carriers
 from constants import (
     PLOT_CAP_LABEL,
     PLOT_CAP_UNITS,
@@ -595,7 +595,7 @@ if __name__ == "__main__":
         fig.savefig(os.path.join(outp_dir, "LCOE.png"))
 
     if "mv_minus_lcoe" in stats_list:
-        if not "lcoe" in stats_list:
+        if "lcoe" not in stats_list:
             rev_costs = calc_lcoe(n, groupby=None)
         ds = rev_costs["profit_pu"].copy()
         ds.attrs = {"name": "MV - LCOE", "unit": "€/MWh"}

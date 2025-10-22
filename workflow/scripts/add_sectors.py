@@ -4,6 +4,7 @@ Only supports direct charging mode, no DSM functionality
 """
 
 import logging
+
 import pandas as pd
 import pypsa
 from _helpers import configure_logging, mock_snakemake
@@ -36,7 +37,9 @@ def attach_EV_components(
     node_ratio = p_set.sum() / max(total_energy, 1e-6)
     number_evs = node_ratio * total_number_evs
 
-    charge_power = (number_evs * options["charge_rate"] * options["share_charger"]).clip(lower=0.001)
+    charge_power = (number_evs * options["charge_rate"] * options["share_charger"]).clip(
+        lower=0.001
+    )
 
     logger.info(f"EV {ev_type}: {int(total_number_evs):,} vehicles (direct charging mode)")
 
@@ -81,13 +84,17 @@ if __name__ == "__main__":
 
     # Passenger EVs
     if snakemake.config.get("transport", {}).get("passenger_bev", {}).get("on", True):
-        charging = pd.read_csv(snakemake.input.transport_demand_passenger, index_col=0, parse_dates=True)
+        charging = pd.read_csv(
+            snakemake.input.transport_demand_passenger, index_col=0, parse_dates=True
+        )
         opts = snakemake.config["transport"]["passenger_bev"]
         attach_EV_components(network, charging, nodes, opts, "passenger")
 
     # Freight EVs
     if snakemake.config.get("transport", {}).get("freight_bev", {}).get("on", True):
-        charging = pd.read_csv(snakemake.input.transport_demand_freight, index_col=0, parse_dates=True)
+        charging = pd.read_csv(
+            snakemake.input.transport_demand_freight, index_col=0, parse_dates=True
+        )
         opts = snakemake.config["transport"]["freight_bev"]
         attach_EV_components(network, charging, nodes, opts, "freight")
 

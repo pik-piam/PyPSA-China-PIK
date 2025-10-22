@@ -9,7 +9,6 @@ Simplified version that only generates charging demand time series.
 import logging
 
 import pandas as pd
-
 from _helpers import configure_logging
 from _pypsa_helpers import generate_periodic_profiles, make_periodic_snapshots
 from constants import PROV_NAMES, TIMEZONE
