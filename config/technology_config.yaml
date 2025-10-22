@@ -9,8 +9,21 @@ transmission_efficiency:
     compression_per_1000km: 0.019
 
 chp_parameters:
-  eff_el: 0.3978
-  eff_th: 0.5304
+  coal:
+    total_eff: 0.9 # Danish energy tech catalogue
+    # typical extraction CHP htpr for China, w/o absorption heat pump
+    # from https://www.nature.com/articles/s41560-024-01560-4
+    heat_to_power: 1.5 
+  # CCGT CHP
+  gas:
+    total_eff: 0.9 # Danish energy tech catalogue !NOTE EFF DECREASES WITH REDUCED POWER. Not captured
+    heat_to_power: 0.9 # doi:10.3390/en13010242
+  OCGT:
+    heat_to_power: 1 # rough estimate for simple cycle gas turbine
+    total_eff: 0.82 # GEA34176 Aeroderivative_CHP_Whitepaper.pdf (GE, up to 90% advertised for aeroderivative)
+# when building "new" consider historical efficiency for coal boilers
+use_historical_efficiency:
+  coal_boiler: True
 
 solar_cf_correction: 0.85
 time_dep_hp_cop: True
@@ -19,6 +32,7 @@ water_tanks:
   tes_tau:
     decentral: 3. # days
     central: 180 # days
+  p_nom_over_e_nom: 0.2 # max power to energy ratio
 
 electricity:
   max_hours:

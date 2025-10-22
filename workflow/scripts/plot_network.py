@@ -64,6 +64,14 @@ def plot_map(
     else:
         fig = ax.get_figure()
 
+    bus_colors = pd.Series(bus_colors)
+    if bus_sizes.index.nlevels > 1:
+        missing = bus_sizes.index.get_level_values(1).difference(bus_colors.index)
+    else:
+        missing = bus_sizes.index.difference(bus_colors.index)
+    if not missing.empty:
+        raise ValueError(f"Missing colors for bus carriers: {missing.tolist()}")
+
     network.plot(
         bus_sizes=bus_sizes,
         bus_colors=bus_colors,
@@ -640,11 +648,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_network",
             topology="current+FCG",
-            # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
-            planning_horizons="2030",
-            # heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            co2_pathway="exp175default",
+            # co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            planning_horizons="2040",
+            heating_demand="positive",
+            # configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
     set_plot_test_backend(snakemake.config)
     configure_logging(snakemake, logger=logger)

@@ -70,7 +70,7 @@ elif config["foresight"] in ["overnight", "myopic"]:
     rule plot_all:
         input:
             expand(
-                RESULTS_DIR+ '/plots/summary/pathway_costs.png',
+                RESULTS_DIR+ '/plots/_summary/pathway_costs.png',
                 **{k: v for k, v in config["scenario"].items() if k != "planning_horizons"},
             ),
             # network plot
@@ -237,6 +237,7 @@ rule build_load_profiles:
         cutout = CUTOUT_PATH,
         intraday_profiles="resources/data/heating/heat_load_profile_DK_AdamJensen.csv",
         space_heat_demand="resources/data/heating/SPH_2020.csv",
+        hot_water_demand="resources/data/heating/IEA_energysectorroadmaptocarbonneutralityinchina_fig325.csv",
         elec_load_projs = path_manager.elec_load(),
         province_codes = "resources/data/regions/province_codes.csv",
         hrly_regional_ac_load = "resources/data/load/Hourly_demand_of_31_province_China_modified_V2.1.csv",
@@ -290,6 +291,9 @@ if config["foresight"] in ["overnight"]:
 
     rule prepare_networks:
         input:
+            # TODO add a constant element for industry
+            # TODO revisit central and decentral fractions
+            # TODO revisit heating demand per provinces
             heat_demand_profile=DERIVED_DATA + f"/heating-cutout_{CUTOUT_NAME}/"+"heat_demand_profile_{planning_horizons}.h5",
             central_fraction="resources/data/heating/DH_city_town_2020.h5",
             solar_thermal_name=DERIVED_CUTOUT+f"/heating/solar_thermal-{config['solar_thermal_angle']}.h5",
@@ -312,7 +316,8 @@ if config["foresight"] in ["overnight"]:
     rule add_existing_baseyear:
         params:
             baseyear = BASEYEAR,
-            add_baseyear_to_assets = False,
+            add_build_year_to_new_assets = False,
+            vre_carriers = ["onwind", "offwind", "solar"],
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
@@ -375,7 +380,6 @@ elif config["foresight"] == "myopic":
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
             **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
                 for tech in config['renewable']},
-
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
         threads: 1
@@ -387,7 +391,7 @@ elif config["foresight"] == "myopic":
     rule add_existing_baseyear:
         params:
             baseyear = BASEYEAR,
-            add_baseyear_to_assets = False,
+            add_build_year_to_new_assets = False,
         input:
             network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
             tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
@@ -436,7 +440,7 @@ elif config["foresight"] == "myopic":
         script: "scripts/solve_network_myopic.py"
 
 
-# run with `snakemake results/dag/rules_graph.png -f`
+# run with `snakemake results/dag/rules_graph.png -f --cores 1`
 rule dag:
     message:
         "Creating DAG of workflow."
@@ -446,6 +450,7 @@ rule dag:
         dag_png="results/dag/dag.png",
         rules_dot="results/dag/rules_graph.dot",
         rules_pdf="results/dag/rules_graph.pdf",
+        rules_svg="results/dag/rules_graph.svg",
         rules_png="results/dag/rules_graph.png",
     conda:
         "envs/environment.yaml"
@@ -456,6 +461,7 @@ rule dag:
         dot -Tpng -o {output.dag_png} {output.dag_dot}
         snakemake --rulegraph --quiet | sed -n "/digraph/,\$p" > {output.rules_dot}
         dot -Tpdf -o {output.rules_pdf} {output.rules_dot}
+        dot -Tsvg -o {output.rules_svg} {output.rules_dot}
         dot -Tpng -o {output.rules_png} {output.rules_dot}
         """
 
