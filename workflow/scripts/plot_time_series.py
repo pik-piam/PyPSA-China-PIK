@@ -88,6 +88,7 @@ def plot_energy_balance(
     # colors & names part 1
     p.rename(plot_config["nice_names"], inplace=True)
     p.rename(columns={k: k.title() for k in p.columns}, inplace=True)
+    p.rename(columns={"Heat": "Heat Load"}, inplace=True)
     color_series.index = color_series.index.str.strip()
     # split into supply and wothdrawal
     supply = p.where(p > 0).dropna(axis=1, how="all")
@@ -126,6 +127,7 @@ def plot_energy_balance(
         color=color_series.loc[supply.columns].values,
     )
     if add_load_line:
+        charge.rename(columns={"Heat Load": "Load"}, inplace=True)
         charge["load_pos"] = charge["Load"] * -1
         charge["load_pos"].plot(linewidth=2, color="black", label="Load", ax=ax, linestyle="--")
         charge.drop(columns="load_pos", inplace=True)

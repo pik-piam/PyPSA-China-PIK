@@ -9,8 +9,11 @@ plotting:
     add_labels:
       - "capacity_factor"
       - "installed_capacity"
+      - "optimal_capacity"
       - "lcoe"
       - "mv_minus_lcoe"
+      - "supply"
+      - "market_value"
   cost_panel:
     y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
   cost_map:
@@ -60,9 +63,10 @@ plotting:
   capacity_tracking:
     stores: ['water tanks','battery', "Battery Storage", "H2" ]
     drop_links : ['battery', "battery charger", 'water tanks', "battery discharger", "H2"]
+  # REMOVE ITEMS SMALLER THAN FROM PLOTS
   costs_threshold: 2.e+6 # Eur
   energy_threshold: 5.e+6 # MWh
-  capacity_threshold: 1.e+4 # MW
+  capacity_threshold: 1.e+2 # MW
   market_value:
       min_gen_share: 0.01
   loads: ['electricity', 'decentral heat', 'central heat']
@@ -232,9 +236,10 @@ plotting:
     coal heat: '#8a7f7d'
     gas CHP: '#8f6e6a'
     CHP gas: '#8f6e6a'
-    central gas CHP: '#8f6e6a'
-    CHP gas generator: '#8f6e6a'
-    CHP gas boiler: '#8f6e6a'
+    CHP OCGT gas: '#745b78'
+    central gas CHP: '#745b78'
+    CHP gas generator: '#745b78'
+    CHP gas boiler: '#745b78'
     CHP CC: '#634643'
     urban central gas CHP CC: '#6e4e4c'
     CHP heat: '#8a5751'
@@ -265,7 +270,8 @@ plotting:
     H2 pipeline retrofitted: '#ba99b5'
     H2 Fuel Cell: '#c251ae'
     H2 fuel cell: '#c251ae'
-    H2 CHP: '#c251ae'
+    H2 CHP: '#a1378e'
+    CHP H2: '#a1378e'
     H2 turbine: '#991f83'
     H2 Electrolysis: '#ff29d9'
     H2 electrolysis: '#ff29d9'
@@ -276,6 +282,7 @@ plotting:
     ror: '#3dbfb0'
     run of river: '#3dbfb0'
     hydroelectricity: '#298c81'
+    hydro_inflow: '#298c81'
     PHS: '#51dbcc'
     Pumped Hydro Storage: '#51dbcc'
     pumped hydro storage: '#51dbcc'
@@ -434,10 +441,14 @@ plotting:
     onwind: "Onshore Wind"
     solar: "Solar"
     solar thermal: "Solar Thermal"
+    heat decentral: "Decentral Heat"
+
 
   preferred_order:
   - electric load
   - heat load
+  - heat
+  - heat decentral
   - Load
   - Transmission Lines
   - transmission lines

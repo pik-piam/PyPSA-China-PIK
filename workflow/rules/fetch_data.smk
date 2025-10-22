@@ -22,29 +22,6 @@ rule fetch_region_shapes:
 # TODO See if there are datasets succeeding the S2 LC100 cover to get newer data
 if config["enable"].get("retrieve_raster", True):
 
-    # rule retrieve_rasters:
-    #     input:
-    #         grass=storage.http(
-    #             "https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Grass-CoverFraction-layer_EPSG-4326.tif"
-    #         ),
-    #         shrubland=storage.http(
-    #             "https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Shrub-CoverFraction-layer_EPSG-4326.tif"
-    #         ),
-    #         bare=storage.http(
-    #             "https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Bare-CoverFraction-layer_EPSG-4326.tif"
-    #         ),
-    #         builtup=storage.http(
-    #             "https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_BuiltUp-CoverFraction-layer_EPSG-4326.tif"
-    #         ),
-    #     output:
-    #         builtup="resources/data/landuse_availability/Build_up.tif",
-    #         bare="resources/data/landuse_availability/Bare.tif",
-    #         grass="resources/data/landuse_availability/Grass.tif",
-    #         shrubland="resources/data/landuse_availability/Shrubland.tif",
-    #     run:
-    #         for name, p in output.items():
-    #             shutil.move(input[name], p)
-
     rule retrieve_Grass_raster:
         input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Grass-CoverFraction-layer_EPSG-4326.tif")
         output: "resources/data/landuse_availability/Grass.tif"
