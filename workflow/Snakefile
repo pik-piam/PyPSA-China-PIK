@@ -264,25 +264,14 @@ if config.get("sectors", {}).get("electric_vehicles", False):
             snapshots=config["snapshots"],
             EV_pass=config.get("transport", {}).get("passenger_bev", {}),
             EV_freight=config.get("transport", {}).get("freight_bev", {}),
-            DSM_config=config.get("DSM_config", {}),
         input:
-            driving_data_passenger="resources/data/load/driving_ratio_passenger.csv",
-            driving_data_freight="resources/data/load/driving_ratio_freight.csv",
             charging_data_passenger="resources/data/load/charging_ratio_passenger.csv",
             charging_data_freight="resources/data/load/charging_ratio_freight.csv",
-            availability_data_passenger="resources/data/load/availability_ratio_passenger.csv",
-            availability_data_freight="resources/data/load/availability_ratio_freight.csv",
             sectoral_load=DERIVED_DATA + "/remind/ac_load_disagg.csv" if config["run"].get("is_remind_coupled", False) else DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
-            cdf_data_passenger="resources/data/load/transport_cdf.csv",
-            cdf_data_freight="resources/data/load/transport_cdf.csv",
+
         output:
-            driving_demand_passenger=DERIVED_DATA + "/transport/driving_demand_passenger_{planning_horizons}.csv",
-            driving_demand_freight=DERIVED_DATA + "/transport/driving_demand_freight_{planning_horizons}.csv",
             charging_demand_passenger=DERIVED_DATA + "/transport/charging_demand_passenger_{planning_horizons}.csv",
             charging_demand_freight=DERIVED_DATA + "/transport/charging_demand_freight_{planning_horizons}.csv",
-            avail_profile_passenger=DERIVED_DATA + "/transport/avail_profile_passenger_{planning_horizons}.csv",
-            avail_profile_freight=DERIVED_DATA + "/transport/avail_profile_freight_{planning_horizons}.csv",
-            dsm_profile=DERIVED_DATA + "/transport/dsm_profile_{planning_horizons}.csv",
         threads: 1
         resources: mem_mb=2000
         log: LOG_DIR + "/build_transport_demand/transport_demand_{planning_horizons}.log"
@@ -353,11 +342,6 @@ if config["foresight"] in ["overnight"]:
                 network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
                 transport_demand_passenger=DERIVED_DATA + "/transport/charging_demand_passenger_{planning_horizons}.csv",
                 transport_demand_freight=DERIVED_DATA + "/transport/charging_demand_freight_{planning_horizons}.csv",
-                driving_demand_passenger=DERIVED_DATA + "/transport/driving_demand_passenger_{planning_horizons}.csv",
-                driving_demand_freight=DERIVED_DATA + "/transport/driving_demand_freight_{planning_horizons}.csv",
-                avail_profile_passenger=DERIVED_DATA + "/transport/avail_profile_passenger_{planning_horizons}.csv",
-                avail_profile_freight=DERIVED_DATA + "/transport/avail_profile_freight_{planning_horizons}.csv",
-                dsm_profile=DERIVED_DATA + "/transport/dsm_profile_{planning_horizons}.csv",
             output:
                 network=RESULTS_DIR+ '/prenetworks-sector/ntwk_{planning_horizons}.nc',
             threads: 1
