@@ -12,12 +12,35 @@ import pandas as pd
 import pyproj
 from pyproj import transform
 from scipy import interpolate
-
+from shapely.geometry import Polygon
 
 # TODO make function
 # polynomial centroid for plotting
-def get_poly_center(poly):
-    """Get the centroid of a polygon."""
+def get_poly_center(poly: Polygon):
+    """Get the geographic centroid of a polygon geometry.
+    
+    Extracts the centroid coordinates from a polygon object, typically used
+    for plotting and spatial analysis in geographic applications.
+    
+    Args:
+        poly (Polygon): A (shapely) polygon geometry object with a 
+            centroid attribute that has x and y coordinate arrays.
+            
+    Returns:
+        tuple: A tuple containing (x, y) coordinates of the polygon centroid
+            as floating point numbers.
+            
+    Example:
+        >>> from shapely.geometry import Polygon
+        >>> polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        >>> center = get_poly_center(polygon)
+        >>> print(center)
+        (0.5, 0.5)
+        
+    Note:
+        This function assumes the polygon object has a centroid attribute
+        with xy arrays containing coordinate data.
+    """
     return (poly.centroid.xy[0][0], poly.centroid.xy[1][0])
 
 
@@ -44,15 +67,29 @@ def cartesian(s1: pd.Series, s2: pd.Series) -> pd.DataFrame:
 
 
 def haversine(p1, p2) -> float:
-    """Calculate the great circle distance in km between two points on
-    the earth (specified in decimal degrees)
-
+    """Calculate the great circle distance between two points on Earth.
+    
+    Uses the Haversine formula to compute the shortest distance over the Earth's
+    surface between two points specified in decimal degrees latitude and longitude.
+    This is useful for calculating distances between geographic locations.
+    
     Args:
         p1 (shapely.Point): location 1 in decimal deg
         p2 (shapely.Point): location 2 in decimal deg
 
     Returns:
-        float: great circle distance in [km]
+        float: Great circle distance between the two points in kilometers.
+        
+    Example:
+        >>> from shapely.geometry import Point
+        >>> beijing = Point(116.4074, 39.9042)  # longitude, latitude
+        >>> shanghai = Point(121.4737, 31.2304)
+        >>> distance = haversine(beijing, shanghai)
+        >>> print(f"Distance: {distance:.1f} km")
+        Distance: 1067.1 km
+        
+    Note:
+        The function assumes the Earth is a perfect sphere with radius 6371 km.
     """
 
     # convert decimal degrees to radians
@@ -68,9 +105,15 @@ def haversine(p1, p2) -> float:
 
 
 # This function follows http://toblerity.org/shapely/manual.html
-def area_from_lon_lat_poly(geometry):
+def area_from_lon_lat_poly(geometry: Polygon):
     """For shapely geometry in lon-lat coordinates,
-    returns area in km^2.
+    returns area in m^2.
+
+    Args:
+        geometry (Polygon): Polygon geometry in lon-lat coordinates.
+    
+    Returns:
+        float: Area of the polygon in m^2.
     """
 
     project = partial(
@@ -94,6 +137,7 @@ def HVAC_cost_curve(distance):
     Returns:
         float: cost in currency
     """
+    raise DeprecationWarning("Function is invalid do not use")
     d = np.array([608, 656, 730, 780, 903, 920, 1300])
     c = 1000 / 7.5 * np.array([5.5, 4.71, 5.5, 5.57, 5.5, 5.5, 5.51])
 

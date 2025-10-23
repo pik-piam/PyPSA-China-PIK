@@ -29,29 +29,36 @@ idx = pd.IndexSlice
 spatial = SimpleNamespace()
 
 
-def add_build_year(n: pypsa.Network, plan_year: int):
-    """Add build year to new builds
-
-    Args:
-        n (pypsa.Network): the network
-        plan_year (int): the plan year
-    """
-
-    # build_year = 0 is default
-    for component in ["links", "generators"]:
-        comp = getattr(n, component)
-        mask = comp.query("p_nom_extendable==True & build_year==0").index
-        comp.loc[mask, "build_year"] = plan_year
-
-
 def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series) -> pd.DataFrame:
-    """distribute vre capacities by grade potential, use up better grades first
-
+    """Distribute VRE capacities by grade, ensuring potentials are respected and prioritizing better grades first
+    
+    Allocates variable renewable energy (VRE) capacity additions across different
+    resource quality grades. The algorithm preferentially uses higher-quality
+    grades before moving to lower-quality ones, implementing a "fill-up" strategy.
+    
     Args:
-        cap_by_year (pd.Series): the vre tech potential p_nom_max added per year
-        grade_capacities (pd.Series): the vre grade potential for the tech and bus
+        cap_by_year (pd.Series): Annual VRE capacity additions indexed by year. Values represent
+            the total capacity to be added in each year (MW or GW).
+        grade_capacities (pd.Series): Available capacity potential by resource grade for a bus,
+            indexed by grade identifier. Higher-quality grades should have lower indices for
+            proper prioritization.
+            
     Returns:
-        pd.DataFrame: DataFrame with the distributed vre capacities (shape: years x buses)
+        DataFrame with distributed capacities where:
+            - Rows are indexed by years (from cap_by_year)
+            - Columns are indexed by grades (from grade_capacities)
+            - Values represent allocated capacity for each year-grade combination
+            
+    Example:
+        >>> cap_additions = pd.Series([100, 200], index=[2020, 2030])
+        >>> grade_potentials = pd.Series([50, 75, 100], index=['grade_1', 'grade_2', 'grade_3'])
+        >>> result = distribute_vre_by_grade(cap_additions, grade_potentials)
+        >>> print(result.sum(axis=1))  # Should match original yearly totals
+        
+    Note:
+        The function assumes grade_capacities are ordered with best grades first.
+        If total demand exceeds available capacity, the algorithm allocates as much
+        as possible following the grade priority.
     """
 
     availability = cap_by_year.sort_index(ascending=False)
@@ -81,11 +88,24 @@ def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series)
 
 
 def add_base_year(n: pypsa.Network, plan_year: int):
-    """Add base year to new builds
-
+    """Add base year information to newly built components in the network.
+    
+    Sets the 'build_year' attribute for all extendable generators and links
+    in the network to the specified planning year. This is used to track
+    when infrastructure is added to the system.
+    
     Args:
-        n (pypsa.Network): the network
-        plan_year (int): the plan year
+        n: The PyPSA network object to modify.
+        plan_year: The planning year to assign as the build year for new components.
+        
+    Note:
+        This function modifies the network in-place by updating the 'build_year'
+        attribute for components marked as extendable (p_nom_extendable==True).
+        
+    Example:
+        >>> network = pypsa.Network()
+        >>> add_base_year(network, 2030)
+        # All extendable components now have build_year = 2030
     """
 
     for component in ["links", "generators"]:
@@ -110,7 +130,7 @@ def add_existing_vre_capacities(
     Args:
         n (pypsa.Network): the network
         costs (pd.DataFrame): costs of the technologies
-        vre_caps (pd.DataFrame): existing VRE capacities in MW
+        vre_caps (pd.DataFrame): existing brownfield VRE capacities in MW
         config (dict): snakemake configuration dictionary
     Returns:
         pd.DataFrame: DataFrame with existing VRE capacities distributed by CF grade
@@ -120,12 +140,13 @@ def add_existing_vre_capacities(
     tech_map = {"solar": "PV", "onwind": "Onshore", "offwind-ac": "Offshore", "offwind": "Offshore"}
     tech_map = {k: tech_map[k] for k in tech_map if k in config["Techs"]["vre_techs"]}
 
+    # historical data by tech, location and build year
     grouped_vre = vre_caps.groupby(["Tech", "bus", "DateIn"]).Capacity.sum()
     vre_df = grouped_vre.unstack().reset_index()
     df_agg = pd.DataFrame()
 
+    # iterate over vre carriers
     for carrier in tech_map:
-
         df = vre_df[vre_df.Tech == carrier].drop(columns=["Tech"])
         df.set_index("bus", inplace=True)
         df.columns = df.columns.astype(int)

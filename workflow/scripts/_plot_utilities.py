@@ -12,21 +12,37 @@ import pandas as pd
 import pypsa
 
 
-def validate_hex_colors(tech_colors: dict[str, str]) -> dict[str, str]:
-    """Validate and standardize hex color codes in the tech_colors dictionary.
-
+def validate_hex_colors(tech_colors: dict[str, str], fill_color = "#999999") -> dict[str, str]:
+    """Validate and standardize hex color codes in technology color mappings.
+    
+    Ensures all color codes in the technology colors dictionary are valid hexadecimal
+    color codes. Invalid or malformed colors are replaced with a default gray color.
+    
     Args:
-        tech_colors (Dict[str, str]): Dictionary mapping technology names to color codes.
-
+        tech_colors (Dict[str, str]): Dictionary mapping technology names to color codes. Expected
+            format is {'tech_name': '#RRGGBB'} or {'tech_name': '#RGB'}.
+        fill_color (str, optional): Default color to use for invalid entries. Defaults to '#999999'.
+            
     Returns:
-        Dict[str, str]: Dictionary with validated color codes. Invalid colors are replaced with '#999999'.
+        dict[str,str] with validated hex color codes. All valid colors are converted
+        to lowercase, while invalid colors are replaced with '#999999' (gray).
+        
+    Example:
+        >>> colors = {'solar': '#FFD700', 'wind': 'invalid', 'coal': '#8B4513'}
+        >>> validated = validate_hex_colors(colors)
+        >>> print(validated)
+        {'solar': '#ffd700', 'wind': '#999999', 'coal': '#8b4513'}
+        
+    Note:
+        Accepts both 3-digit (#RGB) and 6-digit (#RRGGBB) hex color formats.
+        All valid colors are standardized to lowercase.
     """
     hex_color_pattern = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
     validated_colors = {}
 
     for tech, color in tech_colors.items():
         if not isinstance(color, str) or not hex_color_pattern.match(color):
-            validated_colors[tech] = "#999999"
+            validated_colors[tech] = fill_color
         else:
             validated_colors[tech] = color.lower()
 
