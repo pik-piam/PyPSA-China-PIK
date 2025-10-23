@@ -4,7 +4,7 @@
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
-  name: "heat_couple_test_new_chp_h2_2019weather"
+  name: "unamed_default_run"
 foresight: "overnight"
 
 paths:
@@ -25,7 +25,6 @@ scenario:
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
-    - 2020
     - 2025
     - 2030
     - 2035
@@ -50,25 +49,6 @@ co2_scenarios:
       '2050': 0.87480618
       '2055': 0.94359322
       '2060': 1
-  SSP2-PkBudg1000:
-    pathway:
-      2020: 9.320018181818183
-      2025: 12.5
-      2030: 41.29172727272728
-      2035: 56.363727272727274
-      2040: 81.00627272727272
-      2045: 119.62745454545455
-      2050: 176.63645454545454
-      2055: 200.14990909090906
-      2060: 223.6630909090909
-      2070: 270.6897272727273
-      2080: 317.71636363636367
-      2090: 317.71636363636367
-      2100: 317.71636363636367
-      2110: 317.71636363636367
-      2130: 317.71636363636367
-      2150: 317.71636363636367
-    control: price
 
 # Time dimension
 # TODO Need to test functionality of end_year_plus1
@@ -88,12 +68,12 @@ logging:
   format: '%(levelname)s:%(name)s:%(message)s'
 
 enable:
-  build_cutout: true
+  build_cutout: false
   retrieve_cutout: false
-  retrieve_raster: true
+  retrieve_raster: false
 
 atlite:
-  cutout_name: "China-2019"
+  cutout_name: "China-2020c"
   freq: "h"
   nprocesses: 1
   show_progress: true
@@ -104,11 +84,6 @@ atlite:
       dx: 0.25
       dy: 0.25
       weather_year: 2020
-    China-2019:
-      module: era5
-      dx: 0.25
-      dy: 0.25
-      weather_year: 2019
     China-tests-cutout:
       module: era5
       dx: 5
@@ -196,7 +171,7 @@ Techs:
   #TODO: rework vre_techs to split with clean_techs. Merge vre with non_dispatchable
   vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier", "fuel cell", "H2 CHP"]
   non_dispatchable: ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential', "Solar Thermal"]
-  conv_techs: ["CCGT", "CHP gas", "CHP OCGT gas", "gas boiler","coal boiler","coal power plant","CHP coal"] # "OCGT",
+  conv_techs: ["CCGT", "CHP gas", "CHP OCGT gas", "gas boiler","coal boiler","coal power plant","CHP coal", "OCGT"]
   store_techs: ["H2","battery","water tanks","PHS"]
   non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
   hydrogen_lines: true
