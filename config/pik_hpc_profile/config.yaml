@@ -131,9 +131,6 @@ set-resources:
 # GROUPS
 
 groups: 
-  # plot_network: plot
-  # plot_statistics: plot
-  # plot_snapshots: plot
   prep_capacities: prepare_baseyear_capacities
   build_load_profiles: build_load
   prepare_networks: prep_network
@@ -145,6 +142,7 @@ groups:
   retrieve_Build_up_raster: retrieve
   retrieve_Grass_raster: retrieve
   retrieve_Bare_raster: retrieve
+  fetch_region_shapes: retrieve
 group-components:
   plot: 3
   build_load: 3
