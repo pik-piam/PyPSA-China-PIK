@@ -94,6 +94,7 @@ def load_costs(
             "VOM": 0,
             "discount rate": cost_config["discountrate"],
             "efficiency": 1,
+            "hist_efficiency": 1,  # represents brownfield efficiency state, only useful for links
             "fuel": 0,
             "investment": 0,
             "lifetime": 25,

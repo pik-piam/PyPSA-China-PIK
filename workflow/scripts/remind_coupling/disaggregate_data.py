@@ -209,7 +209,7 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
             "disaggregate_remind_data",
-            co2_pathway="SSP2-PkBudg1000-CHA-paidoff09",
+            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj_085",
             topology="current+FCG",
             config_files="resources/tmp/remind_coupled_cg.yaml",
             heating_demand="positive",
@@ -243,10 +243,8 @@ if __name__ == "__main__":
             "PyPSA tech groups are not unique. Check the remind_tech_groups.csv"
             " file for remind techs that appear in multiple pypsa techs"
         )
-
     data["pypsa_capacities"]["tech_group"] = data["pypsa_capacities"].Tech.map(pypsa_tech_groups)
     data["pypsa_capacities"].fillna({"tech_group": ""}, inplace=True)
-
 
     logger.info(f"Loaded data files {data.keys()}")
     missing = set(input_files.keys()) - set(data.keys())

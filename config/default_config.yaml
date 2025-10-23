@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
+# SPDX-FileCopyrightText: : 2025 The PyPSA-China-PIK Authors
 #
 # SPDX-License-Identifier: CC0-1.0
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
@@ -170,12 +170,13 @@ bus_carrier: {
 Techs:
   ## tech selection
   #TODO: rework vre_techs to split with clean_techs. Merge vre with non_dispatchable
-  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier","H2 CHP", "fuel cell"]
-  conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
+  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier", "fuel cell", "H2 CHP"]
+  non_dispatchable: ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential', "Solar Thermal"]
+  conv_techs: ["CCGT", "CHP gas", "CHP OCGT gas", "gas boiler","coal boiler","coal power plant","CHP coal", "OCGT"]
   store_techs: ["H2","battery","water tanks","PHS"]
   non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
   hydrogen_lines: true
-  coal_ccs_retrofit: true # currently myopic pathway only.  CC = co2 cap
+  coal_ccs_retrofit: false # currently myopic pathway only.  CC = co2 cap
 
 ## add components (overwrites vre tech choice)
 
@@ -234,6 +235,12 @@ solving:
     tunnel_port: 27000
     timeout_s: 15
     login_node: "03"
+    gurobi_home: "/p/projects/rd3mod/gurobi1103/linux64"
+    license_path: "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
+    verbose: "1"
+    timeout: "10"
+    ssl_cert: "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+    grb_cafile: "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
 
   solver_options:
     highs-default:
@@ -310,19 +317,11 @@ security:
 existing_capacities:
   add: false # whether to add brownfield capacities
   grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  collapse_years: False # Treat as a single unit when preparing & solving network
-  threshold_capacity: 1 # TODO UNIT
+  collapse_years: True # Treat as a single unit when preparing & solving network
+  threshold_capacity: 80 # MW
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
   node_assignment: simple # simple | gps
 
-# brownfield options
-existing_capacities:
-  add: True # whether to add brownfield capacities
-  grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  collapse_years: False # Treat as a single unit when preparing & solving network
-  threshold_capacity: 1 # TODO UNIT
-  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
-  node_assignment: simple # simple | gps
 
 operational_reserve:
   activate: false

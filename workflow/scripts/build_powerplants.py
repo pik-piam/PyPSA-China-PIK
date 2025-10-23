@@ -90,8 +90,12 @@ def clean_gem_data(gem_data: pd.DataFrame, gem_cfg: dict) -> pd.DataFrame:
 
     # split CHP (potential issue: split before type split. After would be better)
     if gem_cfg["CHP"].get("split", False):
-        GEM.loc[:, "CHP"] = GEM.loc[:, "CHP"].map({"yes": True}).fillna(False)
-        chp_mask = GEM[GEM["CHP"] == True].index
+        GEM.loc[:, "CHP_bool"] = (
+            GEM.loc[:, "CHP"]
+            .map({"not found": False, "yes": True, "no": False, np.nan: False})
+            .fillna(False)
+        )
+        chp_mask = GEM[GEM["CHP_bool"] == True].index
 
         aliases = gem_cfg["CHP"].get("aliases", [])
         for alias in aliases:
@@ -238,6 +242,7 @@ if __name__ == "__main__":
     # TODO add offsore for offsore wind
     nodes = gpd.read_file(snakemake.input.nodes)
     gem_data = load_gem_excel(snakemake.input.GEM_plant_tracker, sheetname="Power facilities")
+
     cleaned = clean_gem_data(gem_data, cfg_GEM)
     cleaned = group_by_year(
         cleaned, config["existing_capacities"]["grouping_years"], base_year=cfg_GEM["base_year"]
@@ -253,7 +258,7 @@ if __name__ == "__main__":
     if extra:
         logger.warning(f"Techs from GEM {extra} not covered by existing_baseyear techs.")
 
-    # TODO assign nodes
+    # TODO assign nodes (for sub-province level, eg. county or GPS/arbitrary point)
     assign_mode = config["existing_capacities"].get("node_assignment", "simple")
     node_cfg = config["nodes"]
 
@@ -273,6 +278,7 @@ if __name__ == "__main__":
             )
         cleaned["node"] = assign_node_from_gps(cleaned, nodes)
 
+    # build and export files
     datasets = {tech: cleaned[cleaned.Type == tech] for tech in requested}
     for name, ds in datasets.items():
         df = (

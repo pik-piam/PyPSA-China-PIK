@@ -6,6 +6,7 @@ flexible data format handling.
 """
 
 import os
+
 import pandas as pd
 
 
@@ -31,19 +32,19 @@ def merge_sectors_by_config(yearly_proj: pd.DataFrame, config: dict) -> pd.DataF
     """
     sectors_cfg = config.get("sectors", {})
     mapping = config.get("sector_mapping", {})
-    
+
     if not sectors_cfg or not mapping:
         raise ValueError("Missing sectors or sector_mapping configuration")
 
     # Get base sectors that are always included
     sectors_to_include = set(mapping.get("base", []))
-    
+
     # Add sectors based on configuration flags
     for sector_key, is_enabled in sectors_cfg.items():
         if is_enabled and sector_key in mapping:
             mapped_sectors = mapping.get(sector_key, [])
             sectors_to_include.update(mapped_sectors)
-    
+
     # Filter data to only include selected sectors
     filtered = yearly_proj[yearly_proj["sector"].isin(sectors_to_include)].copy()
     if filtered.empty:
@@ -101,20 +102,20 @@ def read_yearly_load_projections(
     """
     # Read the CSV file
     df = pd.read_csv(file_path)
-    
+
     # Standardize province column name
     province_candidates = ["province", "region", "Unnamed: 0"]
     province_col = next((col for col in province_candidates if col in df.columns), None)
-    
+
     if province_col is None:
         raise ValueError(
             f"No province column found in {file_path}. "
             f"Expected one of: {province_candidates}"
         )
-    
+
     if province_col != "province":
         df = df.rename(columns={province_col: "province"})
-    
+
     # Process data based on whether it contains sector information
     if "sector" in df.columns:
         if config is None:
@@ -126,10 +127,10 @@ def read_yearly_load_projections(
     else:
         # Simple data format - set province as index
         df = df.set_index("province")
-    
+
     # Convert year columns to integers for consistency
     year_cols = {col: int(col) for col in df.columns if col.isdigit()}
     df = df.rename(columns=year_cols)
-    
+
     # Apply conversion factor
     return df * conversion

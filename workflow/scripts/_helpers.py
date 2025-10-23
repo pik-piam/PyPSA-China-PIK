@@ -39,10 +39,20 @@ class ConfigManager:
         self.wildcards = {}
 
     def handle_scenarios(self) -> dict:
-        """Unpack & filter scenarios from the config
+        """Unpack and filter scenarios from the configuration.
 
+        Processes planning horizons by converting them to integers and handles
+        GHG scenarios through the GHGConfigHandler. This method modifies the
+        internal config state.
+        
         Returns:
-            dict: processed config
+            dict: The processed configuration with validated scenarios.
+            
+        Example:
+            >>> config_manager = ConfigManager(raw_config)
+            >>> processed_config = config_manager.handle_scenarios()
+            >>> print(processed_config['scenario']['planning_horizons'])
+            [2020, 2030, 2040, 2050]
         """
         self.config["scenario"]["planning_horizons"] = [
             int(v) for v in self._raw_config["scenario"]["planning_horizons"]
@@ -53,14 +63,28 @@ class ConfigManager:
         return self.config
 
     def fetch_co2_restriction(self, pthw_name: str, year: str) -> dict:
-        """Fetch a restriction from the config
-
+        """Fetch CO2 restriction parameters for a specific scenario and year.
+        
+        Retrieves the CO2 emission reduction or price limit for a given scenario
+        pathway and planning year from the configuration.
+        
         Args:
-            pthw_name (str): the scenario name
-            year (str): the year
-
+            pthw_name (str): The name of the CO2 scenario pathway (e.g., 'exp175default').
+            year (str): The planning year as a string (e.g., '2030').
+            
         Returns:
-            dict: the pathway
+            dict: A dictionary containing:
+                - 'co2_pr_or_limit': The CO2 reduction fraction or price limit
+                - 'control': The control method ('reduction', 'price', 'budget', etc.)
+                
+        Raises:
+            KeyError: If the pathway name or year is not found in the configuration.
+            
+        Example:
+            >>> config_manager = ConfigManager(config)
+            >>> restriction = config_manager.fetch_co2_restriction('exp175default', '2030')
+            >>> print(restriction)
+            {'co2_pr_or_limit': 0.41175086, 'control': 'reduction'}
         """
         scenario = self.config["co2_scenarios"][pthw_name]
         return {
@@ -166,12 +190,33 @@ class GHGConfigHandler:
 # TODO return pathlib objects? so can just use / to combine paths?
 # TODO unit tests for path manager
 class PathManager:
-    """A class to manage paths for the snakemake workflow and return paths based on the wildcard
-
-    Returns different paths for CI/CD runs (HACK due to snamekame-pytest incompatibility)
+    """Manages file system paths for the Snakemake workflow.
+    
+    This class provides centralized path management for the PyPSA-China workflow,
+    handling different path configurations for production runs vs. CI/CD test runs.
+    It constructs paths based on scenario configurations and wildcards.
+    
+    The class handles the incompatibility between Snakemake and pytest by providing
+    different path behaviors when running in test mode. (Temporary workaround)
+    
+    Attributes:
+        config: The Snakemake configuration dictionary.
+        root_dir: The root directory of the project.
+        
+    Example:
+        >>> path_manager = PathManager(snakemake_config)
+        >>> results_path = path_manager.results_dir()
+        >>> cutout_path = path_manager.cutouts_dir()
     """
 
-    def __init__(self, snmk_config, wildcards_map: dict = None):
+    def __init__(self, snmk_config: dict, wildcards_map: dict = None):
+        """Initialize the PathManager with configuration.
+        
+        Args:
+            snmk_config (dict): The Snakemake configuration containing run settings.
+            wildcards_map (dict, optional): mapping of wildcards for path construction.
+                Defaults to None.
+        """
         self.config = snmk_config
         # HACK for pytests CI, should really be a patch but not possible
         self._is_test_run = self.config["run"].get("is_test", False)
@@ -179,7 +224,18 @@ class PathManager:
         self.root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
     def _get_version(self) -> str:
-        """HACK to get version from workflow pseudo-package"""
+        """Get version from workflow pseudo-package.
+        
+        This is a workaround to extract version information from the workflow
+        package for path construction purposes.
+        
+        Returns:
+            str: The version string from the workflow package.
+            
+        Note:
+            This is marked as a HACK and should ideally be refactored to use
+            a more standard approach for version management.
+        """
         spec = importlib.util.spec_from_file_location(
             "workflow", os.path.abspath("./workflow/__init__.py")
         )
@@ -189,10 +245,18 @@ class PathManager:
 
     @functools.lru_cache
     def _join_scenario_vars(self) -> str:
-        """Join scenario variables into a human readable string
-
+        """Join scenario variables into a human-readable string for directory naming.
+        
+        Creates a compact string representation of scenario parameters by joining
+        them with underscores, using abbreviated names where configured.
+        
         Returns:
-            str: human readable string to build directories
+            str: A human-readable string suitable for building directory paths,
+                containing abbreviated scenario variable names and values.
+                
+        Example:
+            >>> path_manager._join_scenario_vars()
+            'topo_current+FCG_co2pw_exp175default_proj_positive'
         """
         # TODO make into a config
         exclude = ["planning_horizons", "co2_reduction"]
@@ -432,17 +496,26 @@ def setup_gurobi_tunnel_and_env(
         logger.error("SSH tunnel communication timed out.")
 
     os.environ["https_proxy"] = f"socks5://127.0.0.1:{port}"
-    os.environ["SSL_CERT_FILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
-    os.environ["GRB_CAFILE"] = "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+    os.environ["SSL_CERT_FILE"] = tunnel_config.get(
+        "ssl_cert", "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+    )
+    os.environ["GRB_CAFILE"] = tunnel_config.get(
+        "grb_cafile", "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+    )
 
     # Set up Gurobi environment variables
-    os.environ["GUROBI_HOME"] = "/p/projects/rd3mod/gurobi1103/linux64"
+    # TODO soft code
+    os.environ["GUROBI_HOME"] = tunnel_config.get(
+        "gurobi_home", "/p/projects/rd3mod/gurobi1103/linux64"
+    )
     os.environ["PATH"] += f":{os.environ['GUROBI_HOME']}/bin"
     if "LD_LIBRARY_PATH" in os.environ:
         os.environ["LD_LIBRARY_PATH"] += f":{os.environ['GUROBI_HOME']}/lib"
-    os.environ["GRB_LICENSE_FILE"] = "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
-    os.environ["GRB_CURLVERBOSE"] = "1"
-    os.environ["GRB_SERVER_TIMEOUT"] = "10"
+    os.environ["GRB_LICENSE_FILE"] = tunnel_config.get(
+        "license_path", "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
+    )
+    os.environ["GRB_CURLVERBOSE"] = tunnel_config.get("verbose", "1")
+    os.environ["GRB_SERVER_TIMEOUT"] = tunnel_config.get("timeout", "10")
 
     return socks_proc
 

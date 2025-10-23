@@ -1,0 +1,25 @@
+title: PyPSA-China-PIK
+preserve_directory_names: true 
+hide: true 
+
+flatten_single_child_sections: true 
+
+sort:
+  direction: asc 
+  type: natural
+  by: filename 
+  sections: last 
+  ignore_case: true 
+
+
+nav: 
+  - PyPSA-China-PIK: index.md
+  - Model: model.md
+  - Setup: installation/quick_start.md
+  - Configuration: configuration.md
+  - Tutorials: tutorials
+  - Reference: reference
+
+append_unmatched: true 
+
+
