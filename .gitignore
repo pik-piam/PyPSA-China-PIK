@@ -23,7 +23,7 @@ __pycache__
 /resources/data/landuse_availability/World_EEZ/*eez*
 /workflow/scripts/*.pdf
 /workflow/notebooks/*.py
-# /workflow/notebooks/*.ipynb
+/workflow/notebooks/*.html
 /results
 !/results/.gitkeep
 /cutouts

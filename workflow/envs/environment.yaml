@@ -65,4 +65,11 @@ dependencies:
     - tsam>=1.1.0
     - gurobipy==11.0.3
     - jwt
-    - remind-pypsa-coupling >=0.1
+    - remind-pypsa-coupling>=0.1.2
+    - mkdocs>=1.4.0
+    - mkdocs-material>=9.0.0
+    - mkdocs-gen-files
+    - mkdocstrings[python]
+    - mkdocs-awesome-nav
+    - mike>=1.1.0
+    - python-markdown-math

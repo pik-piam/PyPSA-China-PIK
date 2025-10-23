@@ -1,6 +1,5 @@
 
 site_name: PyPSA China (PIK) #(PIK edition) Documentation
-site_url: https://irr-github.github.io/PyPSA-China-PIK/
 
 theme:
   name: "material"
@@ -10,7 +9,7 @@ theme:
     - navigation.tabs
     - navigation.sections
     - toc.integrate
-    - navigation.top
+    # - navigation.top
     - search.suggest
     - search.highlight
     - content.tabs.link
@@ -19,20 +18,23 @@ theme:
     - navigation.footer
   language: en
   palette:
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode    
+      primary: black
+      accent: amber
     - scheme: default
       toggle:
         icon: material/toggle-switch-off-outline 
         name: Switch to dark mode
       # primary: deep purple
       accent: blue 
-    - scheme: slate 
-      toggle:
-        icon: material/toggle-switch
-        name: Switch to light mode    
-      primary: black
-      accent: amber
 
 docs_dir: "./docs"
+nav:
+  - .nav.yml
+  - tutorials/.nav.yml
 
 # Version configuration
 extra:
@@ -47,19 +49,18 @@ plugins:
       - docs/autogen_ref_pages.py
   # - literate-nav:
   #     nav_file: reference_nav.yml
+  - search
+  - awesome-nav
   - mkdocstrings:
       default_handler: python
       handlers:
         python:
           paths: ["./workflow/scripts"]
-  - search
-  - awesome-nav:
-      collapse_single_pages: false
-nav:
-  - .nav.yaml
 
 extra_css:
   - docs/assets/styles/extra.css
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -69,5 +70,6 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
+  - mdx_math
 
 copyright: &copy Potsdam Institute for Climate Impact Research (PIK) 2024

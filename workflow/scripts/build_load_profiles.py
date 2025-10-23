@@ -243,7 +243,7 @@ def prepare_hourly_load_data(
     hourly_load_p: os.PathLike,
     prov_codes_p: os.PathLike,
 ) -> pd.DataFrame:
-    """Read the hourly demand data and prepare it for use in the model
+    """Read the hourly electricity demand data and prepare it for use in the model
 
     Args:
         hourly_load_p (os.PathLike, optional): raw elec data from zenodo, see readme in data.

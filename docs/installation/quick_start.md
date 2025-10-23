@@ -34,7 +34,9 @@
         cd <workflow_location>
         conda env create --file=workflow/envs/environment.yaml
         ```
+
 3. **Activate environment**
+
     === "Unix/MacOS/WSL"
         ```bash title="activate environment"
         source activate pypsa-china
@@ -43,8 +45,31 @@
         ```bash title="activate environment"
         conda activate pypsa-china
         ```
+        
 4. **Fetch data**
-    herefore have to run data fetches
+
+
+    === "Automatic download (slow)"
+
+        !!!note "Commands"
+            ```bash
+            cd my_repository_clone
+            conda activate pypsa-china
+            snakemake --configfile examples/fetch_data.yaml
+            ```
+
+            if running locally you may need to add `--cores 1`
+
+
+    === "Manual download (faster)"
+
+        !!!note "Sources"
+            Manually fetch the data (faster but requires copy-pasting): https://zenodo.org/records/16810831
+
+            Destinations are in `resources/data` folders (rasters, cutouts, existing infrastructure).
+
+            A back-up data source is the PyPSA-China paper https://zenodo.org/records/13987282
+
 5. **Install a Solver**: e.g. [gurobi](https://www.gurobi.com/) [HiGHS](https://highs.dev/) or cplex. The current default configuration uses gurobi.
 6. **[Run locally](../../Tutorials/running/#local_exec)**
 
