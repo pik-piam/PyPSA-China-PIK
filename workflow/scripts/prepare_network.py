@@ -840,11 +840,16 @@ def add_heat_coupling(
     network.add(
         "Load",
         nodes,
+        carrier="heat",
         suffix=" central heat",
         bus=nodes + " central heat",
         carrier="heat",
         p_set=heat_demand[nodes].multiply(central_fraction[nodes]),
     )
+
+    # add Beijing Hebei central heat link
+    # Beijing district heating partially supplied from Hebei
+
 
     if "heat pump" in config["Techs"]["vre_techs"]:
         logger.info(f"loading cop profiles from {paths['cop_name']}")
