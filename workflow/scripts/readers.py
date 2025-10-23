@@ -1,120 +1,135 @@
-"""file reading support functions"""
+"""File reading support functions for PyPSA-China-PIK workflow.
+
+This module provides functions for reading and processing yearly load projections
+from REMIND data, with support for sector coupling (electric vehicles) and 
+flexible data format handling.
+"""
 
 import os
-
 import pandas as pd
-
-
-import os
-import pandas as pd
-
-def load_h2_conversion_efficiency(remind_output_dir: str, region: str = "CHA", year: int = None) -> float:
-    """Load H2 conversion efficiency (elh2) from REMIND output files"""
-    eta_file = os.path.join(remind_output_dir, "pm_eta_conv.csv")
-    if not os.path.exists(eta_file):
-        raise FileNotFoundError(f"Efficiency file not found: {eta_file}")
-    
-    eta_df = pd.read_csv(eta_file)
-    h2_eta = eta_df.query("all_te == 'elh2' and all_regi == @region")
-    if h2_eta.empty:
-        raise ValueError(f"H2 conversion efficiency (elh2) not found for region {region}")
-    
-    if year is not None:
-        if 'ttot' in h2_eta.columns:
-            year_eta = h2_eta.query("ttot == @year")
-            if not year_eta.empty:
-                return float(year_eta["value"].iloc[0])
-    
-    return float(h2_eta["value"].iloc[0])
 
 
 def merge_sectors_by_config(yearly_proj: pd.DataFrame, config: dict) -> pd.DataFrame:
-    """Merge sectors by configuration and convert H2 to electricity demand when disabled"""
+    """Merge sectors based on configuration settings.
+    
+    Processes REMIND data by combining sectors according to the configuration.
+    Supports electric vehicle sector coupling and flexible sector mapping.
+    
+    Args:
+        yearly_proj (pd.DataFrame): Raw yearly projections data with sector column
+        config (dict): Configuration dictionary containing:
+            - sectors: dict of sector flags (e.g., {"electric_vehicles": True})
+            - sector_mapping: dict mapping sector keys to data columns
+            - paths: dict with data file paths
+            - run.remind: dict with REMIND region settings
+    
+    Returns:
+        pd.DataFrame: Processed data aggregated by province and year
+        
+    Raises:
+        ValueError: If required configuration is missing or no matching sectors found
+    """
     sectors_cfg = config.get("sectors", {})
     mapping = config.get("sector_mapping", {})
     
     if not sectors_cfg or not mapping:
         raise ValueError("Missing sectors or sector_mapping configuration")
 
-    data_sectors = set(yearly_proj["sector"].unique())
-    available_sectors = []
-    for k in sectors_cfg.keys():
-        if k in mapping:
-            mapping_sectors = mapping.get(k, [])
-            if any(s in data_sectors for s in mapping_sectors):
-                available_sectors.append(k)
+    # Get base sectors that are always included
+    sectors_to_include = set(mapping.get("base", []))
     
-    available_values = [sectors_cfg[k] for k in available_sectors]
+    # Add sectors based on configuration flags
+    for sector_key, is_enabled in sectors_cfg.items():
+        if is_enabled and sector_key in mapping:
+            mapped_sectors = mapping.get(sector_key, [])
+            sectors_to_include.update(mapped_sectors)
     
-    if all(available_values):
-        sectors = mapping.get("base", [])
-    elif not any(available_values):
-        sectors = mapping.get("base", [])
-        for k, active in sectors_cfg.items():
-            if not active and k in mapping:
-                mapping_sectors = mapping.get(k, [])
-                sectors += [s for s in mapping_sectors if s in data_sectors]
-    else:
-        sectors = mapping.get("base", [])
-        for k, active in sectors_cfg.items():
-            if not active and k in mapping:
-                mapping_sectors = mapping.get(k, [])
-                sectors += [s for s in mapping_sectors if s in data_sectors]
+    # Filter data to only include selected sectors
+    filtered = yearly_proj[yearly_proj["sector"].isin(sectors_to_include)].copy()
+    if filtered.empty:
+        raise ValueError(f"No sector data found for merging. Available sectors: {sectors_to_include}")
 
-    merged = yearly_proj[yearly_proj["sector"].isin(sectors)].copy()
-    if merged.empty:
-        raise ValueError(f"No sector data found for merging: {sectors}")
-
-    h2_sectors = mapping.get("add_H2", [])
-    if not sectors_cfg.get("add_H2", False) and any(s in merged["sector"].values for s in h2_sectors):
-        remind_dir = config["paths"]["remind_outpt_dir"]
-        region = config["run"]["remind"]["region"]
-        year_cols = [c for c in merged.columns if c.isdigit()]
-        
-        for s in h2_sectors:
-            if s in merged["sector"].values:
-                for year_col in year_cols:
-                    year = int(year_col)
-                    eta = load_h2_conversion_efficiency(remind_dir, region, year)
-                    merged.loc[merged["sector"] == s, year_col] /= eta
-
-    year_cols = [c for c in merged.columns if c.isdigit()]
-    result = merged.groupby("province")[year_cols].sum()
+    # Aggregate by province and year
+    year_cols = [c for c in filtered.columns if c.isdigit()]
+    result = filtered.groupby("province")[year_cols].sum()
     return result
 
 
 def read_yearly_load_projections(
-    yearly_projections_p: os.PathLike = "resources/data/load/Province_Load_2020_2060.csv",
-    conversion=1,
+    file_path: os.PathLike = "resources/data/load/Province_Load_2020_2060.csv",
+    conversion: float = 1.0,
     config: dict = None,
 ) -> pd.DataFrame:
-    """Prepare projections for model use
-
-    Args:
-        yearly_projections_p (os.PathLike, optional): the data path.
-                Defaults to "resources/data/load/Province_Load_2020_2060.csv".
-        conversion (int, optional): the conversion factor to MWh. Defaults to 1.
-        config (dict, optional): configuration dictionary for sector merging. Defaults to None.
-
-    Returns:
-        pd.DataFrame: the formatted data, in MWh
-    """
-    yearly_proj = pd.read_csv(yearly_projections_p)
-    yearly_proj.rename(columns={"Unnamed: 0": "province", "region": "province"}, inplace=True)
+    """Read and process yearly load projections from CSV files.
     
-    if "province" not in yearly_proj.columns:
+    Supports both simple load data and REMIND sector-coupled data with 
+    electric vehicle integration. Automatically detects data format and
+    applies appropriate processing.
+    
+    Args:
+        file_path (os.PathLike): Path to the yearly projections CSV file.
+            Defaults to "resources/data/load/Province_Load_2020_2060.csv".
+        conversion (float): Conversion factor to apply to the data (e.g., to MWh).
+            Defaults to 1.0.
+        config (dict, optional): Configuration dictionary for sector processing.
+            Required when processing REMIND data with sector columns.
+            Should contain 'sectors' and 'sector_mapping' keys.
+    
+    Returns:
+        pd.DataFrame: Processed load projections data with:
+            - Province names as index (for simple data) or columns
+            - Year columns as integers
+            - Data converted by the conversion factor
+    
+    Raises:
+        ValueError: If required columns are missing or configuration is invalid
+        FileNotFoundError: If the input file does not exist
+    
+    Examples:
+        >>> # Simple load data
+        >>> data = read_yearly_load_projections("simple_load.csv")
+        
+        >>> # REMIND data with electric vehicles
+        >>> config = {
+        ...     "sectors": {"electric_vehicles": True},
+        ...     "sector_mapping": {
+        ...         "base": ["ac"],
+        ...         "electric_vehicles": ["ev_freight", "ev_pass"]
+        ...     }
+        ... }
+        >>> data = read_yearly_load_projections("remind_data.csv", config=config)
+    """
+    # Read the CSV file
+    df = pd.read_csv(file_path)
+    
+    # Standardize province column name
+    province_candidates = ["province", "region", "Unnamed: 0"]
+    province_col = next((col for col in province_candidates if col in df.columns), None)
+    
+    if province_col is None:
         raise ValueError(
-            "The province (or region or unamed) column is missing in the yearly projections data"
-            ". Index cannot be built"
+            f"No province column found in {file_path}. "
+            f"Expected one of: {province_candidates}"
         )
     
-    if "sector" in yearly_proj.columns:
-        if config is None:
-            raise ValueError("Config is required when processing REMIND data with sector column")
-        yearly_proj = merge_sectors_by_config(yearly_proj, config)
-    else:
-        yearly_proj.set_index("province", inplace=True)
+    if province_col != "province":
+        df = df.rename(columns={province_col: "province"})
     
-    yearly_proj.rename(columns={c: int(c) for c in yearly_proj.columns if c.isdigit()}, inplace=True)
-
-    return yearly_proj * conversion
+    # Process data based on whether it contains sector information
+    if "sector" in df.columns:
+        if config is None:
+            raise ValueError(
+                "REMIND data contains sector column but no config provided. "
+                "Please provide config with 'sectors' and 'sector_mapping' keys."
+            )
+        df = merge_sectors_by_config(df, config)
+    else:
+        # Simple data format - set province as index
+        df = df.set_index("province")
+    
+    # Convert year columns to integers for consistency
+    year_cols = {col: int(col) for col in df.columns if col.isdigit()}
+    df = df.rename(columns=year_cols)
+    
+    # Apply conversion factor
+    return df * conversion

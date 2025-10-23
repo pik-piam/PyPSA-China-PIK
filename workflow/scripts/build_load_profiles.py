@@ -380,7 +380,7 @@ if __name__ == "__main__":
         snakemake.input.hrly_regional_ac_load, snakemake.input.province_codes
     )
 
-    yearly_projs = read_yearly_load_projections(snakemake.input.elec_load_projs, conversion)
+    yearly_projs = read_yearly_load_projections(snakemake.input.elec_load_projs, conversion, config)
     projected_demand = project_elec_demand(hrly_MWh_load, yearly_projs, planning_horizons)
 
     with pd.HDFStore(snakemake.output.elec_load_hrly, mode="w", complevel=4) as store:

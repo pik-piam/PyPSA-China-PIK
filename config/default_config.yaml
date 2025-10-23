@@ -191,6 +191,11 @@ sectors:
   heat_coupling: false
   electric_vehicles: true  # Master switch for transport sector coupling
 
+sector_mapping:
+  base: ["ac"]
+  electric_vehicles: ["ev_freight", "ev_pass"]
+  heat_coupling: ["heat_el"]
+
 hydro_dams:
   dams_path: "resources/data/hydro/dams_large.csv"
   inflow_path: "resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle"
