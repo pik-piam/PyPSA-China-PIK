@@ -34,6 +34,8 @@ jobs:
           pip install mkdocs-awesome-nav
           pip install mkdocs-material
           pip install mkdocs-include-dir-to-nav
+          pip install python-markdown-math
+          pip install mike>=1.1.0
       - name: Build with MkDocs
         run: mkdocs build
       - name: Upload artifact
