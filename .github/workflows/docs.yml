@@ -34,6 +34,8 @@ jobs:
           pip install mkdocs-awesome-nav
           pip install mkdocs-material
           pip install mkdocs-include-dir-to-nav
+          pip install python-markdown-math
+          pip install mike>=1.1.0
       - name: Build with MkDocs
         run: mkdocs build
       - name: Upload artifact
@@ -52,4 +54,4 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v
+        uses: actions/deploy-pages@v4
