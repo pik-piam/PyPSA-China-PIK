@@ -1,15 +1,15 @@
 """Helper functions for pypsa network handling"""
 
-import os
-import pandas as pd
-import numpy as np
 import logging
-import pytz
+import os
 import re
 
+import numpy as np
+import pandas as pd
 import pypsa
+import pytz
 
-
+from constants import PROV_NAMES
 # get root logger
 logger = logging.getLogger()
 
@@ -49,7 +49,7 @@ def get_location_and_carrier(
 
 
 def filter_carriers(n: pypsa.Network, bus_carriers=["AC"], comps=["Generator", "Link"]) -> list:
-    """filter carriers for links that attach to a bus of the target carrier
+    """Filter carriers for links that attach to a bus of the target carrier
 
     Args:
         n (pypsa.Network): the pypsa network object
@@ -75,6 +75,33 @@ def filter_carriers(n: pypsa.Network, bus_carriers=["AC"], comps=["Generator", "
     if bus_carriers not in carriers:
         carriers += bus_carriers
     return carriers
+
+
+# TODO fix timezones/centralsie, think Shanghai won't work on its own
+def generate_periodic_profiles(
+    dt_index=None,
+    col_tzs=pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]),
+    weekly_profile=range(24 * 7),
+):
+    """Generate weekly hourly profiles for each province, from pypsa-eur workflow.
+
+    Args:
+        dt_index: Time index for the profiles
+        col_tzs: Time zones for each province
+        weekly_profile: 168-hour weekly profile pattern
+
+    Returns:
+        pd.DataFrame: Weekly profiles for each province
+    """
+
+    weekly_profile = pd.Series(weekly_profile, range(24 * 7))
+    # TODO fix, no longer take into accoutn summer time
+    # ALSO ADD A TODO in base_network
+    week_df = pd.DataFrame(index=dt_index, columns=col_tzs.index)
+    for ct in col_tzs.index:
+        week_df[ct] = [24 * dt.weekday() + dt.hour for dt in dt_index.tz_localize(None)]
+        week_df[ct] = week_df[ct].map(weekly_profile)
+    return week_df
 
 
 def assign_locations(n: pypsa.Network):

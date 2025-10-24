@@ -1,3 +1,9 @@
+"""Automatic generation of reference documentation pages for MkDocs.
+
+This script automatically generates documentation pages for all Python scripts
+in the workflow/scripts directory using mkdocs-gen-files.
+"""
+
 from pathlib import Path
 
 import mkdocs_gen_files
@@ -40,25 +46,25 @@ for path in sorted(scripts_dir.rglob("[!_]*.py")):
 def generate_pages_file():
     """Generate a .pages file for the reference directory to work with awesome-pages plugin"""
     nav_items = []
-    
+
     for path in sorted(scripts_dir.rglob("[!_]*.py")):
         module_path = path.relative_to(scripts_dir).with_suffix("")
         doc_path = path.relative_to(scripts_dir).with_suffix(".md")
-        
+
         parts = tuple(module_path.parts)
         if parts[-1] in {"__init__", "__main__"}:
             continue
-            
+
         nav_items.append(str(doc_path))
-    
+
     # Create the .pages file content
     pages_content = "title: Reference\n"
     pages_content += "nav:\n"
     pages_content += "  - SUMMARY.md\n"
-    
+
     for item in nav_items:
         pages_content += f"  - {item}\n"
-    
+
     # Write the .pages file
     with mkdocs_gen_files.open("reference/.pages", "w") as pages_file:
         pages_file.write(pages_content)

@@ -1,3 +1,9 @@
+"""Common network preparation utilities and functions.
+
+This module provides shared utilities and functions for network preparation
+including hydro power integration, cost calculations, and other common
+network setup operations for the PyPSA-China energy system model.
+"""
 # Shared functions for building the China Regional resolution networks
 
 import geopandas as gpd
@@ -28,6 +34,20 @@ def add_hydro(
     planning_horizons: int,
     fake_hydro_at_node: bool = False,
 ):
+    """Add hydroelectric power plants and storage to the network.
+
+    Args:
+        network (pypsa.Network): PyPSA Network object to modify
+        config (dict): Configuration dictionary with hydro settings
+        nodes (pd.Index): Network nodes index
+        prov_shapes (gpd.GeoDataFrame): Provincial boundary shapes
+        costs (pd.DataFrame): Technology cost data
+        planning_horizons (int): Planning year
+        fake_hydro_at_node (bool, optional): Use fake hydro at nodes. Defaults to False.
+
+    Returns:
+        None: Modifies the network in place
+    """
     # load dams
     df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
     points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)

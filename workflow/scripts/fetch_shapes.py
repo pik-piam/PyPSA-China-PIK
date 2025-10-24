@@ -2,11 +2,10 @@
 Data fetch operation for region/province/country shapes
 """
 
-import logging
-from os import PathLike
-from pandas import DataFrame
-import zipfile
 import io
+import logging
+import zipfile
+from os import PathLike
 
 import cartopy.io.shapereader as shpreader
 import geopandas as gpd
@@ -114,7 +113,7 @@ def fetch_province_shapes() -> gpd.GeoDataFrame:
 
 def fetch_gadm(country_code="CHN", level=2):
     """
-    fetch GADM shapefile for a given country and administrative level.
+    Fetch GADM shapefile for a given country and administrative level.
     https://gadm.org/download_country.html
 
     Parameters:
@@ -221,7 +220,7 @@ def fetch_prefecture_shapes(
             "Hong Kong": "HongKong",
             "Ningxia Hui": "Ningxia",
         }
-    }
+    },
 ):
     """
     Fetch county-level shapefiles for China.
@@ -244,7 +243,8 @@ def build_nodes(
     """Build the nodes, either directly at provincial (admin1) level or from adminlvk2 subregions
 
     Args:
-      prefectures:"""
+      prefectures:
+    """
     gdf = prefectures.copy()
     if nodes_cfg.get("split_provinces", False):
         validate_split_cfg(nodes_cfg["splits"], gdf)
@@ -256,7 +256,7 @@ def build_nodes(
 
 
 def validate_split_cfg(split_cfg: dict, gdf: gpd.GeoDataFrame):
-    """validate the province split configuration.
+    """Validate the province split configuration.
     The province (admin level 1) is split by admin level 2 {subregion: [prefecture names],..}.
     The prefecture names must be unique and cover all admin2 in the admin1 level.
 
