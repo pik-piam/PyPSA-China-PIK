@@ -6,6 +6,7 @@ Functions to add brownfield capacities to the network for a reference year
 #
 # SPDX-License-Identifier: MIT
 
+
 import logging
 import re
 from types import SimpleNamespace

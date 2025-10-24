@@ -4,8 +4,8 @@
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
-  name: "unamed_run"
-  is_remind_coupled: false  # Set to true when using REMIND data
+  name: "unamed_default_run"
+
 foresight: "overnight"
 
 paths:
@@ -369,33 +369,21 @@ transport:
   passenger_bev:
     on: true
     # Network modeling parameters
-    dsm: false  # DSM switch
-    dsm_availability: 1  # DSM availability
     annual_consumption: 3.0  # MWh/year
     charge_rate: 0.011  # MW
     share_charger: 0.8  # charger sharing ratio
     battery_size: 0.06  # MWh
     # Demand modeling parameters
     energy_per_100km: 0.015  # MWh/100km
-    cdf_column: "Private car"  # CDF data column name
-    initial_soc: 0.2  # initial state of charge
 
   freight_bev:
     on: true
     # Network modeling parameters
-    dsm: false  # DSM switch
-    dsm_availability: 1  # DSM availability
     annual_consumption: 40.0  # MWh/year
     charge_rate: 0.15  # MW
     share_charger: 0.1  # charger sharing ratio
     battery_size: 0.3  # MWh
     # Demand modeling parameters
     energy_per_100km: 0.2  # MWh/100km
-    cdf_column: "SPV"  # CDF data column name
-    initial_soc: 0.2  # initial state of charge
 
-# DSM Common Configuration - Shared by All EV Types
-DSM_config:
-  reset_hour: 7  # daily reset time / DSM restriction time (0-23)
-  reset_daily: true  # whether to reset battery state daily
-  restriction_value: 0.8  # DSM restriction value
+
