@@ -14,6 +14,9 @@ The PyPSA can perform a number of different study types (investment decision, op
 
 The PyPSA-CHINA-PIK is currently under development. Please contact us if you intend to use it for publications.
 
+# License
+The code is released under the [MIT license](https://github.com/irr-github/PyPSA-China-PIK/blob/main/LICENSES/MIT.txt), however some of the data used is more restrictive. 
+
 # Documentation
 The documentation can be found at https://pik-piam.github.io/PyPSA-China-PIK/
 
