@@ -189,13 +189,14 @@ no_lines: False
 
 ## sector coupling configuration
 sectors:
-  heat_coupling: false
-  electric_vehicles: true  # Master switch for transport sector coupling
+  electric_vehicles: false  # Master switch for transport sector coupling
 
 sector_mapping:
   base: ["ac"]
   electric_vehicles: ["ev_freight", "ev_pass"]
   heat_coupling: ["heat_el"]
+
+heat_coupling: false
 
 hydro_dams:
   dams_path: "resources/data/hydro/dams_large.csv"
@@ -385,5 +386,3 @@ transport:
     battery_size: 0.3  # MWh
     # Demand modeling parameters
     energy_per_100km: 0.2  # MWh/100km
-
-

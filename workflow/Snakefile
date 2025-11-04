@@ -355,21 +355,25 @@ if config["foresight"] in ["overnight"]:
     paidoff_caps = DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv"
     if not config["run"].get("is_remind_coupled", False):
         paidoff_caps = DERIVED_DATA+ '/existing_infrastructure/capacities.csv'
-    rule add_existing_baseyear:
-        params:
-            baseyear = BASEYEAR,
-            add_build_year_to_new_assets = False,
-            vre_carriers = ["onwind", "offwind", "solar"],
-        input:
-            network=RESULTS_DIR+ f'/prenetworks{add_sectors}/' +'ntwk_{planning_horizons}.nc',
-            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
-            cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
-            installed_capacities = path_manager.infrastructure() + '/capacities.csv',
-            paid_off_capacities_remind = paidoff_caps,
-        output: RESULTS_DIR+ f'/prenetworks{add_sectors}{add_brownfield}/' +'ntwk_{planning_horizons}.nc'
-        threads: 1
-        resources: mem_mb=2000
-        script: "scripts/add_existing_baseyear.py"
+
+    # Only create add_existing_baseyear rule if existing_capacities.add is True
+    # Otherwise, the network from prepare_networks or add_sectors is used directly
+    if config["existing_capacities"].get("add", False):
+        rule add_existing_baseyear:
+            params:
+                baseyear = BASEYEAR,
+                add_build_year_to_new_assets = False,
+                vre_carriers = ["onwind", "offwind", "solar"],
+            input:
+                network=RESULTS_DIR+ f'/prenetworks{add_sectors}/' +'ntwk_{planning_horizons}.nc',
+                tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
+                cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
+                installed_capacities = path_manager.infrastructure() + '/capacities.csv',
+                paid_off_capacities_remind = paidoff_caps,
+            output: RESULTS_DIR+ f'/prenetworks{add_sectors}{add_brownfield}/' +'ntwk_{planning_horizons}.nc'
+            threads: 1
+            resources: mem_mb=2000
+            script: "scripts/add_existing_baseyear.py"
 
     rule solve_networks:
         params:
