@@ -311,8 +311,8 @@ lines:
     base_year: 2020 # base step year, the exp limit is relative to this year
 
 security:
-  line_margin: 70 # max percent of line capacity
-
+  line_security_margin: 70 # max percent of line capacity
+  
 # brownfield options
 existing_capacities:
   add: false # whether to add brownfield capacities

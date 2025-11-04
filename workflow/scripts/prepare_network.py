@@ -656,6 +656,7 @@ def add_voltage_links(network: pypsa.Network, config: dict):
             p_nom=edges["p_nom"].values,
             p_nom_min=edges["p_nom"].values,
             p_min_pu=0,
+            p_max_pu=line_margin,
             efficiency=config["transmission_efficiency"]["DC"]["efficiency_static"]
             * config["transmission_efficiency"]["DC"]["efficiency_per_1000km"] ** (lengths / 1000),
             length=0,
