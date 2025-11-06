@@ -39,11 +39,6 @@ authors:
     contributions: #TODO
     orcid: 0000-0002-6406-6266
 
-  - name: Robert Pietzcker
-    affiliation: '1'
-    contributions: validation
-    orcid: 0000-0002-9403-6711
-
   - name: Gunnar Luderer
     affiliation: '1'
     contributions: #TODO
