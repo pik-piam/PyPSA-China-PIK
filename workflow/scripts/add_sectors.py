@@ -26,7 +26,26 @@ def attach_EV_components(
     options: dict,
     ev_type: str,
 ):
-    """Add EV components to network, only supports direct charging mode"""
+    """Attach electric-vehicle demand components based on predefined charging profiles.
+
+    The function assumes that ``p_set`` already contains hourly charging demand for
+    each node (for example, prepared by the REMIND coupling workflow). These profiles
+    are written to the network as fixed loads, so the model does not optimise charging
+    behaviour—only direct charging is represented. To model other charging strategies,
+    provide alternative demand profiles upstream.
+
+    Args:
+        n (pypsa.Network): Network to be modified.
+        p_set (pd.DataFrame): Charging demand time series with timestamps as index
+            and nodes as columns; only columns listed in ``nodes`` are used.
+        nodes (pd.Index): Nodes hosting the EV fleet; also determines the naming of
+            loads and chargers.
+        options (dict): Fleet parameters including ``annual_consumption`` (MWh per
+            vehicle), ``charge_rate`` (MW per vehicle), and ``share_charger`` (fraction
+            of vehicles charging simultaneously).
+        ev_type (str): EV fleet category, must be either ``"passenger"`` or
+            ``"freight"``.
+    """
 
     if ev_type not in ("passenger", "freight"):
         raise ValueError("ev_type must be 'passenger' or 'freight'")

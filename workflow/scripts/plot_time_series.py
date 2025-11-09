@@ -149,12 +149,6 @@ def plot_energy_balance(
     return ax
 
 
-def add_reserves(n: pypsa.Network):
-    """Plot the reserves of the network"""
-
-    _curtailed = n.statistics.curtailment(aggregate_time=False, bus_carrier="AC")
-
-
 def plot_load_duration_curve(
     network: pypsa.Network, carrier: str = "AC", ax: plt.Axes = None
 ) -> plt.Axes:

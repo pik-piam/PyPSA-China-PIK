@@ -187,14 +187,6 @@ add_methanation: True
 line_losses: True
 no_lines: False
 
-## sector coupling configuration
-sectors:
-  electric_vehicles: false  # Master switch for transport sector coupling
-
-sector_mapping:
-  base: ["ac"]
-  electric_vehicles: ["ev_freight", "ev_pass"]
-  heat_coupling: ["heat_el"]
 
 heat_coupling: false
 

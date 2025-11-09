@@ -17,29 +17,32 @@ logger = logging.getLogger(__name__)
 
 
 def build_transport_demand(
-    traffic_fn: str,
+    traffic_profile: pd.Series,
     nodes: list,
     sector_load_data: pd.DataFrame,
     snapshots: pd.DatetimeIndex,
-    nyears: int,
 ) -> pd.DataFrame:
-    """
-    Build transport demand time series (unit: MWh), given provincial annual totals.
+    """Build transport charging demand time series (MWh) from annual totals.
 
     Args:
-        traffic_fn (str): Path to driving ratio data (CSV with 'count' column).
-        nodes (list): List of nodes (provinces).
-        sector_load_data (pd.DataFrame): Annual transport load data by province (index) and year (columns).
-        snapshots (pd.DatetimeIndex): Time series index.
-        nyears (int): Number of simulated years.
+        traffic_profile (pd.Series): Normalised weighting of weekday hours (``count``
+            profile) defining the intraday pattern. The series length must match the
+            expected weekly resolution of ``generate_periodic_profiles``. Values do
+            not need to be normalised; the function will normalise internally.
+        nodes (list): Provinces / nodes for which the time series are generated.
+        sector_load_data (pd.DataFrame): Annual transport load by province (index)
+            and year (columns) as provided by REMIND processing.
+        snapshots (pd.DatetimeIndex): Target temporal resolution for the output.
 
     Returns:
-        pd.DataFrame: Provincial transport demand time series (MWh), total per node = input annual total.
+        pd.DataFrame: Provincial transport demand time series (MWh) whose annual
+        totals per node match ``sector_load_data`` for the target year.
     """
 
-    # 1. Load and normalize traffic profile
-    traffic = pd.read_csv(traffic_fn, usecols=["count"]).squeeze("columns")
-    traffic = traffic / traffic.sum()
+    if traffic_profile.empty:
+        raise ValueError("traffic_profile must contain at least one value")
+
+    traffic = traffic_profile / traffic_profile.sum()
 
     base_shape = generate_periodic_profiles(
         dt_index=snapshots,
@@ -79,8 +82,6 @@ if __name__ == "__main__":
         bounds="both",
     )
 
-    nyears = len(snapshots) / 8760.0
-
     # Load REMIND sectoral data (required for transport demand)
     logger.info("Using REMIND sectoral load data")
     sectoral_load = pd.read_csv(snakemake.input.sectoral_load)
@@ -94,12 +95,19 @@ if __name__ == "__main__":
     ev_freight_load.set_index("province", inplace=True)
 
     # Only generate charging demand (simplified)
+    traffic_passenger = pd.read_csv(
+        snakemake.input.charging_data_passenger, usecols=["count"]
+    ).squeeze("columns")
+    traffic_freight = pd.read_csv(
+        snakemake.input.charging_data_freight, usecols=["count"]
+    ).squeeze("columns")
+
     charging_demand_passenger = build_transport_demand(
-        snakemake.input.charging_data_passenger, nodes, ev_passenger_load, snapshots, nyears
+        traffic_passenger, nodes, ev_passenger_load, snapshots
     )
 
     charging_demand_freight = build_transport_demand(
-        snakemake.input.charging_data_freight, nodes, ev_freight_load, snapshots, nyears
+        traffic_freight, nodes, ev_freight_load, snapshots
     )
 
     # Save only charging demand files

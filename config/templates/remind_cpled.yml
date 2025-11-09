@@ -94,7 +94,7 @@ remind_etl:
         currency_conversion: 0.9 # approx USD2017 to EUR2015
   disagg:
     - name: disagg_load
-      method: "disagg_acload_ref"
+      method: "disagg_load_ref"
     - name: harmonize_model_caps
       method: harmonize_capacities
     - name: available_cap
@@ -118,3 +118,11 @@ nuclear_reactors:
 lines:
   expansion:
     transmission_limit: c1.05
+
+sectors:
+  electric_vehicles: false  # default to false in the remind coupling template
+  
+sector_mapping:
+  base: ["ac"]
+  electric_vehicles: ["ev_freight", "ev_pass"]
+  heat_coupling: ["heat_el"]

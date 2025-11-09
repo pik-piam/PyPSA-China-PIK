@@ -73,8 +73,8 @@ def _get_sector_reference(
     return default_reference
 
 
-@register_etl("disagg_acload_ref")
-def disagg_ac_using_ref(
+@register_etl("disagg_load_ref")
+def disagg_load_using_ref(
     data: pd.DataFrame,
     reference_data: pd.DataFrame,
     reference_year: int | str,
@@ -82,7 +82,7 @@ def disagg_ac_using_ref(
 ) -> pd.DataFrame:
     """Spatially disaggregate the load using regional/nodal reference data.
 
-    Automatically chooses between single-sector (AC only) and multi-sector disaggregation
+    Automatically chooses between single-sector (electric-only) and multi-sector disaggregation
     based on sector_coupling_enabled parameter.
 
     Args:
@@ -99,7 +99,7 @@ def disagg_ac_using_ref(
         logger.info("Sector coupling enabled - using multi-sector disaggregation")
         return _disagg_multisector_load(data, reference_data, reference_year)
     else:
-        logger.info("Sector coupling disabled - using AC-only disaggregation")
+        logger.info("Sector coupling disabled - using electricity-only disaggregation")
         return _disagg_ac_total_load(data, reference_data, reference_year)
 
 
@@ -264,7 +264,7 @@ if __name__ == "__main__":
     for step_dict in steps:
         step = Transformation(**step_dict)
         logger.info(f"Running ETL step: {step.name} with method {step.method}")
-        if step.method == "disagg_acload_ref":
+        if step.method == "disagg_load_ref":
             result = ETLRunner.run(
                 step,
                 data,
