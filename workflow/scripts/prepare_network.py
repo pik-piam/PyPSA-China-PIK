@@ -246,6 +246,31 @@ def add_co2_capture_support(
     )
 
 
+def add_fuel_subsidies(
+    config: dict, fuel_type: str, nodes: pd.Index
+) -> pd.Series:
+    """Return provincial fuel subsidies for the specified fuel type, defaulting to 0.
+
+    Uses the new config layout with keys such as `subsidies.coal` or `subsidies.gas`.
+
+    Args:
+        config: Global configuration dictionary.
+        fuel_type: Fuel type such as "coal" or "gas".
+        nodes: Index of provinces (network nodes).
+
+    Returns:
+        pd.Series: Subsidy values indexed by province.
+    """
+    subsidies_config = config.get("subsidies", {})
+
+    # Look up the fuel-specific subsidies and map them to nodes
+    sub_map = subsidies_config.get(fuel_type, {})
+    prov2sub = pd.Series(sub_map, dtype=float) if sub_map else pd.Series(dtype=float)
+    node_sub = pd.Series(nodes.map(prov2sub), index=nodes, dtype=float).fillna(0.0)
+
+    return node_sub
+
+
 def add_conventional_generators(
     network: pypsa.Network,
     nodes: pd.Index,
@@ -266,6 +291,8 @@ def add_conventional_generators(
             coordinates (x, y) of network nodes for spatial representation.
         costs (pd.DataFrame): Cost database containing techno-economic parameters
     """
+    gas_subsidy = add_fuel_subsidies(config, "gas", nodes)
+
     if config["add_gas"]:
         # add converter from fuel source
         network.add(
@@ -286,7 +313,7 @@ def add_conventional_generators(
             carrier="gas",
             p_nom_extendable=True,
             p_nom=1e7,
-            marginal_cost=costs.at["gas", "fuel"],
+            marginal_cost=costs.at["gas", "fuel"] + gas_subsidy,
         )
 
         # gas prices identical per region, pipelines ignored
@@ -329,7 +356,7 @@ def add_conventional_generators(
             carrier="gas ccs",
             p_nom_extendable=True,
             efficiency=costs.at["CCGT-CCS", "efficiency"],
-            marginal_cost=costs.at["CCGT-CCS", "marginal_cost"],
+            marginal_cost=costs.at["CCGT-CCS", "marginal_cost"] + gas_subsidy,
             capital_cost=costs.at["CCGT-CCS", "efficiency"]
             * costs.at["CCGT-CCS", "capital_cost"],  # NB: capital cost is per MWel
             lifetime=costs.at["CCGT-CCS", "lifetime"],
