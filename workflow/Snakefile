@@ -9,7 +9,11 @@ import logging
 import os.path
 import logging
 
-from scripts._helpers import PathManager, get_cutout_params, ConfigManager
+from scripts._helpers import (
+    PathManager,
+    get_cutout_params,
+    ConfigManager,
+)
 
 # NB: duplicated parameters will be overwritten by the last read cfg
 
@@ -263,8 +267,6 @@ if config.get("sectors", {}).get("electric_vehicles", False):
     rule build_transport_demand:
         params:
             snapshots=config["snapshots"],
-            EV_pass=config.get("transport", {}).get("passenger_bev", {}),
-            EV_freight=config.get("transport", {}).get("freight_bev", {}),
         input:
             charging_data_passenger="resources/data/load/charging_ratio_passenger.csv",
             charging_data_freight="resources/data/load/charging_ratio_freight.csv",

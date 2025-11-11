@@ -357,24 +357,3 @@ fetch_regions:
     eez: 0.5
     land: 0.05
 
-# Transport sector configuration (only active when sectors.electric_vehicles: true)
-transport:
-  passenger_bev:
-    on: true
-    # Network modeling parameters
-    annual_consumption: 3.0  # MWh/year
-    charge_rate: 0.011  # MW
-    share_charger: 0.8  # charger sharing ratio
-    battery_size: 0.06  # MWh
-    # Demand modeling parameters
-    energy_per_100km: 0.015  # MWh/100km
-
-  freight_bev:
-    on: true
-    # Network modeling parameters
-    annual_consumption: 40.0  # MWh/year
-    charge_rate: 0.15  # MW
-    share_charger: 0.1  # charger sharing ratio
-    battery_size: 0.3  # MWh
-    # Demand modeling parameters
-    energy_per_100km: 0.2  # MWh/100km

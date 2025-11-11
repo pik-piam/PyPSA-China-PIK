@@ -41,10 +41,11 @@ def _get_sector_reference(
         logger.debug(f"Using default AC load distribution for sector '{sector}'")
         return default_reference
 
-    ref_data = data.get(f"{sector}_reference")
+    sector_lower = sector.lower()
+    ref_data = data.get(f"{sector_lower}_reference")
     if ref_data is None:
         logger.info(
-            f"No sector-specific reference data found for '{sector}', using default AC load distribution"
+            f"No sector-specific reference data found for '{sector}' (tried '{sector_lower}_reference'), using default AC load distribution"
         )
         return default_reference
 
@@ -99,16 +100,16 @@ def disagg_load_using_ref(
         logger.info("Sector coupling enabled - using multi-sector disaggregation")
         return _disagg_multisector_load(data, reference_data, reference_year)
     else:
-        logger.info("Sector coupling disabled - using electricity-only disaggregation")
-        return _disagg_ac_total_load(data, reference_data, reference_year)
+        logger.info("Sector coupling disabled - using total electricity load disaggregation")
+        return _disagg_total_load(data, reference_data, reference_year)
 
 
-def _disagg_ac_total_load(
+def _disagg_total_load(
     data: pd.DataFrame,
     reference_data: pd.DataFrame,
     reference_year: int | str,
 ) -> pd.DataFrame:
-    """Disaggregate AC electricity load using single-sector reference data.
+    """Disaggregate total electricity load using single-sector reference data.
 
     Args:
         data (pd.DataFrame): REMIND data containing loads with 'ac' load type

@@ -39,8 +39,8 @@ def merge_load_sectors_by_config(yearly_proj: pd.DataFrame, config: dict) -> pd.
         data can be found.
     """
     sectors_cfg = config.get("sectors", {})
-    mapping = config.get("sector_mapping", {})
-
+    mapping = sectors_cfg.get("sector_mapping", {})
+    print(sectors_cfg, mapping)
     if not sectors_cfg or not mapping:
         raise ValueError("Missing sectors or sector_mapping configuration")
 

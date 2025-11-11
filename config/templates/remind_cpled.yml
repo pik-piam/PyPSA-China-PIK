@@ -120,9 +120,31 @@ lines:
     transmission_limit: c1.05
 
 sectors:
-  electric_vehicles: false  # default to false in the remind coupling template
-  
-sector_mapping:
-  base: ["ac"]
-  electric_vehicles: ["ev_freight", "ev_pass"]
-  heat_coupling: ["heat_el"]
+  heat_coupling:
+    enabled: false
+  electric_vehicles:
+    enabled: false  # default to false in the REMIND coupling template
+    transport:
+      passenger_bev:
+        enable: true
+        # Network modeling parameters
+        annual_consumption: 3.0  # MWh/year
+        charge_rate: 0.011  # MW
+        share_charger: 0.8  # charger sharing ratio
+
+      freight_bev:
+        enable: true
+        # Network modeling parameters
+        annual_consumption: 40.0  # MWh/year
+        charge_rate: 0.15  # MW
+        share_charger: 0.1  # charger sharing ratio
+  sector_mapping:
+    # REMIND sector names mapped to remind export code
+    base: ["ac"]
+    electric_vehicles: ["ev_freight", "ev_pass"]
+    heat_coupling: ["heat_el"]
+
+gompertz:
+  enabled: true
+  saturation_level: 500 # Nature Geoscience: https://doi.org/10.1038/s41561-023-01350-9
+  alpha: -5.58 #Energy Policy: https://doi.org/10.1016/j.enpol.2011.01.043

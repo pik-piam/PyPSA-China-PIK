@@ -166,8 +166,8 @@ def _load_future_data(input_files: dict, years: list) -> pd.DataFrame:
     return df
 
 
-def generate_reference(years: list, input_files: dict, output_dir: str, config: dict = None):
-    """Generate EV sector reference data using Gompertz model.
+def extrapolate_reference(years: list, input_files: dict, output_dir: str, config: dict = None):
+    """Extrapolate EV sector reference data using Gompertz model.
 
     Args:
         years: Target years for projections
@@ -175,7 +175,7 @@ def generate_reference(years: list, input_files: dict, output_dir: str, config: 
         output_dir: Output directory for results
         config: Optional configuration parameters
     """
-    logger.info("Generating EV sector reference data")
+    logger.info("Extrapolating EV sector reference data")
 
     model = GompertzModel(
         saturation_level=config.get("saturation_level", 500)

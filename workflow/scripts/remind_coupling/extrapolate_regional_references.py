@@ -1,8 +1,8 @@
-"""Generate reference data files for different sectors
+"""Extrapolate reference data files for different sectors
 
-This script provides a general framework to coordinate the generation of
+This script provides a general framework to coordinate the extrapolation of
 sector-specific reference data files. Each sector has its own specialized
-module implementing the `generate_reference` function.
+module implementing the `extrapolate_reference` function.
 """
 
 import importlib
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class SectorReferenceGenerator:
-    """General framework for sector reference data generation"""
+    """General framework for sector reference data extrapolation"""
 
     def __init__(self, config: dict = None):
         """
@@ -30,13 +30,13 @@ class SectorReferenceGenerator:
         self._load_sector_modules()
 
     def _load_sector_modules(self):
-        """Load sector-specific modules for reference data generation.
+        """Load sector-specific modules for reference data extrapolation.
 
         Dynamically imports modules from sector_modules package and
-        stores them for later use in reference data generation.
+        stores them for later use in reference data extrapolation.
         """
         supported_sectors = {
-            "ev": "ev_refshare_generator",
+            "ev": "ev_refshare_extrapolator",
             # 'industry': 'industry_refshare_generator',
             # 'residential': 'residential_refshare_generator',
             # 'commercial': 'commercial_refshare_generator',
@@ -50,37 +50,37 @@ class SectorReferenceGenerator:
             except ImportError as e:
                 logger.warning(f"Could not load {sector} sector module: {e}")
 
-    def generate_references(self, years: list[int], input_files: dict[str, str], output_dir: str):
-        """Generate reference data for all available sectors.
+    def extrapolate_references(self, years: list[int], input_files: dict[str, str], output_dir: str):
+        """Extrapolate reference data for all available sectors.
 
         Args:
             years: List of target years for projections
             input_files: Dictionary mapping data types to file paths
-            output_dir: Directory to save generated reference files
+            output_dir: Directory to save extrapolated reference files
         """
-        logger.info("Generating sector reference data")
+        logger.info("Extrapolating sector reference data")
 
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
         for sector, module in self.sector_modules.items():
             try:
-                logger.info(f"Generating reference data for {sector}")
+                logger.info(f"Extrapolating reference data for {sector}")
 
-                if hasattr(module, "generate_reference"):
-                    module.generate_reference(
+                if hasattr(module, "extrapolate_reference"):
+                    module.extrapolate_reference(
                         years=years,
                         input_files=input_files,
                         output_dir=str(output_path),
                         config=self.config.get(sector, {}),
                     )
                 else:
-                    logger.error(f"Sector module {sector} missing generate_reference function")
+                    logger.error(f"Sector module {sector} missing extrapolate_reference function")
 
             except Exception as e:
-                logger.error(f"Failed to generate reference data for {sector}: {e}")
+                logger.error(f"Failed to extrapolate reference data for {sector}: {e}")
 
-        logger.info("Sector reference data generation completed")
+        logger.info("Sector reference data extrapolation completed")
 
 
 def main():
@@ -94,7 +94,7 @@ def main():
         snakemake = globals()["snakemake"]
 
     configure_logging(snakemake)
-    logger.info("Starting sector reference data generation")
+    logger.info("Starting sector reference data extrapolation")
 
     params = snakemake.params
     years = params.years
@@ -111,9 +111,9 @@ def main():
     output_dir = Path(snakemake.output.ev_passenger_reference).parent
 
     generator = SectorReferenceGenerator(config)
-    generator.generate_references(years, input_files, str(output_dir))
+    generator.extrapolate_references(years, input_files, str(output_dir))
 
-    logger.info("Sector reference data generation finished")
+    logger.info("Sector reference data extrapolation finished")
 
 
 if __name__ == "__main__":

@@ -5,11 +5,11 @@ Prepare remind outputs for pypsa-coupled runs using the Remind-PyPSA-coupling pa
 REMIND_REGION = config["run"].get("remind", {}).get("region")
 
 
-# Only generate EV references if sector coupling is enabled
+# Only extrapolate EV references if sector coupling is enabled
 if config.get("sectors", {}).get("electric_vehicles", False):
-    rule generate_regional_references:
+    rule extrapolate_regional_references:
         """
-        Generate reference data files for different departments
+        Extrapolate reference data files for different departments
         """
         params:
             gompertz_config=config.get("gompertz", {}),
@@ -24,11 +24,11 @@ if config.get("sectors", {}).get("electric_vehicles", False):
             ev_passenger_reference=DERIVED_DATA + "/remind/references/ev_passenger_shares.csv",
             ev_freight_reference=DERIVED_DATA + "/remind/references/ev_freight_shares.csv",
         log:
-            LOG_DIR + "/remind_coupling/generate_references.log",
+            LOG_DIR + "/remind_coupling/extrapolate_references.log",
         conda:
             "remind-coupling"
         script:
-            "../scripts/remind_coupling/generate_regional_references.py"
+            "../scripts/remind_coupling/extrapolate_regional_references.py"
 
 
 rule build_run_config:
@@ -44,7 +44,7 @@ rule build_run_config:
         expname_max_len=20,
         currency_conv=0.912,
     input:
-        remind_output=config["paths"].get("remind_outpt_dir", "dummy.yaml"),
+        remind_output=config["paths"].get("remind_outpt_dir", ""),
         config_template="config/templates/remind_cpled.yml",
     output:
         coupled_config="resources/tmp/remind_coupled.yaml",
@@ -66,7 +66,7 @@ rule transform_remind_data:
         use_gdx=False,
     input:
         pypsa_costs=path_manager.costs_dir(ignore_remind=True),
-        remind_output_dir=config["paths"].get("remind_outpt_dir", "dummy"),
+        remind_output_dir=config["paths"].get("remind_outpt_dir", ""),
     output:
         **{
             f"costs_{yr}": DERIVED_DATA + f"/remind/costs/costs_{yr}.csv"
