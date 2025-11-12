@@ -352,3 +352,13 @@ fetch_regions:
   simplify_tol: 
     eez: 0.5
     land: 0.05
+
+subsidies:
+  # New format: subsidies.fuel_type -> province -> value (EUR/MWh)
+  gas:
+    Guangdong: -8
+    Jiangsu:  -8.5
+    Zhejiang: -9
+    Beijing: -10  
+    Tianjin: -10
+    Shanghai: -10
