@@ -246,29 +246,76 @@ def add_co2_capture_support(
     )
 
 
-def add_fuel_subsidies(
-    config: dict, fuel_type: str, nodes: pd.Index
-) -> pd.Series:
-    """Return provincial fuel subsidies for the specified fuel type, defaulting to 0.
-
-    Uses the new config layout with keys such as `subsidies.coal` or `subsidies.gas`.
-
+def add_fuel_subsidies(n: pypsa.Network, subsidy_config: dict):
+    """Apply fuel subsidies to generators as a post-processing step.
+    
+    Subsidies are applied to generators based on their carrier and location.
+    The subsidy values (in EUR/MWh fuel) are divided by efficiency to convert
+    to electricity basis (EUR/MWhel). Links are not modified as they get their
+    fuel from generators.
+    
     Args:
-        config: Global configuration dictionary.
-        fuel_type: Fuel type such as "coal" or "gas".
-        nodes: Index of provinces (network nodes).
-
-    Returns:
-        pd.Series: Subsidy values indexed by province.
+        n (pypsa.Network): The network object to modify.
+        subsidy_config (dict): Subsidy configuration dictionary with keys like
+            "coal" or "gas", each containing a dict mapping provinces to subsidy values.
     """
-    subsidies_config = config.get("subsidies", {})
-
-    # Look up the fuel-specific subsidies and map them to nodes
-    sub_map = subsidies_config.get(fuel_type, {})
-    prov2sub = pd.Series(sub_map, dtype=float) if sub_map else pd.Series(dtype=float)
-    node_sub = pd.Series(nodes.map(prov2sub), index=nodes, dtype=float).fillna(0.0)
-
-    return node_sub
+    if not subsidy_config:
+        return
+    
+    carriers = subsidy_config.keys()
+    
+    for carrier in carriers:
+        subs_dict = subsidy_config.get(carrier, {})
+        if not subs_dict:
+            continue
+        
+        # Convert subsidy dict to Series indexed by province
+        subs = pd.Series(subs_dict, dtype=float)
+        
+        # Check if location column exists
+        if "location" not in n.generators.columns:
+            logger.warning(
+                f"Location column not found in generators. "
+                f"Cannot apply subsidies for carrier '{carrier}'."
+            )
+            continue
+        
+        # Query generators with matching carrier and location in subsidy provinces
+        mask = n.generators.query(
+            f"carrier == @carrier and location in @subs.index"
+        ).index
+        
+        if mask.empty:
+            logger.warning(
+                f"No generators found with carrier '{carrier}' and locations "
+                f"in {list(subs.index)}. Skipping subsidy application."
+            )
+            continue
+        
+        # Merge subsidies with generators by location
+        gen_locs = n.generators.loc[mask, "location"]
+        subs_to_apply = gen_locs.map(subs).fillna(0.0)
+        
+        # Check if all provinces were found
+        missing_provs = set(subs.index) - set(gen_locs.unique())
+        if missing_provs:
+            logger.warning(
+                f"Subsidies specified for provinces {missing_provs} but no "
+                f"generators found with carrier '{carrier}' in these provinces."
+            )
+        
+        # Apply subsidies: divide by efficiency to convert from fuel to electricity basis
+        # Handle cases where efficiency might be NaN or missing
+        efficiencies = n.generators.loc[mask, "efficiency"].fillna(1.0)
+        subs_electricity = subs_to_apply / efficiencies
+        
+        # Subtract subsidy from marginal cost (negative subsidy = cost reduction)
+        n.generators.loc[mask, "marginal_cost"] -= subs_electricity
+        
+        logger.info(
+            f"Applied subsidies for carrier '{carrier}' to {len(mask)} generators "
+            f"in provinces {sorted(gen_locs.unique())}"
+        )
 
 
 def add_conventional_generators(
@@ -291,8 +338,6 @@ def add_conventional_generators(
             coordinates (x, y) of network nodes for spatial representation.
         costs (pd.DataFrame): Cost database containing techno-economic parameters
     """
-    gas_subsidy = add_fuel_subsidies(config, "gas", nodes)
-
     if config["add_gas"]:
         # add converter from fuel source
         network.add(
@@ -313,7 +358,7 @@ def add_conventional_generators(
             carrier="gas",
             p_nom_extendable=True,
             p_nom=1e7,
-            marginal_cost=costs.at["gas", "fuel"] + gas_subsidy,
+            marginal_cost=costs.at["gas", "fuel"],
         )
 
         # gas prices identical per region, pipelines ignored
@@ -356,7 +401,7 @@ def add_conventional_generators(
             carrier="gas ccs",
             p_nom_extendable=True,
             efficiency=costs.at["CCGT-CCS", "efficiency"],
-            marginal_cost=costs.at["CCGT-CCS", "marginal_cost"] + gas_subsidy,
+            marginal_cost=costs.at["CCGT-CCS", "marginal_cost"],
             capital_cost=costs.at["CCGT-CCS", "efficiency"]
             * costs.at["CCGT-CCS", "capital_cost"],  # NB: capital cost is per MWel
             lifetime=costs.at["CCGT-CCS", "lifetime"],
@@ -1668,6 +1713,12 @@ def prepare_network(
         add_voltage_links(network, config)
 
     assign_locations(network)
+    
+    # Apply fuel subsidies as post-processing step
+    subsidy_config = config.get("subsidies", {})
+    if subsidy_config:
+        add_fuel_subsidies(network, subsidy_config)
+    
     return network
 
 
