@@ -1,3 +1,9 @@
+"""Prepare base electricity network for 2020 baseline year.
+
+This module creates the base electricity network infrastructure for the 2020
+baseline year, including existing generation capacity, transmission infrastructure,
+and load patterns for the PyPSA-China energy system model.
+"""
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
@@ -47,6 +53,15 @@ logger.setLevel(DEBUG)
 
 
 def prepare_network(config: dict, paths: dict):
+    """Prepare the base electricity network for 2020.
+
+    Args:
+        config (dict): Configuration dictionary containing technology and network settings
+        paths (dict): Dictionary of file paths for network data and resources
+
+    Returns:
+        None: Saves the prepared network to file
+    """
     # derive from the config
     config["add_gas"] = (
         True if [tech for tech in config["Techs"]["conv_techs"] if "gas" in tech] else False

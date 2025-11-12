@@ -791,6 +791,17 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
 
 
 def plot_investments(file_list: list, config: dict, fig_name=None, ax: object = None):
+    """Plot investment analysis (placeholder function).
+
+    Args:
+        file_list (list): List of input files for investment analysis
+        config (dict): Configuration dictionary with plotting parameters
+        fig_name: Output figure name. Defaults to None.
+        ax (object, optional): Matplotlib axes object. Defaults to None.
+
+    Returns:
+        None: Currently a placeholder function
+    """
     pass
 
 

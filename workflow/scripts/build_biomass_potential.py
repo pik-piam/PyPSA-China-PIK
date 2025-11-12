@@ -1,4 +1,9 @@
-# TODO missing docu
+"""Build biomass potential data for energy system modeling.
+
+This module processes biomass resource data and calculates biomass potential
+for different regions and technologies in the PyPSA-China model.
+"""
+
 import logging
 from os import PathLike
 

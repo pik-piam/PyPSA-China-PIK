@@ -1,0 +1,3 @@
+[submodule "Remind-PyPSA-coupling/Remind-PyPSA-coupling"]
+	path = Remind-PyPSA-coupling/Remind-PyPSA-coupling
+	url = https://github.com/pik-piam/Remind-PyPSA-coupling.git

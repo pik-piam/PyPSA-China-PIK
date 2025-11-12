@@ -143,6 +143,16 @@ def load_costs(
 # TODO understand why this is in make_summary but not in the main optimisation
 # TODO understand why this is in make_summary but not in the main optimisation
 def update_transmission_costs(n, costs, length_factor=1.0):
+    """Update transmission line and link capital costs based on length and cost data.
+
+    Args:
+        n: PyPSA Network object
+        costs: Cost data DataFrame containing capital costs for transmission technologies
+        length_factor (float, optional): Factor to scale line lengths. Defaults to 1.0.
+
+    Returns:
+        None: Modifies network transmission costs in place
+    """
     # TODO: line length factor of lines is applied to lines and links.
     # Separate the function to distinguish.
 

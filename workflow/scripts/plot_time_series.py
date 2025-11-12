@@ -1,3 +1,9 @@
+"""Plot time series data for energy system analysis.
+
+This module creates time series plots including load profiles, generation patterns,
+storage operations, and other temporal data visualizations for the PyPSA-China model.
+"""
+
 import logging
 import os.path
 from os import makedirs
@@ -13,18 +19,18 @@ from _helpers import (
     set_plot_test_backend,
 )
 from _plot_utilities import (
+    fix_network_names_colors,
     get_stat_colors,
     make_nice_tech_colors,
-    fix_network_names_colors,
     set_plot_style,
 )
 from _pypsa_helpers import get_location_and_carrier
 from constants import (
-    PLOT_CAP_UNITS,
     PLOT_CAP_LABEL,
-    PROV_NAMES,
-    PLOT_SUPPLY_UNITS,
+    PLOT_CAP_UNITS,
     PLOT_SUPPLY_LABEL,
+    PLOT_SUPPLY_UNITS,
+    PROV_NAMES,
 )
 
 logger = logging.getLogger(__name__)
@@ -141,12 +147,6 @@ def plot_energy_balance(
     fig.tight_layout()
 
     return ax
-
-
-def add_reserves(n: pypsa.Network):
-    """plot the reserves of the network"""
-
-    curtailed = n.statistics.curtailment(aggregate_time=False, bus_carrier="AC")
 
 
 def plot_load_duration_curve(

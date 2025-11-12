@@ -1,3 +1,9 @@
+"""Prepare base electricity network for pathway analysis.
+
+This module creates the base electricity network infrastructure including
+transmission lines, generation units, and load centers for pathway analysis
+in the PyPSA-China energy system model.
+"""
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
@@ -176,6 +182,7 @@ def add_wind_and_solar(
         def flatten(t):
             """Flatten tuple to string with ' grade' separator."""
             return " grade".join(map(str, t))
+
         buses = ds.indexes["bus_bin"].get_level_values("bus")
         bus_bins = ds.indexes["bus_bin"].map(flatten)
 
@@ -666,7 +673,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
             e_nom=effective_capacity,
             e_initial=initial_capacity,
             e_cyclic=True,
-            marginal_cost=config["hyro"]["marginal_cost"]["reservoir"]  # EUR/MWh"
+            marginal_cost=config["hyro"]["marginal_cost"]["reservoir"],  # EUR/MWh"
         )
 
         # add hydro turbines to link stations to provinces

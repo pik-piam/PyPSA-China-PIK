@@ -5,6 +5,32 @@ Prepare remind outputs for pypsa-coupled runs using the Remind-PyPSA-coupling pa
 REMIND_REGION = config["run"].get("remind", {}).get("region")
 
 
+# Only extrapolate EV references if sector coupling is enabled
+if config.get("sectors", {}).get("electric_vehicles", False):
+    rule extrapolate_regional_references:
+        """
+        Extrapolate reference data files for different departments
+        """
+        params:
+            gompertz_config=config.get("gompertz", {}),
+            years=config["scenario"]["planning_horizons"],
+        input:
+            historical_gdp="resources/data/load/History_GDP.csv",
+            historical_pop="resources/data/load/History_POP.csv",
+            historical_cars="resources/data/load/History_private_car.csv",
+            ssp2_pop="resources/data/load/SSPs_POP_Prov_v2.xlsx",
+            ssp2_gdp="resources/data/load/SSPs_GDP_Prov_v2.xlsx",
+        output:
+            ev_passenger_reference=DERIVED_DATA + "/remind/references/ev_passenger_shares.csv",
+            ev_freight_reference=DERIVED_DATA + "/remind/references/ev_freight_shares.csv",
+        log:
+            LOG_DIR + "/remind_coupling/extrapolate_references.log",
+        conda:
+            "remind-coupling"
+        script:
+            "../scripts/remind_coupling/extrapolate_regional_references.py"
+
+
 rule build_run_config:
     """
     Build the run config for the pypsa-coupled run. This extracts the REMIND Co2 price and makes a corresponding
@@ -32,7 +58,7 @@ rule build_run_config:
 
 rule transform_remind_data:
     """
-    Import the remind data from the remind output & transform it to the pypsa-china format using 
+    Import the remind data from the remind output & transform it to the pypsa-china format using
     """
     params:
         etl_cfg=config.get("remind_etl"),
@@ -56,7 +82,7 @@ rule transform_remind_data:
     script:
         "../scripts/remind_coupling/generic_etl.py"
 
-
+# For the sector coupling, we can define it in the python file to enable/disable the sector coupling
 rule disaggregate_remind_data:
     """
     Disaggregate the data from the remind output to the network time and spatial resolutions
@@ -64,8 +90,9 @@ rule disaggregate_remind_data:
     params:
         etl_cfg=config.get("remind_etl"),
         region=REMIND_REGION,  # overlaps with cofnig
-        reference_load_year=2025,
+        reference_load_year=lambda wildcards: config["scenario"]["planning_horizons"][0],
         expand_dirs=config["scenario"]["planning_horizons"],
+        separate_loads=config["run"].get("separate_loads", False),
     input:
         pypsa_powerplants=DERIVED_DATA + f"/existing_infrastructure/capacities.csv",
         remind_caps=DERIVED_DATA + "/remind/preinv_capacities.csv",
@@ -73,6 +100,8 @@ rule disaggregate_remind_data:
         loads=DERIVED_DATA + "/remind/yrly_loads.csv",
         # todo switch to default?
         reference_load="resources/data/load/Provincial_Load_2020_2060_MWh.csv",
+        ev_pass_reference=DERIVED_DATA + "/remind/references/ev_passenger_shares.csv",
+        ev_freight_reference=DERIVED_DATA + "/remind/references/ev_freight_shares.csv",
     output:
         capacities=DERIVED_DATA + "/remind/harmonized_capacities/capacities.csv",
         paid_off=DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv",

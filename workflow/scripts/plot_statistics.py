@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Plot statistical analysis and summary charts for energy system results.
+
+This module creates statistical plots including capacity factors, cost breakdowns,
+energy balances, and other key performance indicators for the PyPSA-China model.
+Adapted from PyPSA-Eur by PyPSA-China authors.
+"""
 # SPDX-FileCopyrightText: : 2017-2024 The PyPSA-Eur Authors
 # 2014 Adapted from pypsa-eur by PyPSA-China authors
 #
@@ -9,19 +15,16 @@ import os
 
 import matplotlib.axes as axes
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import pypsa
 import seaborn as sns
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
 from _plot_utilities import (
-    rename_index,
     fix_network_names_colors,
-    heatmap,
-    annotate_heatmap,
     make_nice_tech_colors,
+    rename_index,
 )
-from _pypsa_helpers import calc_lcoe, filter_carriers, calc_generation_share
+from _pypsa_helpers import calc_lcoe, filter_carriers
 from constants import (
     PLOT_CAP_LABEL,
     PLOT_CAP_UNITS,
@@ -94,6 +97,7 @@ def set_link_output_capacities(n: pypsa.Network, carriers: list) -> pd.DataFrame
     Args:
         n (pypsa.Network): The PyPSA network instance.
         carriers (list): List of carrier names to adjust.
+
     Returns:
         pd.DataFrame: the original link capacities.
     """
@@ -177,9 +181,11 @@ def add_second_xaxis(data: pd.Series, ax, label, **kwargs):
 def prepare_capacity_factor_data(n: pypsa.Network, carrier: str):
     """
     Prepare Series for actual and theoretical capacity factors per technology.
+
     Args:
         n (pypsa.Network): The PyPSA network instance.
         carrier (str): The carrier for which to prepare the data.
+
     Returns:
         cf_filtered: Series of actual capacity factors (index: nice_name)
         theo_cf_filtered: Series of theoretical capacity factors (index: nice_name)
