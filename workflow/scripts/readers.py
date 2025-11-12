@@ -10,33 +10,26 @@ import os
 import pandas as pd
 
 
-def merge_load_sectors_by_config(yearly_proj: pd.DataFrame, config: dict) -> pd.DataFrame:
-    """Aggregate REMIND load sectors according to the model configuration.
+def aggregate_sectoral_loads(yearly_proj: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Filter and aggregate REMIND sectoral loads based on enabled sectors.
 
-    The input ``yearly_proj`` is expected to contain at least the columns
-    ``province`` (or ``region``/``Unnamed: 0``), ``sector`` and yearly values
-    (one column per year).  The function filters the rows whose ``sector``
-    appears in the configured ``sector_mapping`` and aggregates them so that
-    the output is a matrix with provinces as the index and integer year labels
-    as columns (annual load in MWh).  It is therefore specific to processing
-    REMIND load projections rather than generic sector merging.
+    Reads sector configuration to determine which sectors (AC, EV passenger, EV freight)
+    should be included, then sums their annual loads by province.
 
     Args:
-        yearly_proj (pd.DataFrame): Raw REMIND yearly projections with a ``sector``
-            column and yearly load values.
-        config (dict): Configuration dictionary containing the switches under
-            ``sectors`` (e.g. ``{"electric_vehicles": True}``) and the
-            complementary ``sector_mapping`` that maps each switch to the sector
-            names present in ``yearly_proj``.
+        yearly_proj: REMIND output with columns ['province', 'sector', '2020', '2025', ...].
+            Each row represents one sector's load for one province across all years.
+        config: Configuration dict with structure:
+            - sectors.electric_vehicles.enabled: bool (whether to include EV loads)
+            - sectors.sector_mapping.base: list (always-included sectors, e.g., ['ac'])
+            - sectors.sector_mapping.electric_vehicles: list (EV sectors, e.g., ['ev_pass', 'ev_freight'])
 
     Returns:
-        pd.DataFrame: DataFrame indexed by province with integer year columns;
-        each cell corresponds to the aggregated annual load (MWh) for that
-        province and year after applying the configured sector mapping.
+        DataFrame with provinces as index and years as columns, containing total annual
+        load (MWh) summed across enabled sectors.
 
     Raises:
-        ValueError: If the configuration is incomplete or if no matching sector
-        data can be found.
+        ValueError: If sector_mapping is missing or no matching sectors found.
     """
     sectors_cfg = config.get("sectors", {})
     mapping = sectors_cfg.get("sector_mapping", {})
@@ -131,7 +124,7 @@ def read_yearly_load_projections(
                 "REMIND data contains sector column but no config provided. "
                 "Please provide config with 'sectors' and 'sector_mapping' keys."
             )
-        df = merge_load_sectors_by_config(df, config)
+        df = aggregate_sectoral_loads(df, config)
     else:
         # Simple data format - set province as index
         df = df.set_index("province")

@@ -30,21 +30,14 @@ class SectorReferenceGenerator:
         self._load_sector_modules()
 
     def _load_sector_modules(self):
-        """Load sector-specific modules for reference data extrapolation.
-
-        Dynamically imports modules from sector_modules package and
-        stores them for later use in reference data extrapolation.
-        """
+        """Load sector-specific modules for reference data extrapolation."""
         supported_sectors = {
             "ev": "ev_refshare_extrapolator",
-            # 'industry': 'industry_refshare_generator',
-            # 'residential': 'residential_refshare_generator',
-            # 'commercial': 'commercial_refshare_generator',
         }
 
         for sector, module_name in supported_sectors.items():
             try:
-                module = importlib.import_module(f"sector_modules.{module_name}")
+                module = importlib.import_module(module_name)
                 self.sector_modules[sector] = module
                 logger.info(f"Loaded {sector} sector module")
             except ImportError as e:
