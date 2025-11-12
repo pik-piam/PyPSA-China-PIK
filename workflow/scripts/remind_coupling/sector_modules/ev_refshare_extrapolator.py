@@ -1,6 +1,7 @@
-"""EV sector reference data generator
+"""EV sector reference data extrapolator.
 
-Generates reference data for the EV sector using a simplified Gompertz model.
+Extrapolates future regional EV shares using a Gompertz model fitted to
+historical vehicle ownership, GDP, and population data.
 """
 
 import logging
@@ -13,7 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class GompertzModel:
-    """Simplified Gompertz model"""
+    """Simplified Gompertz model for vehicle ownership prediction.
+    
+    Args:
+        saturation_level: Maximum vehicle ownership per 1000 people (default: 500)
+        alpha: Fixed Gompertz parameter (default: -5.58)
+    """
 
     def __init__(self, saturation_level: float = 500, alpha: float = -5.58):
         self.saturation_level = saturation_level
@@ -170,10 +176,22 @@ def extrapolate_reference(years: list, input_files: dict, output_dir: str, confi
     """Extrapolate EV sector reference data using Gompertz model.
 
     Args:
-        years: Target years for projections
-        input_files: Dictionary of input data file paths
-        output_dir: Output directory for results
-        config: Optional configuration parameters
+        years: Target years for projections (e.g., [2030, 2040, 2050])
+        input_files: Dictionary of input data file paths with keys:
+            - 'historical_gdp': Historical GDP by province
+            - 'historical_pop': Historical population by province
+            - 'historical_cars': Historical vehicle ownership by province
+            - 'ssp2_pop': SSP2 future population projections
+            - 'ssp2_gdp': SSP2 future GDP projections
+        output_dir: Output directory for results (CSV files will be saved here)
+        config: Optional Gompertz model parameters:
+            - 'saturation_level': Maximum vehicles per 1000 people (default: 500)
+            - 'alpha': Fixed Gompertz parameter (default: -5.58)
+    
+    Outputs:
+        Saves two CSV files to output_dir:
+        - ev_passenger_shares.csv: Provincial shares of passenger EV demand
+        - ev_freight_shares.csv: Provincial shares of freight EV demand
     """
     logger.info("Extrapolating EV sector reference data")
 
