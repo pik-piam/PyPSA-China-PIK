@@ -29,6 +29,31 @@ pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
+def set_nuclear_capacity_limit(n: pypsa.Network, max_capacity: float):
+    """
+    Set nuclear capacity growth limit with global constraint.
+    
+    Args:
+        n (pypsa.Network): the network object
+        max_capacity (float): maximum total nuclear capacity in MW
+    """
+    nuclear_gens_ext = n.generators[
+        (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
+    ].index
+    
+    if len(nuclear_gens_ext) == 0:
+        logger.warning("No extendable nuclear generators found")
+        return
+    
+    # Set p_nom_max for all extendable nuclear generators
+    for gen in nuclear_gens_ext:
+        n.generators.loc[gen, "p_nom_max"] = max_capacity
+    
+    # Store limit for extra_functionality to add constraint
+    n.nuclear_capacity_limit = max_capacity
+    logger.info(f"Nuclear capacity limit set: {max_capacity:.0f} MW for {len(nuclear_gens_ext)} generators")
+
+
 def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1):
     """
     Set global transimission limit constraints - adapted from pypsa-eur
@@ -262,6 +287,29 @@ def prepare_network(
         add_land_use_constraint(n, plan_year)
 
     return n
+
+
+def add_nuclear_capacity_constraints(n: pypsa.Network):
+    """
+    Add nuclear capacity limit constraint if configured.
+    
+    Args:
+        n (pypsa.Network): the network object
+    """
+    if not hasattr(n, "nuclear_capacity_limit"):
+        return
+    
+    nuclear_gens_ext = n.generators[
+        (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
+    ].index
+    
+    if len(nuclear_gens_ext) == 0:
+        return
+    
+    # Add global constraint: sum of all nuclear p_nom <= limit
+    lhs = n.model["Generator-p_nom"].loc[nuclear_gens_ext].sum()
+    n.model.add_constraints(lhs <= n.nuclear_capacity_limit, name="nuclear_capacity_limit")
+    logger.info(f"Applied global nuclear constraint: sum(p_nom) <= {n.nuclear_capacity_limit:.0f} MW")
 
 
 def add_battery_constraints(n: pypsa.Network):
@@ -743,6 +791,8 @@ def extra_functionality(n: pypsa.Network, _) -> None:
     config = n.config
     add_battery_constraints(n)
     add_transmission_constraints(n)
+    add_nuclear_capacity_constraints(n)
+    
     if config["heat_coupling"]:
         add_water_tank_charger_constraints(n, config)
         add_chp_constraints(n)
@@ -867,6 +917,34 @@ if __name__ == "__main__":
     )
     # # TODO: remove ugly hack
     # n.storage_units.p_nom_max = n.storage_units.p_nom * 1.05**exp_years
+
+    # Set nuclear growth limit if configured
+    nuclear_cfg = snakemake.config.get("nuclear_reactors", {})
+    if nuclear_cfg.get("enable_growth_limit") and nuclear_cfg.get("max_annual_capacity_addition"):
+        base_year = nuclear_cfg.get("base_year", 2020)
+        planning_year = int(snakemake.wildcards.planning_horizons)
+        n_years = planning_year - base_year
+        
+        if n_years > 0:
+            # Get base capacity
+            base_capacity = nuclear_cfg.get("base_capacity")
+            if not base_capacity:
+                base_path = snakemake.input.network_name.replace(
+                    f"ntwk_{planning_year}.nc", f"ntwk_{base_year}.nc"
+                )
+                if os.path.exists(base_path):
+                    n_base = pypsa.Network(base_path)
+                    base_capacity = n_base.generators[n_base.generators.carrier == "nuclear"]["p_nom"].sum()
+                else:
+                    base_capacity = n.generators[n.generators.carrier == "nuclear"]["p_nom"].sum()
+            
+            # Calculate and apply limit
+            max_capacity = base_capacity + nuclear_cfg["max_annual_capacity_addition"] * n_years
+            logger.info(
+                f"Adding nuclear capacity limit for {planning_year}: {max_capacity:.0f} MW "
+                f"[{base_capacity:.0f} + {nuclear_cfg['max_annual_capacity_addition']:.0f} × {n_years} years]"
+            )
+            set_nuclear_capacity_limit(n, max_capacity)
 
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")

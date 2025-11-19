@@ -73,7 +73,7 @@ enable:
   retrieve_raster: false
 
 atlite:
-  cutout_name: "China-2020c"
+  cutout_name: "China-2020c_bare"
   freq: "h"
   nprocesses: 1
   show_progress: true
@@ -177,8 +177,15 @@ Techs:
   hydrogen_lines: true
   coal_ccs_retrofit: false # currently myopic pathway only.  CC = co2 cap 
 
+## Nuclear capacity growth limit
+nuclear_reactors:
+  enable_growth_limit: true  # Switch: true=enable growth limit, false=unrestricted growth
+  max_annual_capacity_addition: 5000  # Fixed MW to add per year
+  base_year: 2020  # Base year for capacity reference (should be <= first planning year)
+  # base_capacity: 50000  # (optional) Base year total capacity in MW. If not set, auto-detect from base_year network
+
 ## add components (overwrites vre tech choice)
-heat_coupling: true
+heat_coupling: false
 add_biomass: True
 add_hydro: True
 add_H2: True
