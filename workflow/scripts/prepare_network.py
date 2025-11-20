@@ -55,14 +55,14 @@ def add_biomass_chp(
     add_beccs: bool = True,
 ):
     """Add biomass combined heat and power (CHP) systems to the network.
-    
+
     Integrates biomass CHP technology as new-build capacity (not retrofits or
     co-firing with coal). Optionally includes biomass with carbon capture and
     storage (BECCS) for negative emissions.
-    
+
     Note:
-        The carbon capture component is not currently constrained to biomass capacity 
-    
+        The carbon capture component is not currently constrained to biomass capacity
+
     Args:
         network (pypsa.Network): The PyPSA network object to modify.
         costs (pd.DataFrame): Techno-economic data (for all techs including biomass CHP)
@@ -162,7 +162,7 @@ def add_biomass_chp(
 
 def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
     """Add various carriers to the network based on configuration settings.
-    
+
     Creates carrier objects for different energy types including electricity (AC),
     heat, renewable energy sources, storage technologies, and fuel carriers with
     their associated CO2 emissions factors.
@@ -202,7 +202,7 @@ def add_co2_capture_support(
     network: pypsa.Network, nodes: pd.Index, prov_centroids: gpd.GeoDataFrame
 ):
     """Add CO2 capture carriers and storage to the network.
-    
+
     Creates the necessary CO2-related carriers, buses, and storage components
     to support carbon capture and storage (CCS) technologies in the network.
 
@@ -254,7 +254,7 @@ def add_conventional_generators(
     costs: pd.DataFrame,
 ):
     """Add conventional generation techs to the network.
-    
+
     Integrates fossil fuel generators/links including gas (OCGT, CCGT), coal power plants,
     and carbon capture and storage (CCS) variants based on configuration settings.
 
@@ -378,16 +378,12 @@ def add_conventional_generators(
 
 
 def add_H2(
-    network: pypsa.Network, 
-    config: dict, 
-    nodes: pd.Index, 
-    costs: pd.DataFrame,
-    planning_year: int
+    network: pypsa.Network, config: dict, nodes: pd.Index, costs: pd.DataFrame, planning_year: int
 ):
     """Add hydrogen infrastructure including production, storage, and transport.
-    
+
     Adds hydrogen electrolysis, fuel cells, turbines, storage systems, and
-    optionally hydrogen pipelines for transport and methanation for power-to-gas 
+    optionally hydrogen pipelines for transport and methanation for power-to-gas
 
     Args:
         network (pypsa.Network): PyPSA network object to which H2 comps are added
@@ -582,7 +578,7 @@ def add_H2(
 # TODO harmonize with remind
 def add_voltage_links(network: pypsa.Network, config: dict):
     """Add high-voltage transmission links (HVDC/AC) to the network.
-    
+
     Creates transmission infrastructure between network nodes based on topology config.
     Supports both lossy and lossless transmission models with
     configurable efficiency parameters and security margins.
@@ -627,7 +623,9 @@ def add_voltage_links(network: pypsa.Network, config: dict):
 
     line_cost = (
         lengths * costs.at["HVDC overhead", "capital_cost"] * FOM_LINES * n_years
-    ) + costs.at["HVDC inverter pair", "capital_cost"]  # /MW
+    ) + costs.at[
+        "HVDC inverter pair", "capital_cost"
+    ]  # /MW
 
     # ==== lossy transport model (split into 2) ====
     # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk
@@ -692,7 +690,7 @@ def add_wind_and_solar(
     costs: pd.DataFrame,
 ):
     """Add wind and solar generators with resource grade differentiation.
-    
+
     Add ariable renewable energy (VRE) generators for each tech and quality grade
     Loads capacity factors and potential from profiles and adds generators.
 
@@ -704,7 +702,7 @@ def add_wind_and_solar(
             with keys like 'profile_solar', 'profile_onwind', etc.
         year (int): Planning year for which profiles should be aligned.
         costs (pd.DataFrame): Technoeconomic data incl. renewable technologies
-            
+
     Raises:
         ValueError: If unsupported technologies are specified or if paths not specified
     """
@@ -726,9 +724,11 @@ def add_wind_and_solar(
                 ds = ds.sel(year=ds.year.min(), drop=True)
 
             timestamps = pd.DatetimeIndex(ds.time)
+
             def shift_weather_to_planning_yr(t):
                 """Shift weather data to planning year."""
                 return t.replace(year=int(year))
+
             timestamps = timestamps.map(shift_weather_to_planning_yr)
             ds = ds.assign_coords(time=timestamps)
 
@@ -748,6 +748,7 @@ def add_wind_and_solar(
         def flatten(t):
             """Flatten tuple to string with ' grade' separator."""
             return " grade".join(map(str, t))
+
         buses = ds.indexes["bus_bin"].get_level_values("bus")
         bus_bins = ds.indexes["bus_bin"].map(flatten)
 
@@ -783,7 +784,7 @@ def add_heat_coupling(
     paths: dict,
 ):
     """Add heat sector coupling technologies and infrastructure to the network.
-    
+
     Integrates heat pumps, thermal storage, heating demand, and other heat-related
     technologies for both centralized and decentralized heating systems.
 
@@ -847,20 +848,15 @@ def add_heat_coupling(
         p_set=heat_demand[nodes].multiply(central_fraction[nodes]),
     )
 
-
     if "heat pump" in config["Techs"]["vre_techs"]:
         logger.info(f"loading cop profiles from {paths['cop_name']}")
         with pd.HDFStore(paths["cop_name"], mode="r") as store:
             ashp_cop = store["ashp_cop_profiles"]
             ashp_cop.index = ashp_cop.index.tz_localize(None)
-            ashp_cop = shift_profile_to_planning_year(
-                ashp_cop, planning_year
-            )
+            ashp_cop = shift_profile_to_planning_year(ashp_cop, planning_year)
             gshp_cop = store["gshp_cop_profiles"]
             gshp_cop.index = gshp_cop.index.tz_localize(None)
-            gshp_cop = shift_profile_to_planning_year(
-                gshp_cop, planning_year
-            )
+            gshp_cop = shift_profile_to_planning_year(gshp_cop, planning_year)
 
         for cat in [" decentral ", " central "]:
             network.add(
