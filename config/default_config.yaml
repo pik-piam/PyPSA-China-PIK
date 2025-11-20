@@ -107,6 +107,9 @@ renewable:
     natura: false
     clip_p_max_pu: 1.e-2
     min_p_nom_max: 1.e-2
+    # Copernicus LC100 land cover codes for allowed areas
+    # 20=Shrubland, 30=Herbaceous, 40=Agriculture, 60=Bare, 100=Moss
+    land_cover_codes: [20, 30, 40, 60, 100]
   offwind:
     cutout: China-2020c
     resource:
@@ -122,6 +125,8 @@ renewable:
     max_depth: 50
     clip_p_max_pu: 1.e-2
     min_p_nom_max: 1.e-2
+    # Offshore wind uses water depth from GEBCO, not land cover codes
+    land_cover_codes: null
   solar:
     cutout: China-2020c
     resource:
@@ -139,6 +144,9 @@ renewable:
     natura: false
     clip_p_max_pu: 1.e-2
     min_p_nom_max: 1.e-2
+    # Copernicus LC100 land cover codes for allowed areas
+    # 20=Shrubland, 30=Herbaceous, 40=Agriculture, 50=Urban, 60=Bare, 100=Moss
+    land_cover_codes: [20, 30, 50, 60, 100]
 renewable_potential_cutoff: 200 # MW, skip low potentials
 
 heat_demand:

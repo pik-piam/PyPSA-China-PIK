@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     nprocesses = int(snakemake.threads)
     noprogress = snakemake.config["run"].get("disable_progressbar", True)
-    noprogress = noprogress or not snakemake.config["atlite"]["show_progress"]
+    noprogress = bool(noprogress or not snakemake.config["atlite"]["show_progress"])
 
     technology = snakemake.wildcards.technology
     params = snakemake.config["renewable"][technology]
@@ -87,15 +87,30 @@ if __name__ == "__main__":
             protected_Marine_shp.to_file(TMP)
             excluder.add_geometry(TMP)
 
-    # TODO go straight to the copernicus monitoring instead of using each subraster
-    # add gridcodes per resource in the monitoring raster data
+    # Use Copernicus LC100 discrete classification map instead of percentage cover fractions
+    # This replaces the old approach of using separate Grass/Bare/Shrubland rasters
     if technology != "offwind":
-        excluder.add_raster(snakemake.input["Grass_raster"], invert=True, crs=3035)
-        excluder.add_raster(snakemake.input["Bare_raster"], invert=True, crs=3035)
-        excluder.add_raster(snakemake.input["Shrubland_raster"], invert=True, crs=3035)
+        # Land cover codes from config for allowed areas
+        # Copernicus LC100 codes: 20=Shrubland, 30=Herbaceous, 40=Agriculture,
+        # 50=Urban, 60=Bare, 90=Wetland, 100=Moss
+        codes = snakemake.params.land_cover_codes
 
-    if params.get("allowed_built_up"):
-        excluder.add_raster(snakemake.input["Built_raster"], invert=False, crs=3035)
+        if codes is None:
+            logger.warning(
+                f"No land_cover_codes defined for {technology}, " "skipping land cover filtering"
+            )
+        else:
+            logger.info(f"Using Copernicus LC100 land cover codes for {technology}: {codes}")
+            # invert=True means these codes represent ALLOWED areas (not excluded)
+            excluder.add_raster(
+                snakemake.input.copernicus_land_cover,
+                codes=codes,
+                invert=True,
+                crs=4326,
+            )
+
+    # Note: Built-up area handling is integrated into land_cover_codes in config
+    # To exclude built-up areas, remove code 50 from the land_cover_codes list
 
     if params.get("max_depth"):
         func = functools.partial(np.greater, -params["max_depth"])
