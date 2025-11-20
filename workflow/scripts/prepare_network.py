@@ -272,6 +272,14 @@ def add_fuel_subsidies(n: pypsa.Network, subsidy_config: dict):
         # Convert subsidy dict to Series indexed by province
         subs = pd.Series(subs_dict, dtype=float)
         
+        # Check that subsidies are non-positive (negative = subsidy, positive would be a reward)
+        if (subs > 0).any():
+            raise ValueError(
+                f"Positive subsidy values found for carrier '{carrier}': "
+                f"{subs[subs > 0].to_dict()}. Only zero or negative values are allowed "
+                f"(negative reduces marginal cost, positive would increase it)."
+            )
+        
         # Check if location column exists
         if "location" not in n.generators.columns:
             logger.warning(

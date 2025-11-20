@@ -354,7 +354,7 @@ fetch_regions:
     land: 0.05
 
 subsidies:
-  # New format: subsidies.fuel_type -> province -> value (EUR/MWh)
+  # New format: subsidies.fuel_type -> province -> value (EUR/MWh) only allowed for negative values (subsidies)
   gas:
     Guangdong: -8
     Jiangsu:  -8.5
