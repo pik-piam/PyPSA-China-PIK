@@ -978,7 +978,7 @@ if __name__ == "__main__":
 
         n = solve_network(
             n,
-            config=snakemake.config,
+            config=config,
             solving=snakemake.params.solving,
             opts=opts,
             log_fn=snakemake.log.solver,
