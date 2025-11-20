@@ -34,7 +34,7 @@ def calc_nuclear_expansion_limit(
     nuclear_cfg: dict,
     planning_year: int,
     network_path: str,
-) -> None:
+) -> float | None:
     """
     Calculate and apply the nuclear expansion limit from configuration.
     
@@ -43,14 +43,17 @@ def calc_nuclear_expansion_limit(
         nuclear_cfg (dict): configuration entry under ``nuclear_reactors``
         planning_year (int): target planning horizon year
         network_path (str): path to the current network file, used to locate base year
+    
+    Returns:
+        float | None: maximum allowed nuclear capacity, or None if no limit applies
     """
     if not nuclear_cfg.get("enable_growth_limit"):
-        return
+        return None
     
     annual_addition = nuclear_cfg.get("max_annual_capacity_addition")
     if not annual_addition:
         logger.warning("Nuclear growth limit enabled but max_annual_capacity_addition missing")
-        return
+        return None
     
     base_year = nuclear_cfg.get("base_year", 2020)
     n_years = planning_year - base_year
@@ -60,7 +63,7 @@ def calc_nuclear_expansion_limit(
             planning_year,
             base_year,
         )
-        return
+        return None
     
     base_capacity = nuclear_cfg.get("base_capacity")
     if base_capacity is None:
@@ -73,22 +76,35 @@ def calc_nuclear_expansion_limit(
     
     max_capacity = base_capacity + annual_addition * n_years
     logger.info(
-        f"Adding nuclear expansion limit for {planning_year}: {max_capacity:.0f} MW "
+        f"Calculated nuclear expansion limit for {planning_year}: {max_capacity:.0f} MW "
         f"[{base_capacity:.0f} + {annual_addition:.0f} × {n_years} years]"
     )
+    return max_capacity
+
+
+def apply_nuclear_expansion_limit(n: pypsa.Network, max_capacity: float | None) -> None:
+    """
+    Apply the computed nuclear expansion limit to extendable generators.
+    
+    Args:
+        n (pypsa.Network): the network object
+        max_capacity (float | None): computed nuclear capacity ceiling
+    """
+    if max_capacity is None:
+        return
     
     nuclear_gens_ext = n.generators[
         (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
     ].index
     
     if len(nuclear_gens_ext) == 0:
-        logger.warning("No extendable nuclear generators found")
+        logger.warning("Nuclear expansion limit computed but no extendable nuclear generators found")
         return
     
     n.generators.loc[nuclear_gens_ext, "p_nom_max"] = max_capacity
-    nuclear_cfg["expansion_limit"] = max_capacity
+    n.nuclear_expansion_limit = max_capacity
     logger.info(
-        f"Nuclear expansion limit set: {max_capacity:.0f} MW for {len(nuclear_gens_ext)} generators"
+        f"Applied nuclear expansion limit: {max_capacity:.0f} MW for {len(nuclear_gens_ext)} generators"
     )
 
 
@@ -334,7 +350,7 @@ def add_nuclear_expansion_constraints(n: pypsa.Network):
     Args:
         n (pypsa.Network): the network object
     """
-    limit = n.config.get("nuclear_reactors", {}).get("expansion_limit")
+    limit = getattr(n, "nuclear_expansion_limit", None)
     if limit is None:
         return
     
@@ -920,6 +936,7 @@ if __name__ == "__main__":
             configfiles="resources/tmp/pseudo-coupled.yaml",
         )
     configure_logging(snakemake)
+    config = snakemake.config
 
     opts = snakemake.wildcards.get("opts", "")
     if "sector_opts" in snakemake.wildcards.keys():
@@ -957,12 +974,13 @@ if __name__ == "__main__":
     # # TODO: remove ugly hack
     # n.storage_units.p_nom_max = n.storage_units.p_nom * 1.05**exp_years
 
-    calc_nuclear_expansion_limit(
+    nuclear_limit = calc_nuclear_expansion_limit(
         n=n,
-        nuclear_cfg=snakemake.config.get("nuclear_reactors", {}),
+        nuclear_cfg=config.get("nuclear_reactors", {}),
         planning_year=int(snakemake.wildcards.planning_horizons),
         network_path=snakemake.input.network_name,
     )
+    apply_nuclear_expansion_limit(n, nuclear_limit)
 
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
