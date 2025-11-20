@@ -29,14 +29,54 @@ pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-def set_nuclear_capacity_limit(n: pypsa.Network, max_capacity: float):
+def calc_nuclear_expansion_limit(
+    n: pypsa.Network,
+    nuclear_cfg: dict,
+    planning_year: int,
+    network_path: str,
+) -> None:
     """
-    Set nuclear capacity growth limit with global constraint.
+    Calculate and apply the nuclear expansion limit from configuration.
     
     Args:
         n (pypsa.Network): the network object
-        max_capacity (float): maximum total nuclear capacity in MW
+        nuclear_cfg (dict): configuration entry under ``nuclear_reactors``
+        planning_year (int): target planning horizon year
+        network_path (str): path to the current network file, used to locate base year
     """
+    if not nuclear_cfg.get("enable_growth_limit"):
+        return
+    
+    annual_addition = nuclear_cfg.get("max_annual_capacity_addition")
+    if not annual_addition:
+        logger.warning("Nuclear growth limit enabled but max_annual_capacity_addition missing")
+        return
+    
+    base_year = nuclear_cfg.get("base_year", 2020)
+    n_years = planning_year - base_year
+    if n_years <= 0:
+        logger.info(
+            "Planning year %s is not after base year %s; skipping nuclear expansion limit",
+            planning_year,
+            base_year,
+        )
+        return
+    
+    base_capacity = nuclear_cfg.get("base_capacity")
+    if base_capacity is None:
+        base_path = network_path.replace(f"ntwk_{planning_year}.nc", f"ntwk_{base_year}.nc")
+        if os.path.exists(base_path):
+            n_base = pypsa.Network(base_path)
+            base_capacity = n_base.generators[n_base.generators.carrier == "nuclear"]["p_nom"].sum()
+        else:
+            base_capacity = n.generators[n.generators.carrier == "nuclear"]["p_nom"].sum()
+    
+    max_capacity = base_capacity + annual_addition * n_years
+    logger.info(
+        f"Adding nuclear expansion limit for {planning_year}: {max_capacity:.0f} MW "
+        f"[{base_capacity:.0f} + {annual_addition:.0f} × {n_years} years]"
+    )
+    
     nuclear_gens_ext = n.generators[
         (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
     ].index
@@ -45,13 +85,11 @@ def set_nuclear_capacity_limit(n: pypsa.Network, max_capacity: float):
         logger.warning("No extendable nuclear generators found")
         return
     
-    # Set p_nom_max for all extendable nuclear generators
-    for gen in nuclear_gens_ext:
-        n.generators.loc[gen, "p_nom_max"] = max_capacity
-    
-    # Store limit for extra_functionality to add constraint
-    n.nuclear_capacity_limit = max_capacity
-    logger.info(f"Nuclear capacity limit set: {max_capacity:.0f} MW for {len(nuclear_gens_ext)} generators")
+    n.generators.loc[nuclear_gens_ext, "p_nom_max"] = max_capacity
+    nuclear_cfg["expansion_limit"] = max_capacity
+    logger.info(
+        f"Nuclear expansion limit set: {max_capacity:.0f} MW for {len(nuclear_gens_ext)} generators"
+    )
 
 
 def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1):
@@ -289,14 +327,15 @@ def prepare_network(
     return n
 
 
-def add_nuclear_capacity_constraints(n: pypsa.Network):
+def add_nuclear_expansion_constraints(n: pypsa.Network):
     """
-    Add nuclear capacity limit constraint if configured.
+    Add nuclear expansion limit constraint if configured.
     
     Args:
         n (pypsa.Network): the network object
     """
-    if not hasattr(n, "nuclear_capacity_limit"):
+    limit = n.config.get("nuclear_reactors", {}).get("expansion_limit")
+    if limit is None:
         return
     
     nuclear_gens_ext = n.generators[
@@ -308,8 +347,8 @@ def add_nuclear_capacity_constraints(n: pypsa.Network):
     
     # Add global constraint: sum of all nuclear p_nom <= limit
     lhs = n.model["Generator-p_nom"].loc[nuclear_gens_ext].sum()
-    n.model.add_constraints(lhs <= n.nuclear_capacity_limit, name="nuclear_capacity_limit")
-    logger.info(f"Applied global nuclear constraint: sum(p_nom) <= {n.nuclear_capacity_limit:.0f} MW")
+    n.model.add_constraints(lhs <= limit, name="nuclear_expansion_limit")
+    logger.info(f"Applied global nuclear constraint: sum(p_nom) <= {limit:.0f} MW")
 
 
 def add_battery_constraints(n: pypsa.Network):
@@ -791,7 +830,7 @@ def extra_functionality(n: pypsa.Network, _) -> None:
     config = n.config
     add_battery_constraints(n)
     add_transmission_constraints(n)
-    add_nuclear_capacity_constraints(n)
+    add_nuclear_expansion_constraints(n)
     
     if config["heat_coupling"]:
         add_water_tank_charger_constraints(n, config)
@@ -918,33 +957,12 @@ if __name__ == "__main__":
     # # TODO: remove ugly hack
     # n.storage_units.p_nom_max = n.storage_units.p_nom * 1.05**exp_years
 
-    # Set nuclear growth limit if configured
-    nuclear_cfg = snakemake.config.get("nuclear_reactors", {})
-    if nuclear_cfg.get("enable_growth_limit") and nuclear_cfg.get("max_annual_capacity_addition"):
-        base_year = nuclear_cfg.get("base_year", 2020)
-        planning_year = int(snakemake.wildcards.planning_horizons)
-        n_years = planning_year - base_year
-        
-        if n_years > 0:
-            # Get base capacity
-            base_capacity = nuclear_cfg.get("base_capacity")
-            if not base_capacity:
-                base_path = snakemake.input.network_name.replace(
-                    f"ntwk_{planning_year}.nc", f"ntwk_{base_year}.nc"
-                )
-                if os.path.exists(base_path):
-                    n_base = pypsa.Network(base_path)
-                    base_capacity = n_base.generators[n_base.generators.carrier == "nuclear"]["p_nom"].sum()
-                else:
-                    base_capacity = n.generators[n.generators.carrier == "nuclear"]["p_nom"].sum()
-            
-            # Calculate and apply limit
-            max_capacity = base_capacity + nuclear_cfg["max_annual_capacity_addition"] * n_years
-            logger.info(
-                f"Adding nuclear capacity limit for {planning_year}: {max_capacity:.0f} MW "
-                f"[{base_capacity:.0f} + {nuclear_cfg['max_annual_capacity_addition']:.0f} × {n_years} years]"
-            )
-            set_nuclear_capacity_limit(n, max_capacity)
+    calc_nuclear_expansion_limit(
+        n=n,
+        nuclear_cfg=snakemake.config.get("nuclear_reactors", {}),
+        planning_year=int(snakemake.wildcards.planning_horizons),
+        network_path=snakemake.input.network_name,
+    )
 
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
