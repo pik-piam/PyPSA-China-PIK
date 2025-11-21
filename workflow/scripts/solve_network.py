@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import pypsa
 import xarray as xr
+import os
 from _helpers import ConfigManager, configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env
 from _pypsa_helpers import filter_carriers, mock_solve, store_duals_to_network
 from constants import YEAR_HRS
