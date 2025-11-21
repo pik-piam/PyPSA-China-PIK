@@ -78,6 +78,10 @@ set-resources:
     time: 300
     threads: 4
     mem_mb: 30000
+  build_solar_thermal_profiles:
+    time: 30
+    threads: 4
+    mem_mb: 16000
   plot_network:
     mem_mb: 8000
     threads: 2
