@@ -40,14 +40,14 @@ class ConfigManager:
 
     def handle_scenarios(self) -> dict:
         """Unpack and filter scenarios from the configuration.
-        
+
         Processes planning horizons by converting them to integers and handles
         GHG scenarios through the GHGConfigHandler. This method modifies the
         internal config state.
-        
+
         Returns:
             dict: The processed configuration with validated scenarios.
-            
+
         Example:
             >>> config_manager = ConfigManager(raw_config)
             >>> processed_config = config_manager.handle_scenarios()
@@ -64,22 +64,22 @@ class ConfigManager:
 
     def fetch_co2_restriction(self, pthw_name: str, year: str) -> dict:
         """Fetch CO2 restriction parameters for a specific scenario and year.
-        
+
         Retrieves the CO2 emission reduction or price limit for a given scenario
         pathway and planning year from the configuration.
-        
+
         Args:
             pthw_name (str): The name of the CO2 scenario pathway (e.g., 'exp175default').
             year (str): The planning year as a string (e.g., '2030').
-            
+
         Returns:
             dict: A dictionary containing:
                 - 'co2_pr_or_limit': The CO2 reduction fraction or price limit
                 - 'control': The control method ('reduction', 'price', 'budget', etc.)
-                
+
         Raises:
             KeyError: If the pathway name or year is not found in the configuration.
-            
+
         Example:
             >>> config_manager = ConfigManager(config)
             >>> restriction = config_manager.fetch_co2_restriction('exp175default', '2030')
@@ -191,18 +191,18 @@ class GHGConfigHandler:
 # TODO unit tests for path manager
 class PathManager:
     """Manages file system paths for the Snakemake workflow.
-    
+
     This class provides centralized path management for the PyPSA-China workflow,
     handling different path configurations for production runs vs. CI/CD test runs.
     It constructs paths based on scenario configurations and wildcards.
-    
+
     The class handles the incompatibility between Snakemake and pytest by providing
     different path behaviors when running in test mode. (Temporary workaround)
-    
+
     Attributes:
         config: The Snakemake configuration dictionary.
         root_dir: The root directory of the project.
-        
+
     Example:
         >>> path_manager = PathManager(snakemake_config)
         >>> results_path = path_manager.results_dir()
@@ -211,7 +211,7 @@ class PathManager:
 
     def __init__(self, snmk_config: dict, wildcards_map: dict = None):
         """Initialize the PathManager with configuration.
-        
+
         Args:
             snmk_config (dict): The Snakemake configuration containing run settings.
             wildcards_map (dict, optional): mapping of wildcards for path construction.
@@ -225,13 +225,13 @@ class PathManager:
 
     def _get_version(self) -> str:
         """Get version from workflow pseudo-package.
-        
+
         This is a workaround to extract version information from the workflow
         package for path construction purposes.
-        
+
         Returns:
             str: The version string from the workflow package.
-            
+
         Note:
             This is marked as a HACK and should ideally be refactored to use
             a more standard approach for version management.
@@ -246,14 +246,14 @@ class PathManager:
     @functools.lru_cache
     def _join_scenario_vars(self) -> str:
         """Join scenario variables into a human-readable string for directory naming.
-        
+
         Creates a compact string representation of scenario parameters by joining
         them with underscores, using abbreviated names where configured.
-        
+
         Returns:
             str: A human-readable string suitable for building directory paths,
                 containing abbreviated scenario variable names and values.
-                
+
         Example:
             >>> path_manager._join_scenario_vars()
             'topo_current+FCG_co2pw_exp175default_proj_positive'
@@ -784,3 +784,19 @@ def set_plot_test_backend(config: dict):
         import matplotlib
 
         matplotlib.use("Agg")
+
+
+def setup_proj_environment():
+    """Set up PROJ_LIB environment variable for GDAL to find projection database."""
+    if "PROJ_LIB" not in os.environ:
+        if "CONDA_PREFIX" in os.environ:
+            proj_lib = os.path.join(os.environ["CONDA_PREFIX"], "share", "proj")
+            if os.path.isdir(proj_lib):
+                os.environ["PROJ_LIB"] = proj_lib
+                logger.info(f"Set PROJ_LIB to: {proj_lib}")
+            else:
+                logger.warning(f"PROJ data directory not found at: {proj_lib}")
+        else:
+            logger.warning("CONDA_PREFIX not set, PROJ_LIB may not be configured")
+    else:
+        logger.info(f"PROJ_LIB already set to: {os.environ['PROJ_LIB']}")
