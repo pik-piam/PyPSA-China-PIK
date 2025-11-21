@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+"""Slurm cluster status checker for job monitoring and management.
+
+Based on https://github.com/LUMC/slurm-cluster-status/blob/master/README.md
+This script checks the status of Slurm jobs and maps them to standardized states.
+"""
+
 # https://github.com/LUMC/slurm-cluster-status/blob/master/README.md
 import argparse
 import subprocess

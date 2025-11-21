@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 Functions to add brownfield capacities to the network for a reference year
 - adds VREs per grade and corrects technical potential. Best available grade is chosen
@@ -9,17 +8,16 @@ Functions to add brownfield capacities to the network for a reference year
 
 
 import logging
-import numpy as np
-import pandas as pd
-import pypsa
-
 import re
 from types import SimpleNamespace
 
-from constants import YEAR_HRS
-from add_electricity import load_costs
-from _helpers import mock_snakemake, configure_logging, ConfigManager
+import numpy as np
+import pandas as pd
+import pypsa
+from _helpers import configure_logging, mock_snakemake
 from _pypsa_helpers import shift_profile_to_planning_year
+from add_electricity import load_costs
+from constants import YEAR_HRS
 
 # TODO possibly reimplement to have env separation
 from rpycpl.technoecon_etl import to_list
@@ -31,30 +29,30 @@ spatial = SimpleNamespace()
 
 def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series) -> pd.DataFrame:
     """Distribute VRE capacities by grade, ensuring potentials are respected and prioritizing better grades first
-    
+
     Allocates variable renewable energy (VRE) capacity additions across different
     resource quality grades. The algorithm preferentially uses higher-quality
     grades before moving to lower-quality ones, implementing a "fill-up" strategy.
-    
+
     Args:
         cap_by_year (pd.Series): Annual VRE capacity additions indexed by year. Values represent
             the total capacity to be added in each year (MW or GW).
         grade_capacities (pd.Series): Available capacity potential by resource grade for a bus,
             indexed by grade identifier. Higher-quality grades should have lower indices for
             proper prioritization.
-            
+
     Returns:
         DataFrame with distributed capacities where:
             - Rows are indexed by years (from cap_by_year)
             - Columns are indexed by grades (from grade_capacities)
             - Values represent allocated capacity for each year-grade combination
-            
+
     Example:
         >>> cap_additions = pd.Series([100, 200], index=[2020, 2030])
         >>> grade_potentials = pd.Series([50, 75, 100], index=['grade_1', 'grade_2', 'grade_3'])
         >>> result = distribute_vre_by_grade(cap_additions, grade_potentials)
         >>> print(result.sum(axis=1))  # Should match original yearly totals
-        
+
     Note:
         The function assumes grade_capacities are ordered with best grades first.
         If total demand exceeds available capacity, the algorithm allocates as much
@@ -89,19 +87,19 @@ def distribute_vre_by_grade(cap_by_year: pd.Series, grade_capacities: pd.Series)
 
 def add_base_year(n: pypsa.Network, plan_year: int):
     """Add base year information to newly built components in the network.
-    
+
     Sets the 'build_year' attribute for all extendable generators and links
     in the network to the specified planning year. This is used to track
     when infrastructure is added to the system.
-    
+
     Args:
         n: The PyPSA network object to modify.
         plan_year: The planning year to assign as the build year for new components.
-        
+
     Note:
         This function modifies the network in-place by updating the 'build_year'
         attribute for components marked as extendable (p_nom_extendable==True).
-        
+
     Example:
         >>> network = pypsa.Network()
         >>> add_base_year(network, 2030)
@@ -263,7 +261,7 @@ def add_power_capacities_installed_before_baseyear(
     logger.info(df.grouping_year.unique())
     # TODO: exclude collapse of coal & coal CHP IF CCS retrofitting is enabled
     if config["existing_capacities"].get("collapse_years", False):
-        df.grouping_year = 1 # 0 is default
+        df.grouping_year = 1  # 0 is default
     df.grouping_year = df.grouping_year.astype(int, errors="ignore")
 
     df_ = df.pivot_table(
@@ -283,7 +281,7 @@ def add_power_capacities_installed_before_baseyear(
     for grouping_year, generator, resource_grade in df_.index:
         build_year = 1 if grouping_year == "brownwfield" else grouping_year
         logger.info(f"Adding existing generator {generator} with year grp {grouping_year}")
-        if not carrier_map.get(generator, "missing") in defined_carriers:
+        if carrier_map.get(generator, "missing") not in defined_carriers:
             logger.warning(
                 f"Carrier {carrier_map.get(generator, None)} for {generator} not defined in network"
                 "Consider adding to the CARRIER_MAP"
@@ -636,7 +634,8 @@ def add_paid_off_capacity(
         paid_off_caps (pd.DataFrame): DataFrame with paid off capacities & columns
             [tech_group, Capacity, techs]
         costs (pd.DataFrame): techno-economic data for the technologies
-        cutoff (int, optional): minimum capacity to be considered. Defaults to 100 MW."""
+        cutoff (int, optional): minimum capacity to be considered. Defaults to 100 MW.
+    """
 
     paid_off = paid_off_caps.reset_index()
 
@@ -764,7 +763,7 @@ if __name__ == "__main__":
         )
 
     tech_costs = snakemake.input.tech_costs
-    plan_year = int(snakemake.wildcards["planning_horizons"]) # plan_year]
+    plan_year = int(snakemake.wildcards["planning_horizons"])  # plan_year]
     data_paths = {k: v for k, v in snakemake.input.items()}
     vre_techs = snakemake.params["vre_carriers"]
 
@@ -781,9 +780,12 @@ if __name__ == "__main__":
     # TODO check needed for coupled mode
     existing_capacities = filter_brownfield_capacities(existing_capacities, plan_year)
     # In coupled mode, capacities from REMIND are passed to PyPSA for each plan year.
-    #  The harmonized capacities file then has an extra 'year' column to keep track 
+    #  The harmonized capacities file then has an extra 'year' column to keep track
     #  of the model year (needed because REMIND can actively retire). Select year here
-    if config["run"].get("is_remind_coupled", False) or "remind_year" in existing_capacities.columns:
+    if (
+        config["run"].get("is_remind_coupled", False)
+        or "remind_year" in existing_capacities.columns
+    ):
         existing_capacities = existing_capacities.query("remind_year == @plan_year")
 
     vre_caps = existing_capacities.query("Tech in @vre_techs | Fueltype in @vre_techs")

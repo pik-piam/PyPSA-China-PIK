@@ -1,3 +1,9 @@
+"""Build population gridcell mapping for spatial analysis.
+
+This module creates population density maps and gridcell mappings for spatial
+disaggregation and analysis in the PyPSA-China energy system model.
+"""
+
 import logging
 from os import PathLike
 

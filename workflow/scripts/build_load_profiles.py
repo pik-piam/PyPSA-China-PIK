@@ -154,7 +154,7 @@ def build_daily_heat_demand_profiles(
     else:
         start_day = heat_demand_config["start_day"]
         end_day = heat_demand_config["end_day"]
-    regonal_daily_hd.loc[f"{atlite_year}-{start_day}":f"{atlite_year}-{end_day}"] = 0
+    regonal_daily_hd.loc[f"{atlite_year}-{start_day}" : f"{atlite_year}-{end_day}"] = 0
 
     # drop leap day
     regonal_daily_hd.index = pd.to_datetime(regonal_daily_hd.index)
@@ -165,7 +165,7 @@ def build_daily_heat_demand_profiles(
 
 
 def downscale_by_pop(total: pd.Series, population: pd.Series) -> pd.Series:
-    """simple downscale by population
+    """Simple downscale by population
 
     Args:
         total (pd.Series): the value to downsacale
@@ -372,14 +372,13 @@ if __name__ == "__main__":
         snakemake.input.hrly_regional_ac_load, snakemake.input.province_codes
     )
 
-    yearly_projs = read_yearly_load_projections(snakemake.input.elec_load_projs, conversion)
+    yearly_projs = read_yearly_load_projections(snakemake.input.elec_load_projs, conversion, config)
     projected_demand = project_elec_demand(hrly_MWh_load, yearly_projs, planning_horizons)
 
     with pd.HDFStore(snakemake.output.elec_load_hrly, mode="w", complevel=4) as store:
         store["load"] = projected_demand
 
     if config.get("heat_coupling", False):
-
         # load heat data
         with pd.HDFStore(snakemake.input.population_map, mode="r") as store:
             pop_map = store["population_gridcell_map"]

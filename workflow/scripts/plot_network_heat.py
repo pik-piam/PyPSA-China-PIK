@@ -22,6 +22,15 @@ logger = logging.getLogger(__name__)
 
 
 def make_handler_map_to_scale_circles_as_in(ax, dont_resize_actively=False):
+    """Create a handler map for scaling circles in legend to match plot dimensions.
+
+    Args:
+        ax: The matplotlib axes object
+        dont_resize_actively (bool, optional): If True, disable active resizing. Defaults to False.
+
+    Returns:
+        dict: Handler map for Circle patches
+    """
     fig = ax.get_figure()
 
     def axes2pt():
@@ -53,10 +62,34 @@ def make_handler_map_to_scale_circles_as_in(ax, dont_resize_actively=False):
 
 
 def make_legend_circles_for(sizes, scale=1.0, **kw):
+    """Create circles for legend with specified sizes.
+
+    Args:
+        sizes: List of sizes for the circles
+        scale (float, optional): Scale factor for circle sizes. Defaults to 1.0.
+        **kw: Additional keyword arguments passed to Circle constructor
+
+    Returns:
+        list: List of Circle objects for legend
+    """
     return [Circle((0, 0), radius=(s / scale) ** 0.5, **kw) for s in sizes]
 
 
 def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
+    """Plot an optimized network map showing generation capacities and transmission lines.
+
+    Args:
+        n: PyPSA Network object
+        plot_config (dict): Configuration dictionary with plotting parameters
+        ax: Matplotlib axes object. If None, creates new figure. Defaults to None.
+        attribute (str, optional): Network attribute to plot. Defaults to "p_nom".
+
+    Returns:
+        matplotlib.axes.Axes: The axes object with the plot
+
+    Raises:
+        ValueError: If attribute plotting is not implemented
+    """
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={"projection": ccrs.PlateCarree()})
 
@@ -211,6 +244,16 @@ def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
 
 
 def plot_total_energy_pie(n, plot_config, ax=None):
+    """Plot a pie chart showing total energy production by technology.
+
+    Args:
+        n: PyPSA Network object
+        plot_config (dict): Configuration dictionary with plotting parameters
+        ax: Matplotlib axes object. If None, creates new figure. Defaults to None.
+
+    Returns:
+        None: Modifies the axes in place
+    """
     if ax is None:
         fig, ax = plt.subplots(figsize=(5, 5))
 
@@ -235,6 +278,16 @@ def plot_total_energy_pie(n, plot_config, ax=None):
 
 
 def plot_total_cost_bar(n: Network, plot_config: dict, ax=None):
+    """Plot a stacked bar chart showing total system costs by technology.
+
+    Args:
+        n (Network): PyPSA Network object
+        plot_config (dict): Configuration dictionary with plotting parameters including cost thresholds
+        ax: Matplotlib axes object. If None, uses current axes. Defaults to None.
+
+    Returns:
+        None: Modifies the axes in place
+    """
     if ax is None:
         ax = plt.gca()
 

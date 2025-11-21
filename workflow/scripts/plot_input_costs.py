@@ -1,3 +1,9 @@
+"""Plot input cost data visualization and analysis.
+
+This module creates visualizations for technology cost data, including
+cost trends, comparisons, and other analyses for the PyPSA-China model.
+"""
+
 import logging
 import sys
 

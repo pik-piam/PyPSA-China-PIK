@@ -1,5 +1,6 @@
-import os
 import glob
+import os
+
 import pytest
 import yaml
 
@@ -10,6 +11,6 @@ config_files =  glob.glob(os.path.join(CONFIG_DIR, "*.yml")) + glob.glob(os.path
 @pytest.mark.parametrize("yaml_file", config_files)
 def test_yaml_file_valid_and_importable(yaml_file):
     # Test that the YAML file is valid and can be loaded
-    with open(yaml_file, "r") as f:
+    with open(yaml_file) as f:
         data = yaml.safe_load(f)
     assert isinstance(data, dict) or isinstance(data, list)

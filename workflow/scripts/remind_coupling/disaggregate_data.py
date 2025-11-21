@@ -23,33 +23,161 @@ from rpycpl.etl import ETL_REGISTRY, Transformation, register_etl
 logger = logging.getLogger(__name__)
 
 
-@register_etl("disagg_acload_ref")
-def disagg_ac_using_ref(
+def _get_sector_reference(
+    sector: str, data: dict, default_reference: pd.Series, year: int = None
+) -> pd.Series:
+    """Select sector-specific disaggregation shares or fallback to default.
+
+    Args:
+        sector (str): Sector name.
+        data (dict): Input data dictionary containing share series or DataFrames.
+        default_reference (pd.Series): Default reference distribution.
+        year (int, optional): Year to select from share data.
+
+    Returns:
+        pd.Series: Disaggregation shares for the given sector.
+    """
+    if sector == "ac":
+        logger.debug(f"Using default AC load distribution for sector '{sector}'")
+        return default_reference
+
+    sector_lower = sector.lower()
+    print(sector_lower)
+    ref_data = data.get(f"{sector_lower}_shares")
+    if ref_data is None:
+        logger.info(
+            f"No sector-specific shares found for '{sector}' (tried '{sector_lower}_shares'), using default AC load distribution"
+        )
+        return default_reference
+
+    logger.info(f"Using sector-specific disaggregation shares for '{sector}'")
+
+    if isinstance(ref_data, pd.DataFrame):
+        ref_data = (
+            ref_data.set_index(ref_data.columns[0])
+            if "Unnamed: 0" in ref_data.columns
+            else ref_data
+        )
+        ref_data = ref_data.astype(float)
+        col = (
+            str(int(year))
+            if year is not None and str(int(year)) in ref_data.columns.astype(str)
+            else ref_data.columns[-1]
+        )
+        logger.debug(f"Using column '{col}' from disaggregation shares DataFrame for sector '{sector}'")
+        return ref_data[col]
+
+    if isinstance(ref_data, pd.Series):
+        logger.debug(f"Using disaggregation shares Series for sector '{sector}'")
+        return ref_data.astype(float)
+
+    logger.warning(f"Unexpected share data type for sector '{sector}', using default")
+    return default_reference
+
+
+@register_etl("disagg_load_ref")
+def disagg_load_using_ref(
     data: pd.DataFrame,
     reference_data: pd.DataFrame,
     reference_year: int | str,
+    sector_coupling_enabled: bool = False,
 ) -> pd.DataFrame:
-    """Spatially Disaggregate the load using regional/nodal reference data
-        (e.g. the projections from Hu2013 as in the Zhou et al PyPSA-China version)
+    """Spatially disaggregate the load using regional/nodal reference data.
+
+    Automatically chooses between single-sector (electric-only) and multi-sector disaggregation
+    based on sector_coupling_enabled parameter.
 
     Args:
         data (pd.DataFrame): DataFrame containing the load data
         reference_data (pd.DataFrame): DataFrame containing the reference data
         reference_year (int | str): Year to use for disaggregation
+        sector_coupling_enabled (bool): Whether to use multi-sector disaggregation
+
     Returns:
-        pd.DataFrame: Disaggregated load data (Region x Year)
+        pd.DataFrame: Disaggregated load data (Region x Year) or (Province x Sector x Year)
     """
 
+    if sector_coupling_enabled:
+        logger.info("Sector coupling enabled - using multi-sector disaggregation")
+        return _disagg_multisector_load(data, reference_data, reference_year)
+    else:
+        logger.info("Sector coupling disabled - using total electricity load disaggregation")
+        return _disagg_total_load(data, reference_data, reference_year)
+
+
+def _disagg_total_load(
+    data: pd.DataFrame,
+    reference_data: pd.DataFrame,
+    reference_year: int | str,
+) -> pd.DataFrame:
+    """Disaggregate total electricity load using single-sector reference data.
+
+    Args:
+        data (pd.DataFrame): REMIND data containing loads with 'ac' load type
+        reference_data (pd.DataFrame): Regional reference data with years as columns
+        reference_year (int | str): Reference year to use for spatial disaggregation
+
+    Returns:
+        pd.DataFrame: Disaggregated AC load data with regional distribution
+    """
     regional_reference = reference_data[int(reference_year)]
     regional_reference /= regional_reference.sum()
     electricity_demand = data["loads"].query("load == 'ac'")
     electricity_demand.set_index("year", inplace=True)
-    logger.info("Disaggregating load according to Hu et al. demand projections")
+    logger.info("Disaggregating AC load according to Hu et al. demand projections")
     disagg_load = SpatialDisaggregator().use_static_reference(
         electricity_demand.value, regional_reference
     )
-
     return disagg_load
+
+
+def _disagg_multisector_load(
+    data: pd.DataFrame,
+    reference_data: pd.DataFrame,
+    reference_year: int | str,
+) -> pd.DataFrame:
+    """Disaggregate multiple sector loads using sector-specific reference data.
+
+    Args:
+        data (pd.DataFrame): REMIND data containing loads for multiple sectors
+        reference_data (pd.DataFrame): Regional reference data with years as columns
+        reference_year (int | str): Reference year to use for spatial disaggregation
+
+    Returns:
+        pd.DataFrame: Disaggregated load data with columns:
+            - province: Province name
+            - sector: Sector type (ac, ev_pass, ev_freight, etc.)
+            - year columns: Load values for each year
+    """
+    logger.info("Starting multi-sector load disaggregation")
+
+    default_reference = reference_data[int(reference_year)]
+    default_reference /= default_reference.sum()
+
+    loads_data = data["loads"]
+    all_results = []
+
+    for sector, sector_data in loads_data.groupby("sector"):
+        year_results = []
+        for year, year_data in sector_data.groupby("year"):
+            ref = _get_sector_reference(sector, data, default_reference, year=year)
+
+            disagg = SpatialDisaggregator().use_static_reference(year_data["value"], ref)
+            disagg = disagg.squeeze()
+            disagg.name = int(year)
+            year_results.append(disagg)
+
+        wide_df = pd.concat(year_results, axis=1)
+        wide_df.insert(0, "province", wide_df.index)
+        # Convert sector names to lowercase for consistency
+        sector_name = sector.lower()  # EV_pass -> ev_pass, AC -> ac
+        wide_df.insert(1, "sector", sector_name)
+        wide_df.reset_index(drop=True, inplace=True)
+
+        all_results.append(wide_df)
+
+    result = pd.concat(all_results, ignore_index=True)
+    return result
 
 
 def add_possible_techs_to_paidoff(paidoff: pd.DataFrame, tech_groups: pd.Series) -> pd.DataFrame:
@@ -126,17 +254,25 @@ if __name__ == "__main__":
         logger.warning(f"Warning: Missing data files {missing}")
 
     # ==== transform remind data =======
+    # Check if any sector coupling is enabled
+    sectors_config = snakemake.config.get("sectors", {})
+    ev_enabled = sectors_config.get("electric_vehicles", {}).get("enabled", False)
+    heat_enabled = sectors_config.get("heat_coupling", {}).get("enabled", False)
+    sector_coupling_enabled = ev_enabled or heat_enabled
+    logger.info(f"Sector coupling configuration: EV={ev_enabled}, Heat={heat_enabled}, Any={sector_coupling_enabled}")
+
     steps = config.get("disagg", [])
     results = {}
     for step_dict in steps:
         step = Transformation(**step_dict)
         logger.info(f"Running ETL step: {step.name} with method {step.method}")
-        if step.method == "disagg_acload_ref":
+        if step.method == "disagg_load_ref":
             result = ETLRunner.run(
                 step,
                 data,
                 reference_data=data["reference_load"],
                 reference_year=params["reference_load_year"],
+                sector_coupling_enabled=sector_coupling_enabled,
             )
         elif step.method == "harmonize_capacities":
             # TODO loop over years
@@ -158,9 +294,7 @@ if __name__ == "__main__":
     logger.info(f"Output files: {outp_files}")
     if "disagg_load" in results:
         logger.info(f"Exporting disaggregated load to {outp_files['disagg_load']}")
-        results["disagg_load"].to_csv(
-            outp_files["disagg_load"],
-        )
+        results["disagg_load"].to_csv(outp_files["disagg_load"], index=False)
     if "harmonize_model_caps" in results:
         logger.info("Exporting harmonized model capacities")
         results["harmonize_model_caps"].to_csv(outp_files["capacities"], index=False)
