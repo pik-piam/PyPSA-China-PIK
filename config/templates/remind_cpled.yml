@@ -136,13 +136,16 @@ sectors:
         annual_consumption: 40.0  # MWh/year
         charge_rate: 0.15  # MW
         share_charger: 0.1  # charger sharing ratio
+    
+    # Gompertz model parameters for EV demand disaggregation
+    gompertz:
+      saturation_level: 500  # Maximum vehicles per 1000 people
+                             # Source: Nature Geoscience https://doi.org/10.1038/s41561-023-01350-9
+      alpha: -5.58           # Fixed Gompertz parameter
+                             # Source: Energy Policy https://doi.org/10.1016/j.enpol.2011.01.043
+  
   sector_mapping:
-    # REMIND sector names mapped to remind export code
+    # REMIND export name mapping to sectorss
     base: ["ac"]
     electric_vehicles: ["ev_freight", "ev_pass"]
     heat_coupling: ["heat_el"]
-
-gompertz:
-  enabled: true
-  saturation_level: 500 # Nature Geoscience: https://doi.org/10.1038/s41561-023-01350-9
-  alpha: -5.58 #Energy Policy: https://doi.org/10.1016/j.enpol.2011.01.043

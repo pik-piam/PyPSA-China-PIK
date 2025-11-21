@@ -26,30 +26,31 @@ logger = logging.getLogger(__name__)
 def _get_sector_reference(
     sector: str, data: dict, default_reference: pd.Series, year: int = None
 ) -> pd.Series:
-    """Select sector-specific reference data or fallback to default.
+    """Select sector-specific disaggregation shares or fallback to default.
 
     Args:
         sector (str): Sector name.
-        data (dict): Input data dictionary containing reference series or DataFrames.
+        data (dict): Input data dictionary containing share series or DataFrames.
         default_reference (pd.Series): Default reference distribution.
-        year (int, optional): Year to select from reference data.
+        year (int, optional): Year to select from share data.
 
     Returns:
-        pd.Series: Reference distribution for the given sector.
+        pd.Series: Disaggregation shares for the given sector.
     """
     if sector == "ac":
         logger.debug(f"Using default AC load distribution for sector '{sector}'")
         return default_reference
 
     sector_lower = sector.lower()
-    ref_data = data.get(f"{sector_lower}_reference")
+    print(sector_lower)
+    ref_data = data.get(f"{sector_lower}_shares")
     if ref_data is None:
         logger.info(
-            f"No sector-specific reference data found for '{sector}' (tried '{sector_lower}_reference'), using default AC load distribution"
+            f"No sector-specific shares found for '{sector}' (tried '{sector_lower}_shares'), using default AC load distribution"
         )
         return default_reference
 
-    logger.info(f"Using sector-specific reference data for '{sector}'")
+    logger.info(f"Using sector-specific disaggregation shares for '{sector}'")
 
     if isinstance(ref_data, pd.DataFrame):
         ref_data = (
@@ -63,14 +64,14 @@ def _get_sector_reference(
             if year is not None and str(int(year)) in ref_data.columns.astype(str)
             else ref_data.columns[-1]
         )
-        logger.debug(f"Using column '{col}' from reference DataFrame for sector '{sector}'")
+        logger.debug(f"Using column '{col}' from disaggregation shares DataFrame for sector '{sector}'")
         return ref_data[col]
 
     if isinstance(ref_data, pd.Series):
-        logger.debug(f"Using reference Series for sector '{sector}'")
+        logger.debug(f"Using disaggregation shares Series for sector '{sector}'")
         return ref_data.astype(float)
 
-    logger.warning(f"Unexpected reference data type for sector '{sector}', using default")
+    logger.warning(f"Unexpected share data type for sector '{sector}', using default")
     return default_reference
 
 
@@ -255,10 +256,10 @@ if __name__ == "__main__":
     # ==== transform remind data =======
     # Check if any sector coupling is enabled
     sectors_config = snakemake.config.get("sectors", {})
-    sector_coupling_enabled = sectors_config.get("electric_vehicles", False) or sectors_config.get(
-        "heat_coupling", False
-    )
-    logger.info(f"Sector coupling configuration: {sector_coupling_enabled}")
+    ev_enabled = sectors_config.get("electric_vehicles", {}).get("enabled", False)
+    heat_enabled = sectors_config.get("heat_coupling", {}).get("enabled", False)
+    sector_coupling_enabled = ev_enabled or heat_enabled
+    logger.info(f"Sector coupling configuration: EV={ev_enabled}, Heat={heat_enabled}, Any={sector_coupling_enabled}")
 
     steps = config.get("disagg", [])
     results = {}

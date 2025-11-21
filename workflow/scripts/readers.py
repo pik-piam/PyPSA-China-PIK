@@ -9,6 +9,7 @@ import os
 
 import pandas as pd
 
+
 def aggregate_sectoral_loads(yearly_proj: pd.DataFrame, config: dict) -> pd.DataFrame:
     """Aggregate REMIND load sectors according to the model configuration.
     
@@ -34,7 +35,7 @@ def aggregate_sectoral_loads(yearly_proj: pd.DataFrame, config: dict) -> pd.Data
     """
     sectors_cfg = config.get("sectors", {})
     mapping = sectors_cfg.get("sector_mapping", {})
-    
+
     if not mapping:
         raise ValueError("Missing sector_mapping configuration")
 
@@ -47,12 +48,12 @@ def aggregate_sectoral_loads(yearly_proj: pd.DataFrame, config: dict) -> pd.Data
     if not sectors_cfg.get("electric_vehicles", {}).get("enabled", False):
         if "electric_vehicles" in mapping:
             sectors_to_include.update(mapping["electric_vehicles"])
-    
+
     # Heat coupling (if exists in the future)
     if not sectors_cfg.get("heat_coupling", {}).get("enabled", False):
         if "heat_coupling" in mapping:
             sectors_to_include.update(mapping["heat_coupling"])
-    
+
     # Filter data to only include selected sectors
     filtered = yearly_proj[yearly_proj["sector"].isin(sectors_to_include)].copy()
     if filtered.empty:
@@ -66,6 +67,7 @@ def aggregate_sectoral_loads(yearly_proj: pd.DataFrame, config: dict) -> pd.Data
     year_cols = [c for c in filtered.columns if c.isdigit()]
     result = filtered.groupby("province")[year_cols].sum()
     return result
+
 
 def read_yearly_load_projections(
     file_path: os.PathLike = "resources/data/load/Province_Load_2020_2060.csv",

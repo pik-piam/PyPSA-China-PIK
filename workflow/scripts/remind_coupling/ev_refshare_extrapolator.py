@@ -1,7 +1,8 @@
-"""EV sector reference data extrapolator.
+"""EV provincial disaggregation share extrapolator.
 
-Extrapolates future regional EV shares using a Gompertz model fitted to
-historical vehicle ownership, GDP, and population data.
+Extrapolates future provincial EV shares using a Gompertz model fitted to
+historical vehicle ownership, GDP, and population data. These shares are used
+to spatially disaggregate national REMIND EV demand to provincial level.
 """
 
 import logging
@@ -173,18 +174,19 @@ def _load_future_data(input_files: dict, years: list) -> pd.DataFrame:
 
 
 def extrapolate_reference(years: list, input_files: dict, output_dir: str, config: dict = None):
-    """Extrapolate EV sector reference data using Gompertz model.
+    """Extrapolate provincial EV disaggregation shares using Gompertz model.
 
     Args:
-        years: Target years for projections (e.g., [2030, 2040, 2050])
-        input_files: Dictionary of input data file paths with keys:
+        years (list): Target years for projections (e.g., [2030, 2040, 2050])
+        input_files (dict): Dictionary of input data file paths with keys:
             - 'historical_gdp': Historical GDP by province
             - 'historical_pop': Historical population by province
             - 'historical_cars': Historical vehicle ownership by province
             - 'ssp2_pop': SSP2 future population projections
             - 'ssp2_gdp': SSP2 future GDP projections
-        output_dir: Output directory for results (CSV files will be saved here)
-        config: Optional Gompertz model parameters:
+        output_dir (str): Output directory for results (CSV files will be saved here)
+        config (dict, optional): Gompertz model parameters from 
+            sectors.electric_vehicles.gompertz configuration:
             - 'saturation_level': Maximum vehicles per 1000 people (default: 500)
             - 'alpha': Fixed Gompertz parameter (default: -5.58)
     
@@ -193,7 +195,7 @@ def extrapolate_reference(years: list, input_files: dict, output_dir: str, confi
         - ev_passenger_shares.csv: Provincial shares of passenger EV demand
         - ev_freight_shares.csv: Provincial shares of freight EV demand
     """
-    logger.info("Extrapolating EV sector reference data")
+    logger.info("Extrapolating provincial EV disaggregation shares using Gompertz model")
 
     model = GompertzModel(
         saturation_level=config.get("saturation_level", 500)
@@ -226,4 +228,4 @@ def extrapolate_reference(years: list, input_files: dict, output_dir: str, confi
     shares_df.to_csv(f"{output_dir}/ev_passenger_shares.csv")
     shares_df.to_csv(f"{output_dir}/ev_freight_shares.csv")
 
-    logger.info(f"EV reference data saved to {output_dir}")
+    logger.info(f"EV disaggregation shares saved to {output_dir}")

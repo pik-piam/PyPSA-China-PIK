@@ -5,13 +5,12 @@
 
 run:
   name: "unamed_default_run"
-
 foresight: "overnight"
 
 paths:
   results_dir: "results/"
   costs_dir: "resources/data/costs/default"
-  yearly_regional_load:
+  yearly_regional_load: 
     ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
     # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
@@ -21,8 +20,8 @@ edge_paths:
   current+FCG: "resources/data/grids/edges_current_FCG.csv"
   current+Neighbor: "resources/data/grids/edges_current_neighbor.csv"
 
-
-scenario:
+    
+scenario: 
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
@@ -37,7 +36,7 @@ scenario:
   heating_demand: ["positive"]
 
 # emission reduction scenarios (can be selected with scenario.co2_pathway)
-co2_scenarios:
+co2_scenarios: 
   exp175default:
     control: "reduction" # price | reduction | budget | None
     pathway:
@@ -91,7 +90,7 @@ atlite:
       dy: 5
       weather_year: 2020
 
-# renewable potentials and availabilities from Atlite.
+# renewable potentials and availabilities from Atlite. 
 # !CARE cutout should match atlite.cutout_name above
 renewable:
   onwind:
@@ -102,7 +101,7 @@ renewable:
     # bin by capacity factor
     resource_classes:
       min_cf_delta: 0.05
-      n: 3
+      n: 3  
     capacity_per_sqkm: 3 # ScholzPhd Tab 4.3.1: 10MW/km^2
     potential: simple # or conservative
     natura: false
@@ -176,19 +175,16 @@ Techs:
   store_techs: ["H2","battery","water tanks","PHS"]
   non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
   hydrogen_lines: true
-  coal_ccs_retrofit: false # currently myopic pathway only.  CC = co2 cap
+  coal_ccs_retrofit: false # currently myopic pathway only.  CC = co2 cap 
 
 ## add components (overwrites vre tech choice)
-
+heat_coupling: true
 add_biomass: True
 add_hydro: True
 add_H2: True
 add_methanation: True
 line_losses: True
 no_lines: False
-
-
-heat_coupling: false
 
 hydro_dams:
   dams_path: "resources/data/hydro/dams_large.csv"
@@ -308,9 +304,9 @@ security:
   
 # brownfield options
 existing_capacities:
-  add: false # whether to add brownfield capacities
+  add: True # whether to add brownfield capacities
   grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  collapse_years: True # Treat as a single unit when preparing & solving network
+  collapse_years: True # Treat as a single unit when preparing & solving network 
   threshold_capacity: 80 # MW
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
   node_assignment: simple # simple | gps
@@ -323,20 +319,20 @@ operational_reserve:
   contingency: 300000 # MW. Additional reserves on top of fractions
 
 # TODO integrate in workflow: split_provinces is currently not supported by build_loads and reporting
-nodes:
+nodes: 
   split_provinces: False # split (some) provinces (admin l1) using admin l2  (counties/prefectures)
   # exclude currently only applies if split_provinces is True, will be fixed with integrartion to workflow
   exclude_provinces: ["Macau", "HongKong"] # list of provinces to exclude from splitting
   splits:
     # adminl2 groups per adminl1. {adminl1: {custom_name: [adminl2_names],..}}
     InnerMongolia:
-      West:
+      West: 
         - "Hulunbuir"
         - "Xing'an"
         - "Tongliao"
         - "Chifeng"
         - "Xilin Gol"
-      East:
+      East: 
         - "Alxa"
         - "Baotou"
         - "Baynnur"
@@ -352,8 +348,7 @@ io:
     zlib: True
 
 # simplification of shapes to save memory. If using GPS for plant node assignment a lower value is preferable.
-fetch_regions:
-  simplify_tol:
+fetch_regions:  
+  simplify_tol: 
     eez: 0.5
     land: 0.05
-

@@ -114,7 +114,7 @@ def main():
         "ssp2_gdp": snakemake.input.ssp2_gdp,
     }
 
-    output_dir = Path(snakemake.output.ev_passenger_reference).parent
+    output_dir = Path(snakemake.output.ev_passenger_shares).parent
 
     generator = SectorReferenceGenerator(config)
     generator.extrapolate_references(years, input_files, str(output_dir))

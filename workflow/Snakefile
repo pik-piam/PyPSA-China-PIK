@@ -96,7 +96,7 @@ rule process_config:
 rule build_population:
     input:
         # China national bureau of statistics: https://data.stats.gov.cn/easyquery.htm?cn=E0103
-        population="resources/data/population/History_POP.csv"
+        population="resources/data/population/historical_population.csv"
     output:
         population=DERIVED_COMMON+"/"+"population/population.h5"
     threads: 1

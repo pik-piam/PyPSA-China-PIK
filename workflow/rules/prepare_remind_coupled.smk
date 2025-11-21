@@ -7,26 +7,26 @@ REMIND_REGION = config["run"].get("remind", {}).get("region")
 EV_ENABLED = config.get("sectors", {}).get("electric_vehicles", {}).get("enabled", False)
 
 
-# Only extrapolate EV references if sector coupling is enabled
+# Only extrapolate EV provincial disaggregation shares if sector coupling is enabled
 if EV_ENABLED:
     rule extrapolate_regional_shares:
         """
-        Extrapolate reference data files for different departments
+        Extrapolate provincial disaggregation shares for different sectors
         """
         params:
-            gompertz_config=config.get("gompertz", {}),
+            gompertz_config=config.get("sectors", {}).get("electric_vehicles", {}).get("gompertz", {}),
             years=config["scenario"]["planning_horizons"],
         input:
-            historical_gdp="resources/data/load/History_GDP.csv",
-            historical_pop="resources/data/population/History_POP.csv",
-            historical_cars="resources/data/load/History_private_car.csv",
-            ssp2_pop="resources/data/load/SSPs_POP_Prov_v2.xlsx",
-            ssp2_gdp="resources/data/load/SSPs_GDP_Prov_v2.xlsx",
+            historical_gdp="resources/data/population/historical_gdp.csv",
+            historical_pop="resources/data/population/historical_population.csv",
+            historical_cars="resources/data/transport/History_private_car.csv",
+            ssp2_pop="resources/data/population/SSPs_POP_Prov_v2.xlsx",
+            ssp2_gdp="resources/data/population/SSPs_GDP_Prov_v2.xlsx",
         output:
-            ev_passenger_reference=DERIVED_DATA + "/remind/references/ev_passenger_shares.csv",
-            ev_freight_reference=DERIVED_DATA + "/remind/references/ev_freight_shares.csv",
+            ev_passenger_shares=DERIVED_COMMON + "/transport/ev_passenger_shares.csv",
+            ev_freight_shares=DERIVED_COMMON + "/transport/ev_freight_shares.csv",
         log:
-            LOG_DIR + "/remind_coupling/extrapolate_references.log",
+            LOGS_COMMON + "/remind_coupling/extrapolate_regional_shares.log",
         conda:
             "remind-coupling"
         script:
@@ -101,8 +101,8 @@ rule disaggregate_remind_data:
         loads=DERIVED_DATA + "/remind/yrly_loads.csv",
         # todo switch to default?
         reference_load="resources/data/load/Provincial_Load_2020_2060_MWh.csv",
-        ev_pass_reference=DERIVED_DATA + "/remind/references/ev_passenger_shares.csv" if EV_ENABLED else [],
-        ev_freight_reference=DERIVED_DATA + "/remind/references/ev_freight_shares.csv" if EV_ENABLED else [],
+        ev_pass_shares=DERIVED_COMMON + "/transport/ev_passenger_shares.csv" if EV_ENABLED else [],
+        ev_freight_shares=DERIVED_COMMON + "/transport/ev_freight_shares.csv" if EV_ENABLED else [],
     output:
         capacities=DERIVED_DATA + "/remind/harmonized_capacities/capacities.csv",
         paid_off=DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv",
