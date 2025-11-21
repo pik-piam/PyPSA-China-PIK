@@ -703,7 +703,9 @@ def add_voltage_links(network: pypsa.Network, config: dict):
 
     line_cost = (
         lengths * costs.at["HVDC overhead", "capital_cost"] * FOM_LINES * n_years
-    ) + costs.at["HVDC inverter pair", "capital_cost"]  # /MW
+    ) + costs.at[
+        "HVDC inverter pair", "capital_cost"
+    ]  # /MW
 
     # ==== lossy transport model (split into 2) ====
     # NB this only works if there is an equalising constraint, which is hidden in solve_ntwk

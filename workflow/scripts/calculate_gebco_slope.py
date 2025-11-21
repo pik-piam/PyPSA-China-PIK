@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+# SPDX-FileCopyrightText: : 2025 The PyPSA-China Authors
+# SPDX-License-Identifier: MIT
+
+"""
+Calculate slope from GEBCO bathymetry/altimetry data.
+
+This script:
+1. Reprojects GEBCO data to Mollweide (ESRI:54009) for accurate slope calculation
+2. Calculates slope in percent using gdaldem
+3. Reprojects slope back to EPSG:4326 for compatibility with atlite
+
+Requires: GDAL (gdalwarp, gdaldem)
+"""
+
+import subprocess
+import os
+import sys
+import logging
+from pathlib import Path
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+
+def setup_proj_environment():
+    """Set up PROJ_LIB environment variable for GDAL to find projection database."""
+    if "PROJ_LIB" not in os.environ:
+        if "CONDA_PREFIX" in os.environ:
+            proj_lib = os.path.join(os.environ["CONDA_PREFIX"], "share", "proj")
+            if os.path.isdir(proj_lib):
+                os.environ["PROJ_LIB"] = proj_lib
+                logger.info(f"Set PROJ_LIB to: {proj_lib}")
+            else:
+                logger.warning(f"PROJ data directory not found at: {proj_lib}")
+        else:
+            logger.warning("CONDA_PREFIX not set, PROJ_LIB may not be configured")
+    else:
+        logger.info(f"PROJ_LIB already set to: {os.environ['PROJ_LIB']}")
+
+
+def run_command(cmd: str, description: str):
+    """Run a shell command and log the output.
+
+    Args:
+        cmd: Shell command to execute.
+        description: Human-readable description of the command.
+
+    Returns:
+        CompletedProcess instance from subprocess.run.
+
+    Raises:
+        RuntimeError: If the command fails (non-zero return code).
+    """
+    logger.info(f"{description}...")
+    logger.debug(f"Command: {cmd}")
+
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, env=os.environ.copy())
+
+    if result.returncode != 0:
+        logger.error(f"Command failed with return code {result.returncode}")
+        logger.error(f"STDERR: {result.stderr}")
+        raise RuntimeError(f"{description} failed")
+
+    if result.stdout:
+        logger.debug(f"STDOUT: {result.stdout}")
+    if result.stderr:
+        logger.warning(f"STDERR: {result.stderr}")
+
+    logger.info(f"✓ {description} completed successfully")
+    return result
+
+
+def calculate_slope(input_gebco, output_slope, threads=4, log_file=None):
+    """Calculate slope from GEBCO data.
+
+    The slope is calculated in an equal-area projection (Mollweide/ESRI:54009)
+    to ensure accurate slope values, then reprojected to EPSG:4326 for use
+    with atlite.
+
+    Args:
+        input_gebco: Path to input GEBCO GeoTIFF file.
+        output_slope: Path to output slope NetCDF file.
+        threads: Number of threads for gdalwarp. Default is 4.
+        log_file: Path to log file for appending command output (optional).
+
+    Raises:
+        FileNotFoundError: If input GEBCO file does not exist.
+        RuntimeError: If any GDAL command fails.
+    """
+    input_gebco = Path(input_gebco)
+    output_slope = Path(output_slope)
+
+    if not input_gebco.exists():
+        raise FileNotFoundError(f"Input GEBCO file not found: {input_gebco}")
+
+    # Create output directory if needed
+    output_slope.parent.mkdir(parents=True, exist_ok=True)
+
+    # Set up PROJ environment for GDAL
+    setup_proj_environment()
+
+    # Define temporary file paths
+    mollweide_file = output_slope.parent / (output_slope.stem + "_mollweide.nc")
+    slope_mollweide_file = output_slope.parent / (output_slope.stem + "_mollweide_slope.nc")
+
+    logger.info("=" * 60)
+    logger.info("GEBCO Slope Calculation Pipeline")
+    logger.info("=" * 60)
+    logger.info(f"Input:   {input_gebco}")
+    logger.info(f"Output:  {output_slope}")
+    logger.info(f"Threads: {threads}")
+    logger.info("=" * 60)
+
+    try:
+        # Step 1: Reproject to Mollweide (equal-area projection)
+        logger.info("Reprojecting to Mollweide...")
+        cmd1 = (
+            f"gdalwarp -multi -wo NUM_THREADS={threads} "
+            "-of netCDF -co FORMAT=NC4 "
+            "-s_srs 'EPSG:4326' -t_srs 'ESRI:54009'"
+            f" {input_gebco} {mollweide_file}"
+        )
+        run_command(cmd1, "Step 1: Reproject to Mollweide (ESRI:54009)")
+        logger.info("Calculating slope...")
+        # Step 2: Calculate slope in percent
+        cmd2 = (
+            f"gdaldem slope -p "
+            f"-of netCDF -co FORMAT=NC4 "
+            f"{mollweide_file} {slope_mollweide_file}"
+        )
+        run_command(cmd2, "Step 2: Calculate slope (percent)")
+
+        # Step 3: Reproject back to EPSG:4326 with compression
+        cmd3 = (
+            f"gdalwarp -multi -wo NUM_THREADS={threads} "
+            f"-of netCDF -co FORMAT=NC4 "
+            f"-co COMPRESS=DEFLATE -co ZLEVEL=1 "
+            f"-s_srs 'ESRI:54009' -t_srs 'EPSG:4326' "
+            f"{slope_mollweide_file} {output_slope}"
+        )
+        run_command(cmd3, "Step 3: Reproject to EPSG:4326")
+
+        logger.info("=" * 60)
+        logger.info("✓ Slope calculation completed successfully!")
+        logger.info(f"Output: {output_slope}")
+        logger.info("=" * 60)
+
+    except Exception as e:
+        logger.error(f"Pipeline failed: {e}")
+        raise
+
+    finally:
+        # Clean up intermediate files
+        logger.info("Cleaning up intermediate files...")
+        for temp_file in [mollweide_file, slope_mollweide_file]:
+            if temp_file.exists():
+                temp_file.unlink()
+                logger.info(f"  Removed: {temp_file.name}")
+
+
+if __name__ == "__main__":
+    # When called from snakemake
+    if "snakemake" in globals():
+        calculate_slope(
+            input_gebco=snakemake.input.gebco,
+            output_slope=snakemake.output.slope,
+            threads=snakemake.threads,
+            log_file=snakemake.log[0] if snakemake.log else None,
+        )
+    # When called from command line
+    elif len(sys.argv) >= 3:
+        input_file = sys.argv[1]
+        output_file = sys.argv[2]
+        threads = int(sys.argv[3]) if len(sys.argv) > 3 else 4
+        calculate_slope(input_file, output_file, threads)
+    else:
+        print("Usage: python calculate_gebco_slope.py <input_gebco> <output_slope> [threads]")
+        sys.exit(1)
