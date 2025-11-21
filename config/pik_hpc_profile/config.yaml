@@ -1,6 +1,6 @@
 # A cluster profile for the PIK HPC
 # Profile allows to activeate the gurobi license via an ssh tunnel and solve pypsa
-# adapted from https://github.com/jdblischak/smk-simple-slurm/ 
+# adapted from https://github.com/jdblischak/smk-simple-slurm/
 # & jhemmp https://github.com/aodenweller/pypsa-eur/blob/remind_develop_pypsa_v0.10.0/cluster_config/config.yaml
 # PIK-2024
 
@@ -124,7 +124,7 @@ set-resources:
 
 # GROUPS
 
-groups: 
+groups:
   prep_capacities: prepare_baseyear_capacities
   build_load_profiles: build_load
   prepare_networks: prep_network
@@ -132,7 +132,7 @@ groups:
   make_summary: summary
   retrieve_cutout: retrieve
   retrieve_region_shapes: retrieve
-  retrieve_rasters: retrieve 
+  retrieve_rasters: retrieve
   retrieve_Build_up_raster: retrieve
   retrieve_Grass_raster: retrieve
   retrieve_Bare_raster: retrieve

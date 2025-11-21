@@ -9,7 +9,11 @@ import logging
 import os.path
 import logging
 
-from scripts._helpers import PathManager, get_cutout_params, ConfigManager
+from scripts._helpers import (
+    PathManager,
+    get_cutout_params,
+    ConfigManager,
+)
 
 # NB: duplicated parameters will be overwritten by the last read cfg
 
@@ -65,7 +69,7 @@ storage:
 if config["run"].get("is_test", False):
     rule test_workflow:
         input:
-            expand(RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc',   
+            expand(RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc',
             **{k: v for k, v in config["scenario"].items() if k != "planing_horizons"},
             ),
 
@@ -78,7 +82,7 @@ elif config["foresight"] in ["overnight", "myopic"]:
             ),
             # network plot
             expand(
-                RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.png",      
+                RESULTS_DIR+"/plots/networks/ntwk_{planning_horizons}-cost.png",
                 **config["scenario"]
             ),
             expand(RESULTS_DIR+"/plots/statistics_{planning_horizons}/", **config["scenario"]),
@@ -94,8 +98,8 @@ rule process_config:
 #    ======== Workflow ===========
 rule build_population:
     input:
-        # https://www.stats.gov.cn/sj/ndsj/2023/indexeh.htm
-        population="resources/data/population/population_from_national_data.csv"
+        # China national bureau of statistics: https://data.stats.gov.cn/easyquery.htm?cn=E0103
+        population="resources/data/population/historical_population.csv"
     output:
         population=DERIVED_COMMON+"/"+"population/population.h5"
     threads: 1
@@ -147,7 +151,7 @@ rule build_powerplants:
     threads: 2 #TODO 1?
     script: "scripts/build_powerplants.py"
 
-# TODO find a way to turn off if heat coupling is off 
+# TODO find a way to turn off if heat coupling is off
 rule build_solar_thermal_profiles:
     input:
         cutout=CUTOUT_PATH,
@@ -277,6 +281,32 @@ rule build_load_profiles:
     resources: mem_mb = ATLITE_NPROCESSES * 5000
     script: "scripts/build_load_profiles.py"
 
+# Only build transport demand if electric vehicles are enabled
+if config.get("sectors", {}).get("electric_vehicles", False):
+    if not config["run"].get("is_remind_coupled", False):
+        raise ValueError(
+            "Electric vehicles require REMIND data for transport demand.\n"
+            "Please choose one of the following:\n"
+            "1. Set 'run.is_remind_coupled: true' and provide REMIND data files\n"
+            "2. Set 'sectors.electric_vehicles: false' to run electricity-only model"
+        )
+    rule build_transport_demand:
+        params:
+            snapshots=config["snapshots"],
+        input:
+            charging_data_passenger="resources/data/transport/charging_ratio_passenger.csv",
+            charging_data_freight="resources/data/transport/charging_ratio_freight.csv",
+            sectoral_load=DERIVED_DATA + "/remind/ac_load_disagg.csv" if config["run"].get("is_remind_coupled", False) else DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
+
+        output:
+            charging_demand_passenger=DERIVED_DATA + "/transport/charging_demand_passenger_{planning_horizons}.csv",
+            charging_demand_freight=DERIVED_DATA + "/transport/charging_demand_freight_{planning_horizons}.csv",
+        threads: 1
+        resources: mem_mb=2000
+        log: LOG_DIR + "/build_transport_demand/transport_demand_{planning_horizons}.log"
+        script: "scripts/build_transport_demand.py"
+
+
 rule build_biomass_potential:
     input:
         # from doi.org/10.1038/s41467-021-23282-x
@@ -302,7 +332,7 @@ rule prepare_baseyear_capacities:
         tech_costs=path_manager.costs_dir() + f"/costs_{BASEYEAR}.csv",
         **{f"{tech}": DERIVED_COMMON + f"/existing_infrastructure/{tech}_capacity.csv"
             for tech in config['existing_capacities']['techs']},
-    output: 
+    output:
         installed_capacities = DERIVED_DATA+ '/existing_infrastructure/capacities.csv',
     threads: 1
     resources: mem_mb=2000
@@ -314,6 +344,7 @@ resource_class_cfg = {tech: config["renewable"][tech]["resource_classes"] for te
 rsc_params = {key : "_".join([f"{k}{v}" for k, v in resource_class_cfg[key].items()]) for key in resource_class_cfg}
 if config["foresight"] in ["overnight"]:
     add_brownfield = "-brownfield" if config["existing_capacities"].get("add", False) else ""
+    add_sectors = "-sector" if config.get("sectors", {}).get("electric_vehicles", False) else ""
 
     rule prepare_networks:
         input:
@@ -336,36 +367,53 @@ if config["foresight"] in ["overnight"]:
         resources: mem_mb=10000
         script: "scripts/prepare_network.py"
 
+    # Only create sector network rule if electric vehicles are enabled
+    if config.get("sectors", {}).get("electric_vehicles", False):
+        rule add_sectors:
+            input:
+                network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
+                transport_demand_passenger=DERIVED_DATA + "/transport/charging_demand_passenger_{planning_horizons}.csv",
+                transport_demand_freight=DERIVED_DATA + "/transport/charging_demand_freight_{planning_horizons}.csv",
+            output:
+                network=RESULTS_DIR+ '/prenetworks-sector/ntwk_{planning_horizons}.nc',
+            threads: 1
+            resources: mem_mb=8000
+            script: "scripts/add_sectors.py"
+
     paidoff_caps = DERIVED_DATA + "/remind/harmonized_capacities/paid_off_capacities.csv"
     if not config["run"].get("is_remind_coupled", False):
         paidoff_caps = DERIVED_DATA+ '/existing_infrastructure/capacities.csv'
-    rule add_existing_baseyear:
-        params:
-            baseyear = BASEYEAR,
-            add_build_year_to_new_assets = False,
-            vre_carriers = ["onwind", "offwind", "solar"],
-        input:
-            network=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
-            tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
-            cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
-            installed_capacities = path_manager.infrastructure() + '/capacities.csv',
-            paid_off_capacities_remind = paidoff_caps,
-        output: RESULTS_DIR+ '/prenetworks-brownfield/ntwk_{planning_horizons}.nc'
-        threads: 1
-        resources: mem_mb=2000
-        script: "scripts/add_existing_baseyear.py"
+
+    # Only create add_existing_baseyear rule if existing_capacities.add is True
+    # Otherwise, the network from prepare_networks or add_sectors is used directly
+    if config["existing_capacities"].get("add", False):
+        rule add_existing_baseyear:
+            params:
+                baseyear = BASEYEAR,
+                add_build_year_to_new_assets = False,
+                vre_carriers = ["onwind", "offwind", "solar"],
+            input:
+                network=RESULTS_DIR+ f'/prenetworks{add_sectors}/' +'ntwk_{planning_horizons}.nc',
+                tech_costs=COSTS_DATA + "/costs_{planning_horizons}.csv",
+                cop_name=DERIVED_CUTOUT + "/heating/hp_cop.h5",
+                installed_capacities = path_manager.infrastructure() + '/capacities.csv',
+                paid_off_capacities_remind = paidoff_caps,
+            output: RESULTS_DIR+ f'/prenetworks{add_sectors}{add_brownfield}/' +'ntwk_{planning_horizons}.nc'
+            threads: 1
+            resources: mem_mb=2000
+            script: "scripts/add_existing_baseyear.py"
 
     rule solve_networks:
         params:
             solving = config["solving"],
         input:
-            network_name=RESULTS_DIR+ f'/prenetworks{add_brownfield}/' +'ntwk_{planning_horizons}.nc',
+            network_name=RESULTS_DIR+ f'/prenetworks{add_sectors}{add_brownfield}/' +'ntwk_{planning_horizons}.nc',
         output:
             network_name=RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc'
         log:
             solver = LOG_DIR + "/solve_network_postnetworks/ntwk_{planning_horizons}.log"
         threads: 4
-        resources: mem_mb=35000
+        resources: mem_mb=90000
         script: "scripts/solve_network.py"
 
 
@@ -382,7 +430,7 @@ elif config["foresight"] == "myopic":
             # TODO: metadata for file, why does it need to be h5?
             tech_costs= COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON +"/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
+            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc"
                 for tech in config['renewable']},
 
         output:
@@ -404,7 +452,7 @@ elif config["foresight"] == "myopic":
             elec_load=DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
             tech_costs= COSTS_DATA + "/costs_{planning_horizons}.csv",
             province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
-            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc" 
+            **{f"profile_{tech}": DERIVED_CUTOUT +f"/profile_{tech}-{rsc_params[tech]}.nc"
                 for tech in config['renewable']},
         output:
             network_name=RESULTS_DIR+ '/prenetworks/ntwk_{planning_horizons}.nc',
@@ -503,7 +551,9 @@ onerror:
 onsuccess:
     res_dir = expand(RESULTS_DIR, **config["scenario"])[0]
     try:
+        import os
+        os.makedirs(res_dir, exist_ok=True)
         with open(res_dir + "/run_config.yaml", "w") as f:
             yaml.dump(config, f )
-    except TypeError as e:
+    except (TypeError, FileNotFoundError) as e:
         logging.warning(f"Could not copy config file: {e}")

@@ -246,6 +246,86 @@ def add_co2_capture_support(
     )
 
 
+def add_fuel_subsidies(n: pypsa.Network, subsidy_config: dict):
+    """Apply fuel subsidies to generators as a post-processing step.
+    
+    Subsidies are applied to generators based on their carrier and location.
+    The subsidy values (in EUR/MWh fuel) are divided by efficiency to convert
+    to electricity basis (EUR/MWhel). Links are not modified as they get their
+    fuel from generators.
+    
+    Args:
+        n (pypsa.Network): The network object to modify.
+        subsidy_config (dict): Subsidy configuration dictionary with keys like
+            "coal" or "gas", each containing a dict mapping provinces to subsidy values.
+    """
+    if not subsidy_config:
+        return
+    
+    carriers = subsidy_config.keys()
+    
+    for carrier in carriers:
+        subs_dict = subsidy_config.get(carrier, {})
+        if not subs_dict:
+            continue
+        
+        # Convert subsidy dict to Series indexed by province
+        subs = pd.Series(subs_dict, dtype=float)
+        
+        # Check that subsidies are non-positive (negative = subsidy, positive would be a reward)
+        if (subs > 0).any():
+            raise ValueError(
+                f"Positive subsidy values found for carrier '{carrier}': "
+                f"{subs[subs > 0].to_dict()}. Only zero or negative values are allowed "
+                f"(negative reduces marginal cost, positive would increase it)."
+            )
+        
+        # Check if location column exists
+        if "location" not in n.generators.columns:
+            logger.warning(
+                f"Location column not found in generators. "
+                f"Cannot apply subsidies for carrier '{carrier}'."
+            )
+            continue
+        
+        # Query generators with matching carrier and location in subsidy provinces
+        mask = n.generators.query(
+            f"carrier == @carrier and location in @subs.index"
+        ).index
+        
+        if mask.empty:
+            logger.warning(
+                f"No generators found with carrier '{carrier}' and locations "
+                f"in {list(subs.index)}. Skipping subsidy application."
+            )
+            continue
+        
+        # Merge subsidies with generators by location
+        gen_locs = n.generators.loc[mask, "location"]
+        subs_to_apply = gen_locs.map(subs).fillna(0.0)
+        
+        # Check if all provinces were found
+        missing_provs = set(subs.index) - set(gen_locs.unique())
+        if missing_provs:
+            logger.warning(
+                f"Subsidies specified for provinces {missing_provs} but no "
+                f"generators found with carrier '{carrier}' in these provinces."
+            )
+        
+        # Apply subsidies: divide by efficiency to convert from fuel to electricity basis
+        # Handle cases where efficiency might be NaN or missing
+        efficiencies = n.generators.loc[mask, "efficiency"].fillna(1.0)
+        subs_electricity = subs_to_apply / efficiencies
+        
+        # Subtract subsidy from marginal cost (negative subsidy = cost reduction)
+        n.generators.loc[mask, "marginal_cost"] -= subs_electricity
+        
+        logger.info(
+            f"Applied subsidies for carrier '{carrier}' to {len(mask)} generators "
+            f"in provinces {sorted(gen_locs.unique())}"
+        )
+
+
 def add_conventional_generators(
     network: pypsa.Network,
     nodes: pd.Index,
@@ -966,7 +1046,6 @@ def add_heat_coupling(
         and config["add_H2"]
         and config.get("heat_coupling", False)
     ):
-
         htpr = config["chp_parameters"]["OCGT"]["heat_to_power"]
 
         network.add(
@@ -1068,7 +1147,6 @@ def add_heat_coupling(
         )
 
     if "CHP coal" in config["Techs"]["conv_techs"]:
-
         logger.info("Adding CHP coal to network")
         # Extraction mode super critical CHP -> heat to power ratio is maximum
         # in ideal model there would be plant level "commitment" of extraction mode
@@ -1410,27 +1488,6 @@ def add_hydro(
     )
 
 
-# TODO fix timezones/centralsie, think Shanghai won't work on its own
-def generate_periodic_profiles(
-    dt_index=None,
-    col_tzs=pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]),
-    weekly_profile=range(24 * 7),
-):
-    """Give a 24*7 long list of weekly hourly profiles, generate this
-    for each country for the period dt_index, taking account of time
-    zones and Summer Time.
-    """
-
-    weekly_profile = pd.Series(weekly_profile, range(24 * 7))
-    # TODO fix, no longer take into accoutn summer time
-    # ALSO ADD A TODO in base_network
-    week_df = pd.DataFrame(index=dt_index, columns=col_tzs.index)
-    for ct in col_tzs.index:
-        week_df[ct] = [24 * dt.weekday() + dt.hour for dt in dt_index.tz_localize(None)]
-        week_df[ct] = week_df[ct].map(weekly_profile)
-    return week_df
-
-
 def prepare_network(
     config: dict,
     costs: pd.DataFrame,
@@ -1487,11 +1544,14 @@ def prepare_network(
     add_carriers(network, config, costs)
 
     # load electricity demand data
-    demand_path = paths["elec_load"].replace("{planning_horizons}", f"{cost_year}")
-    with pd.HDFStore(demand_path, mode="r") as store:
-        load = store["load"].loc[network.snapshots, PROV_NAMES]  # MWHr
+    with pd.HDFStore(paths["elec_load"], mode="r") as store:
+        load = store["load"].loc[network.snapshots, PROV_NAMES]
 
     network.add("Load", nodes, bus=nodes, p_set=load[nodes])
+
+    # NOTE: EV components are now handled by add_sectors rule (add_sectors.py)
+    # This allows the workflow to run with or without sector coupling
+    logger.info("EV components will be added by add_sectors rule if sector coupling is enabled")
 
     ws_carriers = [c for c in config["Techs"]["vre_techs"] if c.find("wind") >= 0 or c == "solar"]
     add_wind_and_solar(network, ws_carriers, paths, planning_horizons, costs)
@@ -1637,6 +1697,12 @@ def prepare_network(
         add_voltage_links(network, config)
 
     assign_locations(network)
+    
+    # Apply fuel subsidies as post-processing step
+    subsidy_config = config.get("subsidies", {})
+    if subsidy_config:
+        add_fuel_subsidies(network, subsidy_config)
+    
     return network
 
 

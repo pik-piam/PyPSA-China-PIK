@@ -5,7 +5,10 @@ target-version = "py312"
 exclude = [
     "**/*.ipynb",
     "workflow/notebooks/**",
+    "Remind-PyPSA-coupling/**",
+    "tests/**"
 ]
+
 
 [lint]
 select = [
