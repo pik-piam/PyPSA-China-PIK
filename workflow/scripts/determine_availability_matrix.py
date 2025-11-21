@@ -109,6 +109,20 @@ if __name__ == "__main__":
                 crs=4326,
             )
 
+    if params.get("max_slope"):
+        func = functools.partial(np.less, params["max_slope"])
+        excluder.add_raster(
+            snakemake.input.gebco_slope,
+            codes=func,
+        )
+
+    if params.get("max_altitude"):
+        func = functools.partial(np.less, params["max_altitude"])
+        excluder.add_raster(
+            snakemake.input.gebco,
+            codes=func,
+            nodata=-32767,
+        )
     # Note: Built-up area handling is integrated into land_cover_codes in config
     # To exclude built-up areas, remove code 50 from the land_cover_codes list
 
@@ -117,11 +131,11 @@ if __name__ == "__main__":
         # lambda not supported for atlite + multiprocessing
         # use named function np.greater with partially frozen argument instead
         # and exclude areas where: -max_depth > grid cell depth
-        excluder.add_raster(snakemake.input.gebco, codes=func, crs=4326, nodata=-1000)
+        excluder.add_raster(snakemake.input.gebco, codes=func, nodata=-32767)
 
     if params.get("min_depth"):
         func = functools.partial(np.greater, -params["min_depth"])
-        excluder.add_raster(snakemake.input.gebco, codes=func, crs=4326, nodata=-1000, invert=True)
+        excluder.add_raster(snakemake.input.gebco, codes=func, nodata=-32767, invert=True)
 
     if "min_shore_distance" in params:
         buffer = params["min_shore_distance"]
