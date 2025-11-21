@@ -10,6 +10,12 @@ logger = logging.getLogger(__name__)
 
 
 def add_carrier_if_missing(n: pypsa.Network, carrier_name: str):
+    """Add a carrier to the network if it doesn't already exist.
+    
+    Args:
+        n (pypsa.Network): PyPSA network to modify.
+        carrier_name (str): Name of the carrier to add.
+    """
     if carrier_name not in n.carriers.index:
         n.add("Carrier", carrier_name)
         logger.debug("Carrier '%s' added to network.", carrier_name)
@@ -18,6 +24,28 @@ def add_carrier_if_missing(n: pypsa.Network, carrier_name: str):
 def attach_simple_ev(
     n: pypsa.Network, p_set: pd.DataFrame, nodes: pd.Index, options: dict, ev_type: str
 ):
+    """Attach electric vehicle loads and chargers to PyPSA network.
+    
+    Creates a simplified EV model with direct charging (no battery storage).
+    For each node, adds:
+    - EV load bus
+    - Load component representing EV charging demand
+    - Link (charger) connecting AC bus to EV load bus
+    
+    Args:
+        n (pypsa.Network): PyPSA network to modify in-place.
+        p_set (pd.DataFrame): Time series of EV charging demand (MW) with snapshots 
+            as index and nodes as columns.
+        nodes (pd.Index): AC bus names where EVs should be added.
+        options (dict): EV configuration with keys:
+            - annual_consumption: float, annual energy per vehicle (MWh/year)
+            - charge_rate: float, charging power per vehicle (MW)
+            - share_charger: float, fraction of vehicles that can charge simultaneously
+        ev_type (str): EV type identifier (e.g., 'passenger', 'freight') for naming components.
+        
+    Returns:
+        None: Modifies network in-place.
+    """
     total_energy = p_set.sum().sum()
     total_number_evs = total_energy / max(options["annual_consumption"], 1e-6)
     node_ratio = p_set.sum() / max(total_energy, 1e-6)

@@ -95,8 +95,8 @@ rule process_config:
 #    ======== Workflow ===========
 rule build_population:
     input:
-        # https://www.stats.gov.cn/sj/ndsj/2023/indexeh.htm
-        population="resources/data/population/population_from_national_data.csv"
+        # China national bureau of statistics: https://data.stats.gov.cn/easyquery.htm?cn=E0103
+        population="resources/data/population/History_POP.csv"
     output:
         population=DERIVED_COMMON+"/"+"population/population.h5"
     threads: 1
@@ -268,8 +268,8 @@ if config.get("sectors", {}).get("electric_vehicles", False):
         params:
             snapshots=config["snapshots"],
         input:
-            charging_data_passenger="resources/data/load/charging_ratio_passenger.csv",
-            charging_data_freight="resources/data/load/charging_ratio_freight.csv",
+            charging_data_passenger="resources/data/transport/charging_ratio_passenger.csv",
+            charging_data_freight="resources/data/transport/charging_ratio_freight.csv",
             sectoral_load=DERIVED_DATA + "/remind/ac_load_disagg.csv" if config["run"].get("is_remind_coupled", False) else DERIVED_DATA + "/load/regio_hrly_ac_load_{planning_horizons}.h5",
 
         output:

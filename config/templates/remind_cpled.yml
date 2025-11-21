@@ -120,8 +120,6 @@ lines:
     transmission_limit: c1.05
 
 sectors:
-  heat_coupling:
-    enabled: false
   electric_vehicles:
     enabled: false  # default to false in the REMIND coupling template
     transport:

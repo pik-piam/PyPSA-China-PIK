@@ -9,53 +9,63 @@ import os
 
 import pandas as pd
 
-
 def aggregate_sectoral_loads(yearly_proj: pd.DataFrame, config: dict) -> pd.DataFrame:
-    """Filter and aggregate REMIND sectoral loads based on enabled sectors.
-
-    Reads sector configuration to determine which sectors (AC, EV passenger, EV freight)
-    should be included, then sums their annual loads by province.
+    """Aggregate REMIND load sectors according to the model configuration.
+    
+    Sectors that are NOT enabled for independent modeling will be aggregated 
+    into the main electricity load. For example, if EV sector is not enabled 
+    as an independent sector (enabled: false), its load will be added to the 
+    AC load in the aggregation.
 
     Args:
         yearly_proj: REMIND output with columns ['province', 'sector', '2020', '2025', ...].
             Each row represents one sector's load for one province across all years.
         config: Configuration dict with structure:
-            - sectors.electric_vehicles.enabled: bool (whether to include EV loads)
+            - sectors.electric_vehicles.enabled: bool (whether to model EV as independent sector)
             - sectors.sector_mapping.base: list (always-included sectors, e.g., ['ac'])
             - sectors.sector_mapping.electric_vehicles: list (EV sectors, e.g., ['ev_pass', 'ev_freight'])
 
     Returns:
         DataFrame with provinces as index and years as columns, containing total annual
-        load (MWh) summed across enabled sectors.
+        load (MWh) summed across sectors that should be aggregated.
 
     Raises:
         ValueError: If sector_mapping is missing or no matching sectors found.
     """
     sectors_cfg = config.get("sectors", {})
     mapping = sectors_cfg.get("sector_mapping", {})
-    print(sectors_cfg, mapping)
-    if not sectors_cfg or not mapping:
-        raise ValueError("Missing sectors or sector_mapping configuration")
+    
+    if not mapping:
+        raise ValueError("Missing sector_mapping configuration")
 
-    # Get base sectors that are always included
+    # Always include base sectors (e.g., AC)
     sectors_to_include = set(mapping.get("base", []))
 
-    # Add sectors based on configuration flags
-    for sector_key, is_enabled in sectors_cfg.items():
-        if is_enabled and sector_key in mapping:
-            mapped_sectors = mapping.get(sector_key, [])
-            sectors_to_include.update(mapped_sectors)
-
+    # For each optional sector, if it's NOT enabled for independent modeling,
+    # aggregate it into the main load
+    # Electric vehicles
+    if not sectors_cfg.get("electric_vehicles", {}).get("enabled", False):
+        if "electric_vehicles" in mapping:
+            sectors_to_include.update(mapping["electric_vehicles"])
+    
+    # Heat coupling (if exists in the future)
+    if not sectors_cfg.get("heat_coupling", {}).get("enabled", False):
+        if "heat_coupling" in mapping:
+            sectors_to_include.update(mapping["heat_coupling"])
+    
     # Filter data to only include selected sectors
     filtered = yearly_proj[yearly_proj["sector"].isin(sectors_to_include)].copy()
     if filtered.empty:
-        raise ValueError(f"No sector data found for merging. Available sectors: {sectors_to_include}")
+        raise ValueError(
+            f"No sector data found. "
+            f"Requested sectors: {sectors_to_include}, "
+            f"Available sectors: {yearly_proj['sector'].unique().tolist()}"
+        )
 
     # Aggregate by province and year
     year_cols = [c for c in filtered.columns if c.isdigit()]
     result = filtered.groupby("province")[year_cols].sum()
     return result
-
 
 def read_yearly_load_projections(
     file_path: os.PathLike = "resources/data/load/Province_Load_2020_2060.csv",
@@ -121,7 +131,7 @@ def read_yearly_load_projections(
     if "sector" in df.columns:
         if config is None:
             raise ValueError(
-                "REMIND data contains sector column but no config provided. "
+                "Data file contains sector column but no config provided. "
                 "Please provide config with 'sectors' and 'sector_mapping' keys."
             )
         df = aggregate_sectoral_loads(df, config)
