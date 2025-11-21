@@ -1,10 +1,10 @@
-# SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
+# SPDX-FileCopyrightText: : 2025 The PyPSA-China-PIK Authors
 #
 # SPDX-License-Identifier: CC0-1.0
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
-  name: "unamed_default_run"
+  name: "unnamed_run"
 foresight: "overnight"
 
 paths:
@@ -73,7 +73,7 @@ enable:
   retrieve_raster: false
 
 atlite:
-  cutout_name: "China-2020c"
+  cutout_name: "China-2020c_bare"
   freq: "h"
   nprocesses: 1
   show_progress: true
@@ -169,16 +169,23 @@ bus_carrier: {
 Techs:
   ## tech selection
   #TODO: rework vre_techs to split with clean_techs. Merge vre with non_dispatchable
-  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier","H2 CHP", "fuel cell"]
+  vre_techs: [ "onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier", "fuel cell", "H2 CHP"]
   non_dispatchable: ['Offshore Wind', 'Onshore Wind', 'Solar', 'Solar Residential', "Solar Thermal"]
-  conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
+  conv_techs: ["CCGT", "CHP gas", "CHP OCGT gas", "gas boiler","coal boiler","coal power plant","CHP coal", "OCGT"]
   store_techs: ["H2","battery","water tanks","PHS"]
   non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
   hydrogen_lines: true
-  coal_ccs_retrofit: true # currently myopic pathway only.  CC = co2 cap 
+  coal_ccs_retrofit: false # currently myopic pathway only.  CC = co2 cap 
+
+## Nuclear capacity growth limit
+nuclear_reactors:
+  enable_growth_limit: true  # Switch: true=enable growth limit, false=unrestricted growth
+  max_annual_capacity_addition: 5000  # Fixed MW to add per year
+  base_year: 2020  # Base year for capacity reference (should be <= first planning year)
+  # base_capacity: 50000  # (optional) Base year total capacity in MW. If not set, auto-detect from base_year network
 
 ## add components (overwrites vre tech choice)
-heat_coupling: true
+heat_coupling: false
 add_biomass: True
 add_hydro: True
 add_H2: True
@@ -224,6 +231,12 @@ solving:
     tunnel_port: 27000
     timeout_s: 15
     login_node: "03"
+    gurobi_home: "/p/projects/rd3mod/gurobi1103/linux64"
+    license_path: "/p/projects/rd3mod/gurobi_rc/gurobi.lic"
+    verbose: "1"
+    timeout: "10"
+    ssl_cert: "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
+    grb_cafile: "/p/projects/rd3mod/ssl/ca-bundle.pem_2022-02-08"
 
   solver_options:
     highs-default:
@@ -294,13 +307,13 @@ lines:
     base_year: 2020 # base step year, the exp limit is relative to this year
 
 security:
-  line_margin: 70 # max percent of line capacity
+  line_security_margin: 70 # max percent of line capacity
   
 # brownfield options
 existing_capacities:
   add: True # whether to add brownfield capacities
   grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  collapse_years: False # Treat as a single unit when preparing & solving network 
+  collapse_years: True # Treat as a single unit when preparing & solving network 
   threshold_capacity: 80 # MW
   techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
   node_assignment: simple # simple | gps
@@ -346,3 +359,13 @@ fetch_regions:
   simplify_tol: 
     eez: 0.5
     land: 0.05
+
+subsidies:
+  # New format: subsidies.fuel_type -> province -> value (EUR/MWh) only allowed for negative values (subsidies)
+  gas:
+    Guangdong: -8
+    Jiangsu:  -8.5
+    Zhejiang: -9
+    Beijing: -10  
+    Tianjin: -10
+    Shanghai: -10
