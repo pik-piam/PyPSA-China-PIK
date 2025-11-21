@@ -1,3 +1,9 @@
+"""Plot input data visualizations for model validation and analysis.
+
+This module creates geographical and statistical visualizations of input data
+including renewable resources, demand patterns, and infrastructure data.
+"""
+
 import logging
 
 import geopandas as gpd

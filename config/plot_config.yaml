@@ -111,6 +111,15 @@ plotting:
     home battery charger: '#5e8032'
     home battery discharger: '#3c5221'
     BEV charger: '#baf238'
+    EV_passenger_charger: '#e41a1c'
+    EV_freight_charger: '#fb6a4a'
+    EV_passenger_discharger: '#ff7f7f'
+    EV_freight_discharger: '#ff9f9f'
+    # Title case versions (after .title() transformation in plot_time_series.py)
+    ev_Passenger_Charger: '#e41a1c'
+    EV_Freight_Charger: '#fb6a4a'
+    EV_Passenger_Discharger: '#ff7f7f'
+    EV_Freight_Discharger: '#ff9f9f'
     V2G: '#e5ffa8'
     land transport EV: '#baf238'
     Li ion: '#baf238'
@@ -424,6 +433,14 @@ plotting:
     # generatord
     battery: "Battery Storage"
     battery discharger: "Battery Discharger"
+    EV_passenger_charger: "EV Passenger Charger"
+    EV_freight_charger: "EV Freight Charger"
+    EV_passenger_discharger: "EV Passenger Discharger"
+    EV_freight_discharger: "EV Freight Discharger"
+    ev_Passenger_Charger: "EV Passenger Charger"
+    EV_Freight_Charger: "EV Freight Charger"
+    EV_Passenger_Discharger: "EV Passenger Discharger"
+    EV_Freight_Discharger: "EV Freight Discharger"
     # coal: "Coal"
     coal: "Coal Power Plant"
     coal cc: "Coal with carbon capture"
@@ -450,6 +467,14 @@ plotting:
   - heat
   - heat decentral
   - Load
+  - EV_passenger_charger
+  - EV_freight_charger
+  - EV_passenger_discharger
+  - EV_freight_discharger
+  - ev_Passenger_Charger
+  - EV_Freight_Charger
+  - EV_Passenger_Discharger
+  - EV_Freight_Discharger
   - Transmission Lines
   - transmission lines
   - transmission losses
@@ -473,7 +498,7 @@ plotting:
   - CHP coal
   - gas CCGT
   - CCGT-CCS
-  - gas CCGT-CCS 
+  - gas CCGT-CCS
   - gas
   - gas CCS
   - Combined-Cycle Gas

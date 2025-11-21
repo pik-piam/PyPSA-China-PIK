@@ -40,7 +40,7 @@ class ConfigManager:
 
     def handle_scenarios(self) -> dict:
         """Unpack and filter scenarios from the configuration.
-        
+
         Processes planning horizons by converting them to integers and handles
         GHG scenarios through the GHGConfigHandler. This method modifies the
         internal config state.
