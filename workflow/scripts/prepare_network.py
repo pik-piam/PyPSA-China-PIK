@@ -246,6 +246,86 @@ def add_co2_capture_support(
     )
 
 
+def add_fuel_subsidies(n: pypsa.Network, subsidy_config: dict):
+    """Apply fuel subsidies to generators as a post-processing step.
+    
+    Subsidies are applied to generators based on their carrier and location.
+    The subsidy values (in EUR/MWh fuel) are divided by efficiency to convert
+    to electricity basis (EUR/MWhel). Links are not modified as they get their
+    fuel from generators.
+    
+    Args:
+        n (pypsa.Network): The network object to modify.
+        subsidy_config (dict): Subsidy configuration dictionary with keys like
+            "coal" or "gas", each containing a dict mapping provinces to subsidy values.
+    """
+    if not subsidy_config:
+        return
+    
+    carriers = subsidy_config.keys()
+    
+    for carrier in carriers:
+        subs_dict = subsidy_config.get(carrier, {})
+        if not subs_dict:
+            continue
+        
+        # Convert subsidy dict to Series indexed by province
+        subs = pd.Series(subs_dict, dtype=float)
+        
+        # Check that subsidies are non-positive (negative = subsidy, positive would be a reward)
+        if (subs > 0).any():
+            raise ValueError(
+                f"Positive subsidy values found for carrier '{carrier}': "
+                f"{subs[subs > 0].to_dict()}. Only zero or negative values are allowed "
+                f"(negative reduces marginal cost, positive would increase it)."
+            )
+        
+        # Check if location column exists
+        if "location" not in n.generators.columns:
+            logger.warning(
+                f"Location column not found in generators. "
+                f"Cannot apply subsidies for carrier '{carrier}'."
+            )
+            continue
+        
+        # Query generators with matching carrier and location in subsidy provinces
+        mask = n.generators.query(
+            f"carrier == @carrier and location in @subs.index"
+        ).index
+        
+        if mask.empty:
+            logger.warning(
+                f"No generators found with carrier '{carrier}' and locations "
+                f"in {list(subs.index)}. Skipping subsidy application."
+            )
+            continue
+        
+        # Merge subsidies with generators by location
+        gen_locs = n.generators.loc[mask, "location"]
+        subs_to_apply = gen_locs.map(subs).fillna(0.0)
+        
+        # Check if all provinces were found
+        missing_provs = set(subs.index) - set(gen_locs.unique())
+        if missing_provs:
+            logger.warning(
+                f"Subsidies specified for provinces {missing_provs} but no "
+                f"generators found with carrier '{carrier}' in these provinces."
+            )
+        
+        # Apply subsidies: divide by efficiency to convert from fuel to electricity basis
+        # Handle cases where efficiency might be NaN or missing
+        efficiencies = n.generators.loc[mask, "efficiency"].fillna(1.0)
+        subs_electricity = subs_to_apply / efficiencies
+        
+        # Subtract subsidy from marginal cost (negative subsidy = cost reduction)
+        n.generators.loc[mask, "marginal_cost"] -= subs_electricity
+        
+        logger.info(
+            f"Applied subsidies for carrier '{carrier}' to {len(mask)} generators "
+            f"in provinces {sorted(gen_locs.unique())}"
+        )
+
+
 def add_conventional_generators(
     network: pypsa.Network,
     nodes: pd.Index,
@@ -1615,6 +1695,12 @@ def prepare_network(
         add_voltage_links(network, config)
 
     assign_locations(network)
+    
+    # Apply fuel subsidies as post-processing step
+    subsidy_config = config.get("subsidies", {})
+    if subsidy_config:
+        add_fuel_subsidies(network, subsidy_config)
+    
     return network
 
 
