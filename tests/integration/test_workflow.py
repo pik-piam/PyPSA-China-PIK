@@ -68,16 +68,6 @@ def launch_subprocess(cmd: str, env=None) -> subprocess.CompletedProcess:
                 "existing_capacities": {"add": False},
             }
         ),
-        # currently broken (fix coming)
-        # (
-        #     {
-        #         "time_res": 24,
-        #         "plan_year": 2060,
-        #         "heat_coupling": True,
-        #         "foresight": "myopic",
-        #         "existing_capacities": {"add": False},
-        #     }
-        # ),
         (
             {
                 "time_res": 5,
