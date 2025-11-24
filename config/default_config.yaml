@@ -73,7 +73,7 @@ enable:
   retrieve_raster: true
 
 atlite:
-  cutout_name: "China-2020c_bare"
+  cutout_name: "China-2020c"
   freq: "h"
   nprocesses: 1
   show_progress: true
