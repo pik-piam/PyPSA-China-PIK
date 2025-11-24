@@ -36,15 +36,13 @@ if config["enable"].get("retrieve_raster", True):
             os.makedirs(os.path.dirname(output[0]), exist_ok=True)
             shutil.move(input[0], output[0])
 
-
-
     rule retrieve_bathymetry_raster:
         input:
             gebco=storage.http(
-                "https://zenodo.org/record/16792792/files/GEBCO_tiff.zip"
+                "https://zenodo.org/record/17697456/files/GEBCO_tiff.zip"
             ),
         output:
-            gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2024_CN.tif",
+            gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2025_CN.tif",
         params:
             zip_file="resources/data/landuse_availability/GEBCO_tiff.zip",
         run:
@@ -52,7 +50,6 @@ if config["enable"].get("retrieve_raster", True):
             with ZipFile(params.zip_file, "r") as zip_ref:
                 zip_ref.extractall(os.path.dirname(params.zip_file))
             os.remove(params.zip_file)
-
 
 
 rule retrieve_powerplants:

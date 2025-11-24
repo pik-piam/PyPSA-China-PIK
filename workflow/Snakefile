@@ -200,9 +200,9 @@ rule calculate_gebco_slope:
     Output format: NetCDF4 with DEFLATE compression
     """
     input:
-        gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2024_CN.tif",
+        gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2025_CN.tif",
     output:
-        slope="resources/data/landuse_availability/GEBCO_tiff/gebco_2024_CN_slope.nc",
+        slope="resources/data/landuse_availability/GEBCO_tiff/gebco_2025_CN_slope.nc",
     log:
         "logs/gebco_slope_calculation.log"
     script:
@@ -214,8 +214,8 @@ rule build_availability_matrix:
         land_cover_codes = lambda wildcards: config["renewable"][wildcards.technology].get("land_cover_codes")
     input:
         # GEBCO bathymetry (water depth)
-        gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2024_CN.tif",
-        gebco_slope="resources/data/landuse_availability/GEBCO_tiff/gebco_2024_CN_slope.nc",
+        gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN.tif",
+        gebco_slope="resources/data/landuse_availability/GEBCO_tiff/gebco_2025_CN_slope.nc",
         cutout=CUTOUT_PATH,
         # TODO directly link to output of fetch region shapes
         # admin 1 level = first administrative level within country
