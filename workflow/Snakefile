@@ -231,7 +231,7 @@ rule build_availability_matrix:
         # Copernicus LC100 discrete classification land cover map
         # Replaces old percentage cover fraction rasters (Grass, Bare, Shrubland)
         copernicus_land_cover=f"{LU_RASTER}/Copernicus_LC100_discrete_classification_2019.tif",
-        rice_paddies=f"{LU_RASTER}/CCD-Rice-China-2016-v1.1.tif",
+        # rice_paddies=f"{LU_RASTER}/CCD-Rice-China-2016-v1.1.tif",
     output:
         availability_matrix= DERIVED_CUTOUT + "/availability_matrix_{technology}.nc",
     log: LOGS_COMMON + "/build_availability_matrix_{technology}.log"
