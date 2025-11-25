@@ -187,26 +187,27 @@ rule build_cop_profiles:
     script: "scripts/build_cop_profiles.py"
 
 
-rule calculate_gebco_slope:
-    """
-    Calculate slope from GEBCO altimetry/bathymetry data.
-    
-    Process:
-    1. Reproject to Mollweide (ESRI:54009) - equal-area projection for accurate slope
-    2. Calculate slope in percent using gdaldem
-    3. Reproject back to EPSG:4326 for compatibility with atlite
-    
-    Output CRS: EPSG:4326 (WGS84 Geographic)
-    Output format: NetCDF4 with DEFLATE compression
-    """
-    input:
-        gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN.tif",
-    output:
-        slope=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN_slope.nc",
-    log:
-        "logs/gebco_slope_calculation.log"
-    script:
-        "scripts/calculate_gebco_slope.py"
+if note config["run"].get("is_test", False):
+    rule calculate_gebco_slope:
+        """
+        Calculate slope from GEBCO altimetry/bathymetry data.
+        
+        Process:
+        1. Reproject to Mollweide (ESRI:54009) - equal-area projection for accurate slope
+        2. Calculate slope in percent using gdaldem
+        3. Reproject back to EPSG:4326 for compatibility with atlite
+        
+        Output CRS: EPSG:4326 (WGS84 Geographic)
+        Output format: NetCDF4 with DEFLATE compression
+        """
+        input:
+            gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN.tif",
+        output:
+            slope=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN_slope.nc",
+        log:
+            "logs/gebco_slope_calculation.log"
+        script:
+            "scripts/calculate_gebco_slope.py"
         
 
 rule build_availability_matrix:
