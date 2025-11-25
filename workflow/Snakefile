@@ -59,8 +59,8 @@ include: "rules/visualize_inputs.smk"
 localrules: calculate_gebco_slope
 
 if config["run"].get("is_test", False):
-    localrules: plot_all, plot_summary, plot_snapshots, build_population, dag, fetch_region_shapes, plot_input_costs
-
+    localrules: build_population, dag, fetch_region_shapes
+    print([RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc' for v in config["scenario"]["planning_horizons"]])
 # ====== set up snakemake providers =======
 storage:
     provider="http",

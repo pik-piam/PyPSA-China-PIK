@@ -114,6 +114,7 @@ if __name__ == "__main__":
         excluder.add_raster(
             snakemake.input.gebco_slope,
             codes=func,
+            crs=4326,
         )
 
     if params.get("max_altitude"):
