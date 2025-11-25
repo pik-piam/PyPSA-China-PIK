@@ -187,7 +187,7 @@ rule build_cop_profiles:
     script: "scripts/build_cop_profiles.py"
 
 
-if note config["run"].get("is_test", False):
+if not config["run"].get("is_test", False):
     rule calculate_gebco_slope:
         """
         Calculate slope from GEBCO altimetry/bathymetry data.
