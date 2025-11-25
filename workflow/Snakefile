@@ -215,7 +215,7 @@ rule build_availability_matrix:
     input:
         # GEBCO bathymetry (water depth)
         gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN.tif",
-        gebco_slope="resources/data/landuse_availability/GEBCO_tiff/gebco_2025_CN_slope.nc",
+        gebco_slope=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN_slope.nc",
         cutout=CUTOUT_PATH,
         # TODO directly link to output of fetch region shapes
         # admin 1 level = first administrative level within country
