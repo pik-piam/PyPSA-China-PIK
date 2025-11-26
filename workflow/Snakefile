@@ -222,13 +222,8 @@ rule build_availability_matrix:
         # admin 1 level = first administrative level within country
         province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
         offshore_province_shapes=DERIVED_COMMON + "/regions/provinces_offshore.geojson",
-        # natural reserves from WPGDA, available land
-        **{
-            f"natura{i+1}": "resources/data/landuse_availability/"
-                        + f"WDPA_WDOECM_Oct2024_Public_CN_shp_{i}/"
-                        + "WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp"
-            for i in range(3)
-        },
+        # natural reserves from https://zenodo.org/records/14875797
+        natural_reserves=f"{LU_RASTER}/protected_areas_zenodo_14875797/shapes.shp",
         # Copernicus LC100 discrete classification land cover map
         # Replaces old percentage cover fraction rasters (Grass, Bare, Shrubland)
         copernicus_land_cover=f"{LU_RASTER}/Copernicus_LC100_discrete_classification_2019.tif",

@@ -26,6 +26,7 @@ rule fetch_region_shapes:
 if config["enable"].get("retrieve_raster", True):
 
     rule retrieve_copernicus_land_cover:
+        """retrieve Copernicus Land Cover 100m discrete classification map from Zenodo"""
         input:
             storage.http(
                 "https://zenodo.org/records/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif"
@@ -37,6 +38,7 @@ if config["enable"].get("retrieve_raster", True):
             shutil.move(input[0], output[0])
 
     rule retrieve_bathymetry_raster:
+        """retrieve GEBCO 2025 bathymetry data from Zenodo bundle"""
         input:
             gebco=storage.http(
                 "https://zenodo.org/record/17697456/files/GEBCO_tiff.zip"
@@ -52,7 +54,9 @@ if config["enable"].get("retrieve_raster", True):
             os.remove(params.zip_file)
 
 
+
 rule retrieve_powerplants:
+    """retrieve powerplant data from Zenodo bundle"""
     input:
         powerplants=storage.http(
             "https://zenodo.org/records/16810831/files/Global-integrated-Plant-Tracker-July-2025_china.xlsx"
@@ -62,6 +66,24 @@ rule retrieve_powerplants:
     run:
         os.makedirs(os.path.dirname(output.powerplants), exist_ok=True)
         shutil.move(input.powerplants, output.powerplants)
+
+
+# Fetch protected areas
+rule retrieve_natural_reserves:
+    """retrieve natural reserves from Zenodo bundle"""
+    input:
+        natural_reserves=storage.http(
+            "https://zenodo.org/records/17719794/files/protected_areas_zenodo_14875797.zip"
+        ),
+    output:
+        natural_reserves="resources/data/landuse_availability/protected_areas_zenodo_14875797",
+    params:
+        zip_file="resources/data/landuse_availability/protected_areas_zenodo_14875797.zip",
+    run:
+        os.rename(input.natural_reserves, params.zip_file)
+        with ZipFile(params.zip_file, "r") as zip_ref:
+            zip_ref.extractall(os.path.dirname(params.zip_file))
+        os.remove(params.zip_file)
 
 
 if config["enable"].get("retrieve_cutout", False) and config["enable"].get(
