@@ -76,7 +76,8 @@ rule retrieve_natural_reserves:
             "https://zenodo.org/records/17719794/files/protected_areas_zenodo_14875797.zip"
         ),
     output:
-        natural_reserves="resources/data/landuse_availability/protected_areas_zenodo_14875797",
+        natural_reserves=directory("resources/data/landuse_availability/protected_areas_zenodo_14875797"),
+        shpfile = "resources/data/landuse_availability/protected_areas_zenodo_14875797/shapes.shp",
     params:
         zip_file="resources/data/landuse_availability/protected_areas_zenodo_14875797.zip",
     run:
