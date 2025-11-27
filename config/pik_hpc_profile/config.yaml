@@ -78,6 +78,10 @@ set-resources:
     time: 300
     threads: 4
     mem_mb: 30000
+  build_solar_thermal_profiles:
+    time: 30
+    threads: 4
+    mem_mb: 16000
   plot_network:
     mem_mb: 8000
     threads: 2
@@ -91,20 +95,10 @@ set-resources:
     threads: 1
     partition: io # login
     qos: io
-  retrieve_Build_up_raster:
+  retrieve_copernicus_land_cover:
     time: 300
     threads: 1
     partition: io # login
-    qos: io
-  retrieve_Grass_raster:
-    time: 300
-    threads: 1
-    partition: io
-    qos: io
-  retrieve_Bare_raster:
-    time: 300
-    threads: 1
-    partition: io
     qos: io
   retrieve_powerplants:
     time: 300

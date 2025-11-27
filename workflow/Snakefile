@@ -55,9 +55,12 @@ include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
 include: "rules/visualize_inputs.smk"
 
-if config["run"].get("is_test", False):
-    localrules: plot_all, plot_summary, plot_snapshots, build_population, dag, fetch_region_shapes, plot_input_costs
+# Mark calculate_gebco_slope as local rule (always runs locally, not on Slurm)
+localrules: calculate_gebco_slope
 
+if config["run"].get("is_test", False):
+    localrules: build_population, dag, fetch_region_shapes
+    print([RESULTS_DIR+ '/postnetworks/ntwk_{planning_horizons}.nc' for v in config["scenario"]["planning_horizons"]])
 # ====== set up snakemake providers =======
 storage:
     provider="http",
@@ -183,28 +186,48 @@ rule build_cop_profiles:
     log: LOGS_COMMON + "/build_cop_profiles.log"
     script: "scripts/build_cop_profiles.py"
 
-rasters = ["Build_up", "Grass", "Bare", "Shrubland"]
+
+if not config["run"].get("is_test", False):
+    rule calculate_gebco_slope:
+        """
+        Calculate slope from GEBCO altimetry/bathymetry data.
+        
+        Process:
+        1. Reproject to Mollweide (ESRI:54009) - equal-area projection for accurate slope
+        2. Calculate slope in percent using gdaldem
+        3. Reproject back to EPSG:4326 for compatibility with atlite
+        
+        Output CRS: EPSG:4326 (WGS84 Geographic)
+        Output format: NetCDF4 with DEFLATE compression
+        """
+        input:
+            gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN.tif",
+        output:
+            slope=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN_slope.nc",
+        log:
+            "logs/gebco_slope_calculation.log"
+        script:
+            "scripts/calculate_gebco_slope.py"
+        
+
 rule build_availability_matrix:
+    params:
+        land_cover_codes = lambda wildcards: config["renewable"][wildcards.technology].get("land_cover_codes")
     input:
         # GEBCO bathymetry (water depth)
-        gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2024_CN.tif",
+        gebco=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN.tif",
+        gebco_slope=f"{LU_RASTER}/GEBCO_tiff/gebco_2025_CN_slope.nc",
         cutout=CUTOUT_PATH,
         # TODO directly link to output of fetch region shapes
         # admin 1 level = first administrative level within country
         province_shape=DERIVED_COMMON+"/province_shapes/CHN_adm1.shp",
         offshore_province_shapes=DERIVED_COMMON + "/regions/provinces_offshore.geojson",
-        # natural reserves from WPGDA, available land
-        **{
-            f"natura{i+1}": "resources/data/landuse_availability/"
-                        + f"WDPA_WDOECM_Oct2024_Public_CN_shp_{i}/"
-                        + "WDPA_WDOECM_Oct2024_Public_CN_shp-polygons.shp"
-            for i in range(3)
-        },
-        # available land:
-        **{
-            f"{raster}_raster": f"{LU_RASTER}/{raster}.tif"
-            for raster in rasters
-        },
+        # natural reserves from https://zenodo.org/records/14875797
+        natural_reserves=f"{LU_RASTER}/protected_areas_zenodo_14875797/shapes.shp",
+        # Copernicus LC100 discrete classification land cover map
+        # Replaces old percentage cover fraction rasters (Grass, Bare, Shrubland)
+        copernicus_land_cover=f"{LU_RASTER}/Copernicus_LC100_discrete_classification_2019.tif",
+        # rice_paddies=f"{LU_RASTER}/CCD-Rice-China-2016-v1.1.tif",
     output:
         availability_matrix= DERIVED_CUTOUT + "/availability_matrix_{technology}.nc",
     log: LOGS_COMMON + "/build_availability_matrix_{technology}.log"

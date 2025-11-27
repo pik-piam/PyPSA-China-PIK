@@ -3,6 +3,7 @@ from zipfile import ZipFile
 import shutil
 import os
 
+
 # TODO rework this, save shapes with all admin levels
 # build nodes with another script and save that to DERIVED_DATA
 # nodes could be read by snakefile and passed as a param to the relevant rules
@@ -18,34 +19,32 @@ rule fetch_region_shapes:
         "../scripts/fetch_shapes.py"
 
 
-# TODO build actual fetch rules with the sentinel/copernicus APIs.
-# TODO See if there are datasets succeeding the S2 LC100 cover to get newer data
+# Fetch Copernicus Land Cover 100m discrete classification map
+# This replaces the old approach of using separate percentage cover fraction rasters
+# The discrete classification map contains integer codes for different land cover types
+# See: https://zenodo.org/records/3939050
 if config["enable"].get("retrieve_raster", True):
 
-    rule retrieve_Grass_raster:
-        input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Grass-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/landuse_availability/Grass.tif"
-        run: shutil.move(input[0], output[0])
-    rule retrieve_Bare_raster:
-        input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Bare-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/landuse_availability/Bare.tif"
-        run: shutil.move(input[0], output[0])
-    rule retrieve_Shrubland_raster:
-        input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Shrub-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/landuse_availability/Shrubland.tif"
-        run: shutil.move(input[0], output[0])
-    rule retrieve_Build_up_raster:
-        input: storage.http("https://zenodo.org/record/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_BuiltUp-CoverFraction-layer_EPSG-4326.tif")
-        output: "resources/data/landuse_availability/Build_up.tif"
-        run: shutil.move(input[0], output[0])
-
-    rule retrieve_bathymetry_raster:
+    rule retrieve_copernicus_land_cover:
+        """retrieve Copernicus Land Cover 100m discrete classification map from Zenodo"""
         input:
-            gebco=storage.http(
-                "https://zenodo.org/record/16792792/files/GEBCO_tiff.zip"
+            storage.http(
+                "https://zenodo.org/records/3939050/files/PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif"
             ),
         output:
-            gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2024_CN.tif",
+            "resources/data/landuse_availability/Copernicus_LC100_discrete_classification_2019.tif",
+        run:
+            os.makedirs(os.path.dirname(output[0]), exist_ok=True)
+            shutil.move(input[0], output[0])
+
+    rule retrieve_bathymetry_raster:
+        """retrieve GEBCO 2025 bathymetry data from Zenodo bundle"""
+        input:
+            gebco=storage.http(
+                "https://zenodo.org/record/17697456/files/GEBCO_tiff.zip"
+            ),
+        output:
+            gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2025_CN.tif",
         params:
             zip_file="resources/data/landuse_availability/GEBCO_tiff.zip",
         run:
@@ -54,7 +53,10 @@ if config["enable"].get("retrieve_raster", True):
                 zip_ref.extractall(os.path.dirname(params.zip_file))
             os.remove(params.zip_file)
 
+
+
 rule retrieve_powerplants:
+    """retrieve powerplant data from Zenodo bundle"""
     input:
         powerplants=storage.http(
             "https://zenodo.org/records/16810831/files/Global-integrated-Plant-Tracker-July-2025_china.xlsx"
@@ -64,6 +66,25 @@ rule retrieve_powerplants:
     run:
         os.makedirs(os.path.dirname(output.powerplants), exist_ok=True)
         shutil.move(input.powerplants, output.powerplants)
+
+
+# Fetch protected areas
+rule retrieve_natural_reserves:
+    """retrieve natural reserves from Zenodo bundle"""
+    input:
+        natural_reserves=storage.http(
+            "https://zenodo.org/records/17719794/files/protected_areas_zenodo_14875797.zip"
+        ),
+    output:
+        natural_reserves=directory("resources/data/landuse_availability/protected_areas_zenodo_14875797"),
+        shpfile = "resources/data/landuse_availability/protected_areas_zenodo_14875797/shapes.shp",
+    params:
+        zip_file="resources/data/landuse_availability/protected_areas_zenodo_14875797.zip",
+    run:
+        os.rename(input.natural_reserves, params.zip_file)
+        with ZipFile(params.zip_file, "r") as zip_ref:
+            zip_ref.extractall(os.path.dirname(params.zip_file))
+        os.remove(params.zip_file)
 
 
 if config["enable"].get("retrieve_cutout", False) and config["enable"].get(
@@ -76,9 +97,11 @@ elif config["enable"].get("retrieve_cutout", False):
 
     rule retrieve_cutout:
         input:
-            zenodo_cutout = storage.http("https://zenodo.org/record/16792792/files/China-2020c.nc"),
+            zenodo_cutout=storage.http(
+                "https://zenodo.org/record/16792792/files/China-2020c.nc"
+            ),
         output:
-            cutout = "resources/cutouts/China-2020c.nc",
+            cutout="resources/cutouts/China-2020c.nc",
         run:
             os.makedirs(os.path.dirname(output.cutout), exist_ok=True)
             shutil.move(input.zenodo_cutout, output.cutout)

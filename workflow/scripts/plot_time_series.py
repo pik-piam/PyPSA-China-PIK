@@ -133,7 +133,7 @@ def plot_energy_balance(
         color=color_series.loc[supply.columns].values,
     )
     if add_load_line:
-        charge.rename(columns={"Heat Load": "Load"}, inplace=True)
+        # charge.rename(columns={"Heat Load": "Load"}, inplace=True)
         charge["load_pos"] = charge["Load"] * -1
         charge["load_pos"].plot(linewidth=2, color="black", label="Load", ax=ax, linestyle="--")
         charge.drop(columns="load_pos", inplace=True)
