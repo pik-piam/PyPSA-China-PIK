@@ -19,6 +19,7 @@ dependencies:
 
   # Dependencies of the workflow itself
   - xlrd
+  - libgdal-hdf5
   - rioxarray
   - openpyxl
   - pycountry

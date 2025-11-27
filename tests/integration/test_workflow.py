@@ -48,11 +48,14 @@ def launch_subprocess(cmd: str, env=None) -> subprocess.CompletedProcess:
         logging.info("\n\t".join(res.stdout.split("\n")))
         logging.info(f"return code: {res.returncode}")
         logging.info(f"====== stderr ====== :\n {'\n\t'.join(res.stderr.split('\n'))}")
+        return res
     except subprocess.CalledProcessError as e:
         logging.error(e.stderr)
         logging.error(e)
-        assert False, "Workflow integration test failed"
-    return res
+        # Return the failed process info instead of raising assertion
+        return subprocess.CompletedProcess(
+            args=e.cmd, returncode=e.returncode, stdout=e.stdout, stderr=e.stderr
+        )
 
 
 # TODO: add existing baseyear, add remind_coupled, add_plotting
@@ -116,7 +119,7 @@ def test_dry_run(make_test_config_file):
     """Simple workflow test to check the snakemake inputs and outputs are valid"""
     cfg = make_test_config_file
     cmd = f"snakemake --configfile {cfg} -n -f"
-    cmd += " --rerun-incomplete"
+    cmd += " --rerun-incomplete --rerun-triggers input"
     res = launch_subprocess(cmd)
     if res.returncode != 0:
         hash_id = copy_failed_config(cfg)
