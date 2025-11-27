@@ -140,7 +140,11 @@ def build_resource_classes(
     )
 
     # avoid binning resources that are very similar
-    nbins_per_bus = [int(min(nbins, x)) for x in (cf_max - cf_min) // min_cf_delta]
+    # If cf_range < min_cf_delta, use at least 1 bin (instead of 0)
+    if min_cf_delta > 0:
+        nbins_per_bus = [max(1, int(min(nbins, x))) for x in (cf_max - cf_min) // min_cf_delta]
+    else:
+        nbins_per_bus = [nbins] * len(buses)
     normed_bins = xr.DataArray(
         np.vstack(
             [np.hstack([[0] * (nbins - n), np.linspace(0, 1, n + 1)]) for n in nbins_per_bus]
