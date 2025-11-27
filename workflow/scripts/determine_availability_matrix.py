@@ -5,17 +5,14 @@
 The script performs a land eligibility analysis of what share of land is
 availability for developing the selected technology at each cutout grid cell.
 The script uses the `atlite <https://github.com/pypsa/atlite>`_ library and
-several GIS datasets like the Copernicus land use data,
-Natura2000 nature reserves, GEBCO bathymetry data
+several GIS datasets like the Copernicus land use data, GEBCO bathymetry data.
+
+Natural reserves are from https://zenodo.org/records/14875797
 
 The copernicus land monitoring data is/can be fetched by the pipeline.
-The GEBCO data must currently be manually downloaded
-  <https://en.wikipedia.org/wiki/Bathymetry>`_ data set with a global terrain
-  model for ocean and land at 15 arc-second intervals by the `General
-  Bathymetric Chart of the Oceans (GEBCO)
+The GEBCO data is stored in the PyPSA-China-PIK zenodo bundle or must
+ be manually downloaded from the `General Bathymetric Chart of the Oceans (GEBCO)
   <https://www.gebco.net/data_and_products/gridded_bathymetry_data/>`_.
-<https://www.gebco.net/data_and_products/images/gebco_2019_grid_image.jpg>`_
-The natura data must be manually downloaded for now or retrieved with the data bundle
 
 """
 
@@ -63,19 +60,13 @@ if __name__ == "__main__":
     res = params.get("excluder_resolution", 100)
     excluder = atlite.ExclusionContainer(crs=3035, res=res)
 
-    # TODO improve pipeline and combine the files into a single one as part of the fetch
-    if not params["natura"]:
-        nat1 = gpd.read_file(snakemake.input["natura1"])
-        nat2 = gpd.read_file(snakemake.input["natura2"])
-        nat3 = gpd.read_file(snakemake.input["natura3"])
-        protected_shp = gpd.GeoDataFrame(concat([nat1, nat2, nat3], ignore_index=True))
-        protected_shp = gpd.GeoDataFrame(protected_shp.geometry)
+    if not params["natural_reserves"]:
 
         if technology == "offwind":
-            protected_Marine_shp = gpd.tools.overlay(
-                protected_shp, regions.union_all("unary"), how="intersection"
+            protected_shp = gpd.read_file(snakemake.input["natural_reserves"])
+            protected_shape = gpd.tools.overlay(
+                protected_shp, regions.dissolve(), how="intersection"
             )
-            # TO
             # this is to avoid atlite complaining about parallelisation (still relevant?)
             logger.info("Creating tmp directory for protected marine shapefile")
             TMP = "resources/derived_data/tmp/atlite_protected_marine.shp"
@@ -84,8 +75,10 @@ if __name__ == "__main__":
                 mkdir(os.path.dirname(os.path.dirname(TMP)))
             if not os.path.isdir(os.path.dirname(TMP)):
                 mkdir(os.path.dirname(TMP))
-            protected_Marine_shp.to_file(TMP)
+            protected_shape.to_file(TMP)
             excluder.add_geometry(TMP)
+        else:
+            excluder.add_geometry(snakemake.input["natural_reserves"])
 
     # Use Copernicus LC100 discrete classification map instead of percentage cover fractions
     # This replaces the old approach of using separate Grass/Bare/Shrubland rasters
