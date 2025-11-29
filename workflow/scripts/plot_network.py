@@ -573,6 +573,12 @@ def plot_energy_map(
     # get colors
     bus_colors = network.carriers.loc[network.carriers.nice_name.isin(carriers_list), "color"]
     bus_colors.rename(opts["nice_names"], inplace=True)
+    logger.info(f"[plot_energy_map] carriers_list (original): {carriers_list}")
+    logger.info(f"[plot_energy_map] bus_colors.index (after rename): {bus_colors.index.tolist()}")
+    # Exclude Battery Discharger from bus_colors
+    if "Battery Discharger" in bus_colors.index:
+        bus_colors = bus_colors.drop("Battery Discharger")
+        logger.info(f"[plot_energy_map] Removed Battery Discharger from bus_colors")
 
     preferred_order = pd.Index(opts["preferred_order"])
     reordered = preferred_order.intersection(bus_colors.index).append(
@@ -609,6 +615,20 @@ def plot_energy_map(
         )
     else:
         bus_sizes = supply_pies / opts_plot["bus_size_factor"]
+    
+    # Debug: check bus_sizes index before mapping
+    if bus_sizes.index.nlevels > 1:
+        carrier_level_original = bus_sizes.index.get_level_values(1).unique()
+        logger.info(f"[plot_energy_map] bus_sizes carrier level (original): {carrier_level_original.tolist()}")
+    
+    # Exclude Battery Discharger from bus_sizes
+    # Note: carrier level is already nice_names (from supply_pies which uses get_location_and_carrier)
+    if bus_sizes.index.nlevels > 1:
+        carrier_level = bus_sizes.index.get_level_values(1)
+        # Filter out Battery Discharger
+        mask = carrier_level != "Battery Discharger"
+        bus_sizes = bus_sizes.loc[mask]
+    
     ax = plot_map(
         network,
         tech_colors=tech_colors,  # colors.to_dict(),
@@ -629,6 +649,9 @@ def plot_energy_map(
         df = supply_pies.groupby(level=1).sum().to_frame()
         df = df.fillna(0)
         df.rename(columns={0: ""}, inplace=True)
+        # Exclude Battery Discharger (df.index is already nice_names from supply_pies)
+        if "Battery Discharger" in df.index:
+            df = df.drop("Battery Discharger")
         add_energy_pannel(df, fig, preferred_order, bus_colors, ax_loc=[0.1, 0.8, 0.7, 0.05])
 
     handles, labels = ax.get_legend_handles_labels()
