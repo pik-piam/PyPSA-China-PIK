@@ -549,11 +549,11 @@ nuclear,2035,FOM,1.4,%/year,Lazard s Levelized Cost of Energy Analysis - Version
 nuclear,2035,VOM,3.5,EUR/MWh_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 nuclear,2035,efficiency,0.33,per unit,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 nuclear,2035,fuel,2.6,EUR/MWh_th,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
-nuclear,2035,investment,6000.0,USD/kW_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
+nuclear,2035,investment,2700.0,USD/kW_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 nuclear,2035,lifetime,40.0,years,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 offwind,2035,FOM,2.25,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","21 Offshore turbines:  Fixed O&M [EUR/MW_e/y, 2020]"
 offwind,2035,VOM,0.02,EUR/MWhel,RES costs made up to fix curtailment order, from old pypsa cost assumptions
-offwind,2035,investment,1469.32,"EUR/kW_e, 2020","Danish Energy Agency, technology_data_for_el_and_dh.xlsx","21 Offshore turbines:  Nominal investment [MEUR/MW_e, 2020] grid connection costs substracted from investment costs"
+offwind,2035,investment,1272.0,"EUR/kW_e, 2020","Danish Energy Agency, technology_data_for_el_and_dh.xlsx","21 Offshore turbines:  Nominal investment [MEUR/MW_e, 2020] grid connection costs substracted from investment costs"
 offwind,2035,lifetime,30.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",21 Offshore turbines:  Technical lifetime [years]
 offwind-ac-connection-submarine,2035,investment,2685.0,EUR/MW/km,DEA https://ens.dk/en/our-services/projections-and-models/technology-data, from old pypsa cost assumptions
 offwind-ac-connection-underground,2035,investment,1342.0,EUR/MW/km,DEA https://ens.dk/en/our-services/projections-and-models/technology-data, from old pypsa cost assumptions
@@ -570,7 +570,7 @@ oil,2035,investment,341.25,EUR/kW,"Danish Energy Agency, technology_data_for_el_
 oil,2035,lifetime,25.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",50 Diesel engine farm:  Technical lifetime
 onwind,2035,FOM,1.2,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Fixed O&M
 onwind,2035,VOM,1.3,EUR/MWh,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Variable O&M
-onwind,2035,investment,525.64,EUR/kW,zhu et.al.2025,20 Onshore turbines:  Nominal investment
+onwind,2035,investment,648.0,EUR/kW,zhu et.al.2025,20 Onshore turbines:  Nominal investment
 onwind,2035,lifetime,30.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Technical lifetime
 retrofit,2035,VOM,69.0,USD/tCO2,"Lockwood T. A compararitive review of next-generation carbon capture technologies for coal-fired power plant[J]. Energy procedia, 2017, 114: 2658-2670.",
 retrofit,2035,investment,180.0,USD/kW,"Fan J L, Xu M, Li F, et al. Carbon capture and storage (CCS) retrofit potential of coal-fired power plants in China: the technology lock-in and cost optimization perspective[J]. Applied energy, 2018, 229: 326-334.",
@@ -598,7 +598,7 @@ solar-rooftop residential,2035,FOM,1.32,%/year,"Danish Energy Agency, technology
 solar-rooftop residential,2035,investment,697.04,EUR/kW_e,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",22 Rooftop PV residential:  Nominal investment [2020-MEUR/MW_e]
 solar-rooftop residential,2035,lifetime,40.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",22 Rooftop PV residential:  Technical lifetime [years]
 solar-utility,2035,FOM,2.5,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",22 Utility-scale PV:  Fixed O&M [2020-EUR/MW_e/y]
-solar-utility,2035,investment,319.07,EUR/kW_e,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",22 Utility-scale PV:  Nominal investment [2020-MEUR/MW_e]
+solar-utility,2035,investment,306.0,EUR/kW_e,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",22 Utility-scale PV:  Nominal investment [2020-MEUR/MW_e]
 solar-utility,2035,lifetime,40.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",22 Utility-scale PV:  Technical lifetime [years]
 solid biomass,2035,CO2 intensity,0.37,tCO2/MWh_th,Stoichiometric calculation with 18 GJ/t_DM LHV and 50% C-content for solid biomass,
 solid biomass,2035,fuel,12.0,EUR/MWh_th,"JRC ENSPRESO ca avg for MINBIOWOOW1 (secondary forest residue wood chips), ENS_Ref for 2040",
