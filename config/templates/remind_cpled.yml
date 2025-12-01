@@ -54,7 +54,7 @@ remind_etl:
     - name: loads
       method: "convert_load"
       frames:
-        ac_load: p32_load
+        ac_load: p32_load_sector
         h2_el_load: null
         heat_el_load: null
     # using mapping table to assign tech groups to remind techs
