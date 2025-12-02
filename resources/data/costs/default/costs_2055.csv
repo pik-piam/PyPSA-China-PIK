@@ -549,7 +549,7 @@ nuclear,2055,FOM,1.4,%/year,Lazard s Levelized Cost of Energy Analysis - Version
 nuclear,2055,VOM,3.5,EUR/MWh_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 nuclear,2055,efficiency,0.33,per unit,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 nuclear,2055,fuel,2.6,EUR/MWh_th,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
-nuclear,2055,investment,2700.0,USD/kW_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
+nuclear,2055,investment,1973.8542,USD/kW_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 nuclear,2055,lifetime,40.0,years,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 offwind,2055,FOM,2.17,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","21 Offshore turbines:  Fixed O&M [EUR/MW_e/y, 2020]"
 offwind,2055,VOM,0.02,EUR/MWhel,RES costs made up to fix curtailment order, from old pypsa cost assumptions
