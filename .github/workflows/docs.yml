@@ -6,6 +6,7 @@ on:
     branches:
       - "main"
       - "develop"
+      - "prepare_release" # For testing release infrastructure
   workflow_dispatch:
 
 permissions:
@@ -66,6 +67,10 @@ jobs:
           elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
             echo "ALIAS=develop" >> $GITHUB_OUTPUT
             echo "TITLE=Development (develop)" >> $GITHUB_OUTPUT
+            echo "SET_DEFAULT=false" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/prepare_release" ]; then
+            echo "ALIAS=test-release" >> $GITHUB_OUTPUT
+            echo "TITLE=Test Release" >> $GITHUB_OUTPUT
             echo "SET_DEFAULT=false" >> $GITHUB_OUTPUT
           else
             echo "ALIAS=preview" >> $GITHUB_OUTPUT
