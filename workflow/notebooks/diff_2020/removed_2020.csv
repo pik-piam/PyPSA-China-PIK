@@ -1,0 +1,19 @@
+technology,year,parameter,value_old
+central coal boiler,2020,FOM,2.5
+central coal boiler,2020,VOM,1.1
+central coal boiler,2020,efficiency,0.9
+central coal boiler,2020,hist_efficiency,0.78
+central coal boiler,2020,investment,315.0
+central coal boiler,2020,lifetime,25.0
+decentral coal boiler,2020,FOM,3.49
+decentral coal boiler,2020,discount rate,0.04
+decentral coal boiler,2020,efficiency,0.9
+decentral coal boiler,2020,hist_efficiency,0.78
+decentral coal boiler,2020,investment,182.0
+decentral coal boiler,2020,lifetime,20.0
+geothermal,2020,efficiency,0.24
+geothermal,2020,investment,3392.0
+methanolisation,2020,VOM,6.27
+retrofit,2020,VOM,69.0
+retrofit,2020,investment,180.0
+retrofit,2020,lifetime,40.0

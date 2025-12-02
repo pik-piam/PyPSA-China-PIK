@@ -1,0 +1,619 @@
+technology,year,parameter,value_new
+Alkaline electrolyzer large size,2020,FOM,6.4
+Alkaline electrolyzer large size,2020,VOM,0.6142
+Alkaline electrolyzer large size,2020,electricity-input,1.5
+Alkaline electrolyzer large size,2020,investment,711.9042
+Alkaline electrolyzer large size,2020,lifetime,40.0
+Alkaline electrolyzer medium size,2020,FOM,18.1
+Alkaline electrolyzer medium size,2020,VOM,0.2389
+Alkaline electrolyzer medium size,2020,electricity-input,1.633
+Alkaline electrolyzer medium size,2020,investment,566.0884
+Alkaline electrolyzer medium size,2020,lifetime,20.0
+Alkaline electrolyzer small size,2020,FOM,18.1
+Alkaline electrolyzer small size,2020,VOM,1.0919
+Alkaline electrolyzer small size,2020,electricity-input,1.62
+Alkaline electrolyzer small size,2020,investment,984.8823
+Alkaline electrolyzer small size,2020,lifetime,20.0
+Ammonia cracker,2020,ammonia-input,1.46
+BEV Bus city,2020,FOM,0.0001
+BEV Bus city,2020,Motor size,300.0
+BEV Bus city,2020,VOM,0.0952
+BEV Bus city,2020,efficiency,0.97
+BEV Bus city,2020,investment,409373.5872
+BEV Bus city,2020,lifetime,12.0
+BEV Coach,2020,FOM,0.0001
+BEV Coach,2020,Motor size,250.0
+BEV Coach,2020,VOM,0.0952
+BEV Coach,2020,efficiency,0.9613
+BEV Coach,2020,investment,489913.3908
+BEV Coach,2020,lifetime,12.0
+BEV Truck Semi-Trailer max 50 tons,2020,FOM,0.0002
+BEV Truck Semi-Trailer max 50 tons,2020,Motor size,400.0
+BEV Truck Semi-Trailer max 50 tons,2020,VOM,0.0952
+BEV Truck Semi-Trailer max 50 tons,2020,efficiency,1.5362
+BEV Truck Semi-Trailer max 50 tons,2020,investment,325191.1729
+BEV Truck Semi-Trailer max 50 tons,2020,lifetime,10.5
+BEV Truck Solo max 26 tons,2020,FOM,0.0002
+BEV Truck Solo max 26 tons,2020,Motor size,330.0
+BEV Truck Solo max 26 tons,2020,VOM,0.0952
+BEV Truck Solo max 26 tons,2020,efficiency,0.9603
+BEV Truck Solo max 26 tons,2020,investment,338623.152
+BEV Truck Solo max 26 tons,2020,lifetime,13.8
+BEV Truck Trailer max 56 tons,2020,FOM,0.0002
+BEV Truck Trailer max 56 tons,2020,Motor size,490.0
+BEV Truck Trailer max 56 tons,2020,VOM,0.0952
+BEV Truck Trailer max 56 tons,2020,efficiency,1.6988
+BEV Truck Trailer max 56 tons,2020,investment,360694.2014
+BEV Truck Trailer max 56 tons,2020,lifetime,13.8
+Battery electric (passenger cars),2020,FOM,0.9
+Battery electric (passenger cars),2020,efficiency,0.68
+Battery electric (passenger cars),2020,investment,33000.0
+Battery electric (passenger cars),2020,lifetime,15.0
+Battery electric (trucks),2020,FOM,14.0
+Battery electric (trucks),2020,investment,204067.0
+Battery electric (trucks),2020,lifetime,15.0
+CH4 (g) pipeline,2020,electricity-input,0.01
+CH4 (g) submarine pipeline,2020,electricity-input,0.01
+CH4 liquefaction,2020,electricity-input,0.036
+CH4 liquefaction,2020,methane-input,1.0
+CO2 liquefaction,2020,carbondioxide-input,1.0
+CO2 liquefaction,2020,electricity-input,0.123
+CO2 liquefaction,2020,heat-input,0.0067
+Charging infrastructure fast (purely) battery electric vehicles passenger cars,2020,FOM,1.6
+Charging infrastructure fast (purely) battery electric vehicles passenger cars,2020,investment,629102.0
+Charging infrastructure fast (purely) battery electric vehicles passenger cars,2020,lifetime,30.0
+Charging infrastructure fuel cell vehicles passenger cars,2020,FOM,2.2
+Charging infrastructure fuel cell vehicles passenger cars,2020,investment,2243051.0
+Charging infrastructure fuel cell vehicles passenger cars,2020,lifetime,30.0
+Charging infrastructure fuel cell vehicles trucks,2020,FOM,2.2
+Charging infrastructure fuel cell vehicles trucks,2020,investment,2243051.0
+Charging infrastructure fuel cell vehicles trucks,2020,lifetime,30.0
+Charging infrastructure slow (purely) battery electric vehicles passenger cars,2020,FOM,1.8
+Charging infrastructure slow (purely) battery electric vehicles passenger cars,2020,investment,1283.0
+Charging infrastructure slow (purely) battery electric vehicles passenger cars,2020,lifetime,30.0
+Compressed-Air-Adiabatic-bicharger,2020,FOM,0.9265
+Compressed-Air-Adiabatic-bicharger,2020,efficiency,0.7211
+Compressed-Air-Adiabatic-bicharger,2020,investment,946180.9426
+Compressed-Air-Adiabatic-bicharger,2020,lifetime,60.0
+Compressed-Air-Adiabatic-store,2020,FOM,0.43
+Compressed-Air-Adiabatic-store,2020,investment,5448.7894
+Compressed-Air-Adiabatic-store,2020,lifetime,60.0
+Concrete-charger,2020,FOM,1.075
+Concrete-charger,2020,efficiency,0.99
+Concrete-charger,2020,investment,188018.4103
+Concrete-charger,2020,lifetime,35.0
+Concrete-discharger,2020,FOM,0.2688
+Concrete-discharger,2020,efficiency,0.4343
+Concrete-discharger,2020,investment,752073.6414
+Concrete-discharger,2020,lifetime,35.0
+Concrete-store,2020,FOM,0.3231
+Concrete-store,2020,investment,29432.5788
+Concrete-store,2020,lifetime,35.0
+"Container feeder, ammonia",2020,efficiency,0.7754
+"Container feeder, ammonia",2020,investment,41959454.4301
+"Container feeder, ammonia",2020,lifetime,30.0
+"Container feeder, diesel",2020,efficiency,0.7718
+"Container feeder, diesel",2020,investment,34966212.0251
+"Container feeder, diesel",2020,lifetime,30.0
+"Container feeder, methanol",2020,efficiency,0.7711
+"Container feeder, methanol",2020,investment,38462833.2276
+"Container feeder, methanol",2020,lifetime,30.0
+"Container, ammonia",2020,efficiency,1.7094
+"Container, ammonia",2020,investment,143583536.7421
+"Container, ammonia",2020,lifetime,30.0
+"Container, diesel",2020,efficiency,1.6399
+"Container, diesel",2020,investment,119652947.2851
+"Container, diesel",2020,lifetime,30.0
+"Container, methanol",2020,efficiency,1.7001
+"Container, methanol",2020,investment,131618242.0136
+"Container, methanol",2020,lifetime,30.0
+Diesel Bus city,2020,FOM,0.0004
+Diesel Bus city,2020,Motor size,250.0
+Diesel Bus city,2020,VOM,0.1068
+Diesel Bus city,2020,efficiency,2.4356
+Diesel Bus city,2020,investment,150756.2732
+Diesel Bus city,2020,lifetime,12.0
+Diesel Coach,2020,FOM,0.0003
+Diesel Coach,2020,Motor size,350.0
+Diesel Coach,2020,VOM,0.1068
+Diesel Coach,2020,efficiency,2.5466
+Diesel Coach,2020,investment,231296.0768
+Diesel Coach,2020,lifetime,12.0
+Diesel Truck Semi-Trailer max 50 tons,2020,FOM,0.0005
+Diesel Truck Semi-Trailer max 50 tons,2020,Motor size,380.0
+Diesel Truck Semi-Trailer max 50 tons,2020,VOM,0.1068
+Diesel Truck Semi-Trailer max 50 tons,2020,efficiency,3.5523
+Diesel Truck Semi-Trailer max 50 tons,2020,investment,142012.114
+Diesel Truck Semi-Trailer max 50 tons,2020,lifetime,10.5
+Diesel Truck Solo max 26 tons,2020,FOM,0.0004
+Diesel Truck Solo max 26 tons,2020,Motor size,220.0
+Diesel Truck Solo max 26 tons,2020,VOM,0.1068
+Diesel Truck Solo max 26 tons,2020,efficiency,2.4961
+Diesel Truck Solo max 26 tons,2020,investment,155444.0931
+Diesel Truck Solo max 26 tons,2020,lifetime,13.8
+Diesel Truck Trailer max 56 tons,2020,FOM,0.0004
+Diesel Truck Trailer max 56 tons,2020,Motor size,382.3529
+Diesel Truck Trailer max 56 tons,2020,VOM,0.1068
+Diesel Truck Trailer max 56 tons,2020,efficiency,3.625
+Diesel Truck Trailer max 56 tons,2020,investment,177515.1425
+Diesel Truck Trailer max 56 tons,2020,lifetime,13.8
+FCV Bus city,2020,FOM,0.0001
+FCV Bus city,2020,Motor size,364.0
+FCV Bus city,2020,VOM,0.0979
+FCV Bus city,2020,efficiency,1.7805
+FCV Bus city,2020,investment,382675.3098
+FCV Bus city,2020,lifetime,12.0
+FCV Coach,2020,FOM,0.0001
+FCV Coach,2020,Motor size,364.0
+FCV Coach,2020,VOM,0.0952
+FCV Coach,2020,efficiency,1.7747
+FCV Coach,2020,investment,889942.5809
+FCV Coach,2020,lifetime,12.0
+FCV Truck Semi-Trailer max 50 tons,2020,FOM,0.0002
+FCV Truck Semi-Trailer max 50 tons,2020,Motor size,475.0
+FCV Truck Semi-Trailer max 50 tons,2020,VOM,0.0952
+FCV Truck Semi-Trailer max 50 tons,2020,efficiency,2.7537
+FCV Truck Semi-Trailer max 50 tons,2020,investment,348679.5032
+FCV Truck Semi-Trailer max 50 tons,2020,lifetime,10.5
+FCV Truck Solo max 26 tons,2020,FOM,0.0002
+FCV Truck Solo max 26 tons,2020,Motor size,350.0
+FCV Truck Solo max 26 tons,2020,VOM,0.0952
+FCV Truck Solo max 26 tons,2020,efficiency,1.8629
+FCV Truck Solo max 26 tons,2020,investment,293681.0517
+FCV Truck Solo max 26 tons,2020,lifetime,13.8
+FCV Truck Trailer max 56 tons,2020,FOM,0.0002
+FCV Truck Trailer max 56 tons,2020,Motor size,350.0
+FCV Truck Trailer max 56 tons,2020,VOM,0.0952
+FCV Truck Trailer max 56 tons,2020,efficiency,3.0727
+FCV Truck Trailer max 56 tons,2020,investment,315752.1011
+FCV Truck Trailer max 56 tons,2020,lifetime,13.8
+Fischer-Tropsch,2020,carbondioxide-input,0.36
+Fischer-Tropsch,2020,efficiency-heat,0.25
+Fischer-Tropsch,2020,electricity-input,0.008
+Fischer-Tropsch,2020,hydrogen-input,1.531
+Gravity-Brick-bicharger,2020,FOM,1.5
+Gravity-Brick-bicharger,2020,efficiency,0.9274
+Gravity-Brick-bicharger,2020,investment,415570.5177
+Gravity-Brick-bicharger,2020,lifetime,41.7
+Gravity-Brick-store,2020,investment,187325.7928
+Gravity-Brick-store,2020,lifetime,41.7
+Gravity-Water-Aboveground-bicharger,2020,FOM,1.5
+Gravity-Water-Aboveground-bicharger,2020,efficiency,0.9014
+Gravity-Water-Aboveground-bicharger,2020,investment,365630.713
+Gravity-Water-Aboveground-bicharger,2020,lifetime,60.0
+Gravity-Water-Aboveground-store,2020,investment,144713.4654
+Gravity-Water-Aboveground-store,2020,lifetime,60.0
+Gravity-Water-Underground-bicharger,2020,FOM,1.5
+Gravity-Water-Underground-bicharger,2020,efficiency,0.9014
+Gravity-Water-Underground-bicharger,2020,investment,905158.9602
+Gravity-Water-Underground-bicharger,2020,lifetime,60.0
+Gravity-Water-Underground-store,2020,investment,113887.5264
+Gravity-Water-Underground-store,2020,lifetime,60.0
+H2 (g) pipeline,2020,electricity-input,0.021
+H2 (g) pipeline repurposed,2020,electricity-input,0.021
+H2 (g) submarine pipeline,2020,electricity-input,0.021
+H2 (g) submarine pipeline repurposed,2020,FOM,3.0
+H2 (g) submarine pipeline repurposed,2020,electricity-input,0.021
+H2 (g) submarine pipeline repurposed,2020,investment,160.1562
+H2 (g) submarine pipeline repurposed,2020,lifetime,30.0
+H2 liquefaction,2020,electricity-input,0.203
+H2 liquefaction,2020,hydrogen-input,1.017
+H2 production biomass gasification,2020,FOM,5.0
+H2 production biomass gasification,2020,VOM,0.5118
+H2 production biomass gasification,2020,electricity-input,0.097
+H2 production biomass gasification,2020,investment,1467.9399
+H2 production biomass gasification,2020,lifetime,20.0
+H2 production biomass gasification,2020,wood-input,1.804
+H2 production biomass gasification CC,2020,FOM,5.0
+H2 production biomass gasification CC,2020,VOM,0.5232
+H2 production biomass gasification CC,2020,electricity-input,0.143
+H2 production biomass gasification CC,2020,investment,1489.0957
+H2 production biomass gasification CC,2020,lifetime,20.0
+H2 production biomass gasification CC,2020,wood-input,1.804
+H2 production coal gasification,2020,FOM,5.9
+H2 production coal gasification,2020,VOM,0.6677
+H2 production coal gasification,2020,coal-input,1.77
+H2 production coal gasification,2020,electricity-input,0.07
+H2 production coal gasification,2020,investment,526.0516
+H2 production coal gasification,2020,lifetime,20.0
+H2 production coal gasification CC,2020,FOM,7.9
+H2 production coal gasification CC,2020,VOM,0.2275
+H2 production coal gasification CC,2020,coal-input,1.77
+H2 production coal gasification CC,2020,electricity-input,0.111
+H2 production coal gasification CC,2020,investment,591.9076
+H2 production coal gasification CC,2020,lifetime,20.0
+H2 production heavy oil partial oxidation,2020,FOM,5.0
+H2 production heavy oil partial oxidation,2020,VOM,0.1592
+H2 production heavy oil partial oxidation,2020,electricity-input,0.063
+H2 production heavy oil partial oxidation,2020,investment,491.1331
+H2 production heavy oil partial oxidation,2020,lifetime,25.0
+H2 production heavy oil partial oxidation,2020,oil-input,1.3
+H2 production natural gas steam reforming,2020,FOM,4.9
+H2 production natural gas steam reforming,2020,VOM,0.3298
+H2 production natural gas steam reforming,2020,electricity-input,0.02
+H2 production natural gas steam reforming,2020,gas-input,1.32
+H2 production natural gas steam reforming,2020,investment,228.8467
+H2 production natural gas steam reforming,2020,lifetime,20.0
+H2 production natural gas steam reforming CC,2020,FOM,5.2
+H2 production natural gas steam reforming CC,2020,VOM,0.6028
+H2 production natural gas steam reforming CC,2020,electricity-input,0.05
+H2 production natural gas steam reforming CC,2020,gas-input,1.52
+H2 production natural gas steam reforming CC,2020,investment,310.2851
+H2 production natural gas steam reforming CC,2020,lifetime,20.0
+H2 production solid biomass steam reforming,2020,FOM,4.0
+H2 production solid biomass steam reforming,2020,VOM,0.7393
+H2 production solid biomass steam reforming,2020,electricity-input,0.044
+H2 production solid biomass steam reforming,2020,investment,590.6564
+H2 production solid biomass steam reforming,2020,lifetime,20.0
+H2 production solid biomass steam reforming,2020,wood-input,1.36
+HVDC underground,2020,FOM,0.35
+HVDC underground,2020,investment,1008.2934
+HVDC underground,2020,lifetime,40.0
+Haber-Bosch,2020,efficiency-heat,0.146
+Haber-Bosch,2020,electricity-input,0.2473
+Haber-Bosch,2020,hydrogen-input,1.1484
+Haber-Bosch,2020,nitrogen-input,0.1597
+HighT-Molten-Salt-charger,2020,FOM,1.075
+HighT-Molten-Salt-charger,2020,efficiency,0.99
+HighT-Molten-Salt-charger,2020,investment,187899.5061
+HighT-Molten-Salt-charger,2020,lifetime,35.0
+HighT-Molten-Salt-discharger,2020,FOM,0.2688
+HighT-Molten-Salt-discharger,2020,efficiency,0.4444
+HighT-Molten-Salt-discharger,2020,investment,751598.0242
+HighT-Molten-Salt-discharger,2020,lifetime,35.0
+HighT-Molten-Salt-store,2020,FOM,0.3308
+HighT-Molten-Salt-store,2020,investment,112560.0095
+HighT-Molten-Salt-store,2020,lifetime,35.0
+Hydrogen fuel cell (passenger cars),2020,FOM,1.1
+Hydrogen fuel cell (passenger cars),2020,efficiency,0.48
+Hydrogen fuel cell (passenger cars),2020,investment,55000.0
+Hydrogen fuel cell (passenger cars),2020,lifetime,15.0
+Hydrogen fuel cell (trucks),2020,FOM,10.1
+Hydrogen fuel cell (trucks),2020,efficiency,0.56
+Hydrogen fuel cell (trucks),2020,investment,151574.0
+Hydrogen fuel cell (trucks),2020,lifetime,15.0
+Hydrogen-charger,2020,FOM,0.46
+Hydrogen-charger,2020,efficiency,0.6963
+Hydrogen-charger,2020,investment,1304350.411
+Hydrogen-charger,2020,lifetime,30.0
+Hydrogen-discharger,2020,FOM,0.4801
+Hydrogen-discharger,2020,efficiency,0.4869
+Hydrogen-discharger,2020,investment,1265835.3275
+Hydrogen-discharger,2020,lifetime,30.0
+Hydrogen-store,2020,FOM,0.43
+Hydrogen-store,2020,investment,4779.9527
+Hydrogen-store,2020,lifetime,30.0
+LOHC hydrogenation,2020,electricity-input,0.004
+LOHC hydrogenation,2020,hydrogen-input,1.867
+LOHC hydrogenation,2020,lohc-input,0.944
+Lead-Acid-bicharger,2020,FOM,2.4064
+Lead-Acid-bicharger,2020,efficiency,0.8832
+Lead-Acid-bicharger,2020,investment,149731.2267
+Lead-Acid-bicharger,2020,lifetime,12.0
+Lead-Acid-store,2020,FOM,0.2386
+Lead-Acid-store,2020,investment,365289.854
+Lead-Acid-store,2020,lifetime,12.0
+Liquid fuels ICE (passenger cars),2020,FOM,1.6
+Liquid fuels ICE (passenger cars),2020,efficiency,0.215
+Liquid fuels ICE (passenger cars),2020,investment,23561.0
+Liquid fuels ICE (passenger cars),2020,lifetime,15.0
+Liquid fuels ICE (trucks),2020,FOM,18.0
+Liquid fuels ICE (trucks),2020,efficiency,0.373
+Liquid fuels ICE (trucks),2020,investment,99772.0
+Liquid fuels ICE (trucks),2020,lifetime,15.0
+Liquid-Air-charger,2020,FOM,0.366
+Liquid-Air-charger,2020,efficiency,0.99
+Liquid-Air-charger,2020,investment,503663.7386
+Liquid-Air-charger,2020,lifetime,35.0
+Liquid-Air-discharger,2020,FOM,0.5212
+Liquid-Air-discharger,2020,efficiency,0.55
+Liquid-Air-discharger,2020,investment,353636.242
+Liquid-Air-discharger,2020,lifetime,35.0
+Liquid-Air-store,2020,FOM,0.328
+Liquid-Air-store,2020,investment,186749.107
+Liquid-Air-store,2020,lifetime,35.0
+Lithium-Ion-LFP-bicharger,2020,FOM,2.0701
+Lithium-Ion-LFP-bicharger,2020,efficiency,0.9193
+Lithium-Ion-LFP-bicharger,2020,investment,95584.1917
+Lithium-Ion-LFP-bicharger,2020,lifetime,16.0
+Lithium-Ion-LFP-store,2020,FOM,0.0447
+Lithium-Ion-LFP-store,2020,investment,325690.7596
+Lithium-Ion-LFP-store,2020,lifetime,16.0
+Lithium-Ion-NMC-bicharger,2020,FOM,2.0701
+Lithium-Ion-NMC-bicharger,2020,efficiency,0.9193
+Lithium-Ion-NMC-bicharger,2020,investment,95584.1917
+Lithium-Ion-NMC-bicharger,2020,lifetime,13.0
+Lithium-Ion-NMC-store,2020,FOM,0.0379
+Lithium-Ion-NMC-store,2020,investment,372111.988
+Lithium-Ion-NMC-store,2020,lifetime,13.0
+LowT-Molten-Salt-charger,2020,FOM,1.075
+LowT-Molten-Salt-charger,2020,efficiency,0.99
+LowT-Molten-Salt-charger,2020,investment,149374.5139
+LowT-Molten-Salt-charger,2020,lifetime,35.0
+LowT-Molten-Salt-discharger,2020,FOM,0.2688
+LowT-Molten-Salt-discharger,2020,efficiency,0.5394
+LowT-Molten-Salt-discharger,2020,investment,597498.0554
+LowT-Molten-Salt-discharger,2020,lifetime,35.0
+LowT-Molten-Salt-store,2020,FOM,0.3308
+LowT-Molten-Salt-store,2020,investment,69421.8279
+LowT-Molten-Salt-store,2020,lifetime,35.0
+Methanol steam reforming,2020,methanol-input,1.201
+Ni-Zn-bicharger,2020,FOM,2.0701
+Ni-Zn-bicharger,2020,efficiency,0.9
+Ni-Zn-bicharger,2020,investment,95584.1917
+Ni-Zn-bicharger,2020,lifetime,15.0
+Ni-Zn-store,2020,FOM,0.2238
+Ni-Zn-store,2020,investment,344828.4062
+Ni-Zn-store,2020,lifetime,15.0
+PEM electrolyzer small size,2020,FOM,3.0
+PEM electrolyzer small size,2020,electricity-input,1.43
+PEM electrolyzer small size,2020,investment,1364.8906
+PEM electrolyzer small size,2020,lifetime,6.0
+Pumped-Heat-charger,2020,FOM,0.366
+Pumped-Heat-charger,2020,efficiency,0.99
+Pumped-Heat-charger,2020,investment,807189.2511
+Pumped-Heat-charger,2020,lifetime,33.0
+Pumped-Heat-discharger,2020,FOM,0.5212
+Pumped-Heat-discharger,2020,efficiency,0.63
+Pumped-Heat-discharger,2020,investment,566749.8997
+Pumped-Heat-discharger,2020,lifetime,33.0
+Pumped-Heat-store,2020,FOM,0.0615
+Pumped-Heat-store,2020,investment,31293.8274
+Pumped-Heat-store,2020,lifetime,33.0
+Pumped-Storage-Hydro-bicharger,2020,FOM,0.9951
+Pumped-Storage-Hydro-bicharger,2020,efficiency,0.8944
+Pumped-Storage-Hydro-bicharger,2020,investment,1397128.4612
+Pumped-Storage-Hydro-bicharger,2020,lifetime,60.0
+Pumped-Storage-Hydro-store,2020,FOM,0.43
+Pumped-Storage-Hydro-store,2020,investment,57074.0625
+Pumped-Storage-Hydro-store,2020,lifetime,60.0
+SOEC,2020,FOM,4.0
+SOEC,2020,electricity-input,1.22
+SOEC,2020,investment,2359.2378
+SOEC,2020,lifetime,30.0
+Sand-charger,2020,FOM,1.075
+Sand-charger,2020,efficiency,0.99
+Sand-charger,2020,investment,152624.5646
+Sand-charger,2020,lifetime,35.0
+Sand-discharger,2020,FOM,0.2688
+Sand-discharger,2020,efficiency,0.53
+Sand-discharger,2020,investment,610498.2585
+Sand-discharger,2020,lifetime,35.0
+Sand-store,2020,FOM,0.3308
+Sand-store,2020,investment,8014.7441
+Sand-store,2020,lifetime,35.0
+Steam methane reforming,2020,methane-input,1.483
+"Tank&bulk, diesel",2020,efficiency,0.462
+"Tank&bulk, diesel",2020,investment,35129312.4041
+"Tank&bulk, diesel",2020,lifetime,25.0
+"Tank&bulk, methanol",2020,efficiency,0.4695
+"Tank&bulk, methanol",2020,investment,38642243.6445
+"Tank&bulk, methanol",2020,lifetime,25.0
+"Tankbulk, ammonia",2020,efficiency,0.471
+"Tankbulk, ammonia",2020,investment,42155174.885
+"Tankbulk, ammonia",2020,lifetime,25.0
+Vanadium-Redox-Flow-bicharger,2020,FOM,2.4028
+Vanadium-Redox-Flow-bicharger,2020,efficiency,0.8062
+Vanadium-Redox-Flow-bicharger,2020,investment,149950.2088
+Vanadium-Redox-Flow-bicharger,2020,lifetime,12.0
+Vanadium-Redox-Flow-store,2020,FOM,0.2335
+Vanadium-Redox-Flow-store,2020,investment,317614.1853
+Vanadium-Redox-Flow-store,2020,lifetime,12.0
+Zn-Air-bicharger,2020,FOM,2.4395
+Zn-Air-bicharger,2020,efficiency,0.7937
+Zn-Air-bicharger,2020,investment,129023.0526
+Zn-Air-bicharger,2020,lifetime,25.0
+Zn-Air-store,2020,FOM,0.1893
+Zn-Air-store,2020,investment,194899.0057
+Zn-Air-store,2020,lifetime,25.0
+Zn-Br-Flow-bicharger,2020,FOM,2.475
+Zn-Br-Flow-bicharger,2020,efficiency,0.8307
+Zn-Br-Flow-bicharger,2020,investment,134297.449
+Zn-Br-Flow-bicharger,2020,lifetime,10.0
+Zn-Br-Flow-store,2020,FOM,0.2849
+Zn-Br-Flow-store,2020,investment,476623.9107
+Zn-Br-Flow-store,2020,lifetime,10.0
+Zn-Br-Nonflow-bicharger,2020,FOM,2.4395
+Zn-Br-Nonflow-bicharger,2020,efficiency,0.8888
+Zn-Br-Nonflow-bicharger,2020,investment,129023.0526
+Zn-Br-Nonflow-bicharger,2020,lifetime,15.0
+Zn-Br-Nonflow-store,2020,FOM,0.2481
+Zn-Br-Nonflow-store,2020,investment,276873.6097
+Zn-Br-Nonflow-store,2020,lifetime,15.0
+air separation unit,2020,electricity-input,0.25
+allam,2020,VOM,2.0
+allam,2020,efficiency,0.6
+allam,2020,investment,1500.0
+allam,2020,lifetime,30.0
+ammonia carbon capture retrofit,2020,FOM,5.0
+ammonia carbon capture retrofit,2020,capture_rate,0.99
+ammonia carbon capture retrofit,2020,electricity-input,0.1
+ammonia carbon capture retrofit,2020,investment,929753.03
+ammonia carbon capture retrofit,2020,lifetime,20.0
+biochar pyrolysis,2020,FOM,3.4615
+biochar pyrolysis,2020,VOM,823.497
+biochar pyrolysis,2020,efficiency-biochar,0.404
+biochar pyrolysis,2020,efficiency-heat,0.4848
+biochar pyrolysis,2020,investment,167272.82
+biochar pyrolysis,2020,lifetime,25.0
+biochar pyrolysis,2020,yield-biochar,0.0582
+biodiesel crops,2020,fuel,96.2077
+bioethanol crops,2020,CO2 intensity,0.1289
+bioethanol crops,2020,fuel,62.1519
+biogas manure,2020,fuel,19.7575
+biogas plus hydrogen,2020,VOM,4.5939
+biomass-to-methanol,2020,C in fuel,0.3926
+biomass-to-methanol,2020,C stored,0.6074
+biomass-to-methanol,2020,CO2 stored,0.2227
+biomass-to-methanol,2020,FOM,1.1111
+biomass-to-methanol,2020,VOM,21.6979
+biomass-to-methanol,2020,capture rate,0.9
+biomass-to-methanol,2020,efficiency,0.58
+biomass-to-methanol,2020,efficiency-electricity,0.02
+biomass-to-methanol,2020,efficiency-heat,0.22
+biomass-to-methanol,2020,investment,5591.3924
+biomass-to-methanol,2020,lifetime,20.0
+blast furnace-basic oxygen furnace,2020,FOM,14.18
+blast furnace-basic oxygen furnace,2020,coal-input,5.34
+blast furnace-basic oxygen furnace,2020,economic_lifetime,20.0
+blast furnace-basic oxygen furnace,2020,investment,7637406.0
+blast furnace-basic oxygen furnace,2020,lifetime,40.0
+blast furnace-basic oxygen furnace,2020,ore-input,1.539
+blast furnace-basic oxygen furnace,2020,scrap-input,0.051
+cement carbon capture retrofit,2020,FOM,7.0
+cement carbon capture retrofit,2020,capture_rate,0.9
+cement carbon capture retrofit,2020,electricity-input,0.16
+cement carbon capture retrofit,2020,gas-input,0.76
+cement carbon capture retrofit,2020,investment,2587727.173
+cement carbon capture retrofit,2020,lifetime,20.0
+cement dry clinker,2020,FOM,4.0
+cement dry clinker,2020,VOM,5.2911
+cement dry clinker,2020,electricity-input,0.0694
+cement dry clinker,2020,gas-input,0.0002
+cement dry clinker,2020,heat-input,0.9444
+cement dry clinker,2020,investment,1158752.6816
+cement dry clinker,2020,lifetime,30.0
+cement finishing,2020,FOM,30.0
+cement finishing,2020,VOM,3.1747
+cement finishing,2020,clinker-input,0.656
+cement finishing,2020,electricity-input,0.1736
+cement finishing,2020,investment,92700.2145
+cement finishing,2020,lifetime,25.0
+cement finishing,2020,slag-input,0.194
+central excess-heat-sourced heat pump,2020,FOM,0.3003
+central excess-heat-sourced heat pump,2020,VOM,1.7884
+central excess-heat-sourced heat pump,2020,efficiency,5.1
+central excess-heat-sourced heat pump,2020,investment,704.7435
+central excess-heat-sourced heat pump,2020,lifetime,25.0
+central geothermal heat source,2020,FOM,0.8406
+central geothermal heat source,2020,VOM,4.8547
+central geothermal heat source,2020,investment,3008.7285
+central geothermal heat source,2020,lifetime,25.0
+central water pit charger,2020,efficiency,1.0
+central water pit discharger,2020,efficiency,1.0
+central water pit storage,2020,Bottom storage temperature,35.0
+central water pit storage,2020,FOM,0.2354
+central water pit storage,2020,Top storage temperature,90.0
+central water pit storage,2020,energy to power ratio,150.0
+central water pit storage,2020,investment,1.0622
+central water pit storage,2020,lifetime,20.0
+central water pit storage,2020,standing losses,0.0078
+central water tank charger,2020,efficiency,1.0
+central water tank discharger,2020,efficiency,1.0
+central water tank storage,2020,energy to power ratio,60.3448
+central water tank storage,2020,standing losses,0.0077
+central water tank storage,2020,temperature difference,55.0
+decentral water tank charger,2020,efficiency,1.0
+decentral water tank discharger,2020,efficiency,1.0
+decentral water tank storage,2020,VOM,0.7168
+decentral water tank storage,2020,energy to power ratio,0.15
+decentral water tank storage,2020,standing losses,2.1
+decentral water tank storage,2020,temperature difference,30.0
+dry bulk carrier Capesize,2020,FOM,4.0
+dry bulk carrier Capesize,2020,capacity,180000.0
+dry bulk carrier Capesize,2020,investment,40000000.0
+dry bulk carrier Capesize,2020,lifetime,25.0
+electric arc furnace,2020,FOM,30.0
+electric arc furnace,2020,economic_lifetime,20.0
+electric arc furnace,2020,electricity-input,0.6395
+electric arc furnace,2020,hbi-input,1.0
+electric arc furnace,2020,investment,1839600.0
+electric arc furnace,2020,lifetime,40.0
+electric arc furnace with hbi and scrap,2020,FOM,30.0
+electric arc furnace with hbi and scrap,2020,economic_lifetime,20.0
+electric arc furnace with hbi and scrap,2020,electricity-input,0.6395
+electric arc furnace with hbi and scrap,2020,hbi-input,0.37
+electric arc furnace with hbi and scrap,2020,investment,1839600.0
+electric arc furnace with hbi and scrap,2020,lifetime,40.0
+electric arc furnace with hbi and scrap,2020,scrap-input,0.71
+electric steam cracker,2020,FOM,3.0
+electric steam cracker,2020,VOM,190.4799
+electric steam cracker,2020,carbondioxide-output,0.55
+electric steam cracker,2020,electricity-input,2.7
+electric steam cracker,2020,investment,11124025.7434
+electric steam cracker,2020,lifetime,30.0
+electric steam cracker,2020,naphtha-input,14.8
+electrolysis small,2020,FOM,4.0
+electrolysis small,2020,efficiency,0.5773
+electrolysis small,2020,efficiency-heat,0.2762
+electrolysis small,2020,investment,1900.0
+electrolysis small,2020,lifetime,25.0
+ethanol carbon capture retrofit,2020,FOM,7.0
+ethanol carbon capture retrofit,2020,capture_rate,0.94
+ethanol carbon capture retrofit,2020,electricity-input,0.12
+ethanol carbon capture retrofit,2020,investment,928559.735
+ethanol carbon capture retrofit,2020,lifetime,20.0
+ethanol from starch crop,2020,FOM,13.8
+ethanol from starch crop,2020,VOM,26.3497
+ethanol from starch crop,2020,efficiency,0.58
+ethanol from starch crop,2020,investment,716511.2815
+ethanol from starch crop,2020,lifetime,20.0
+ethanol from sugar crops,2020,FOM,16.43
+ethanol from sugar crops,2020,VOM,23.1751
+ethanol from sugar crops,2020,efficiency,0.45
+ethanol from sugar crops,2020,investment,530264.2751
+ethanol from sugar crops,2020,lifetime,20.0
+fuelwood,2020,fuel,15.9997
+geothermal,2020,district heat surcharge,25.0
+geothermal,2020,district heat-input,0.8
+hydrogen direct iron reduction furnace,2020,FOM,11.3
+hydrogen direct iron reduction furnace,2020,economic_lifetime,20.0
+hydrogen direct iron reduction furnace,2020,electricity-input,1.03
+hydrogen direct iron reduction furnace,2020,hydrogen-input,2.1
+hydrogen direct iron reduction furnace,2020,investment,4277858.0
+hydrogen direct iron reduction furnace,2020,lifetime,40.0
+hydrogen direct iron reduction furnace,2020,ore-input,1.59
+iron ore DRI-ready,2020,commodity,97.73
+iron-air battery,2020,FOM,1.0219
+iron-air battery,2020,investment,25.1342
+iron-air battery,2020,lifetime,17.5
+iron-air battery charge,2020,efficiency,0.7
+iron-air battery discharge,2020,efficiency,0.59
+methanation,2020,carbondioxide-input,0.198
+methanation,2020,hydrogen-input,1.282
+methanol,2020,CO2 intensity,0.2482
+methanol-to-kerosene,2020,FOM,4.5
+methanol-to-kerosene,2020,VOM,1.35
+methanol-to-kerosene,2020,hydrogen-input,0.0279
+methanol-to-kerosene,2020,investment,307000.0
+methanol-to-kerosene,2020,lifetime,30.0
+methanol-to-kerosene,2020,methanol-input,1.0764
+methanol-to-olefins/aromatics,2020,FOM,3.0
+methanol-to-olefins/aromatics,2020,VOM,31.7466
+methanol-to-olefins/aromatics,2020,carbondioxide-output,0.6107
+methanol-to-olefins/aromatics,2020,electricity-input,1.3889
+methanol-to-olefins/aromatics,2020,investment,2781006.4359
+methanol-to-olefins/aromatics,2020,lifetime,30.0
+methanol-to-olefins/aromatics,2020,methanol-input,18.03
+methanolisation,2020,carbondioxide-input,0.248
+methanolisation,2020,electricity-input,0.271
+methanolisation,2020,heat-output,0.1
+methanolisation,2020,hydrogen-input,1.138
+natural gas direct iron reduction furnace,2020,FOM,11.3
+natural gas direct iron reduction furnace,2020,economic_lifetime,20.0
+natural gas direct iron reduction furnace,2020,gas-input,2.78
+natural gas direct iron reduction furnace,2020,investment,4277858.0
+natural gas direct iron reduction furnace,2020,lifetime,40.0
+natural gas direct iron reduction furnace,2020,ore-input,1.59
+offwind-float,2020,FOM,1.15
+offwind-float,2020,investment,2350.0
+offwind-float,2020,lifetime,20.0
+offwind-float-connection-submarine,2020,investment,2118.5597
+offwind-float-connection-underground,2020,investment,1039.4778
+offwind-float-station,2020,investment,415.7911
+organic rankine cycle,2020,FOM,2.0
+organic rankine cycle,2020,electricity-input,0.12
+organic rankine cycle,2020,investment,1376.0
+organic rankine cycle,2020,lifetime,30.0
+seawater RO desalination,2020,electricity-input,0.003
+shipping fuel methanol,2020,CO2 intensity,0.2482
+shipping fuel methanol,2020,fuel,72.0
+solar-utility single-axis tracking,2020,FOM,1.8605
+solar-utility single-axis tracking,2020,investment,650.3522
+solar-utility single-axis tracking,2020,lifetime,35.0
+steel carbon capture retrofit,2020,FOM,5.0
+steel carbon capture retrofit,2020,capture_rate,0.9
+steel carbon capture retrofit,2020,electricity-input,0.16
+steel carbon capture retrofit,2020,gas-input,0.76
+steel carbon capture retrofit,2020,investment,3561435.753
+steel carbon capture retrofit,2020,lifetime,20.0
