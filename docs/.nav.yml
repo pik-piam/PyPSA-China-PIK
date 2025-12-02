@@ -10,8 +10,8 @@ nav:
   - Releases: releases.md
   - Tutorials: tutorials
   - Reference: reference
-  - Miscellaneous: misc.md
+  # - Miscellaneous: misc.md
   - Release Guide: release-guide.md
-  - Testing: testing-release-flow.md 
+  # - Testing: testing-release-flow.md 
 
 
