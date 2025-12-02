@@ -112,7 +112,9 @@ jobs:
             - name: Deploy documentation with mike
               run: |
                   VERSION="${{ steps.get_version.outputs.VERSION }}"
-                  mike deploy --push --update-aliases $VERSION latest
+                  # Deploy this version and make it the latest
+                  mike deploy --push --update-aliases "$VERSION" latest
+                  # Set latest as the default version
                   mike set-default --push latest
 
             - name: Create documentation update message

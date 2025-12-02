@@ -85,9 +85,11 @@ jobs:
           TITLE="${{ steps.deployment.outputs.TITLE }}"
 
           # Deploy current version with appropriate alias
-          mike deploy --push --update-aliases "$ALIAS" "$TITLE"
-
-          # Set as default if from main branch
           if [ "${{ steps.deployment.outputs.SET_DEFAULT }}" = "true" ]; then
-            mike set-default --push "$ALIAS"
+            # For main branch: deploy as both alias and latest, then set latest as default
+            mike deploy --push --update-aliases "$ALIAS" latest "$TITLE"
+            mike set-default --push latest
+          else
+            # For other branches: just deploy with the alias
+            mike deploy --push --update-aliases "$ALIAS" "$TITLE"
           fi
