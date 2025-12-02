@@ -1,13 +1,18 @@
-import logging
-import atlite
-import xarray as xr
-import pandas as pd
-import geopandas as gpd
+"""Build population gridcell mapping for spatial analysis.
 
-from constants import PROV_NAMES, CRS
+This module creates population density maps and gridcell mappings for spatial
+disaggregation and analysis in the PyPSA-China energy system model.
+"""
+
+import logging
 from os import PathLike
 
+import atlite
+import geopandas as gpd
+import pandas as pd
+import xarray as xr
 from _helpers import configure_logging, mock_snakemake
+from constants import CRS, PROV_NAMES
 from readers_geospatial import read_pop_density, read_province_shapes
 
 logger = logging.getLogger(__name__)
@@ -16,7 +21,7 @@ logger = logging.getLogger(__name__)
 def xarr_to_gdf(
     xarr: xr.DataArray, var_name: str, x_var="x", y_var="y", crs=CRS
 ) -> gpd.GeoDataFrame:
-    """convert an xarray to GDF
+    """Convert an xarray to GDF
 
     Args:
         xarr (xr.DataArray): the input array
@@ -36,7 +41,7 @@ def xarr_to_gdf(
 
 
 def load_cfrs_data(target: PathLike) -> gpd.GeoDataFrame:
-    """load  CFRS_grid.nc type files into a geodatafram
+    """Load  CFRS_grid.nc type files into a geodatafram
 
     Args:
         target (PathLike): the abs path

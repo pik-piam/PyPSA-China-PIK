@@ -1,29 +1,36 @@
+"""Plot network maps and energy system visualizations.
+
+This module creates geographical network maps showing generation capacities,
+transmission lines, energy flows, and other network characteristics for
+the PyPSA-China energy system model.
+"""
+
 import logging
-import pypsa
+import os
+
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
-import pandas as pd
-import os
 import numpy as np
-
-# from make_summary import assign_carriers
-from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
-from _plot_utilities import (
-    set_plot_style,
-    fix_network_names_colors,
-    determine_plottable,
-    make_nice_tech_colors,
-    # aggregate_small_pie_vals,
-)
-from _pypsa_helpers import get_location_and_carrier
+import pandas as pd
+import pypsa
 from _helpers import (
     configure_logging,
     mock_snakemake,
     set_plot_test_backend,
 )
-from constants import PLOT_COST_UNITS, PLOT_CAP_UNITS, PLOT_SUPPLY_UNITS, CURRENCY
+from _plot_utilities import (
+    determine_plottable,
+    fix_network_names_colors,
+    make_nice_tech_colors,
+    # aggregate_small_pie_vals,
+    set_plot_style,
+)
+from _pypsa_helpers import get_location_and_carrier
+from constants import CURRENCY, PLOT_CAP_UNITS, PLOT_COST_UNITS, PLOT_SUPPLY_UNITS
 
+# from make_summary import assign_carriers
+from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +70,14 @@ def plot_map(
         fig, ax = plt.subplots()
     else:
         fig = ax.get_figure()
+
+    bus_colors = pd.Series(bus_colors)
+    if bus_sizes.index.nlevels > 1:
+        missing = bus_sizes.index.get_level_values(1).difference(bus_colors.index)
+    else:
+        missing = bus_sizes.index.difference(bus_colors.index)
+    if not missing.empty:
+        raise ValueError(f"Missing colors for bus carriers: {missing.tolist()}")
 
     network.plot(
         bus_sizes=bus_sizes,
@@ -110,7 +125,7 @@ def plot_map(
         size_factor = float(kwargs.get("linewidth_factor", 1e5))
         ref_sizes = kwargs.get("ref_edge_sizes", [1e5, 5e5])
 
-        labels = [f"{float(s)/edge_unit_conv} {ref_unit}" for s in ref_sizes]
+        labels = [f"{float(s) / edge_unit_conv} {ref_unit}" for s in ref_sizes]
         ref_sizes = list(map(lambda x: float(x) / size_factor, ref_sizes))
         legend_kw = dict(
             loc="upper left",
@@ -129,7 +144,7 @@ def plot_map(
         ref_unit = kwargs.get("ref_bus_unit", "bEUR/a")
         size_factor = float(kwargs.get("bus_size_factor", 1e10))
         ref_sizes = kwargs.get("ref_bus_sizes", [2e10, 1e10, 5e10])
-        labels = [f"{float(s)/bus_unit_conv:.0f} {ref_unit}" for s in ref_sizes]
+        labels = [f"{float(s) / bus_unit_conv:.0f} {ref_unit}" for s in ref_sizes]
         ref_sizes = list(map(lambda x: float(x) / size_factor, ref_sizes))
 
         legend_kw = {
@@ -311,7 +326,7 @@ def plot_cost_map(
     bus_size_factor = opts["cost_map"]["bus_size_factor"]
     linewidth_factor = opts["cost_map"]["linewidth_factor"]
 
-    ax = plot_map(
+    plot_map(
         network,
         tech_colors=tech_colors,
         edge_widths=edge_widths / linewidth_factor,
@@ -320,7 +335,7 @@ def plot_cost_map(
         edge_colors=opts["cost_map"]["edge_color"],
         ax=ax1,
         add_legend=not plot_additions,
-        bus_ref_title=f"System costs{' (CAPEX)'if capex_only else ''}",
+        bus_ref_title=f"System costs{' (CAPEX)' if capex_only else ''}",
         **opts["cost_map"],
     )
 
@@ -607,7 +622,7 @@ def plot_nodal_prices(
     edge_widths = edges.clip(line_lower_threshold, edges.max()).replace(line_lower_threshold, 0)
 
     bus_size_factor = opts["price_map"]["bus_size_factor"]
-    linewidth_factor = opts["price_map"][f"linewidth_factor{"_heat" if carrier == 'heat' else ''}"]
+    linewidth_factor = opts["price_map"][f"linewidth_factor{'_heat' if carrier == 'heat' else ''}"]
     plot_map(
         network,
         tech_colors=None,
@@ -640,11 +655,11 @@ if __name__ == "__main__":
         snakemake = mock_snakemake(
             "plot_network",
             topology="current+FCG",
-            # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
-            planning_horizons="2030",
-            # heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            co2_pathway="exp175default",
+            # co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            planning_horizons="2040",
+            heating_demand="positive",
+            # configfiles=["resources/tmp/remind_coupled_cg.yaml"],
         )
     set_plot_test_backend(snakemake.config)
     configure_logging(snakemake, logger=logger)

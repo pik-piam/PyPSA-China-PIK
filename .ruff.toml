@@ -1,0 +1,58 @@
+line-length = 100
+target-version = "py312"
+
+# Exclude notebook files from linting
+exclude = [
+    "**/*.ipynb",
+    "workflow/notebooks/**",
+    "Remind-PyPSA-coupling/**",
+    "tests/**"
+]
+
+
+[lint]
+select = [
+    "F",   # pyflakes
+    "E",   # pycodestyle: Error
+    "W",   # pycodestyle: Warning
+    "I",   # isort
+    "D",   # pydocstyle
+    "UP",  # pyupgrade
+    "TID", # flake8-tidy-imports
+]
+ignore = [
+    "ANN401", # Dynamically typed expressions are forbidden
+    "E712", # comparison to False should be 'if cond is False:' or 'if not cond:'
+    "E741", # ambiguous variable names
+    "D203", # 1 blank line required before class docstring
+    "D212", # Multi-line docstring summary should start at the second line
+    "D401", # First line should be in imperative mood
+]
+
+[lint.per-file-ignores]
+# Ignore docstring and line length issues in all Python files
+
+"**/*.py" = [
+    'E501', # line too long
+    'D107', # Missing docstring in __init__
+    'D200', # One-line docstring should fit on one line with quotes
+    'D202', # No blank lines allowed after function docstring
+    'D205', # 1 blank line required between summary line and description
+    'D400', # First line should end with a period
+    'D404', # First word of the docstring should not be "This"
+    'D413', # Missing blank line after last section
+    'D415', # First line should end with a period, question mark, or exclamation point
+    'D417', # Missing argument descriptions in the docstring
+    "W291", # trailing whitespace
+]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.isort]
+combine-as-imports = true
+known-first-party = ["workflow"]

@@ -7,6 +7,7 @@
 Associated with the `solve_network_myopic` rule in the Snakefile.
 To be merged/consolidated with the `solve_network` script.
 """
+
 import logging
 
 import numpy as np
@@ -17,6 +18,7 @@ from _helpers import (
     mock_snakemake,
     setup_gurobi_tunnel_and_env,
 )
+from _pypsa_helpers import store_duals_to_network
 
 logger = logging.getLogger(__name__)
 pypsa.pf.logger.setLevel(logging.WARNING)
@@ -27,7 +29,7 @@ def prepare_network(
     config: dict,
     solve_opts=None,
 ):
-    """prepare the network for the solver
+    """Prepare the network for the solver
     Args:
         n (pypsa.Network): the pypsa network object
         solve_opts (dict): the solving options
@@ -284,8 +286,8 @@ def extra_functionality(n, snapshots):
         add_retrofit_constraints(n)
 
 
-def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs):
-    """perform the optimisation
+def solve_network(n: pypsa.Network, config: dict, solving, opts="", **kwargs) -> pypsa.Network:
+    """Perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
         config (dict): the configuration dictionary
@@ -370,6 +372,9 @@ if __name__ == "__main__":
 
     n = prepare_network(n, solve_opts, snakemake.config)
 
+    # Extract export_duals flag from config in main
+    export_duals_flag = snakemake.params.solving["options"].get("export_duals", False)
+
     n = solve_network(
         n,
         config=snakemake.config,
@@ -378,6 +383,10 @@ if __name__ == "__main__":
         log_fn=snakemake.log.solver,
     )
 
+    # Store dual variables in network components for netcdf export
+    if export_duals_flag:
+        store_duals_to_network(n)
+
     # n.meta = dict(snakemake.config, **dict(wildcards=dict(snakemake.wildcards)))
     n.links_t.p2 = n.links_t.p2.astype(float)
     outp = snakemake.output.network_name
@@ -385,7 +394,5 @@ if __name__ == "__main__":
     if compression:
         compression = compression.get("nc_compression", None)
     n.export_to_netcdf(outp, compression=compression)
-
-    logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")
 
     logger.info(f"Network successfully solved for {snakemake.wildcards.planning_horizons}")

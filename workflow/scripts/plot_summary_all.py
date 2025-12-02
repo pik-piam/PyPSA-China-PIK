@@ -9,36 +9,37 @@ Plots energy and cost summaries for solved networks.
 This script collects functions that plot across planning horizons.
 """
 
-import os
 import logging
-import pandas as pd
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
-
+import pandas as pd
 from _helpers import configure_logging, mock_snakemake, set_plot_test_backend
+from _plot_utilities import label_stacked_bars, set_plot_style
 from constants import (
-    PLOT_COST_UNITS,
     COST_UNIT,
-    PLOT_CO2_UNITS,
-    PLOT_CO2_LABEL,
-    PLOT_SUPPLY_UNITS,
-    PLOT_SUPPLY_LABEL,
-    PLOT_CAP_UNITS,
     PLOT_CAP_LABEL,
+    PLOT_CAP_UNITS,
+    PLOT_CO2_LABEL,
+    PLOT_CO2_UNITS,
+    PLOT_COST_UNITS,
+    PLOT_SUPPLY_LABEL,
+    PLOT_SUPPLY_UNITS,
 )
-from _plot_utilities import set_plot_style, label_stacked_bars
 
 logger = logging.getLogger(__name__)
 
 
 # consolidate and rename
 def rename_techs(label: pd.Index) -> pd.Index:
-    """rename techs into grouped categories
+    """Rename techs into grouped categories
 
     Args:
         label (pd.Index | iterable): the index techs to rename
     Returns:
-        pd.Index | iterable: the renamed index / iterable"""
+        pd.Index | iterable: the renamed index / iterable
+    """
     prefix_to_remove = [
         "central ",
         "decentral ",
@@ -90,7 +91,7 @@ def plot_pathway_costs(
     social_discount_rate=0.0,
     fig_name: os.PathLike = None,
 ):
-    """plot the costs
+    """Plot the costs
 
     Args:
         file_list (list): the input csvs from make_summary
@@ -146,7 +147,7 @@ def plot_pathway_costs(
     ax.grid(axis="y")
     # TODO fix this - doesnt work with non-constant interval
     ax.annotate(
-        f"Total cost in bn Eur: {df.sum().sum()*5:.2f}",
+        f"Total cost in bn Eur: {df.sum().sum() * 5:.2f}",
         xy=(0.75, 0.9),
         color="darkgray",
         xycoords="axes fraction",
@@ -171,7 +172,7 @@ def plot_pathway_costs(
 def plot_pathway_capacities(
     file_list: list, config: dict, plot_heat=True, plot_h2=True, fig_name=None
 ):
-    """plot the capacities
+    """Plot the capacities
 
     Args:
         file_list (list): the input csvs from make_summary
@@ -195,7 +196,6 @@ def plot_pathway_capacities(
         year = cap_df.columns.get_level_values(0)[0]
         cap_df = cap_df.droplevel(0, axis=1).rename(columns={"Unnamed: 4_level_1": year})
         cap_df /= PLOT_CAP_UNITS
-
         if "Load Shedding" in cap_df.index.get_level_values("carrier"):
             cap_df.drop("Load Shedding", level="carrier", inplace=True)
 
@@ -226,6 +226,7 @@ def plot_pathway_capacities(
         )
         cap_ac = cap_ac.groupby("carrier").sum()[year]
 
+        cap_h2 = pd.DataFrame()
         if plot_h2:
             cap_h2 = cap_df.reset_index().query(
                 "bus_carrier == 'H2' | carrier =='H2' | end_carrier =='H2'"
@@ -258,6 +259,8 @@ def plot_pathway_capacities(
     for i, capacity_df in enumerate([caps_ac, caps_heat, caps_stores, caps_h2]):
         if capacity_df.empty:
             continue
+        if isinstance(capacity_df, pd.Series):
+            capacity_df = capacity_df.to_frame()
         k, j = divmod(i, 2)
         ax = axes[k, j]
         preferred_order = pd.Index(config["preferred_order"])
@@ -301,7 +304,7 @@ def plot_pathway_capacities(
 def plot_expanded_capacities(
     file_list: list, config: dict, plot_heat=False, plot_h2=True, fig_name=None
 ):
-    """plot the expanded capacities
+    """Plot the expanded capacities
 
     Args:
         file_list (list): the input csvs from make_summary
@@ -322,7 +325,7 @@ def plot_expanded_capacities(
 
 
 def plot_energy(file_list: list, config: dict, fig_name=None):
-    """plot the energy production and consumption
+    """Plot the energy production and consumption
 
     Args:
         file_list (list): the input csvs
@@ -383,7 +386,7 @@ def plot_energy(file_list: list, config: dict, fig_name=None):
 def plot_electricty_heat_balance(
     file_list: list[os.PathLike], config: dict, fig_dir=None, plot_heat=True
 ):
-    """plot the energy production and consumption
+    """Plot the energy production and consumption
 
     Args:
         file_list (list): the input csvs  from make_dirs([year/supply_energy.csv])
@@ -611,7 +614,7 @@ def plot_prices(
     unit="€/MWh",
     **kwargs,
 ):
-    """plot the prices
+    """Plot the prices
 
     Args:
         file_list (list): the input csvs from make_summary
@@ -639,12 +642,14 @@ def plot_prices(
         prices_df = prices_df.abs()
 
     defaults = {"lw": 3, "marker": "o", "markersize": 5, "alpha": 0.8}
-    kwargs.update(kwargs)
+    if "linewidth" in kwargs:
+        kwargs["lw"] = kwargs.pop("linewidth")
+    defaults.update(kwargs)
     prices_df.plot(
         ax=ax,
         kind="line",
         color=[colors[k] if k in colors else "k" for k in prices_df.columns],
-        **kwargs,
+        **defaults,
     )
     min_ = prices_df.min().min()
     if np.sign(min_) < 0:
@@ -708,7 +713,7 @@ def plot_pathway_co2(file_list: list, config: dict, fig_name=None):
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
-    ax.set_ylim([0, co2_balance_df.sum(axis=1).max() * 1.1])
+    ax.set_ylim([co2_balance_df.min().min() * 1.1, co2_balance_df.sum(axis=1).max() * 1.1])
     fig.tight_layout()
     if fig_name is not None:
         fig.savefig(fig_name, transparent=config["transparent"])
@@ -741,7 +746,7 @@ def plot_co2_prices(co2_prices: dict, config: dict, fig_name=None):
 
 
 def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
-    """plot the co2 price
+    """Plot the co2 price
 
     Args:
         file_list (list): the input csvs from make_summaries
@@ -786,6 +791,17 @@ def plot_co2_shadow_price(file_list: list, config: dict, fig_name=None):
 
 
 def plot_investments(file_list: list, config: dict, fig_name=None, ax: object = None):
+    """Plot investment analysis (placeholder function).
+
+    Args:
+        file_list (list): List of input files for investment analysis
+        config (dict): Configuration dictionary with plotting parameters
+        fig_name: Output figure name. Defaults to None.
+        ax (object, optional): Matplotlib axes object. Defaults to None.
+
+    Returns:
+        None: Currently a placeholder function
+    """
     pass
 
 
@@ -833,16 +849,14 @@ def write_data(data_paths: dict, outp_dir: os.PathLike):
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
         snakemake = mock_snakemake(
             "plot_summary",
             topology="current+FCG",
             # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2_higheradj",
+            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
             heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            configfiles="resources/tmp/pseudo_coupled.yml",
         )
-
     configure_logging(snakemake)
     set_plot_test_backend(snakemake.config)
     logger.info(snakemake.input)
@@ -865,7 +879,7 @@ if __name__ == "__main__":
         co2_prices = None
 
     plot_heat = config.get("heat_coupling", False)
-    plot_h2 = config["add_H2"]
+    plot_h2 = config.get("add_H2", False)
     NAN_COLOR = config["plotting"]["nan_color"]
     data_paths = {
         "energy": [os.path.join(p, "energy.csv") for p in paths],
@@ -888,9 +902,10 @@ if __name__ == "__main__":
             "solar",
             "onwind",
             "offwind",
+            # "battery",
+            "battery discharger",
             "coal",
             "coal-CCS",
-            # "gas CCGT",
             "hydroelectricity",
             "gas OCGT",
             "CCGT-CCS",

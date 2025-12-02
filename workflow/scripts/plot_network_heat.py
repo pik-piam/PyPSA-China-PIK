@@ -2,27 +2,35 @@
 
 import logging
 
-import pandas as pd
-import numpy as np
-from pypsa import Network
 import cartopy.crs as ccrs
-import matplotlib.pyplot as plt
 import matplotlib as mpl
-from matplotlib.patches import Circle, Ellipse
-from matplotlib.legend_handler import HandlerPatch
-
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from _helpers import (
     configure_logging,
     mock_snakemake,
 )
-from _pypsa_helpers import load_network_for_plots, aggregate_costs, aggregate_p
 from _plot_utilities import fix_network_names_colors, set_plot_style
+from _pypsa_helpers import aggregate_costs, aggregate_p, load_network_for_plots
+from matplotlib.legend_handler import HandlerPatch
+from matplotlib.patches import Circle, Ellipse
+from pypsa import Network
 
 to_rgba = mpl.colors.colorConverter.to_rgba
 logger = logging.getLogger(__name__)
 
 
 def make_handler_map_to_scale_circles_as_in(ax, dont_resize_actively=False):
+    """Create a handler map for scaling circles in legend to match plot dimensions.
+
+    Args:
+        ax: The matplotlib axes object
+        dont_resize_actively (bool, optional): If True, disable active resizing. Defaults to False.
+
+    Returns:
+        dict: Handler map for Circle patches
+    """
     fig = ax.get_figure()
 
     def axes2pt():
@@ -54,11 +62,34 @@ def make_handler_map_to_scale_circles_as_in(ax, dont_resize_actively=False):
 
 
 def make_legend_circles_for(sizes, scale=1.0, **kw):
+    """Create circles for legend with specified sizes.
+
+    Args:
+        sizes: List of sizes for the circles
+        scale (float, optional): Scale factor for circle sizes. Defaults to 1.0.
+        **kw: Additional keyword arguments passed to Circle constructor
+
+    Returns:
+        list: List of Circle objects for legend
+    """
     return [Circle((0, 0), radius=(s / scale) ** 0.5, **kw) for s in sizes]
 
 
 def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
+    """Plot an optimized network map showing generation capacities and transmission lines.
 
+    Args:
+        n: PyPSA Network object
+        plot_config (dict): Configuration dictionary with plotting parameters
+        ax: Matplotlib axes object. If None, creates new figure. Defaults to None.
+        attribute (str, optional): Network attribute to plot. Defaults to "p_nom".
+
+    Returns:
+        matplotlib.axes.Axes: The axes object with the plot
+
+    Raises:
+        ValueError: If attribute plotting is not implemented
+    """
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={"projection": ccrs.PlateCarree()})
 
@@ -84,7 +115,6 @@ def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
         bus_sizes.index.names = ["bus", "carrier"]
         bus_sizes = bus_sizes.groupby(["bus", "carrier"]).sum()
         line_widths_exp = n.lines.s_nom_opt
-        line_widths_cur = n.lines.s_nom_min
         link_widths_exp = (
             pd.concat(
                 [
@@ -94,10 +124,8 @@ def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
             )
             - n.links.p_nom_min
         )
-
-        link_widths_cur = n.links.p_nom_min
     else:
-        raise "plotting of {} has not been implemented yet".format(attribute)
+        raise f"plotting of {attribute} has not been implemented yet"
 
     # FORMAT
     linewidth_factor = plot_config["map"]["linewidth_factor"]
@@ -143,7 +171,7 @@ def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
         handles.append(
             plt.Line2D([0], [0], color=line_colors["exp"], linewidth=s * 1e3 / linewidth_factor)
         )
-        labels.append("{} GW".format(s))
+        labels.append(f"{s} GW")
     l1_1 = ax.legend(
         handles,
         labels,
@@ -176,7 +204,7 @@ def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
     ax.add_artist(l1_2)
 
     handles = make_legend_circles_for([10e4, 5e4, 1e4], scale=bus_size_factor, facecolor="w")
-    labels = ["{} GW".format(s) for s in (100, 50, 10)]
+    labels = [f"{s} GW" for s in (100, 50, 10)]
     l2 = ax.legend(
         handles,
         labels,
@@ -201,7 +229,7 @@ def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
             plt.Line2D([0], [0], color=tech_colors[t], marker="o", markersize=8, linewidth=0)
         )
         labels.append(plot_config["nice_names"].get(t, t))
-    l3 = ax.legend(
+    ax.legend(
         handles,
         labels,
         loc="upper center",
@@ -216,6 +244,16 @@ def plot_opt_map(n, plot_config, ax=None, attribute="p_nom"):
 
 
 def plot_total_energy_pie(n, plot_config, ax=None):
+    """Plot a pie chart showing total energy production by technology.
+
+    Args:
+        n: PyPSA Network object
+        plot_config (dict): Configuration dictionary with plotting parameters
+        ax: Matplotlib axes object. If None, creates new figure. Defaults to None.
+
+    Returns:
+        None: Modifies the axes in place
+    """
     if ax is None:
         fig, ax = plt.subplots(figsize=(5, 5))
 
@@ -240,6 +278,16 @@ def plot_total_energy_pie(n, plot_config, ax=None):
 
 
 def plot_total_cost_bar(n: Network, plot_config: dict, ax=None):
+    """Plot a stacked bar chart showing total system costs by technology.
+
+    Args:
+        n (Network): PyPSA Network object
+        plot_config (dict): Configuration dictionary with plotting parameters including cost thresholds
+        ax: Matplotlib axes object. If None, uses current axes. Defaults to None.
+
+    Returns:
+        None: Modifies the axes in place
+    """
     if ax is None:
         ax = plt.gca()
 
@@ -312,7 +360,6 @@ def plot_total_cost_bar(n: Network, plot_config: dict, ax=None):
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
         snakemake = mock_snakemake(
             "plot_network",
             opts="ll",

@@ -6,6 +6,14 @@ plotting:
   transparent: false
   statistics:
     clip_numerical_zeroes: true
+    add_labels:
+      - "capacity_factor"
+      - "installed_capacity"
+      - "optimal_capacity"
+      - "lcoe"
+      - "mv_minus_lcoe"
+      - "supply"
+      - "market_value"
   cost_panel:
     y_axis: "annualized system cost bEUR/a" # only true if investment period is one year
   cost_map:
@@ -55,10 +63,12 @@ plotting:
   capacity_tracking:
     stores: ['water tanks','battery', "Battery Storage", "H2" ]
     drop_links : ['battery', "battery charger", 'water tanks', "battery discharger", "H2"]
+  # REMOVE ITEMS SMALLER THAN FROM PLOTS
   costs_threshold: 2.e+6 # Eur
   energy_threshold: 5.e+6 # MWh
-  capacity_threshold: 1.e+4 # MW
-
+  capacity_threshold: 1.e+2 # MW
+  market_value:
+      min_gen_share: 0.01
   loads: ['electricity', 'decentral heat', 'central heat']
   vre_techs: [ "onwind", "offwind", "solar"]
   conv_techs: [ "gas", "gas-heat", "gas-AC", "AC-gas", "coal", "coal-AC","solar thermal","AC-heat","AC-AC","stations-AC","uranium", "H2-AC", "H2-gas",]
@@ -101,6 +111,15 @@ plotting:
     home battery charger: '#5e8032'
     home battery discharger: '#3c5221'
     BEV charger: '#baf238'
+    EV_passenger_charger: '#e41a1c'
+    EV_freight_charger: '#fb6a4a'
+    EV_passenger_discharger: '#ff7f7f'
+    EV_freight_discharger: '#ff9f9f'
+    # Title case versions (after .title() transformation in plot_time_series.py)
+    ev_Passenger_Charger: '#e41a1c'
+    EV_Freight_Charger: '#fb6a4a'
+    EV_Passenger_Discharger: '#ff7f7f'
+    EV_Freight_Discharger: '#ff9f9f'
     V2G: '#e5ffa8'
     land transport EV: '#baf238'
     Li ion: '#baf238'
@@ -145,8 +164,9 @@ plotting:
     OCGT marginal: '#e0986c'
     OCGT-heat: '#e0986c'
     CCGT: '#a85522'
-    CCGT gas: '#a85522'
+    CCGT marginal: '#a85522'
     gas CCGT: '#a85522'
+    CCGT gas: '#a85522'
     gas ccs: '#a85522'
     CCGT-CCS: '#76855B'
     gas CCGT-CCS: '#76855B'
@@ -163,9 +183,6 @@ plotting:
     fossil gas: '#e05b09'
     natural gas: '#e05b09'
     biogas to gas: '#e36311'
-    CCGT: '#a85522'
-    CCGT marginal: '#a85522'
-    gas CCGT: '#a85522'
     allam: '#B98F76'
     gas for industry co2 to atmosphere: '#692e0a'
     gas for industry co2 to stored: '#8a3400'
@@ -174,8 +191,6 @@ plotting:
     gas pipeline: '#ebbca0'
     gas pipeline new: '#a87c62'
     gas-AC: "grey"
-
-
     # hot water storage
     water tanks: '#e69487'
     residential rural water tanks: '#f7b7a3'
@@ -228,10 +243,12 @@ plotting:
     CHP coal: '#8a5751'
     CHP coal generator: '#8a5751'
     coal heat: '#8a7f7d'
-    urban central gas CHP: '#8f6e6a'
+    gas CHP: '#8f6e6a'
     CHP gas: '#8f6e6a'
-    CHP gas generator: '#8f6e6a'
-    CHP gas boiler: '#8f6e6a'
+    CHP OCGT gas: '#745b78'
+    central gas CHP: '#745b78'
+    CHP gas generator: '#745b78'
+    CHP gas boiler: '#745b78'
     CHP CC: '#634643'
     urban central gas CHP CC: '#6e4e4c'
     CHP heat: '#8a5751'
@@ -262,7 +279,8 @@ plotting:
     H2 pipeline retrofitted: '#ba99b5'
     H2 Fuel Cell: '#c251ae'
     H2 fuel cell: '#c251ae'
-    H2 CHP: '#c251ae'
+    H2 CHP: '#a1378e'
+    CHP H2: '#a1378e'
     H2 turbine: '#991f83'
     H2 Electrolysis: '#ff29d9'
     H2 electrolysis: '#ff29d9'
@@ -273,6 +291,7 @@ plotting:
     ror: '#3dbfb0'
     run of river: '#3dbfb0'
     hydroelectricity: '#298c81'
+    hydro_inflow: '#298c81'
     PHS: '#51dbcc'
     Pumped Hydro Storage: '#51dbcc'
     pumped hydro storage: '#51dbcc'
@@ -414,6 +433,15 @@ plotting:
     # generatord
     battery: "Battery Storage"
     battery discharger: "Battery Discharger"
+    EV_passenger_charger: "EV Passenger Charger"
+    EV_freight_charger: "EV Freight Charger"
+    EV_passenger_discharger: "EV Passenger Discharger"
+    EV_freight_discharger: "EV Freight Discharger"
+    ev_Passenger_Charger: "EV Passenger Charger"
+    EV_Freight_Charger: "EV Freight Charger"
+    EV_Passenger_Discharger: "EV Passenger Discharger"
+    EV_Freight_Discharger: "EV Freight Discharger"
+    # coal: "Coal"
     coal: "Coal Power Plant"
     coal cc: "Coal with carbon capture"
     coal ccs: "Coal with carbon capture"
@@ -422,24 +450,31 @@ plotting:
     hydro: "Reservoir & Dam"
     H2 fuel cell: "H2 Fuel Cell"
     PHS: "Pumped Hydro Storage"
-    offwind: "Offshore Wind"
-    onwind: "Onshore Wind"
-    solar: "Solar"
     # H2: "Hydrogen Power"
     ror: "Run of River"
-    solar thermal: "Solar Thermal"
     uranium: "Nuclear"
     hydroelectricity: "Hydroelectricity"
-    coal: "Coal"
     offwind: "Offshore Wind"
     onwind: "Onshore Wind"
     solar: "Solar"
     solar thermal: "Solar Thermal"
+    heat decentral: "Decentral Heat"
+
 
   preferred_order:
   - electric load
   - heat load
+  - heat
+  - heat decentral
   - Load
+  - EV_passenger_charger
+  - EV_freight_charger
+  - EV_passenger_discharger
+  - EV_freight_discharger
+  - ev_Passenger_Charger
+  - EV_Freight_Charger
+  - EV_Passenger_Discharger
+  - EV_Freight_Discharger
   - Transmission Lines
   - transmission lines
   - transmission losses
@@ -463,7 +498,7 @@ plotting:
   - CHP coal
   - gas CCGT
   - CCGT-CCS
-  - gas CCGT-CCS 
+  - gas CCGT-CCS
   - gas
   - gas CCS
   - Combined-Cycle Gas

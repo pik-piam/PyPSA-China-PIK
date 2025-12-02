@@ -15,23 +15,20 @@ The sequence of operations matters: Dependencies represents previous step output
 
 """
 
-from typing import Any
 import logging
-import pandas as pd
-import re
 import os.path
+import re
 from os import PathLike
+from typing import Any
 
-import sys
-
-import setup  # sets up paths
-from _helpers import configure_logging
+import pandas as pd
 
 # remind pypsa coupling package
 import rpycpl.utils as coupl_utils
-from rpycpl.utils import read_remind_csv
+import setup  # sets up paths
+from _helpers import configure_logging
 from rpycpl.etl import ETL_REGISTRY, Transformation
-
+from rpycpl.utils import read_remind_csv
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +45,7 @@ class RemindLoader:
         self.backend = backend
 
     def _group_split_frames(self, keys, pattern: str = r"_part\d+$") -> dict[str, list[str]]:
-        """Chat gpt regex magic to group split frames
+        r"""Chat gpt regex magic to group split frames
         Args:
             keys (list): list of keys
             pattern (str, optional): regex pattern to group split frames by. Defaults to r"_part\\d+$"."
@@ -74,7 +71,18 @@ class RemindLoader:
     def load_frames_gdx(
         self, frames: dict[str, str], gdx_file: PathLike
     ) -> dict[str, pd.DataFrame]:
+        """Load frames from GDX file.
 
+        Args:
+            frames (dict[str, str]): Dictionary mapping parameter names to REMIND symbol names.
+            gdx_file (PathLike): Path to the GDX file.
+
+        Returns:
+            dict[str, pd.DataFrame]: Dictionary of loaded DataFrames.
+
+        Raises:
+            NotImplementedError: GDX loading not implemented yet.
+        """
         raise NotImplementedError("GDX loading not implemented yet")
 
     def merge_split_frames(self, frames: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
@@ -140,12 +148,14 @@ class ETLRunner:
         **kwargs,
     ) -> pd.DataFrame:
         """Run the ETL step using the provided frames and extra arguments.
+
         Args:
             step (Transformation): The ETL step to run.
             frames (dict): Dictionary of loaded frames.
             previous_outputs (dict, optional): Dictionary of outputs from previous
                 steps that can be used as inputs.
             **kwargs: Additional arguments for the ETL method.
+
         Returns:
             pd.DataFrame: The result of the ETL step.
         """
@@ -173,7 +183,6 @@ class ETLRunner:
 
 
 if __name__ == "__main__":
-
     if "snakemake" not in globals():
         snakemake = setup._mock_snakemake(
             "transform_remind_data",

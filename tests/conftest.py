@@ -4,19 +4,15 @@ Note that conftest functions are automatically discovered by pytest
 """
 
 import pathlib
-import yaml
-import pytest
-from os import PathLike
-import matplotlib
-import shutil
-
 from hashlib import sha256 as hash256
-from os import remove
+from os import PathLike
+
+import matplotlib
+import pytest
+import yaml
 
 # from filelock import BaseFileLock
-
-from constants import TESTS_RUNNAME, TESTS_CUTOUT
-from _helpers import PathManager
+from constants import TESTS_CUTOUT, TESTS_RUNNAME
 
 DEFAULT_CONFIG = pathlib.Path(pathlib.Path.cwd(), "config", "default_config.yaml")
 TECH_CONFIG = pathlib.Path(pathlib.Path.cwd(), "config", "technology_config.yaml")
@@ -29,7 +25,7 @@ def set_matplotlib_backend():
 
 
 def load_config(config_path: PathLike) -> dict:
-    """load a config file
+    """Load a config file
     Args:
         config_path (PathLike): the path to the config file
 
@@ -43,17 +39,21 @@ def load_config(config_path: PathLike) -> dict:
 
 @pytest.fixture(scope="module")
 def make_snakemake_test_config(tmp_path_factory) -> dict:
-    """make a test config for snamekemake based on the default config
+    """Make a test config for snamekemake based on the default config
     Example:
         conf_dict = make_snamkemake_test_config({"scenario":{"planning_horizons":2030}})
+
     Returns:
         dict: the test config
     """
 
     def make(
-        time_res=24, plan_year=2040, start_d="01-02 00:00", end_d="01-02 23:00", **kwargs
+        time_res=24,
+        plan_year=2040,
+        start_d="01-02 00:00",
+        end_d="01-02 23:00",
+        **kwargs,
     ) -> dict:
-
         base_config = load_config(DEFAULT_CONFIG)
         # base_config.update(load_config(TECH_CONFIG))
         base_config.update(kwargs)
@@ -73,11 +73,9 @@ def make_snakemake_test_config(tmp_path_factory) -> dict:
         test_config["enable"] = {k: False for k in test_config["enable"]}
         # set the paths & run name (PathManager reacts to TESTS_RUNNAME)
         test_config["results_dir"] = str(tmp_path_factory.mktemp("results"))
-        test_config["summary_dir"] = str(tmp_path_factory.mktemp("results_summary"))
         test_config["run"]["name"] = TESTS_RUNNAME
         test_config["run"]["is_test"] = True
         test_config["paths"]["costs_dir"] = None
-        
 
         # mock the atlite cutout config
         test_config["atlite"]["cutout_name"] = TESTS_CUTOUT
@@ -95,7 +93,6 @@ def make_test_config_file(make_snakemake_test_config, tmpdir_factory, request):
     """Fixture to save a temp config file for testing, return its path,
     and clean up after module.
     """
-
     # Get parameters passed via pytest.mark.parametrize
     time_res = request.param.get("time_res", 24)
     plan_year = request.param.get("plan_year", 2040)
@@ -113,6 +110,14 @@ def make_test_config_file(make_snakemake_test_config, tmpdir_factory, request):
 
     # Generate the test config
     test_config = make_snakemake_test_config(time_res=time_res, plan_year=plan_year, **kwargs)
+
+    # If REMIND coupling is enabled, point to mock data
+    if test_config.get("run", {}).get("is_remind_coupled", False):
+        import pathlib
+
+        mock_remind_dir = str(pathlib.Path(__file__).parent / "testdata" / "mock_remind")
+        test_config["paths"] = test_config.get("paths", {})
+        test_config["paths"]["remind_outpt_dir"] = mock_remind_dir
 
     # Generate a unique filename based on the arguments
     config_filename = generate_filename(time_res=time_res, plan_year=plan_year)

@@ -1,11 +1,11 @@
 """File reading support functions"""
 
-import rioxarray
-from xarray import DataArray
-import geopandas as gpd
-
 import os
-from constants import CRS, PROV_NAMES, OFFSHORE_WIND_NODES
+
+import geopandas as gpd
+import rioxarray
+from constants import CRS, OFFSHORE_WIND_NODES, PROV_NAMES
+from xarray import DataArray
 
 
 def read_raster(
@@ -46,7 +46,7 @@ def read_pop_density(
     chunks=25,
     var_name="pop_density",
 ) -> gpd.GeoDataFrame:
-    """read raster data, clip it to a clip_shape and convert it to a GeoDataFrame
+    """Read raster data, clip it to a clip_shape and convert it to a GeoDataFrame
 
     Args:
         path (os.PathLike): the target path for the raster data (tif)
@@ -70,7 +70,7 @@ def read_pop_density(
 
 
 def read_province_shapes(shape_file: os.PathLike) -> gpd.GeoDataFrame:
-    """read the province shape files
+    """Read the province shape files
 
     Args:
         shape_file (os.PathLike): the path to the .shp file & co
@@ -93,7 +93,7 @@ def read_province_shapes(shape_file: os.PathLike) -> gpd.GeoDataFrame:
 def read_offshore_province_shapes(
     shape_file: os.PathLike, index_name="province"
 ) -> gpd.GeoDataFrame:
-    """read the offshore province shape files (based on the eez)
+    """Read the offshore province shape files (based on the eez)
 
     Args:
         shape_file (os.PathLike): the path to the .shp file & co

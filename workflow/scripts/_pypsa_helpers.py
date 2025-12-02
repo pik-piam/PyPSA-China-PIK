@@ -1,14 +1,30 @@
 """Helper functions for pypsa network handling"""
 
-import os
-import pandas as pd
 import logging
+import os
+import re
+
+import numpy as np
+import pandas as pd
+import pypsa
 import pytz
 
-import pypsa
-
+from constants import PROV_NAMES
 # get root logger
 logger = logging.getLogger()
+
+# Simplified component mapping - only essential mappings
+COMPONENT_MAPPING = {
+    "generator": "generators",
+    "link": "links",
+    "line": "lines",
+    "store": "stores",
+    "storageunit": "storage_units",
+    "bus": "buses",
+    "globalconstraint": "global_constraints",
+    "load": "loads",
+    "transformer": "transformers",
+}
 
 
 def get_location_and_carrier(
@@ -30,6 +46,62 @@ def get_location_and_carrier(
     bus, carrier = pypsa.statistics.get_bus_and_carrier(n, c, port, nice_names=nice_names)
     location = bus.map(n.buses.location).rename("location")
     return [location, carrier]
+
+
+def filter_carriers(n: pypsa.Network, bus_carriers=["AC"], comps=["Generator", "Link"]) -> list:
+    """Filter carriers for links that attach to a bus of the target carrier
+
+    Args:
+        n (pypsa.Network): the pypsa network object
+        bus_carrier (str | list, optional): the bus carrier. Defaults to "AC".
+        comps (list, optional): the components to check. Defaults to ["Generator", "Link"].
+
+    Returns:
+        list: list of carriers that are attached to the bus carrier
+    """
+    if isinstance(bus_carriers, str):
+        bus_carriers = [bus_carriers]
+
+    carriers = []
+    for c in comps:
+        comp = n.static(c)
+        ports = [c for c in comp.columns if c.startswith("bus")]
+        comp_df = comp[ports + ["carrier"]]
+        is_attached = (
+            comp_df[ports].apply(lambda x: x.map(n.buses.carrier).isin(bus_carriers)).T.any()
+        )
+        carriers += comp_df.loc[is_attached].carrier.unique().tolist()
+
+    if bus_carriers not in carriers:
+        carriers += bus_carriers
+    return carriers
+
+
+# TODO fix timezones/centralsie, think Shanghai won't work on its own
+def generate_periodic_profiles(
+    dt_index=None,
+    col_tzs=pd.Series(index=PROV_NAMES, data=len(PROV_NAMES) * ["Shanghai"]),
+    weekly_profile=range(24 * 7),
+):
+    """Generate weekly hourly profiles for each province, from pypsa-eur workflow.
+
+    Args:
+        dt_index: Time index for the profiles
+        col_tzs: Time zones for each province
+        weekly_profile: 168-hour weekly profile pattern
+
+    Returns:
+        pd.DataFrame: Weekly profiles for each province
+    """
+
+    weekly_profile = pd.Series(weekly_profile, range(24 * 7))
+    # TODO fix, no longer take into accoutn summer time
+    # ALSO ADD A TODO in base_network
+    week_df = pd.DataFrame(index=dt_index, columns=col_tzs.index)
+    for ct in col_tzs.index:
+        week_df[ct] = [24 * dt.weekday() + dt.hour for dt in dt_index.tz_localize(None)]
+        week_df[ct] = week_df[ct].map(weekly_profile)
+    return week_df
 
 
 def assign_locations(n: pypsa.Network):
@@ -76,15 +148,19 @@ def aggregate_p(n: pypsa.Network) -> pd.Series:
 
 
 def calc_lcoe(
-    n: pypsa.Network, grouper=pypsa.statistics.get_carrier_and_bus_carrier, **kwargs
+    n: pypsa.Network,
+    grouper=pypsa.statistics.get_carrier_and_bus_carrier,
+    carriers=["AC", "heat"],  # noqa: F
+    **kwargs,
 ) -> pd.DataFrame:
-    """calculate the LCOE for the network: (capex+opex)/supply.
+    """Calculate the LCOE for the network: (capex+opex)/supply.
 
     Args:
         n (pypsa.Network): the network for which LCOE is to be calaculated
         grouper (function | list, optional): function to group the data in network.statistics.
                 Overwritten if groupby is passed in kwargs.
                 Defaults to pypsa.statistics.get_carrier_and_bus_carrier.
+        carriers (list, optional): list of carriers to include for generators. Defaults to ["AC", "heat"].
         **kwargs: other arguments to be passed to network.statistics
     Returns:
         pd.DataFrame: The LCOE for the network with or without brownfield CAPEX, MV and delta
@@ -93,15 +169,17 @@ def calc_lcoe(
     if "groupby" in kwargs:
         grouper = kwargs.pop("groupby")
 
-    # store marginal costs we will manipulate to merge gas costs
+    # store marginal costs we will manipulate to merge fuel costs
     original_marginal_costs = n.links.marginal_cost.copy()
-    # TODO remve the != Inner Mongolia gas, there for backward compat with a bug
-    gas_links = n.links.query("carrier.str.contains('gas') & bus0 != 'Inner Mongolia gas'").index
-    fuel_costs = n.generators.loc[n.links.loc[gas_links, "bus0"] + " fuel"].marginal_cost.values
-    # eta is applied by statistics
-    n.links.loc[gas_links, "marginal_cost"] += fuel_costs
+    for carr in ["coal", "gas", "coal ccs"]:
+        fueled_links = n.links.query(f"carrier.str.contains('{carr}', case=False)").index
+        suffix = " fuel" if carr == "gas" else ""
+        fuel_costs = n.generators.loc[
+            n.links.loc[fueled_links, "bus0"] + suffix
+        ].marginal_cost.values
+        # eta is applied by statistics
+        n.links.loc[fueled_links, "marginal_cost"] += fuel_costs
     # TODO same with BECCS? & other links?
-
     rev = n.statistics.revenue(groupby=grouper, **kwargs)
     opex = n.statistics.opex(groupby=grouper, **kwargs)
     capex = n.statistics.expanded_capex(groupby=grouper, **kwargs)
@@ -119,9 +197,38 @@ def calc_lcoe(
         axis=1,
         keys=["OPEX", "CAPEX", "CAPEX_wBROWN", "Revenue", "supply"],
     ).fillna(0)
-    outputs["rev-costs"] = outputs.apply(lambda row: row.Revenue - row.CAPEX - row.OPEX, axis=1)
-    outputs["LCOE"] = (outputs.CAPEX + outputs.OPEX) / outputs.supply
-    outputs["LCOE_wbrownfield"] = (outputs.CAPEX_wBROWN + outputs.OPEX) / outputs.supply
+
+    # remove generators that are not of interest (eg. coal fuel)
+    if "bus_carrier" in outputs.index.names and "carrier" in outputs.index.names:
+        outputs = outputs.query(
+            "(component == 'Generator' and bus_carrier in @carriers) or component!='Generator'"
+        )
+        outputs = outputs.sort_index()
+        # in case of links costs can be assigned to a different bus_carrier
+        outputs["supp_frac"] = (
+            outputs.groupby(["component", "carrier"])
+            .apply(lambda x: x.supply / x.supply.sum())
+            .values
+        )
+        outputs.fillna({"supp_frac": 0}, inplace=True)
+        outputs["cost"] = (
+            outputs.groupby(["component", "carrier"])
+            .apply(lambda x: (x.CAPEX + x.OPEX).sum() * x.supp_frac)
+            .values
+        )
+        outputs["cost_w_brownfield"] = (
+            outputs.groupby(["component", "carrier"])
+            .apply(lambda x: (x.CAPEX_wBROWN + x.OPEX).sum() * x.supp_frac)
+            .values
+        )
+        outputs = outputs[outputs.supp_frac != 0]
+    else:
+        outputs["cost"] = outputs["CAPEX"] + outputs["OPEX"]
+        outputs["cost_w_brownfield"] = outputs["CAPEX_wBROWN"] + outputs["OPEX"]
+
+    outputs["LCOE"] = outputs["cost"] / (outputs["supply"])
+    outputs["LCOE_wbrownfield"] = outputs["cost_w_brownfield"] / (outputs["supply"])
+    outputs["rev-costs"] = outputs.apply(lambda row: row.Revenue - row.cost, axis=1)
     outputs["MV"] = outputs.apply(lambda row: row.Revenue / row.supply, axis=1)
     outputs["profit_pu"] = outputs["rev-costs"] / outputs.supply
     outputs.sort_values("profit_pu", ascending=False, inplace=True)
@@ -129,9 +236,26 @@ def calc_lcoe(
     return outputs[outputs.supply > 0]
 
 
+def calc_generation_share(df, n, carrier):
+    """
+    Add generation share column to an existing DataFrame.
+    Assumes df has carrier index already.
+
+    Returns: DataFrame with an added 'GenShare' column.
+    """
+    supply_data = n.statistics.supply(bus_carrier=carrier, comps="Generator")
+    total_supply = supply_data.sum()
+    gen_shares = (supply_data / total_supply * 100).dropna()
+    carrier_map = {c.lower(): row["nice_name"] for c, row in n.carriers.iterrows()}
+    gen_shares.index = gen_shares.index.map(lambda idx: carrier_map.get(idx.lower(), idx))
+    df = df.copy()
+    df["GenShare"] = gen_shares
+    return df
+
+
 # TODO is thsi really good? useful?
 # TODO make a standard apply/str op instead ofmap in add_electricity.sanitize_carriers
-def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
+def rename_techs(label: str, nice_names: dict | pd.Series | None = None) -> str:
     """Rename technology labels for better readability. Removes some prefixes
         and renames if certain conditions  defined in function body are met.
 
@@ -202,7 +326,7 @@ def rename_techs(label: str, nice_names: dict | pd.Series = None) -> str:
 def aggregate_costs(
     n: pypsa.Network,
     flatten=False,
-    opts: dict = None,
+    opts: dict | None = None,
     existing_only=False,
 ) -> pd.Series | pd.DataFrame:
     """LEGACY FUNCTION used in pypsa heating plots - unclear what it does
@@ -211,7 +335,8 @@ def aggregate_costs(
         n (pypsa.Network): the network object
         flatten (bool, optional):merge capex and marginal ? Defaults to False.
         opts (dict, optional): options for the function. Defaults to None.
-        existing_only (bool, optional): use _nom instead of nom_opt. Defaults to False."""
+        existing_only (bool, optional): use _nom instead of nom_opt. Defaults to False.
+    """
 
     components = dict(
         Link=("p_nom", "p0"),
@@ -273,10 +398,12 @@ def calc_atlite_heating_timeshift(date_range: pd.date_range, use_last_ts=False) 
 
 def is_leap_year(year: int) -> bool:
     """Determine whether a year is a leap year.
+
     Args:
         year (int): the year
     Returns:
-        bool: True if leap year, False otherwise"""
+        bool: True if leap year, False otherwise
+    """
     year = int(year)
     return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
@@ -288,7 +415,7 @@ def load_network_for_plots(
     cost_year: int,
     combine_hydro_ps=True,
 ) -> pypsa.Network:
-    """load network object (LEGACY FUNCTION for heat plot)
+    """Load network object (LEGACY FUNCTION for heat plot)
 
     Args:
         network_file (os.PathLike): the path to the network file
@@ -301,7 +428,7 @@ def load_network_for_plots(
         pypsa.Network: the network object
     """
 
-    from add_electricity import update_transmission_costs, load_costs
+    from add_electricity import load_costs, update_transmission_costs
 
     n = pypsa.Network(network_file)
 
@@ -417,3 +544,59 @@ def update_p_nom_max(n: pypsa.Network) -> None:
     # Hence, we update the assumptions.
 
     n.generators.p_nom_max = n.generators[["p_nom_min", "p_nom_max"]].max(1)
+
+
+def store_duals_to_network(network: pypsa.Network) -> None:
+    """Store dual variables in network components so they get saved to netcdf file."""
+    model = getattr(network, "model", None)
+    duals = getattr(model, "dual", None)
+
+    for dual_name, dual_value in duals.items():
+        # ---- Parse component / constraint ----
+        if "-" in dual_name:
+            component_type, constraint_type = dual_name.split("-", 1)
+        else:
+            lt = dual_name.lower()
+            component_type = next((k for k in COMPONENT_MAPPING if k in lt), None)
+            if not component_type:
+                continue
+            constraint_type = dual_name
+
+        comp_name = COMPONENT_MAPPING.get(component_type.lower())
+        if comp_name is None or not hasattr(network, comp_name):
+            continue
+        comp_obj = getattr(network, comp_name)
+
+        # ---- Standardize attr name ----
+        attr = f"mu_{re.sub(r'[^a-zA-Z0-9_]', '_', constraint_type)}"
+
+        # ---- Normalize to pandas ----
+        if hasattr(dual_value, "to_pandas"):
+            dual_value = dual_value.to_pandas()
+
+        # ---- Write back (single decision on DataFrame vs not) ----
+        if isinstance(dual_value, pd.DataFrame):
+            if comp_name == "global_constraints":
+                # collapse rows → per-constraint Series, align to component index
+                series = dual_value.mean(axis=0).reindex(comp_obj.index)
+                comp_obj[attr] = series
+            else:
+                # align time index & columns safely
+                time_index = getattr(network, "snapshots", dual_value.index)
+                aligned = dual_value.reindex(index=time_index, columns=comp_obj.index)
+
+                comp_t_name = f"{comp_name}_t"
+                if not hasattr(network, comp_t_name):
+                    setattr(network, comp_t_name, {})
+                getattr(network, comp_t_name)[attr] = aligned
+        else:
+            # Series / scalar / ndarray → Series aligned to component index
+            if isinstance(dual_value, pd.Series):
+                series = dual_value.reindex(comp_obj.index)
+            else:
+                try:
+                    val = float(np.asarray(dual_value).ravel()[0])
+                except Exception:
+                    val = 0.0
+                series = pd.Series(val, index=comp_obj.index)
+            comp_obj[attr] = series

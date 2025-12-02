@@ -57,22 +57,20 @@ The maximal installable potential for the node (`p_nom_max`) is computed by
 adding up the installable potentials of the individual grid cells.
 """
 
-
 import logging
 import time
+from itertools import product
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 import xarray as xr
-
-from itertools import product
-from atlite.gis import ExclusionContainer
-from atlite import Cutout
-from dask.distributed import Client
-
 from _helpers import configure_logging, mock_snakemake
-from readers_geospatial import read_province_shapes, read_offshore_province_shapes
-from constants import PROV_NAMES, OFFSHORE_WIND_NODES, TIMEZONE
+from atlite import Cutout
+from atlite.gis import ExclusionContainer
+from constants import OFFSHORE_WIND_NODES, PROV_NAMES, TIMEZONE
+from dask.distributed import Client
+from readers_geospatial import read_offshore_province_shapes, read_province_shapes
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +140,8 @@ def build_resource_classes(
     )
 
     # avoid binning resources that are very similar
-    nbins_per_bus = [int(min(nbins, x)) for x in (cf_max - cf_min) // min_cf_delta]
+    # If cf_range < min_cf_delta, use at least 1 bin (instead of 0)
+    nbins_per_bus = [max(1, int(min(nbins, x))) for x in (cf_max - cf_min) // min_cf_delta]
     normed_bins = xr.DataArray(
         np.vstack(
             [np.hstack([[0] * (nbins - n), np.linspace(0, 1, n + 1)]) for n in nbins_per_bus]
@@ -182,7 +181,7 @@ def build_resource_classes(
 
 
 def localize_cutout_time(cutout: Cutout, drop_leap=True) -> Cutout:
-    """localize the time to the local timezone
+    """Localize the time to the local timezone
 
     Args:
         cutout (Cutout): the atlite cutout object
@@ -207,7 +206,6 @@ def localize_cutout_time(cutout: Cutout, drop_leap=True) -> Cutout:
 
 
 if __name__ == "__main__":
-
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "build_renewable_profiles", technology="solar", rc_params="n3_min_cf_0.05"

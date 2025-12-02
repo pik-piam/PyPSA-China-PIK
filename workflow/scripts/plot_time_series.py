@@ -1,27 +1,37 @@
-import pypsa
+"""Plot time series data for energy system analysis.
+
+This module creates time series plots including load profiles, generation patterns,
+storage operations, and other temporal data visualizations for the PyPSA-China model.
+"""
+
 import logging
-import matplotlib.pyplot as plt
 import os.path
-
-import seaborn as sns
-import numpy as np
-import pandas as pd
-
 from os import makedirs
 
-from _plot_utilities import (
-    get_stat_colors,
-    set_plot_style,
-    make_nice_tech_colors,
-    fix_network_names_colors,
-)
-from _pypsa_helpers import get_location_and_carrier
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import pypsa
+import seaborn as sns
 from _helpers import (
     configure_logging,
     mock_snakemake,
     set_plot_test_backend,
 )
-from constants import PLOT_CAP_UNITS, PLOT_CAP_LABEL, PROV_NAMES
+from _plot_utilities import (
+    fix_network_names_colors,
+    get_stat_colors,
+    make_nice_tech_colors,
+    set_plot_style,
+)
+from _pypsa_helpers import get_location_and_carrier
+from constants import (
+    PLOT_CAP_LABEL,
+    PLOT_CAP_UNITS,
+    PLOT_SUPPLY_LABEL,
+    PLOT_SUPPLY_UNITS,
+    PROV_NAMES,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +44,10 @@ def plot_energy_balance(
     end_date="2060-04-06 12:00:00",
     aggregate_fossil=False,
     add_load_line=True,
+    add_reserves=False,
     ax: plt.Axes = None,
 ):
-    """plot the electricity balance of the network for the given time range
+    """Plot the electricity balance of the network for the given time range
 
     Args:
         n (pypsa.Network): the network
@@ -57,13 +68,13 @@ def plot_energy_balance(
         .dropna(how="all")
         .groupby("carrier")
         .sum()
-        .div(PLOT_CAP_UNITS)
+        .div(PLOT_SUPPLY_UNITS)
         # .drop("-")
         .T
     )
 
-    p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
     p = p.loc[start_date:end_date]
+    p.rename(columns={"-": "Load", "AC": "transmission losses"}, inplace=True)
 
     # aggreg fossil
     if aggregate_fossil:
@@ -83,6 +94,7 @@ def plot_energy_balance(
     # colors & names part 1
     p.rename(plot_config["nice_names"], inplace=True)
     p.rename(columns={k: k.title() for k in p.columns}, inplace=True)
+    p.rename(columns={"Heat": "Heat Load"}, inplace=True)
     color_series.index = color_series.index.str.strip()
     # split into supply and wothdrawal
     supply = p.where(p > 0).dropna(axis=1, how="all")
@@ -121,12 +133,13 @@ def plot_energy_balance(
         color=color_series.loc[supply.columns].values,
     )
     if add_load_line:
+        # charge.rename(columns={"Heat Load": "Load"}, inplace=True)
         charge["load_pos"] = charge["Load"] * -1
         charge["load_pos"].plot(linewidth=2, color="black", label="Load", ax=ax, linestyle="--")
         charge.drop(columns="load_pos", inplace=True)
 
     ax.legend(ncol=1, loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, fontsize=16)
-    ax.set_ylabel(PLOT_CAP_LABEL)
+    ax.set_ylabel(PLOT_SUPPLY_LABEL)
     ax.set_ylim(charge.sum(axis=1).min() * 1.07, supply.sum(axis=1).max() * 1.07)
     ax.grid(axis="y")
     ax.set_xlim(supply.index.min(), supply.index.max())
@@ -139,7 +152,7 @@ def plot_energy_balance(
 def plot_load_duration_curve(
     network: pypsa.Network, carrier: str = "AC", ax: plt.Axes = None
 ) -> plt.Axes:
-    """plot the load duration curve for the given carrier
+    """Plot the load duration curve for the given carrier
 
     Args:
         network (pypsa.Network): the pypasa network object
@@ -173,7 +186,7 @@ def plot_load_duration_curve(
 def plot_regional_load_durations(
     network: pypsa.Network, carrier="AC", ax=None, cmap="plasma"
 ) -> plt.Axes:
-    """plot the load duration curve for the given carrier stacked by region
+    """Plot the load duration curve for the given carrier stacked by region
 
     Args:
         network (pypsa.Network): the pypasa network object
@@ -226,7 +239,7 @@ def plot_regional_load_durations(
 def plot_residual_load_duration_curve(
     network, ax: plt.Axes = None, vre_techs=["Onshore Wind", "Offshore Wind", "Solar"]
 ) -> plt.Axes:
-    """plot the residual load duration curve for the given carrier
+    """Plot the residual load duration curve for the given carrier
 
     Args:
         network (pypsa.Network): the pypasa network object
@@ -269,13 +282,14 @@ def plot_residual_load_duration_curve(
 def plot_price_duration_curve(
     network: pypsa.Network, carrier="AC", ax: plt.Axes = None, figsize=(8, 8)
 ) -> plt.Axes:
-    """plot the price duration curve for the given carrier
+    """Plot the price duration curve for the given carrier
 
     Args:
         network (pypsa.Network): the pypasa network object
         carrier (str, optional): the load carrier, defaults to AC
         ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.
         figsize (tuple, optional): size of the figure (if no ax given), defaults to (8, 8)
+
     Returns:
         plt.Axes: the plotting axes
     """
@@ -312,10 +326,12 @@ def plot_price_duration_by_node(
         logy (bool, optional): use log scale for y axis, defaults to True
         y_lower (float, optional): lower limit for y axis, defaults to 1e-3
         fig_shape (tuple, optional): shape of the figure, defaults to (8, 4)
+
     Returns:
         plt.Axes: the plotting axes
     Raises:
-        ValueError: if the figure shape is too small for the number of regions"""
+        ValueError: if the figure shape is too small for the number of regions
+    """
 
     if carrier == "AC":
         suffix = ""
@@ -363,7 +379,7 @@ def plot_price_heatmap(
     time_range: pd.Index = None,
     ax: plt.Axes = None,
 ) -> plt.Axes:
-    """plot the price heat map (region vs time) for the given carrier
+    """Plot the price heat map (region vs time) for the given carrier
 
     Args:
         network (pypsa.Network): the pypsa network object
@@ -420,18 +436,25 @@ def plot_price_heatmap(
 
 
 def plot_vre_heatmap(
-    n: pypsa.Network, color_map="magma", log_values=True, time_range: pd.Index = None
+    n: pypsa.Network,
+    config: dict,
+    color_map="magma",
+    log_values=True,
+    time_range: pd.Index = None,
 ):
-    """plot the VRE generation per hour and day as a heatmap
+    """Plot the VRE generation per hour and day as a heatmap
 
     Args:
-        network (pypsa.Network): the pypsa network object
+        n (pypsa.Network): the pypsa network object
         time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).
         log_values (bool, optional): whether to use log scale for the values. Defaults to True.
+        config (dict, optional): the run config (snakemake.config).
 
     """
 
-    vres = ["offwind", "onwind", "solar"]
+    vres = config["Techs"].get(
+        "non_dispatchable", ["Offshore Wind", "Onshore Wind", "Solar", "Solar Residential"]
+    )
     vre_avail = (
         n.statistics.supply(
             comps="Generator",
@@ -457,6 +480,7 @@ def plot_vre_heatmap(
             tech_avail = np.log(tech_avail.clip(lower=10))
         fig, ax = plt.subplots()
         sns.heatmap(tech_avail.T, ax=ax, cmap=color_map)
+        ax.set_title(f"{tech} generation by province")
 
 
 def plot_vre_timemap(
@@ -464,7 +488,7 @@ def plot_vre_timemap(
     color_map="viridis",
     time_range: pd.Index = None,
 ):
-    """plot the VRE generation per hour and day as a heatmap
+    """Plot the VRE generation per hour and day as a heatmap
 
     Args:
         network (pypsa.Network): the pypsa network object
@@ -487,25 +511,24 @@ def plot_vre_timemap(
     vre_avail["hour"] = vre_avail.index.hour
 
     for tech in vres:
-        solar_pivot = vre_avail.pivot_table(index="hour", columns="day", values=tech)
+        pivot_ = vre_avail.pivot_table(index="hour", columns="day", values=tech)
         fig, ax = plt.subplots(figsize=(12, 6))
-        sns.heatmap(solar_pivot.sort_index(ascending=False), cmap=color_map, ax=ax)
+        sns.heatmap(pivot_.sort_index(ascending=False), cmap=color_map, ax=ax)
         ax.set_title(f"{tech} generation by hour and day")
 
         fig.tight_layout()
 
 
 if __name__ == "__main__":
-
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "plot_snapshots",
             topology="current+FCG",
-            # co2_pathway="exp175default",
-            co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
+            co2_pathway="exp175default",
+            # co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
-            configfiles=["resources/tmp/remind_coupled_cg.yaml"],
+            # configfiles=["resources/tmp/remind_coupled_cg.yaml"],
             planning_horizons="2050",
             winter_day1="12-10 21:00",  # mm-dd HH:MM
             winter_day2="12-17 12:00",  # mm-dd HH:MM
@@ -582,4 +605,4 @@ if __name__ == "__main__":
     pdc = plot_price_duration_curve(n, carrier="AC", ax=None)
     pdc.get_figure().savefig(os.path.join(snakemake.output.outp_dir, "price_duration_curve.png"))
 
-    logger.info(f"Successfully plotted time series for carriers: {", ".join(carriers)}")
+    logger.info(f"Successfully plotted time series for carriers: {', '.join(carriers)}")

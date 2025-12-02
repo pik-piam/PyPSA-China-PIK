@@ -1,41 +1,45 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-import chardet
+"""Plot input cost data visualization and analysis.
+
+This module creates visualizations for technology cost data, including
+cost trends, comparisons, and other analyses for the PyPSA-China model.
+"""
+
 import logging
 import sys
-import yaml
-import re
+
+import chardet
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import ultraplot as uplt
-from typing import Dict, List, Tuple
-import pypsa
-from _plot_utilities import validate_hex_colors
 from _helpers import mock_snakemake
+from _plot_utilities import validate_hex_colors
+
 # --------------------------------------------------
 # Constants
 # --------------------------------------------------
 
 # Currency exchange rates (as of 2024)
-EXCHANGE_RATES: Dict[Tuple[str, str], float] = {
+EXCHANGE_RATES: dict[tuple[str, str], float] = {
     ("eur", "eur"): 1.0,
     ("eur", "cny"): 7.8,
-    ("cny", "eur"): 1/7.8,
+    ("cny", "eur"): 1 / 7.8,
     ("usd", "cny"): 7.2,
-    ("cny", "usd"): 1/7.2,
-    ("usd", "eur"): 7.2/7.8,
-    ("eur", "usd"): 7.8/7.2,
+    ("cny", "usd"): 1 / 7.2,
+    ("usd", "eur"): 7.2 / 7.8,
+    ("eur", "usd"): 7.8 / 7.2,
     ("cny", "cny"): 1.0,
     ("usd", "usd"): 1.0,
 }
 
 # Currency aliases for standardization
-CURRENCY_ALIASES: Dict[str, str] = {
+CURRENCY_ALIASES: dict[str, str] = {
     "eur": "eur",
     "€": "eur",
     "usd": "usd",
     "$": "usd",
     "cny": "cny",
-    "rmb": "cny"
+    "rmb": "cny",
 }
 
 # --------------------------------------------------
@@ -52,9 +56,9 @@ def detect_file_encoding(file_path: str) -> str:
     Returns:
         str: The detected encoding of the file.
     """
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         result = chardet.detect(f.read())
-    encoding = result['encoding']
+    encoding = result["encoding"]
     return encoding
 
 
@@ -106,8 +110,9 @@ def filter_investment_parameter(df: pd.DataFrame) -> pd.DataFrame:
     return df_investment
 
 
-def filter_technologies_by_config(df: pd.DataFrame, 
-                                techs_dict: Dict[str, List[str]]) -> pd.DataFrame:
+def filter_technologies_by_config(
+    df: pd.DataFrame, techs_dict: dict[str, list[str]]
+) -> pd.DataFrame:
     """Filter and categorize technologies based on the provided technology dictionary.
 
     Args:
@@ -127,13 +132,13 @@ def filter_technologies_by_config(df: pd.DataFrame,
         if df.empty:
             logging.warning("Warning: Input DataFrame is empty")
             return pd.DataFrame()
-            
+
         if "technology" not in df.columns:
             logging.error("Error: 'technology' column not found in DataFrame")
             return pd.DataFrame()
 
         # Example aliases
-        alias_map: Dict[str, List[str]] = {
+        alias_map: dict[str, list[str]] = {
             "solar thermal": ["central solar thermal", "decentral solar thermal"],
             "hydroelectricity": ["hydro"],
             "heat pump": ["central air heat pump", "decentral air heat pump"],
@@ -148,11 +153,11 @@ def filter_technologies_by_config(df: pd.DataFrame,
             "CHP coal": ["central coal CHP"],
             "H2": ["H2 pipeline", "hydrogen storage tank type 1"],
             "battery": ["battery storage"],
-            "water tanks": ["central water tank storage", "decentral water tank storage"]
+            "water tanks": ["central water tank storage", "decentral water tank storage"],
         }
 
         # Reverse alias map for easier lookup
-        tech_aliases: Dict[str, str] = {}
+        tech_aliases: dict[str, str] = {}
         for main_tech, aliases in alias_map.items():
             for alias in aliases:
                 tech_aliases[alias.lower()] = main_tech
@@ -162,12 +167,12 @@ def filter_technologies_by_config(df: pd.DataFrame,
         conv_techs = techs_dict.get("conv_techs", [])
         store_techs = techs_dict.get("store_techs", [])
         solar_thermal = ["solar thermal"]  # special case for solar thermal
-        
+
         # combine all techs
         all_techs = vre_techs + conv_techs + store_techs + solar_thermal
 
         # create tech to category mapping
-        tech_categories: Dict[str, str] = {}
+        tech_categories: dict[str, str] = {}
         for tech in vre_techs:
             if tech != "solar thermal":  # exclude solar thermal
                 tech_categories[tech] = "VRE Technologies"
@@ -179,37 +184,36 @@ def filter_technologies_by_config(df: pd.DataFrame,
 
         # Create a copy of the DataFrame
         df_filtered = df.copy()
-        
+
         # Direct mapping
         df_filtered["mapped_technology"] = df_filtered["technology"].where(
             df_filtered["technology"].isin(all_techs)
         )
-        
+
         # Alias mapping
         df_filtered["mapped_technology"].fillna(
-            df_filtered["technology"].str.lower().map(tech_aliases),
-            inplace=True
+            df_filtered["technology"].str.lower().map(tech_aliases), inplace=True
         )
-        
+
         # Log unmapped technologies
         unmapped_techs = df_filtered[df_filtered["mapped_technology"].isna()]["technology"].unique()
         if len(unmapped_techs) > 0:
             logging.warning(
                 f"Warning: The following technologies could not be mapped: {unmapped_techs}"
             )
-        
+
         # Drop rows where no match was found
         df_filtered = df_filtered.dropna(subset=["mapped_technology"])
-        
+
         if df_filtered.empty:
             logging.warning("Warning: No matching technologies found!")
             return pd.DataFrame()
 
         # Add category based on mapped technology
         df_filtered["category"] = df_filtered["mapped_technology"].map(tech_categories)
-        
+
         return df_filtered
-        
+
     except KeyError as e:
         logging.error(f"Error: Missing key in technology dictionary - {str(e)}")
         return pd.DataFrame()
@@ -220,19 +224,20 @@ def filter_technologies_by_config(df: pd.DataFrame,
         logging.error(f"Unexpected error in technology filtering: {str(e)}")
         return pd.DataFrame()
 
+
 # --------------------------------------------------
 # 3) Unit Conversion
 # --------------------------------------------------
 
 
-def parse_unit_string(unit_str: str) -> Tuple[str | None, str | None]:
+def parse_unit_string(unit_str: str) -> tuple[str | None, str | None]:
     """Parse a unit string into currency and capacity parts.
 
     Args:
         unit_str (str): Unit string in format "currency/capacity"
 
     Returns:
-        Tuple[str | None, str | None]: 
+        Tuple[str | None, str | None]:
             - First element: currency part (e.g., "eur", "usd", "cny")
             - Second element: capacity part (e.g., "kw", "kwh")
             Returns (None, None) if invalid format
@@ -265,15 +270,15 @@ def get_capacity_factor(orig_cap: str, target_cap: str) -> float:
     Returns:
         float: Conversion factor between capacity units
     """
-    capacity_factors: Dict[Tuple[str, str], float] = {
+    capacity_factors: dict[tuple[str, str], float] = {
         ("kw", "kw"): 1.0,
-        ("mw", "kw"): 1/1000.0,
+        ("mw", "kw"): 1 / 1000.0,
         ("kwh", "kwh"): 1.0,
-        ("mwh", "kwh"): 1/1000.0,
+        ("mwh", "kwh"): 1 / 1000.0,
         ("kw", "mw"): 1000.0,
         ("mw", "mw"): 1.0,
         ("kwh", "mwh"): 1000.0,
-        ("mwh", "mwh"): 1.0
+        ("mwh", "mwh"): 1.0,
     }
     return capacity_factors.get((orig_cap.lower(), target_cap.lower()), 1.0)
 
@@ -298,7 +303,7 @@ def normalize_capacity_unit(cap: str) -> str:
     return cap
 
 
-def get_numeric_columns(row: pd.Series) -> List[str]:
+def get_numeric_columns(row: pd.Series) -> list[str]:
     """Get list of numeric columns in the row.
 
     Args:
@@ -310,30 +315,30 @@ def get_numeric_columns(row: pd.Series) -> List[str]:
             - Cost columns (e.g., "cost_2020", "cost_2025")
     """
     numeric_cols = []
-    
+
     # Check for year columns
     for col in row.index:
         if isinstance(col, str) and col.isdigit():
             numeric_cols.append(col)
-            
+
     # Check for cost columns
     if not numeric_cols:
         for col in row.index:
             if isinstance(col, str) and "cost_" in col and col.split("_")[-1].isdigit():
                 numeric_cols.append(col)
-                
+
     # Check for specific years
     possible_years = ["2020", "2025", "2030", "2035", "2040", "2045", "2050", "2055", "2060"]
     for year in possible_years:
         if year in row.index and year not in numeric_cols:
             numeric_cols.append(year)
-            
+
     return numeric_cols
 
 
-def convert_row_units(row: pd.Series, 
-                     target_unit_installation: str,
-                     target_unit_storage: str) -> pd.Series:
+def convert_row_units(
+    row: pd.Series, target_unit_installation: str, target_unit_storage: str
+) -> pd.Series:
     """Convert row's numeric columns to target units.
 
     Args:
@@ -364,7 +369,7 @@ def convert_row_units(row: pd.Series,
     # Get capacity conversion factor
     norm_capacity = normalize_capacity_unit(capacity_part)
     norm_target = normalize_capacity_unit(tgt_capacity)
-    
+
     if norm_capacity in ["kw", "mw", "kwh", "mwh"] and norm_target in ["kw", "mw", "kwh", "mwh"]:
         cap_factor = get_capacity_factor(norm_capacity, norm_target)
         new_capacity_part = norm_target
@@ -391,9 +396,9 @@ def convert_row_units(row: pd.Series,
     return row
 
 
-def apply_conversion(df: pd.DataFrame, 
-                    target_unit_installation: str, 
-                    target_unit_storage: str) -> pd.DataFrame:
+def apply_conversion(
+    df: pd.DataFrame, target_unit_installation: str, target_unit_storage: str
+) -> pd.DataFrame:
     """Apply unit conversion to each row in the DataFrame.
 
     Args:
@@ -417,11 +422,7 @@ def apply_conversion(df: pd.DataFrame,
         df["original_unit"] = df["unit"].copy()
 
     # Convert row by row
-    return df.apply(
-        convert_row_units,
-        axis=1,
-        args=(target_unit_installation, target_unit_storage)
-    )
+    return df.apply(convert_row_units, axis=1, args=(target_unit_installation, target_unit_storage))
 
 
 def load_reference_data(file_path: str) -> pd.DataFrame:
@@ -436,7 +437,7 @@ def load_reference_data(file_path: str) -> pd.DataFrame:
     try:
         ref_df = load_and_clean_data(file_path)
         ref_df = ref_df[ref_df["reference"] != "PyPSA-China"]
-        
+
         if "parameter" in ref_df.columns:
             ref_df = filter_investment_parameter(ref_df)
         ref_df = apply_conversion(ref_df, "eur/kW", "eur/kWh")
@@ -449,9 +450,9 @@ def load_reference_data(file_path: str) -> pd.DataFrame:
 def plot_technologies_by_category(
     costs_df: pd.DataFrame,
     ref_df: pd.DataFrame | None = None,
-    tech_colors: Dict[str, str] | None = None,
+    tech_colors: dict[str, str] | None = None,
     font_size: int = 14,
-    plot_reference: bool = True
+    plot_reference: bool = True,
 ) -> plt.Figure:
     """Plot technology cost trends with literature comparison.
 
@@ -475,11 +476,13 @@ def plot_technologies_by_category(
     # Get year columns
     year_cols = [col for col in costs_df.columns if col.isdigit()]
     if not year_cols:
-        year_cols = [col.split("_")[-1] for col in costs_df.columns 
-                    if "cost_" in col and col.split("_")[-1].isdigit()]
+        year_cols = [
+            col.split("_")[-1]
+            for col in costs_df.columns
+            if "cost_" in col and col.split("_")[-1].isdigit()
+        ]
     if not year_cols:
-        possible_years = ["2020", "2025", "2030", "2035", "2040", 
-                         "2045", "2050", "2055", "2060"]
+        possible_years = ["2020", "2025", "2030", "2035", "2040", "2045", "2050", "2055", "2060"]
         year_cols = [year for year in possible_years if year in costs_df.columns]
     if not year_cols:
         logging.error("Error: Unable to identify year columns in costs data.")
@@ -499,17 +502,13 @@ def plot_technologies_by_category(
     num_rows = (num_techs + num_cols - 1) // num_cols
 
     fig, axs = uplt.subplots(
-        nrows=num_rows,
-        ncols=num_cols,
-        figwidth=6 * num_cols,
-        sharex=True,
-        sharey=False
+        nrows=num_rows, ncols=num_cols, figwidth=6 * num_cols, sharex=True, sharey=False
     )
     if not isinstance(axs, np.ndarray):
         axs = np.array([axs])
     axs = axs.flatten()
 
-    dash_styles = ['--', '-.', ':', (0, (3, 1, 1, 1))]
+    dash_styles = ["--", "-.", ":", (0, (3, 1, 1, 1))]
 
     # Plot each technology
     for i, tech in enumerate(technologies):
@@ -525,7 +524,7 @@ def plot_technologies_by_category(
         # Plot main data
         tech_years, tech_values = [], []
         for year in year_cols:
-            values = pd.to_numeric(tech_df[year], errors='coerce').dropna().values
+            values = pd.to_numeric(tech_df[year], errors="coerce").dropna().values
             if values.size > 0:
                 tech_years.append(int(year))
                 tech_values.append(np.median(values))
@@ -533,13 +532,8 @@ def plot_technologies_by_category(
         legend_handles = []
         legend_labels = []
         if tech_years:
-            line, = ax.plot(
-                tech_years,
-                tech_values,
-                linewidth=2.5,
-                color=color,
-                linestyle='-',
-                label=tech
+            (line,) = ax.plot(
+                tech_years, tech_values, linewidth=2.5, color=color, linestyle="-", label=tech
             )
             legend_handles.append(line)
             legend_labels.append(tech)
@@ -549,20 +543,20 @@ def plot_technologies_by_category(
             for j, (ref_name, ref_group) in enumerate(ref_tech_df.groupby("reference")):
                 ref_years, ref_values = [], []
                 for year in ref_year_cols:
-                    vals = pd.to_numeric(ref_group[year], errors='coerce').dropna().values
+                    vals = pd.to_numeric(ref_group[year], errors="coerce").dropna().values
                     if vals.size > 0:
                         ref_years.append(int(year))
                         ref_values.append(np.median(vals))
 
                 if ref_years:
                     dash_style = dash_styles[j % len(dash_styles)]
-                    ref_line, = ax.plot(
+                    (ref_line,) = ax.plot(
                         ref_years,
                         ref_values,
                         linewidth=2,
                         color=color,
                         linestyle=dash_style,
-                        label=ref_name
+                        label=ref_name,
                     )
                     legend_handles.append(ref_line)
                     legend_labels.append(ref_name)
@@ -570,10 +564,10 @@ def plot_technologies_by_category(
         # Set labels and formatting
         if "unit" in tech_df.columns and not tech_df["unit"].isna().all():
             unit = tech_df["unit"].iloc[0]
-            unit_parts = unit.split('/')
+            unit_parts = unit.split("/")
             if len(unit_parts) == 2:
                 currency, capacity = unit_parts
-                if 'eur' in currency.lower():
+                if "eur" in currency.lower():
                     ax.set_ylabel(f"EUR/{capacity.upper()}", fontsize=font_size)
                 else:
                     ax.set_ylabel(f"{unit}", fontsize=font_size)
@@ -585,7 +579,7 @@ def plot_technologies_by_category(
         ax2 = ax.twinx()
         if "unit" in tech_df.columns and not tech_df["unit"].isna().all():
             unit = tech_df["unit"].iloc[0]
-            unit_parts = unit.split('/')
+            unit_parts = unit.split("/")
             if len(unit_parts) == 2:
                 _, capacity = unit_parts
                 ax2.set_ylabel(f"CNY/{capacity.upper()}", fontsize=font_size)
@@ -598,16 +592,10 @@ def plot_technologies_by_category(
         ax2.set_ylim(y_min * 7.8, y_max * 7.8)
 
         ax.set_title(f"{tech}", fontsize=font_size)
-        ax.grid(True, linestyle='--', alpha=0.7)
-        ax.tick_params(axis='y', labelsize=font_size)
-        ax2.tick_params(axis='y', labelsize=font_size)
-        ax.legend(
-            legend_handles,
-            legend_labels,
-            loc='upper right',
-            fontsize=font_size-2,
-            ncol=1
-        )
+        ax.grid(True, linestyle="--", alpha=0.7)
+        ax.tick_params(axis="y", labelsize=font_size)
+        ax2.tick_params(axis="y", labelsize=font_size)
+        ax.legend(legend_handles, legend_labels, loc="upper right", fontsize=font_size - 2, ncol=1)
 
     # Hide unused subplots
     total_plots = num_rows * num_cols
@@ -620,7 +608,7 @@ def plot_technologies_by_category(
         abc=True,
         abcloc="ul",
         xlabel="Year",
-        fontsize=font_size
+        fontsize=font_size,
     )
 
     return fig
@@ -631,21 +619,21 @@ def plot_technologies_by_category(
 # --------------------------------------------------
 
 if __name__ == "__main__":
-    if 'snakemake' not in globals():
+    if "snakemake" not in globals():
         snakemake = mock_snakemake("plot_input_costs")
-    
+
     target_unit_installation = "eur/kW"
     target_unit_storage = "eur/kWh"
-    
+
     tech_colors = validate_hex_colors(snakemake.config["plotting"]["tech_colors"])
-    
+
     all_data = pd.DataFrame()
-    
+
     for cost_file in snakemake.input.costs:
-        year = cost_file.split('_')[-1].split('.')[0]
+        year = cost_file.split("_")[-1].split(".")[0]
         df = pd.read_csv(cost_file)
         if not df.empty:
-            df[year] = df['value']
+            df[year] = df["value"]
             all_data = pd.concat([all_data, df], ignore_index=True)
 
     if all_data.empty:
@@ -672,16 +660,16 @@ if __name__ == "__main__":
             ref_df = load_reference_data(snakemake.input.reference_costs)
     except AttributeError:
         pass
-    
+
     fig = plot_technologies_by_category(
-        filtered_data, 
-        ref_df, 
+        filtered_data,
+        ref_df,
         tech_colors,
-        plot_reference=snakemake.params.get('plot_reference', True)
+        plot_reference=snakemake.params.get("plot_reference", True),
     )
 
     output_path = str(snakemake.output.cost_map)
-    plt.savefig(output_path, bbox_inches='tight', dpi=300)
+    plt.savefig(output_path, bbox_inches="tight", dpi=300)
     plt.close()
 
     logging.info("Plot successfully generated")

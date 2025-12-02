@@ -13,6 +13,8 @@ STATISTICS_BARPLOTS = [
     "withdrawal",
     "market_value",
     "lcoe",
+    "province_peakload_capacity",
+    "mv_minus_lcoe",
 ]
 
 
@@ -62,8 +64,8 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
                 },
             ),
         output:
-            energy=RESULTS_DIR + "/plots/summary/elec_balance.png",
-            costs=RESULTS_DIR + "/plots/summary/pathway_costs.png",
+            energy=RESULTS_DIR + "/plots/_summary/elec_balance.png",
+            costs=RESULTS_DIR + "/plots/_summary/pathway_costs.png",
         log:
             LOG_DIR + "/plot/summary_plot_ntwk_summary.log",
         script:
@@ -77,7 +79,7 @@ if config["foresight"] in ["None", "overnight", "non-pathway", "myopic"]:
             ),
         params:
             stat_types=STATISTICS_BARPLOTS,
-            carrier="AC",
+            carriers=["AC", "heat"] if config["heat_coupling"] else ["AC"],
         output:
             stats_dir=directory(RESULTS_DIR + "/plots/statistics_{planning_horizons}"),
         log:

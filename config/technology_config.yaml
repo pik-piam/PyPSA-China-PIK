@@ -9,8 +9,21 @@ transmission_efficiency:
     compression_per_1000km: 0.019
 
 chp_parameters:
-  eff_el: 0.3978
-  eff_th: 0.5304
+  coal:
+    total_eff: 0.9 # Danish energy tech catalogue
+    # typical extraction CHP htpr for China, w/o absorption heat pump
+    # from https://www.nature.com/articles/s41560-024-01560-4
+    heat_to_power: 1.5 
+  # CCGT CHP
+  gas:
+    total_eff: 0.9 # Danish energy tech catalogue !NOTE EFF DECREASES WITH REDUCED POWER. Not captured
+    heat_to_power: 0.9 # doi:10.3390/en13010242
+  OCGT:
+    heat_to_power: 1 # rough estimate for simple cycle gas turbine
+    total_eff: 0.82 # GEA34176 Aeroderivative_CHP_Whitepaper.pdf (GE, up to 90% advertised for aeroderivative)
+# when building "new" consider historical efficiency for coal boilers
+use_historical_efficiency:
+  coal_boiler: True
 
 solar_cf_correction: 0.85
 time_dep_hp_cop: True
@@ -19,32 +32,22 @@ water_tanks:
   tes_tau:
     decentral: 3. # days
     central: 180 # days
+  p_nom_over_e_nom: 0.2 # max power to energy ratio
 
 electricity:
-  agg_p_nom_limits: data/agg_p_nom_minmax.csv
-
-  extendable_carriers:
-    Generator: []
-    StorageUnit: [] # battery, H2
-    Store: [battery, H2]
-    Link: []
-
   max_hours:
     battery: 6
     H2: 168
   min_charge:
     battery: 0.1 # fraction of e_nom
-  powerplants_filter: false # use pandas query strings here, e.g. Country not in ['Germany']
-  custom_powerplants: false # use pandas query strings here, e.g. Country in ['Germany']
-  conventional_carriers: [nuclear, oil, OCGT, CCGT, coal, lignite, geothermal, biomass]
-  renewable_capacities_from_OPSD: [] # onwind, offwind, solar
-
-
 
 # TODO move to brownfield?
 hydro:
   hydro_capital_cost: True
+  marginal_cost: 
+    reservoir: 0. # EUR/MWh
   PHS_max_hours: 24 # hours
+
 fossil_ramps:
   coal:
     ramp_limit_up: 0.5 # fraction of p_nom per hour
@@ -57,6 +60,4 @@ costs:
   discountrate: 0.06
   social_discount_rate: 0.02 # social discountrate
   USD2013_to_EUR2013: 0.9189 # [EUR/USD] ECB: https://www.ecb.europa.eu/stats/exchange/eurofxref/html/eurofxref-graph-usd.en.html
-  marginal_cost: # EUR/MWh
-    hydro: 0.
   pv_utility_fraction: 1 # the fraction that will not be residential

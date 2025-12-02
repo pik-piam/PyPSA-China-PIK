@@ -94,7 +94,7 @@ remind_etl:
         currency_conversion: 0.9 # approx USD2017 to EUR2015
   disagg:
     - name: disagg_load
-      method: "disagg_acload_ref"
+      method: "disagg_load_ref"
     - name: harmonize_model_caps
       method: harmonize_capacities
     - name: available_cap
@@ -118,3 +118,34 @@ nuclear_reactors:
 lines:
   expansion:
     transmission_limit: c1.05
+
+sectors:
+  electric_vehicles:
+    enabled: false  # default to false in the REMIND coupling template
+    transport:
+      passenger_bev:
+        enable: true
+        # Network modeling parameters
+        annual_consumption: 3.0  # MWh/year
+        charge_rate: 0.011  # MW
+        share_charger: 0.8  # charger sharing ratio
+
+      freight_bev:
+        enable: true
+        # Network modeling parameters
+        annual_consumption: 40.0  # MWh/year
+        charge_rate: 0.15  # MW
+        share_charger: 0.1  # charger sharing ratio
+    
+    # Gompertz model parameters for EV demand disaggregation
+    gompertz:
+      saturation_level: 500  # Maximum vehicles per 1000 people
+                             # Source: Nature Geoscience https://doi.org/10.1038/s41561-023-01350-9
+      alpha: -5.58           # Fixed Gompertz parameter
+                             # Source: Energy Policy https://doi.org/10.1016/j.enpol.2011.01.043
+  
+  sector_mapping:
+    # REMIND export name mapping to sectorss
+    base: ["ac"]
+    electric_vehicles: ["ev_freight", "ev_pass"]
+    heat_coupling: ["heat_el"]

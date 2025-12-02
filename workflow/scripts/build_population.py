@@ -1,31 +1,35 @@
-""" 
+"""
 Rules for building the population data by region
 """
 
 import logging
-from _helpers import configure_logging, mock_snakemake
-
 import os
+
 import pandas as pd
-from constants import PROV_NAMES, YEARBOOK_DATA2POP, POP_YEAR
+from _helpers import configure_logging, mock_snakemake
+from constants import POP_YEAR, PROV_NAMES, YEARBOOK_DATA2POP
 
 logger = logging.getLogger(__name__)
 
 
 def load_pop_csv(csv_path: os.PathLike) -> pd.DataFrame:
-    """Load the national bureau of statistics of China population
-    (Yearbook - Population, table 2.5 pop at year end by Region)
+    """Load the national bureau of statistics of China population.
+    
+    Supports both formats:
+    - Yearbook format (2.5 pop at year end by Region)
+    - Historical data format with comment lines
 
     Args:
-        csv_path (os.Pathlike): the csv path
+        csv_path (os.Pathlike): Path to the CSV file
 
     Returns:
-        pd.DataFrame: the population for constants.POP_YEAR by province
+        pd.DataFrame: The population for constants.POP_YEAR by province
+        
     Raises:
-        ValueError: if the province names are not as expected
+        ValueError: If the province names do not match expected names
     """
-
-    df = pd.read_csv(csv_path, index_col=0, header=0)
+    # Read CSV, skipping comment lines that start with #
+    df = pd.read_csv(csv_path, index_col=0, header=0, comment='#')
     df = df.apply(pd.to_numeric)
     df = df[POP_YEAR][df.index.isin(PROV_NAMES)]
     if not sorted(df.index.to_list()) == sorted(PROV_NAMES):

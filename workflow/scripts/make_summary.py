@@ -6,19 +6,16 @@
 Create summary CSV files for all scenario runs including costs, capacities,
 capacity factors, curtailment, energy balances, prices and other metrics.
 """
+
+import logging
 import os
 import sys
-import logging
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pypsa
-
-from _helpers import mock_snakemake, configure_logging
-from _pypsa_helpers import assign_locations
-
-# import numpy as np
-# from add_electricity import load_costs, update_transmission_costs
+from _helpers import configure_logging, mock_snakemake
+from _pypsa_helpers import assign_locations, calc_lcoe
 
 logger = logging.getLogger(__name__)
 logger = logging.getLogger(__name__)
@@ -30,7 +27,8 @@ opt_name = {"Store": "e", "Line": "s", "Transformer": "s"}
 def assign_carriers(n: pypsa.Network):
     """Assign AC where missing
     Args:
-        n (pypsa.Network): the network object to fix"""
+        n (pypsa.Network): the network object to fix
+    """
     if "carrier" not in n.lines:
         n.lines["carrier"] = "AC"
 
@@ -214,6 +212,26 @@ def calculate_costs(n: pypsa.Network, label: str, costs: pd.DataFrame) -> pd.Dat
     return costs
 
 
+def calculate_nodal_lcoe(n: pypsa.Network, label: str, nodal_lcoe: pd.DataFrame):
+    """Calculate LCOE by province and technology
+
+    Args:
+        n (pypsa.Network): the network object
+        label (str): the label used by make summaries
+        nodal_lcoe (pd.DataFrame): the dataframe to fill/update
+    Returns:
+        pd.DataFrame: updated nodal_lcoe
+    """
+
+    lcoe_data = calc_lcoe(n, groupby=["location", "carrier"])
+
+    lcoe_series = lcoe_data["LCOE"]
+
+    nodal_lcoe[label] = lcoe_series
+
+    return nodal_lcoe
+
+
 def calculate_nodal_capacities(
     n: pypsa.Network, label: str, nodal_capacities: pd.DataFrame
 ) -> pd.DataFrame:
@@ -224,7 +242,8 @@ def calculate_nodal_capacities(
         label (str): the label used by make summaries
         nodal_capacities (pd.DataFrame): the dataframe to fill/update
     Returns:
-        pd.DataFrame: updated nodal_capacities"""
+        pd.DataFrame: updated nodal_capacities
+    """
     # Beware this also has extraneous locations for country (e.g. biomass) or continent-wide
     #  (e.g. fossil gas/oil) stuff
 
@@ -267,7 +286,6 @@ def calculate_capacities(
 
     # Drop reversed links & report AC capacities for links from X to AC
     if adjust_link_capacities:
-
         # For links where bus1 is AC, multiply capacity by efficiency coefficient to get AC side capacity
         ac_links = n.links[n.links.bus1.map(n.buses.carrier) == "AC"].index
         n.links.loc[ac_links, "p_nom_opt"] *= n.links.loc[ac_links, "efficiency"]
@@ -303,7 +321,7 @@ def calculate_capacities(
 def calculate_expanded_capacities(
     n: pypsa.Network, label: str, capacities: pd.DataFrame
 ) -> pd.DataFrame:
-    """calculate the capacities by carrier
+    """Calculate the capacities by carrier
 
     Args:
         n (pypsa.Network): the network object
@@ -341,7 +359,8 @@ def calculate_co2_balance(
     co2_balance: pd.DataFrame,
     withdrawal_stores=["CO2 capture"],
 ) -> pd.DataFrame:
-    """calc the co2 balance [DOES NOT INCLUDE EMISSION GENERATING LINKSs]
+    """Calc the co2 balance [DOES NOT INCLUDE EMISSION GENERATING LINKSs]
+
     Args:
         n (pypsa.Network): the network object
         withdrawal_stores (list, optional): names of stores. Defaults to ["CO2 capture"].
@@ -411,6 +430,16 @@ def calculate_curtailment(n: pypsa.Network, label: str, curtailment: pd.DataFram
 
 # TODO what does this actually do? is it needed?
 def calculate_energy(n: pypsa.Network, label: str, energy: pd.DataFrame) -> pd.DataFrame:
+    """Calculate energy production/consumption by carrier from network components.
+
+    Args:
+        n (pypsa.Network): PyPSA Network object
+        label (str): Label for the energy calculation scenario
+        energy (pd.DataFrame): DataFrame to store energy results
+
+    Returns:
+        pd.DataFrame: Updated energy DataFrame with calculated values
+    """
     for c in n.iterate_components(n.one_port_components | n.branch_components):
         if c.name in n.one_port_components:
             c_energies = (
@@ -493,8 +522,10 @@ def calculate_metrics(n: pypsa.Network, label: str, metrics: pd.DataFrame):
         n (pypsa.Network): the network object
         label (str): the label to update the table row with
         metrics (pd.DataFrame): the dataframe to write to (not needed, refactor)
+
     Returns:
-        pd.DataFrame: updated metrics"""
+        pd.DataFrame: updated metrics
+    """
 
     metrics_list = [
         "line_volume",
@@ -533,6 +564,7 @@ def calculate_t_avgd_prices(n: pypsa.Network, label: str, prices: pd.DataFrame):
         n (pypsa.Network): the network object
         label (str): the label representing the pathway (not needed, refactor)
         prices (pd.DataFrame): the dataframe to write to (not needed, refactor)
+
     Returns:
         pd.DataFrame: updated prices
     """
@@ -549,6 +581,7 @@ def calculate_weighted_prices(
 ) -> pd.DataFrame:
     """Demand-weighed prices for stores and loads.
         For stores if withdrawal is zero, use supply instead.
+
     Args:
         n (pypsa.Network): the network object
         label (str): the label representing the pathway (not needed, refactor)
@@ -557,26 +590,36 @@ def calculate_weighted_prices(
     Returns:
         pd.DataFrame: updated weighted_prices
     """
-    entries = pd.Index(["electricity", "heat", "H2", "CO2 capture", "gas", "biomass"])
-    weighted_prices = weighted_prices.reindex(entries)
+    # --- baseline entries ---
+    baseline_entries = pd.Index(["electricity", "heat", "H2", "CO2 capture", "gas", "biomass"])
 
-    # loads
+    # --- loads ---
     load_rev = -1 * n.statistics.revenue(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
-    prices = load_rev / n.statistics.withdrawal(
-        comps="Load", groupby=pypsa.statistics.get_bus_carrier
-    )
-    prices.rename(index={"AC": "electricity"}, inplace=True)
+    load_withdrawal = n.statistics.withdrawal(comps="Load", groupby=pypsa.statistics.get_bus_carrier)
+    prices = (load_rev / load_withdrawal).rename(index={"AC": "electricity"})
 
-    # stores
+    # --- stores ---
     w = n.statistics.withdrawal(comps="Store")
-    # biomass stores have no withdrawal for some reason
-    if not w[w == 0].empty:
-        w[w == 0] = n.statistics.supply(comps="Store")[w == 0]
-
+    if not w.empty:
+        w[w == 0] = n.statistics.supply(comps="Store")[w == 0]  # fallback
     store_rev = n.statistics.revenue(comps="Store")
-    mask = store_rev > load_rev.sum() / 400  # remove small
-    wp_stores = store_rev[mask] / w[mask]
-    weighted_prices[label] = pd.concat([prices, wp_stores.rename({"stations": "reservoir inflow"})])
+
+    if not w.empty and not store_rev.empty:
+        common_idx = w.index.intersection(store_rev.index)
+        wp_stores = store_rev.reindex(common_idx) / w.reindex(common_idx)
+    else:
+        wp_stores = pd.Series(dtype=float)
+
+    # --- combine ---
+    all_prices = pd.concat([prices, wp_stores])
+    all_prices = all_prices[~all_prices.index.duplicated(keep="first")]
+
+    # --- reindex weighted_prices with baseline + dynamic ---
+    all_entries = baseline_entries.union(all_prices.index)  # 保证基准有，同时动态扩展
+    weighted_prices = weighted_prices.reindex(all_entries)
+
+    weighted_prices[label] = all_prices
+
     return weighted_prices
 
 
@@ -588,6 +631,7 @@ def calculate_market_values(
         n (pypsa.Network): the network object
         label (str): the label representing the pathway
         market_values (pd.DataFrame): the dataframe to write to (not needed, refactor)
+
     Returns:
         pd.DataFrame: updated market_values
     """
@@ -666,6 +710,7 @@ def make_summaries(
         "nodal_costs": calculate_nodal_costs,
         "nodal_capacities": calculate_nodal_capacities,
         "nodal_cfs": calculate_nodal_cfs,
+        "nodal_lcoe": calculate_nodal_lcoe,
         "cfs": calculate_cfs,
         "costs": calculate_costs,
         "co2_balance": calculate_co2_balance,
@@ -711,7 +756,7 @@ def make_summaries(
 
 # TODO move to helper?
 def expand_from_wildcard(key, config) -> list:
-    """return a list of values for the given key in the config file
+    """Return a list of values for the given key in the config file
     Args:
         key (str): the key to look for in the config file
         config (dict): the config file
@@ -724,12 +769,11 @@ def expand_from_wildcard(key, config) -> list:
 
 if __name__ == "__main__":
     if "snakemake" not in globals():
-
         snakemake = mock_snakemake(
             "make_summary",
             topology="current+FCG",
             co2_pathway="exp175default",
-            planning_horizons="2050",
+            planning_horizons="2060",
             # co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
             # configfiles=["resources/tmp/remind_coupled_cg.yaml"],
@@ -772,6 +816,15 @@ if __name__ == "__main__":
     df["metrics"].loc["total costs"] = df["costs"].sum()
 
     def to_csv(dfs, dir):
+        """Save DataFrames to CSV files in specified directory.
+
+        Args:
+            dfs (dict): Dictionary of DataFrames to save
+            dir (str): Output directory path
+
+        Returns:
+            None: Saves files to disk
+        """
         os.makedirs(dir, exist_ok=True)
         for key, df in dfs.items():
             df.to_csv(os.path.join(dir, f"{key}.csv"))

@@ -10,8 +10,8 @@ dependencies:
   - python>=3.12
   - pip
 
-  - pypsa=0.31
-  - atlite>=0.2.6
+  - pypsa=0.35.1
+  - atlite>=0.4.0
   - dask
   - snakemake-storage-plugin-http
   # - pyasyncore
@@ -19,11 +19,12 @@ dependencies:
 
   # Dependencies of the workflow itself
   - xlrd
+  - libgdal-hdf5
   - rioxarray
   - openpyxl
   - pycountry
   - seaborn
-  - snakemake-minimal>=8.0
+  - snakemake-minimal>=9.0
   - memory_profiler
   - yaml
   - pytables
@@ -52,6 +53,8 @@ dependencies:
 
   # Keep in conda environment when calling ipython
   - ipython
+  # Testing
+  - pytest
 
   # GIS dependencies:
   - cartopy
@@ -63,3 +66,11 @@ dependencies:
     - tsam>=1.1.0
     - gurobipy==11.0.3
     - jwt
+    - remind-pypsa-coupling>=0.1.2
+    - mkdocs>=1.4.0
+    - mkdocs-material>=9.0.0
+    - mkdocs-gen-files
+    - mkdocstrings[python]
+    - mkdocs-awesome-nav
+    - mike>=1.1.0
+    - python-markdown-math

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: : 2025 The PyPSA-China Authors
+#
+# SPDX-License-Identifier: MIT
 """
 Build the existing capacities for each node from GEM (global energy monitor) tracker data.
 This script is intended for use as part of the Snakemake workflow.
@@ -10,14 +13,13 @@ Nodes can be assigned to specific GEM IDs based on their GPS location or adminis
 """
 
 import logging
+import os
+
+import geopandas as gpd
 import numpy as np
 import pandas as pd
-import geopandas as gpd
-import os
-from pathlib import Path
+from _helpers import configure_logging, mock_snakemake
 from shapely.geometry import Point
-
-from _helpers import mock_snakemake, configure_logging
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ def load_gem_excel(
     df.columns = df.columns.str.replace("/", "_")
     country_col = country_col.replace("/", "_")
 
-    if not country_col in df.columns:
+    if country_col not in df.columns:
         logger.warning(f"Column {country_col} not found in {path}. Returning unfiltered DataFrame.")
         return df
 
@@ -66,10 +68,11 @@ def clean_gem_data(gem_data: pd.DataFrame, gem_cfg: dict) -> pd.DataFrame:
         gem_data (pd.DataFrame): GEM dataset.
         gem_cfg (dict): Configuration dictionary, 'global_energy_monitor.yaml'
     Returns:
-        pd.DataFrame: Cleaned GEM data."""
+        pd.DataFrame: Cleaned GEM data.
+    """
 
-    valid_project_states = gem_cfg["status"]
-    GEM = gem_data.query("Status in @valid_project_states")
+    _valid_project_states = gem_cfg["status"]
+    GEM = gem_data.query("Status in @_valid_project_states")
     GEM.rename(columns={"Plant _ Project name": "Plant name"}, inplace=True)
     GEM.loc[:, "Retired year"] = GEM["Retired year"].replace("not found", np.nan)
     GEM.loc[:, "Start year"] = GEM["Start year"].replace("not found", np.nan)
@@ -87,8 +90,12 @@ def clean_gem_data(gem_data: pd.DataFrame, gem_cfg: dict) -> pd.DataFrame:
 
     # split CHP (potential issue: split before type split. After would be better)
     if gem_cfg["CHP"].get("split", False):
-        GEM.loc[:, "CHP"] = GEM.loc[:, "CHP"].map({"yes": True}).fillna(False)
-        chp_mask = GEM[GEM["CHP"] == True].index
+        GEM.loc[:, "CHP_bool"] = (
+            GEM.loc[:, "CHP"]
+            .map({"not found": False, "yes": True, "no": False, np.nan: False})
+            .fillna(False)
+        )
+        chp_mask = GEM[GEM["CHP_bool"] == True].index
 
         aliases = gem_cfg["CHP"].get("aliases", [])
         for alias in aliases:
@@ -151,8 +158,10 @@ def assign_node_from_gps(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame) -> pd.
     Args:
         gem_data (pd.DataFrame): GEM data
         nodes (gpd.GeoDataFrame): node geometries (nodes as index).
+
     Returns:
-        pd.DataFrame: DataFrame with assigned nodes."""
+        pd.DataFrame: DataFrame with assigned nodes.
+    """
 
     gem_data["geometry"] = gem_data.apply(
         lambda row: Point(row["Longitude"], row["Latitude"]), axis=1
@@ -168,48 +177,49 @@ def assign_node_from_gps(gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame) -> pd.
     return joined
 
 
-def partition_gem_across_nodes(
-    gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame, admin_level=None
-) -> pd.DataFrame:
-    """
-    Partition GEM data across nodes based on geographical coordinates.
-
-    Args:
-        gem_data (pd.DataFrame): DataFrame containing GEM data.
-        nodes (geopandas.GeoDataFrame): GeoDataFrame containing node geometries (nodes as index).
-        admin_level (int, optional): Administrative level for partitioning. Default is None (GPS).
-
-    Returns:
-        pd.DataFrame: DataFrame with GEM data partitioned across nodes.
-    """
-    if admin_level is not None and admin_level not in [0, 1, 2]:
-        raise ValueError("admin_level must be None, 0, 1, or 2")
-
-    # snap to admin_level
-    if admin_level is not None:
-        admin = ADM_COLS[admin_level]
-        gem_data[admin] = gem_data[admin].str.replace(" ", "")
-        uncovered_gem = set(gem_data[ADM_COLS[admin_level]]) - set(nodes.index)
-        if uncovered_gem:
-            logger.warning(
-                f"Some GEM locations are not covered by the nodes at admin level {admin_level}: {uncovered_gem}"
-                ". Consider partitioning with at a different admin_level or with GPS (None)."
-            )
-        gem_data["node"] = gem_data[admin]
-        gem_data.dropna(subset=["node"], inplace=True)
-        return gem_data
-    else:
-        gem_data["geometry"] = gem_data.apply(
-            lambda row: Point(row["Longitude"], row["Latitude"]), axis=1
-        )
-        gem_gdf = gpd.GeoDataFrame(gem_data, geometry="geometry", crs="EPSG:4326")
-        joined = nodes.reset_index(names="node").sjoin_nearest(gem_gdf, how="right")
-        missing = joined[joined.node.isna()]
-        if not missing.empty:
-            logger.warning(
-                f"Some GEM locations are not covered by the nodes at GPS: {missing['Plant name'].head()}"
-            )
-        return joined["node"]
+# FUTURE FEATURE: Partition GEM data across nodes based on admin level or GPS.
+# def partition_gem_across_nodes(
+#     gem_data: pd.DataFrame, nodes: gpd.GeoDataFrame, admin_level=None
+# ) -> pd.DataFrame:
+#     """
+#     Partition GEM data across nodes based on geographical coordinates.
+#
+#     Args:
+#         gem_data (pd.DataFrame): DataFrame containing GEM data.
+#         nodes (geopandas.GeoDataFrame): GeoDataFrame containing node geometries (nodes as index).
+#         admin_level (int, optional): Administrative level for partitioning. Default is None (GPS).
+#
+#     Returns:
+#         pd.DataFrame: DataFrame with GEM data partitioned across nodes.
+#     """
+#     if admin_level is not None and admin_level not in [0, 1, 2]:
+#         raise ValueError("admin_level must be None, 0, 1, or 2")
+#
+#     # snap to admin_level
+#     if admin_level is not None:
+#         admin = ADM_COLS[admin_level]
+#         gem_data[admin] = gem_data[admin].str.replace(" ", "")
+#         uncovered_gem = set(gem_data[ADM_COLS[admin_level]]) - set(nodes.index)
+#         if uncovered_gem:
+#             logger.warning(
+#                 f"Some GEM locations are not covered by the nodes at admin level {admin_level}: {uncovered_gem}"
+#                 ". Consider partitioning with at a different admin_level or with GPS (None)."
+#             )
+#         gem_data["node"] = gem_data[admin]
+#         gem_data.dropna(subset=["node"], inplace=True)
+#         return gem_data
+#     else:
+#         gem_data["geometry"] = gem_data.apply(
+#             lambda row: Point(row["Longitude"], row["Latitude"]), axis=1
+#         )
+#         gem_gdf = gpd.GeoDataFrame(gem_data, geometry="geometry", crs="EPSG:4326")
+#         joined = nodes.reset_index(names="node").sjoin_nearest(gem_gdf, how="right")
+#         missing = joined[joined.node.isna()]
+#         if not missing.empty:
+#             logger.warning(
+#                 f"Some GEM locations are not covered by the nodes at GPS: {missing['Plant name'].head()}"
+#             )
+#         return joined["node"]
 
 
 if __name__ == "__main__":
@@ -232,6 +242,7 @@ if __name__ == "__main__":
     # TODO add offsore for offsore wind
     nodes = gpd.read_file(snakemake.input.nodes)
     gem_data = load_gem_excel(snakemake.input.GEM_plant_tracker, sheetname="Power facilities")
+
     cleaned = clean_gem_data(gem_data, cfg_GEM)
     cleaned = group_by_year(
         cleaned, config["existing_capacities"]["grouping_years"], base_year=cfg_GEM["base_year"]
@@ -247,8 +258,8 @@ if __name__ == "__main__":
     if extra:
         logger.warning(f"Techs from GEM {extra} not covered by existing_baseyear techs.")
 
-    # TODO assign nodes
-    assign_mode = config["existing_capacities"].get("node_assignment_mode", "simple")
+    # TODO assign nodes (for sub-province level, eg. county or GPS/arbitrary point)
+    assign_mode = config["existing_capacities"].get("node_assignment", "simple")
     node_cfg = config["nodes"]
 
     if not node_cfg["split_provinces"]:
@@ -267,6 +278,7 @@ if __name__ == "__main__":
             )
         cleaned["node"] = assign_node_from_gps(cleaned, nodes)
 
+    # build and export files
     datasets = {tech: cleaned[cleaned.Type == tech] for tech in requested}
     for name, ds in datasets.items():
         df = (
@@ -281,6 +293,6 @@ if __name__ == "__main__":
         logger.debug(f"GEM Dataset for pypsa-tech {name}: has techs \n\t{ds.Technology.unique()}")
 
         df.to_csv(output_paths[name])
-        logger.info(f"cap for {name} {df.sum().sum()/1000}")
+        logger.info(f"cap for {name} {df.sum().sum() / 1000}")
 
     logger.info(f"GEM capacities saved to {os.path.dirname(output_paths[name])}")

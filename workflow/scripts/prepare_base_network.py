@@ -1,42 +1,45 @@
+"""Prepare base electricity network for pathway analysis.
+
+This module creates the base electricity network infrastructure including
+transmission lines, generation units, and load centers for pathway analysis
+in the PyPSA-China energy system model.
+"""
 # SPDX-FileCopyrightText: : 2022 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
 
 # for pathway network
 
-import pypsa
-import geopandas as gpd
-import pandas as pd
-import numpy as np
 import os
-
-import xarray as xr
-from vresutils.costdata import annuity
-from shapely.geometry import Point
 from logging import getLogger
 
-from constants import (
-    PROV_NAMES,
-    CRS,
-    TIMEZONE,
-    LOAD_CONVERSION_FACTOR,
-    YEAR_HRS,
-    INFLOW_DATA_YR,
-    NUCLEAR_EXTENDABLE,
-    NON_LIN_PATH_SCALING,
-    LINE_SECURITY_MARGIN,
-    FOM_LINES,
-    ECON_LIFETIME_LINES,
-)
-from functions import HVAC_cost_curve
-from _helpers import configure_logging, mock_snakemake, ConfigManager
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+import pypsa
+import xarray as xr
+from _helpers import ConfigManager, configure_logging, mock_snakemake
 from _pypsa_helpers import (
     make_periodic_snapshots,
     shift_profile_to_planning_year,
 )
 from add_electricity import load_costs, sanitize_carriers
-from functions import haversine
+from constants import (
+    CRS,
+    ECON_LIFETIME_LINES,
+    FOM_LINES,
+    INFLOW_DATA_YR,
+    LINE_SECURITY_MARGIN,
+    NON_LIN_PATH_SCALING,
+    NUCLEAR_EXTENDABLE,
+    PROV_NAMES,
+    TIMEZONE,
+    YEAR_HRS,
+)
+from functions import HVAC_cost_curve, haversine
 from readers_geospatial import read_province_shapes
+from shapely.geometry import Point
+from vresutils.costdata import annuity
 
 logger = getLogger(__name__)
 logger.setLevel("INFO")
@@ -71,7 +74,7 @@ def add_buses(
 
 
 def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
-    """ad the various carriers to the network based on the config file
+    """Ad the various carriers to the network based on the config file
 
     Args:
         network (pypsa.Network): the pypsa network
@@ -91,7 +94,7 @@ def add_carriers(network: pypsa.Network, config: dict, costs: pd.DataFrame):
         if carrier == "battery":
             network.add("Carrier", "battery discharger")
 
-    if "coal power plant" in config["Techs"]["conv_techs"] and config["Techs"]["coal_cc"]:
+    if "coal power plant" in config["Techs"]["conv_techs"] and config["Techs"]["coal_ccs_retrofit"]:
         network.add("Carrier", "coal cc", co2_emissions=0.034)
 
 
@@ -176,7 +179,10 @@ def add_wind_and_solar(
             ds = ds.stack(bus_bin=["bus", "bin"])
 
         # bins represent renewable generation grades
-        flatten = lambda t: " grade".join(map(str, t))
+        def flatten(t):
+            """Flatten tuple to string with ' grade' separator."""
+            return " grade".join(map(str, t))
+
         buses = ds.indexes["bus_bin"].get_level_values("bus")
         bus_bins = ds.indexes["bus_bin"].map(flatten)
 
@@ -277,7 +283,6 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
     add_wind_and_solar(network, ws_carriers, paths, planning_horizons, costs)
 
     if config["heat_coupling"]:
-
         central_fraction = pd.read_hdf(snakemake.input.central_fraction)
         with pd.HDFStore(snakemake.input.heat_demand_profile, mode="r") as store:
             heat_demand = store["heat_demand_profiles"]
@@ -303,7 +308,6 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
 
     # ====== add gas techs ======
     if [tech for tech in config["Techs"]["conv_techs"] if "gas" in tech]:
-
         # add converter from fuel source
         network.add(
             "Generator",
@@ -396,7 +400,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         )
 
     # TODO separate retrofit in config from coal power plant
-    if "coal power plant" in config["Techs"]["conv_techs"] and config["Techs"]["coal_cc"]:
+    if "coal power plant" in config["Techs"]["conv_techs"] and config["Techs"]["coal_ccs_retrofit"]:
         network.add(
             "Generator",
             nodes,
@@ -612,7 +616,6 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         )
 
     if config["add_hydro"]:
-
         # load dams
         df = pd.read_csv(config["hydro_dams"]["dams_path"], index_col=0)
         points = df.apply(lambda row: Point(row.Lon, row.Lat), axis=1)
@@ -670,7 +673,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
             e_nom=effective_capacity,
             e_initial=initial_capacity,
             e_cyclic=True,
-            marginal_cost=config["costs"]["marginal_cost"]["hydro"],
+            marginal_cost=config["hyro"]["marginal_cost"]["reservoir"],  # EUR/MWh"
         )
 
         # add hydro turbines to link stations to provinces
@@ -733,7 +736,6 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         ]
 
         for bus0, bus2 in list(zip(dams.index[bus0s], dam_buses.iloc[bus1s].index)):
-
             # normal flow
             network.links.at[bus0 + " turbines", "bus2"] = bus2
             network.links.at[bus0 + " turbines", "efficiency2"] = 1.0
@@ -742,7 +744,7 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         for bus0, bus1 in list(zip(dam_buses.iloc[bus0s].index, dam_buses.iloc[bus1s].index)):
             network.add(
                 "Link",
-                "{}-{}".format(bus0, bus1) + " spillage",
+                f"{bus0}-{bus1}" + " spillage",
                 bus0=bus0,
                 bus1=bus1,
                 p_nom_extendable=True,
@@ -769,7 +771,6 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         inflow_stations = [dam for dam in range(len(dams.index)) if dam not in bus1s]
 
         for inflow_station in inflow_stations:
-
             # p_nom = 1 and p_max_pu & p_min_pu = p_pu, compulsory inflow
 
             p_nom = (inflow / water_consumption_factor).iloc[:, inflow_station].max()
@@ -815,7 +816,6 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         )
 
     if config["add_H2"]:
-
         network.add(
             "Bus",
             nodes,
@@ -930,7 +930,6 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
         )
 
     if "heat pump" in config["Techs"]["vre_techs"]:
-
         with pd.HDFStore(snakemake.input.cop_name, mode="r") as store:
             ashp_cop = store["ashp_cop_profiles"]
             ashp_cop.index = ashp_cop.index.tz_localize(None)
@@ -1252,7 +1251,6 @@ def prepare_network(config: dict, costs: pd.DataFrame, paths: dict) -> pypsa.Net
 
 
 if __name__ == "__main__":
-
     # Detect running outside of snakemake and mock snakemake for testing
     if "snakemake" not in globals():
         snakemake = mock_snakemake(

@@ -1,27 +1,75 @@
 
-site_name: PyPSA China Model (PIK edition) Documentation
+site_name: PyPSA China (PIK) #(PIK edition) Documentation
 
 theme:
   name: "material"
+  logo: "assets/img/logo_small.png"
+  favicon: "assets/img/pypsa_china.ico"
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    # - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+    - navigation.footer
+  language: en
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode    
+      primary: black
+      accent: amber
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline 
+        name: Switch to dark mode
+      # primary: deep purple
+      accent: blue 
+
 docs_dir: "./docs"
+nav:
+  - .nav.yml
+  - tutorials/.nav.yml
+
+# Version configuration
+extra:
+  version:
+    provider: mike
+    default: latest
 
 # Due to snakemake workflow, we need to include the 'scripts' directory in the python path
 plugins:
   - gen-files:
       scripts:
       - docs/autogen_ref_pages.py
-  - literate-nav:
-      nav_file: reference_nav.yml
+  # - literate-nav:
+  #     nav_file: reference_nav.yml
+  - search
+  - awesome-nav
   - mkdocstrings:
       default_handler: python
       handlers:
         python:
           paths: ["./workflow/scripts"]
-  - search
 
-nav:
-  - Home: index.md
-  - Tutorials: tutorials.md
-  - Reference:
-      - reference.md
+extra_css:
+  - docs/assets/styles/extra.css
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - mdx_math
 
+copyright: &copy Potsdam Institute for Climate Impact Research (PIK) 2024

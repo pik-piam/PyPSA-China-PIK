@@ -2,32 +2,47 @@
 Helper/utility functions for plotting, including legacy functions yet to be removed
 """
 
-import pypsa
-import pandas as pd
 import os.path
-import matplotlib.pyplot as plt
-from os import PathLike
 import re
-from typing import Dict
+from os import PathLike
 
-from constants import PROV_NAMES
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import pypsa
 
 
-def validate_hex_colors(tech_colors: Dict[str, str]) -> Dict[str, str]:
-    """Validate and standardize hex color codes in the tech_colors dictionary.
-
+def validate_hex_colors(tech_colors: dict[str, str], fill_color = "#999999") -> dict[str, str]:
+    """Validate and standardize hex color codes in technology color mappings.
+    
+    Ensures all color codes in the technology colors dictionary are valid hexadecimal
+    color codes. Invalid or malformed colors are replaced with a default gray color.
+    
     Args:
-        tech_colors (Dict[str, str]): Dictionary mapping technology names to color codes.
-
+        tech_colors (Dict[str, str]): Dictionary mapping technology names to color codes. Expected
+            format is {'tech_name': '#RRGGBB'} or {'tech_name': '#RGB'}.
+        fill_color (str, optional): Default color to use for invalid entries. Defaults to '#999999'.
+            
     Returns:
-        Dict[str, str]: Dictionary with validated color codes. Invalid colors are replaced with '#999999'.
+        dict[str,str] with validated hex color codes. All valid colors are converted
+        to lowercase, while invalid colors are replaced with '#999999' (gray).
+        
+    Example:
+        >>> colors = {'solar': '#FFD700', 'wind': 'invalid', 'coal': '#8B4513'}
+        >>> validated = validate_hex_colors(colors)
+        >>> print(validated)
+        {'solar': '#ffd700', 'wind': '#999999', 'coal': '#8b4513'}
+        
+    Note:
+        Accepts both 3-digit (#RGB) and 6-digit (#RRGGBB) hex color formats.
+        All valid colors are standardized to lowercase.
     """
     hex_color_pattern = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
     validated_colors = {}
 
     for tech, color in tech_colors.items():
         if not isinstance(color, str) or not hex_color_pattern.match(color):
-            validated_colors[tech] = "#999999"
+            validated_colors[tech] = fill_color
         else:
             validated_colors[tech] = color.lower()
 
@@ -47,7 +62,6 @@ def find_weeks_of_interest(
     Returns:
         tuple: Index ranges of ±3.5 days around the winter_max and summer_max.
     """
-    max_prices = n.buses_t["marginal_price"][PROV_NAMES].T.max()
     prices_w = (
         -1
         * n.statistics.revenue(comps="Load", bus_carrier="AC", aggregate_time=False)
@@ -60,9 +74,15 @@ def find_weeks_of_interest(
 
     summer = prices_w.query("snapshot > @summer_start and snapshot < @summer_end")
     summer_peak = summer.idxmax().iloc[0]
-    summer_peak_w = n.snapshots[(n.snapshots >= summer_peak - pd.Timedelta(days=3.5)) & (n.snapshots <= summer_peak + pd.Timedelta(days=3.5))]
+    summer_peak_w = n.snapshots[
+        (n.snapshots >= summer_peak - pd.Timedelta(days=3.5))
+        & (n.snapshots <= summer_peak + pd.Timedelta(days=3.5))
+    ]
     winter_peak = prices_w.loc[~prices_w.index.isin(summer.index)].idxmax().iloc[0]
-    winter_peak_w = n.snapshots[(n.snapshots >= winter_peak - pd.Timedelta(days=3.5)) & (n.snapshots <= winter_peak + pd.Timedelta(days=3.5))]
+    winter_peak_w = n.snapshots[
+        (n.snapshots >= winter_peak - pd.Timedelta(days=3.5))
+        & (n.snapshots <= winter_peak + pd.Timedelta(days=3.5))
+    ]
 
     return winter_peak_w, summer_peak_w
 
@@ -75,7 +95,8 @@ def label_stacked_bars(ax: object, nbars: int, fontsize=8, small_values=350):
         nbars (int): The number of bars in the stacked chart.
         fontsize (int, optional): Font size for the labels. Defaults to 8.
         small_values (int, optional): Threshold for small values. Small values
-            adjacent to one another are not printed to avoid overlap. Defaults to 350."""
+            adjacent to one another are not printed to avoid overlap. Defaults to 350.
+    """
 
     # reorganize patches by bar
     stacked = [ax.patches[i::nbars] for i in range(len(ax.patches) // nbars)]
@@ -90,7 +111,7 @@ def label_stacked_bars(ax: object, nbars: int, fontsize=8, small_values=350):
                 continue
             if 0 < value < small_values:
                 yoffset -= 20
-            elif -1 * small_values < value < 0 & (prev < -1 * small_values or prev > 0):
+            elif -1 * small_values < value < 0 and (prev < -1 * small_values or prev > 0):
                 yoffset += 50
             ax.text(
                 # Put the text in the middle of each bar. get_x returns the start
@@ -112,7 +133,7 @@ def label_stacked_bars(ax: object, nbars: int, fontsize=8, small_values=350):
 
 
 def make_nice_tech_colors(tech_colors: dict, nice_names: dict) -> dict:
-    """add the nice names to the tech_colors dict keys
+    """Add the nice names to the tech_colors dict keys
 
     Args:
         tech_colors (dict): the tech colors (plot config)
@@ -159,7 +180,7 @@ def get_stat_colors(
 
 
 def get_solver_tolerance(config: dict, tol_name="BarConvTol") -> float:
-    """get the solver tolerance from the config
+    """Get the solver tolerance from the config
 
     Args:
         config (dict): the config
@@ -357,30 +378,6 @@ def set_plot_style(
     plt.style.use(style_config_file)
 
 
-def filter_carriers(n: pypsa.Network, bus_carrier="AC", comps=["Generator", "Link"]) -> list:
-    """filter carriers for links that attach to a bus of the target carrier
-
-    Args:
-        n (pypsa.Network): the pypsa network object
-        bus_carrier (str, optional): the bus carrier. Defaults to "AC".
-        comps (list, optional): the components to check. Defaults to ["Generator", "Link"].
-
-    Returns:
-        list: list of carriers that are attached to the bus carrier
-    """
-    carriers = []
-    for c in comps:
-        comp = n.static(c)
-        ports = [c for c in comp.columns if c.startswith("bus")]
-        comp_df = comp[ports + ["carrier"]]
-        is_attached = comp_df[ports].apply(lambda x: x.map(n.buses.carrier) == bus_carrier).T.any()
-        carriers += comp_df.loc[is_attached].carrier.unique().tolist()
-
-    if bus_carrier not in carriers:
-        carriers += [bus_carrier]
-    return carriers
-
-
 def aggregate_small_pie_vals(pie: pd.Series, threshold: float) -> pd.Series:
     """Aggregate small pie values into the "Other" category
 
@@ -398,6 +395,135 @@ def aggregate_small_pie_vals(pie: pd.Series, threshold: float) -> pd.Series:
     )
     pie_df["location"] = pie_df.index.get_level_values(0)
     return pie_df.set_index(["location", "new_carrier"]).groupby(level=[0, 1]).sum().squeeze()
+
+
+def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **kwargs):
+    """
+    Create a heatmap from a numpy array and two lists of labels.
+
+    Args:
+        data (np.ndarray): The data to plot.
+        row_labels (list): The labels for the rows.
+        col_labels (list): The labels for the columns.
+        ax (matplotlib.axes.Axes, optional): The axes to plot on. Defaults to None.
+        cbar_kw (dict, optional): Arguments to pass to colorbar. Defaults to {}.
+        cbarlabel (str, optional): The label for the colorbar. Defaults to "".
+        **kwargs: Additional arguments for imshow.
+
+    Returns:
+        im: The image.
+        cbar: The colorbar.
+    """
+    if ax is None:
+        ax = plt.gca()
+    im = ax.imshow(data, aspect="auto", interpolation="none", **kwargs)
+    cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
+    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom")
+    ax.set_xticks(np.arange(data.shape[1]), labels=col_labels)
+    ax.set_yticks(np.arange(data.shape[0]), labels=row_labels)
+    ax.tick_params(top=True, bottom=False, labeltop=True, labelbottom=False)
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="left", rotation_mode="anchor")
+    for edge, spine in ax.spines.items():
+        spine.set_visible(False)
+    return im, cbar
+
+
+def annotate_heatmap(
+    im, data=None, valfmt="{x:.1f}", textcolors=("black", "white"), threshold=None, **textkw
+):
+    """
+    Annotate a heatmap.
+
+    Args:
+        im: The AxesImage to annotate.
+        data (np.ndarray, optional): Data to annotate. Defaults to im.get_array().
+        valfmt (str, optional): Format for values. Defaults to "{x:.1f}".
+        textcolors (tuple, optional): Colors for values below/above threshold. Defaults to ("black", "white").
+        threshold (float, optional): Value in data units according to which the colors are applied. Defaults to half the max.
+        **textkw: Additional arguments for text.
+
+    Returns:
+        list: List of text annotations.
+    """
+    if data is None:
+        data = im.get_array()
+    if threshold is not None:
+        threshold = im.norm(threshold)
+    else:
+        threshold = im.norm(data.max()) / 2.0
+    kw = dict(horizontalalignment="center", verticalalignment="center")
+    kw.update(textkw)
+    texts = []
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            kw.update(color=textcolors[int(im.norm(data[i, j]) > threshold)])
+            text = im.axes.text(j, i, valfmt.format(x=data[i, j]), **kw)
+            texts.append(text)
+    return texts
+
+def setup_plot_export_hook(plot_accessor_class, export_dir="plot_exports", verbose=True):
+    """Setup a monkey patch to auto-export data to CSV whenever pandas plots are created.
+    
+    Args:
+        plot_accessor_class: The PlotAccessor class to patch (e.g., pandas.plotting.PlotAccessor).
+        export_dir (str, optional): Directory where CSV exports will be saved. 
+            Defaults to "plot_exports".
+        verbose (bool, optional): Whether to print export messages. Defaults to True.
+    
+    Returns:
+        callable: Function to remove the patch and restore original behavior.
+    
+    Example:
+        >>> from pandas.plotting import PlotAccessor
+        >>> remove_hook = setup_plot_export_hook(PlotAccessor)
+        >>> # ... do plotting ...
+        >>> remove_hook()  # Restore original behavior
+    """
+    import os
+    import time
+    import pandas as pd
+    
+    # Create export directory
+    os.makedirs(export_dir, exist_ok=True)
+    
+    # Store original __call__ if not already stored
+    if not hasattr(plot_accessor_class, '_original_call'):
+        plot_accessor_class._original_call = plot_accessor_class.__call__
+    
+    def patched_plot_call(self, *args, **kwargs):
+        """Patched __call__ method for PlotAccessor to export data before plotting."""
+        # Create timestamped filename
+        if 'fname' in kwargs:
+            fname = kwargs.pop('fname')
+        else:
+            ts = time.strftime("%Y%m%d_%H%M%S")
+            fname = os.path.join(export_dir, f"plot_export_{ts}.csv")
+        
+        # Export the data
+        if isinstance(self._parent, pd.Series):
+            self._parent.to_frame().to_csv(fname, index=True)
+        else:
+            self._parent.to_csv(fname, index=True)
+        
+        if verbose:
+            print(f"[pandas-plot-hook] Exported plotted data to {fname}")
+        
+        # Call the original __call__ method
+        return self._original_call(*args, **kwargs)
+    
+    # Apply the patch
+    plot_accessor_class.__call__ = patched_plot_call
+    
+    # Return function to remove the patch
+    def remove_hook():
+        """Remove the plot export hook and restore original behavior."""
+        if hasattr(plot_accessor_class, '_original_call'):
+            plot_accessor_class.__call__ = plot_accessor_class._original_call
+            delattr(plot_accessor_class, '_original_call')
+            if verbose:
+                print("[pandas-plot-hook] Hook removed, original behavior restored.")
+    
+    return remove_hook
 
 
 if __name__ == "__main__":

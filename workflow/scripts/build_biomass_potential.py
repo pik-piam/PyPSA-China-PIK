@@ -1,10 +1,14 @@
-# TODO missing docu
+"""Build biomass potential data for energy system modeling.
+
+This module processes biomass resource data and calculates biomass potential
+for different regions and technologies in the PyPSA-China model.
+"""
+
 import logging
-import pandas as pd
 from os import PathLike
 
+import pandas as pd
 from _helpers import configure_logging, mock_snakemake
-
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +30,7 @@ def estimate_co2_intensity_xing() -> float:
 
 
 def read_xing_si_data(biomass_potentials_path: PathLike):
-    """read and prepare the xing SI data
+    """Read and prepare the xing SI data
 
     Args:
         biomass_potentials_path (PathLike): the path to the Xing SI data (xlsx).
@@ -43,7 +47,7 @@ def read_xing_si_data(biomass_potentials_path: PathLike):
 
 # TODO fix hardcoded issues
 def build_biomass_potential_xing(biomass_potentials_path: PathLike):
-    """build potential from Xing et al. https://doi.org/10.1038/s41467-021-23282-x
+    """Build potential from Xing et al. https://doi.org/10.1038/s41467-021-23282-x
 
     Args:
         biomass_potentials_path (PathLike, optional): the path to the Xing SI data (xlsx).
@@ -63,7 +67,6 @@ def build_biomass_potential_xing(biomass_potentials_path: PathLike):
 
 
 if __name__ == "__main__":
-
     # for testing & standalone purposes, emulate snakemake
     if "snakemake" not in globals():
         snakemake = mock_snakemake(

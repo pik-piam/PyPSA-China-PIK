@@ -89,6 +89,14 @@ def get_province_names() -> list:
 
 
 def filter_buses(names) -> list:
+    """Filter bus names to include only those in PROV_NAMES.
+
+    Args:
+        names: Iterable of bus names to filter
+
+    Returns:
+        list: List of names that are present in PROV_NAMES
+    """
     return [name for name in names if name in PROV_NAMES]
 
 
@@ -143,6 +151,8 @@ EEZ_PREFIX = "chinese"
 # 791 TWh extra space heating demand + 286 Twh extra hot water demand
 # 60% CHP efficiency 0.468 40% coal boiler efficiency 0.97
 # (((791+286) * 0.6 /0.468) + ((791+286) * 0.4 /0.97))  * 0.34 * 1e6 = 0.62 * 1e9
+CO2_EL_2020 = 4.716 * 1e9  # tCO2, Ember https://ember-energy.org/countries-and-regions/china/
+CO2_EL_2025 = 5.65 * 1e9  # tCO2
 CO2_EL_2020 = 5.288987673 * 1e9  # tCO2
 CO2_HEATING_2020 = 0.628275682 * 1e9  # tCO2
 CO2_BASEYEAR_EM = CO2_EL_2020 + CO2_HEATING_2020  # tCO2
@@ -157,18 +167,6 @@ NON_LIN_PATH_SCALING = 1.25
 LINE_SECURITY_MARGIN = 1.45
 FOM_LINES = 1.02  # of cap costs
 ECON_LIFETIME_LINES = 40  # years
-
-# TODO fix mismatch in ref year, move to config
-# ===== YEARLY HEAT DEMAND INCREASE MODEL ======
-# In 2008 China 228.4 Twh for urban residential DHW
-# MWh/capita/year = 228.4 * 1e6 / 62403/1e4 = 0.366008
-UNIT_HOT_WATER_START_YEAR = 0.366008  # MWh/capita/yr 2020 [!! INCONSISTENT]
-# We can consider that, on average,
-# the 52 M in developed countries is around 1000 kWh per person
-# http://www.estif.org/fileadmin/estif/content/publications/downloads/UNEP_2015/factsheet_single_family_houses_v05.pdf
-UNIT_HOT_WATER_END_YEAR = 1.0
-
-# TODO soft-code based on the eez shapefile
 
 
 # ==== technologies

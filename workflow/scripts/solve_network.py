@@ -6,20 +6,85 @@
 """Functions to add constraints and prepare the network for the solver.
 Associated with the `solve_networks` rule in the Snakefile.
 """
+
 import logging
+
 import numpy as np
+import pandas as pd
 import pypsa
 import xarray as xr
-import pandas as pd
-from pandas import DatetimeIndex
-
-
-from _helpers import configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env, ConfigManager
-from _pypsa_helpers import mock_solve
+import os
+from _helpers import ConfigManager, configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env
+from _pypsa_helpers import filter_carriers, mock_solve, store_duals_to_network
 from constants import YEAR_HRS
+from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
+
+
+def calc_nuclear_expansion_limit(
+    n: pypsa.Network,
+    config: dict,
+    planning_year: int,
+    network_path: str,
+) -> None:
+    """
+    Calculate and apply the nuclear expansion limit from configuration.
+    
+    Args:
+        n (pypsa.Network): the network object
+        config (dict): full configuration dictionary (mutated in place)
+        planning_year (int): target planning horizon year
+        network_path (str): path to the current network file, used to locate base year
+    """
+    nuclear_cfg = config.setdefault("nuclear_reactors", {})
+    if not nuclear_cfg.get("enable_growth_limit"):
+        return
+    
+    annual_addition = nuclear_cfg.get("max_annual_capacity_addition")
+    if not annual_addition:
+        logger.warning("Nuclear growth limit enabled but max_annual_capacity_addition missing")
+        return
+    
+    base_year = nuclear_cfg.get("base_year", 2020)
+    n_years = planning_year - base_year
+    if n_years <= 0:
+        logger.info(
+            "Planning year %s is not after base year %s; skipping nuclear expansion limit",
+            planning_year,
+            base_year,
+        )
+        return
+    
+    base_capacity = nuclear_cfg.get("base_capacity")
+    if base_capacity is None:
+        base_path = network_path.replace(f"ntwk_{planning_year}.nc", f"ntwk_{base_year}.nc")
+        if os.path.exists(base_path):
+            n_base = pypsa.Network(base_path)
+            base_capacity = n_base.generators[n_base.generators.carrier == "nuclear"]["p_nom"].sum()
+        else:
+            base_capacity = n.generators[n.generators.carrier == "nuclear"]["p_nom"].sum()
+    
+    max_capacity = base_capacity + annual_addition * n_years
+    logger.info(
+        f"Adding nuclear expansion limit for {planning_year}: {max_capacity:.0f} MW "
+        f"[{base_capacity:.0f} + {annual_addition:.0f} × {n_years} years]"
+    )
+
+    nuclear_gens_ext = n.generators[
+        (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
+    ].index
+    
+    if len(nuclear_gens_ext) == 0:
+        logger.warning("No extendable nuclear generators found")
+        return
+    
+    n.generators.loc[nuclear_gens_ext, "p_nom_max"] = max_capacity
+    nuclear_cfg["expansion_limit"] = max_capacity
+    logger.info(
+        f"Nuclear expansion limit set: {max_capacity:.0f} MW for {len(nuclear_gens_ext)} generators"
+    )
 
 
 def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1):
@@ -33,7 +98,7 @@ def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1
         n_years (int, optional): the number of years to consider for the limit. Defaults to 1.
     """
     logger.info(
-        f"Setting global transmission limit for {kind} with factor {factor}/year and {n_years} years"
+        f"Adding global transmission limit for {kind} with factor {factor}/year & {n_years} years"
     )
     links_dc = n.links.query("carrier in ['AC','DC']").index
     # links_dc_rev = n.links.query("carrier in ['AC','DC'] & Link.str.contains('reverse')").index
@@ -72,7 +137,7 @@ def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1
         con_type = "expansion_cost" if kind == "c" else "volume_expansion"
         rhs = float(factor) ** n_years * ref
         logger.info(
-            f"Setting global transmission limit for {kind} to {float(factor) ** n_years} current value"
+            f"Adding global transmission limit for {kind} to {float(factor) ** n_years} current value"
         )
         n.add(
             "GlobalConstraint",
@@ -85,7 +150,7 @@ def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1
 
 
 def add_emission_prices(n: pypsa.Network, emission_prices={"co2": 0.0}, exclude_co2=False):
-    """from pypsa-eur: add GHG price to marginal costs of generators and storage units
+    """From pypsa-eur: add GHG price to marginal costs of generators and storage units
 
     Args:
         n (pypsa.Network): the pypsa network
@@ -143,7 +208,7 @@ def add_co2_constraints_prices(network: pypsa.Network, co2_control: dict):
         )
     else:
         logger.error(f"Unhandled CO2 control config {co2_control} due to unknown control.")
-        raise ValueError(f"Unhandled CO2 config {config['scenario']['co2_reduction']}")
+        raise ValueError(f"Unhandled CO2 control config {co2_control} due to unknown control")
 
 
 def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbine"]):
@@ -153,12 +218,13 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbi
     Args:
         n (pypsa.Network): the network object
         config (dict): the configuration dictionary
-        exclude (list, optional): list of technologies to exclude from freezing. Defaults to ["OCGT"]
+        exclude (list, optional): list of technologies to exclude from freezing.
+            Defaults to ["OCGT"]
     """
 
     # Freeze VRE and conventional techs
     freeze = config["Techs"]["vre_techs"] + config["Techs"]["conv_techs"]
-    freeze = [f for f in freeze if not f in exclude]
+    freeze = [f for f in freeze if f not in exclude]
     if "coal boiler" in freeze:
         freeze += ["coal boiler central", "coal boiler decentral"]
     if "gas boiler" in freeze:
@@ -187,7 +253,8 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbi
 def prepare_network(
     n: pypsa.Network, solve_opts: dict, config: dict, plan_year: int, co2_pathway: str
 ) -> pypsa.Network:
-    """prepare the network for the solver,
+    """Prepare the network for the solver,
+
     Args:
         n (pypsa.Network): the network object to optimize
         solve_opts (dict): solving options
@@ -255,6 +322,30 @@ def prepare_network(
     return n
 
 
+def add_nuclear_expansion_constraints(n: pypsa.Network):
+    """
+    Add nuclear expansion limit constraint if configured.
+    
+    Args:
+        n (pypsa.Network): the network object
+    """
+    limit = n.config.get("nuclear_reactors", {}).get("expansion_limit")
+    if limit is None:
+        return
+    
+    nuclear_gens_ext = n.generators[
+        (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
+    ].index
+    
+    if len(nuclear_gens_ext) == 0:
+        return
+    
+    # Add global constraint: sum of all nuclear p_nom <= limit
+    lhs = n.model["Generator-p_nom"].loc[nuclear_gens_ext].sum()
+    n.model.add_constraints(lhs <= limit, name="nuclear_expansion_limit")
+    logger.info(f"Applied global nuclear constraint: sum(p_nom) <= {limit:.0f} MW")
+
+
 def add_battery_constraints(n: pypsa.Network):
     """
     Add constraint ensuring that charger = discharger, i.e.
@@ -275,9 +366,73 @@ def add_battery_constraints(n: pypsa.Network):
     n.model.add_constraints(lhs == 0, name="Link-charger_ratio")
 
 
+def add_chp_constraints_new_attempt(n: pypsa.Network):
+    """Add constraints to couple the heat and electricity output of CHP plants.
+      Simplified treatment of extraction plant with max heat to power ratio.
+      Ignore the minimum electric power for heat output (aggregate over all units).
+
+
+    Args:
+        n (pypsa.Network): the pypsa network object to which's model the constraints are added
+    """
+
+    elec = n.links.query("index.str.contains('chp', case=False) & index.str.contains('generator')")
+    heat = n.links.query("index.str.contains('chp', case=False) & index.str.contains('boiler')")
+
+    if not elec.shape == heat.shape:
+        raise ValueError(
+            "Incorrect definition of CHP units, check link names."
+            " Each 'CHP generator' needs an associated 'CHP boiler'."
+        )
+
+    # elec = n.links.index.str.contains("CHP") & n.links.index.str.contains("generator")
+    # heat = n.links.index.str.contains("CHP") & n.links.index.str.contains("boiler")
+
+    elec_ext = sorted(elec.query("p_nom_extendable").index)
+    heat_ext = sorted(heat.query("p_nom_extendable").index)
+
+    elec_fix = elec.query("~p_nom_extendable").index
+    heat_fix = heat.query("~p_nom_extendable").index
+
+    p = n.model["Link-p"]  # dimension: [time, link]
+    p_nom = n.model["Link-p_nom"]
+
+    # maximum capacity of heat set by ratio between heat and electricity
+    if not elec.query("p_nom_extendable").empty:
+        # maximising heat power under constraints that Pel/eta_el + Pth/eta_th <= p_nom_link
+        # & noting that pypsa link powers are defined by input (fuel)
+        # yields: p_nom_heat = p_nom_el * htpr / (htpr+eta_h/eta_el)
+        htpr = n.links.p_nom_ratio[elec_ext].values
+        alpha = n.links.efficiency[heat_ext].values / n.links.efficiency[elec_ext].values
+        lhs = p_nom.loc[elec_ext] * htpr / (htpr + alpha) - p_nom.loc[heat_ext]
+        n.model.add_constraints(lhs == 0, name="chplink-fix_max_heat")
+
+        # top_iso_fuel_line ext (is it still relevant?)
+        rename = {"Link-ext": "Link"}
+        lhs = p.loc[:, elec_ext] + p.loc[:, heat_ext] - p_nom.rename(rename).loc[elec_ext]
+        n.model.add_constraints(lhs <= 0, name="chplink-top_iso_fuel_line_ext")
+
+    # max heat to power ratio
+    grouper_heat = pd.concat([heat.location, heat.build_year], axis=1)
+    grouper_elec = pd.concat([elec.location, elec.build_year], axis=1)
+    p_heat = n.model["Link-p"].loc[:, heat.index]
+    p_elec = n.model["Link-p"].loc[:, elec.index]
+    lhs = (p_heat * heat.efficiency).groupby(grouper_heat).sum()
+    rhs = (p_elec * elec.efficiency * elec.p_nom_ratio.fillna(1)).groupby(grouper_elec).sum()
+    n.model.add_constraints(lhs <= rhs, name="chplink-max_heat_to_power")
+
+    # top_iso_fuel_line for fixed (is it still relevant?)
+    if not elec_fix.empty:
+        lhs = p.loc[:, elec_fix] + p.loc[:, heat_fix]
+        rhs = n.links.p_nom[elec_fix]
+        n.model.add_constraints(lhs <= rhs, name="chplink-top_iso_fuel_line_fix")
+
+
 def add_chp_constraints(n: pypsa.Network):
-    """Add constraints to couple the heat and electricity output of CHP plants
-         (using the cb and cv parameter). See the DEA technology cataloge
+    """Add constraints to couple the heat and electricity output of CHP plants.
+      Simplified treatment of extraction plant with Cb/Cv coeffs as per DKEA catalogue.
+      Ignore the minimum electric power for heat output (aggregate over all units).
+
 
     Args:
         n (pypsa.Network): the pypsa network object to which's model the constraints are added
@@ -299,7 +454,7 @@ def add_chp_constraints(n: pypsa.Network):
 
         lhs = (
             p_nom.loc[electric_ext]
-            * (n.links.p_nom_ratio * n.links.efficiency)[electric_ext].values
+            * (n.links.heat_to_power * n.links.efficiency)[electric_ext].values
             - p_nom.loc[heat_ext] * n.links.efficiency[heat_ext].values
         )
         n.model.add_constraints(lhs == 0, name="chplink-fix_p_nom_ratio")
@@ -314,19 +469,19 @@ def add_chp_constraints(n: pypsa.Network):
         rhs = n.links.p_nom[electric_fix]
         n.model.add_constraints(lhs <= rhs, name="chplink-top_iso_fuel_line_fix")
 
-    # back-pressure
+    # max heat to power ratio (simplified extraction plant w/o min heat output in extraction mode)
+    # heat can drop to zero to represent condensation mode
     if not n.links[electric].index.empty:
-        lhs = (
-            p.loc[:, heat] * (n.links.efficiency[heat] * n.links.c_b[electric].values)
-            - p.loc[:, electric] * n.links.efficiency[electric]
-        )
+        lhs = p.loc[:, heat] * n.links.efficiency[heat] - p.loc[:, electric] * n.links.efficiency[
+            electric
+        ] * n.links.heat_to_power[electric].fillna(1)
         n.model.add_constraints(lhs <= 0, name="chplink-backpressure")
 
 
 def add_land_use_constraint(n: pypsa.Network, planning_horizons: str | int) -> None:
     """
-    Add land use constraints for renewable energy potential. This ensures that the brownfield + greenfield
-     vre installations for each generator technology do not exceed the technical potential.
+    Add land use constraints for renewable energy potential. This ensures that the brownfield +
+     greenfield vre installations for each generator tech do not exceed the technical potential.
 
     Args:
         n (pypsa.Network): the network object to add the constraints to
@@ -361,6 +516,74 @@ def add_land_use_constraint(n: pypsa.Network, planning_horizons: str | int) -> N
         ]
 
     n.generators["p_nom_max"] = n.generators["p_nom_max"].clip(lower=0)
+
+
+def add_water_tank_charger_constraints(n: pypsa.Network, config: dict):
+    """
+    Add constraint ensuring that centra water tank charger = discharger & limit p_nom/e_nom ratio, i.e.
+
+    Args:
+        n (pypsa.Network): the network object to optimize
+        config (dict): the snakemake configuration dictionary
+    """
+
+    discharger_bool = n.links.index.str.contains(
+        "water tanks discharger & not index.str.contains('decentral')"
+    )
+    charger_bool = n.links.index.str.contains(
+        "water tanks charger & not index.str.contains('decentral')"
+    )
+
+    dischargers_ext = n.links[discharger_bool].query("p_nom_extendable").index
+    chargers_ext = n.links[charger_bool].query("p_nom_extendable").index
+
+    eff = n.links.efficiency[dischargers_ext].values
+    lhs = n.model["Link-p_nom"].loc[chargers_ext] - n.model["Link-p_nom"].loc[dischargers_ext] * eff
+
+    n.model.add_constraints(lhs == 0, name="Link-water-tank-charger_ratio")
+
+    # limit the p_nom/e_nom ratio
+    central_tanks = n.stores.query("carrier == 'water tanks' & not index.str.contains('decentral')")
+    central_dischargers_ext = n.links.query(
+        "carrier == 'water tanks' and index.str.contains('discharger') and not index.str.contains('decentral')"
+    ).query("p_nom_extendable")
+
+    grouper_s = central_tanks.location.rename_axis("Store-ext")
+    grouper_l = central_dischargers_ext.rename_axis("Link-ext").location
+    p_nom_over_e_nom = config["water_tanks"].get("p_nom_over_e_nom", 0.2)
+    lhs = (
+        n.model["Store-e_nom"].loc[central_tanks.index].groupby(grouper_s).sum() * p_nom_over_e_nom
+        - n.model["Link-p_nom"].loc[central_dischargers_ext.index].groupby(grouper_l).sum()
+    )
+    n.model.add_constraints(lhs >= 0, name="Central_Water_Tank_p_nom_over_e_nom")
+
+    # limit the p_nom/e_nom ratio to 1 for decentral tanks
+    decentral_tanks = n.stores.query("carrier == 'water tanks' & index.str.contains('decentral')")
+    decentral_dischargers_ext = n.links.query(
+        "carrier == 'water tanks' and index.str.contains('discharger') and index.str.contains('decentral')"
+    ).query("p_nom_extendable")
+    decentral_chargers_ext = n.links.query(
+        "carrier == 'water tanks' and not index.str.contains('discharger') and index.str.contains('decentral')"
+    ).query("p_nom_extendable")
+
+    grouper_s = decentral_tanks.location.rename_axis("Store-ext")
+    grouper_l = decentral_dischargers_ext.rename_axis("Link-ext").location
+    lhs = (
+        n.model["Store-e_nom"].loc[decentral_tanks.index].groupby(grouper_s).sum()
+        - n.model["Link-p_nom"].loc[decentral_dischargers_ext.index].groupby(grouper_l).sum()
+    )
+
+    n.model.add_constraints(lhs >= 0, name="Decentral_Water_Tank_p_nom_over_e_nom")
+    lhs = (
+        n.model["Store-e_nom"].loc[decentral_tanks.index].groupby(grouper_s).sum()
+        - n.model["Link-p_nom"].loc[decentral_dischargers_ext.index].groupby(grouper_l).sum()
+    )
+    grouper_l = decentral_chargers_ext.rename_axis("Link-ext").location
+    lhs = (
+        n.model["Store-e_nom"].loc[decentral_tanks.index].groupby(grouper_s).sum()
+        - n.model["Link-p_nom"].loc[decentral_chargers_ext.index].groupby(grouper_l).sum()
+    )
+    n.model.add_constraints(lhs >= 0, name="Decentral_Water_Tank_p_nom_over_e_nom_charger")
 
 
 def add_transmission_constraints(n: pypsa.Network):
@@ -407,7 +630,6 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
     # p/e_nom_rcl is the availale paid-off capacity per tech group and is nan for non paid-off (usual) generators.
     # rcl is a legacy name from Aodenweller
     for component in ["Generator", "Link", "Store"]:
-
         prefix = "e" if component == "Store" else "p"
         paid_off_col = f"{prefix}_nom_max_rcl"
 
@@ -450,10 +672,8 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             continue
         else:
             paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
-
-        # techs that only exist as paid-off don't have usual counterparts
-        remind_only_techs = n.config["existing_capacities"].get("remind_only_tech_groups", [])
-        paidoff_comp = paidoff_comp.query("tech_group not in @remind_only_techs")
+        _remind_only_techs = n.config["existing_capacities"].get("remind_only_tech_groups", [])
+        paidoff_comp = paidoff_comp.query("tech_group not in @_remind_only_techs")
 
         if paidoff_comp.empty:
             continue
@@ -486,7 +706,112 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             )
 
 
-def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
+def add_operational_reserve_margin(n: pypsa.network, config):
+    """
+    Build operational reserve margin constraints based on the formulation given in
+    https://genxproject.github.io/GenX.jl/stable/Model_Reference/core/#GenX.operational_reserves_core!-Tuple{JuMP.Model,%20Dict,%20Dict}
+
+    The constraint is network wide and not at each node!
+
+    Args:
+        n (pypsa.Network): the network object to optimize
+        config (dict): the configuration dictionary
+
+    Example:
+        config.yaml requires to specify operational_reserve:
+        operational_reserve:
+            activate: true
+            epsilon_load: 0.02 # percentage of load at each snapshot
+            epsilon_vres: 0.02 # percentage of VRES at each snapshot
+            contingency: 400000 # MW
+    """
+    reserve_config = config["operational_reserve"]
+    _VRE_TECHS = config["Techs"].get("non_dispatchable", ["onwind", "offwind", "solar"])
+    EPSILON_LOAD, EPSILON_VRES = reserve_config["epsilon_load"], reserve_config["epsilon_vres"]
+    CONTINGENCY = float(reserve_config["contingency"])
+
+    # AC producers
+    ac_mask = n.generators.bus.map(n.buses.carrier) == "AC"
+    _ac_buses = n.buses.query("carrier =='AC'").index
+    _attached_carriers = filter_carriers(n, "AC")
+    # conceivably a link could have a negative efficiency and flow towards bus0 - don't consider
+    prod_links = n.links.query("carrier in @_attached_carriers & not bus0 in @_ac_buses")
+    transport_links = prod_links.bus0.map(n.buses.carrier) == prod_links.bus1.map(n.buses.carrier)
+    prod_links = prod_links.loc[transport_links == False]
+    prod_gen = n.generators.loc[ac_mask]
+    producers_all = prod_links.index.append(prod_gen.index)
+    producers_all.name = "Producers-p"
+
+    # RSERVES
+    n.model.add_variables(0, np.inf, coords=[n.snapshots, prod_gen.index], name="Generator-r")
+    n.model.add_variables(0, np.inf, coords=[n.snapshots, prod_links.index], name="Link-r")
+
+    # Define Reserve and weigh VRES by their mean availability ("capacity credit")
+    vres_gen = prod_gen.query("carrier in @_VRE_TECHS")
+    non_vre = prod_gen.index.difference(vres_gen.index)
+    # full capacity credit for non-VRE producers (questionable, maybe should be weighted by availability)
+    summed_reserve = (n.model["Link-r"] * prod_links.efficiency).sum("Link") + n.model[
+        "Generator-r"
+    ].loc[:, non_vre].sum("Generator")
+
+    # VRE capacity credit & margin reqs
+    ext_idx = vres_gen.query("p_nom_extendable").index
+    avail = n.generators_t.p_max_pu.loc[:, vres_gen.index]
+    vres_idx = avail.columns
+
+    if not vres_gen.empty:
+        # Reserve score based on actual avail (perfect foresight) not mean/expected avail
+        vre_reserve_score = (n.model["Generator-r"].loc[:, vres_gen.index] * avail).sum("Generator")
+        summed_reserve += vre_reserve_score
+    if not ext_idx.empty and not vres_idx.empty:
+        # reqs from brownfield VRE generators. epsilon is the margin for VRES forecast error
+        avail_factor = n.generators_t.p_max_pu[ext_idx]
+        p_nom_vres = n.model["Generator-p_nom"].loc[ext_idx].rename({"Generator-ext": "Generator"})
+        vre_req_ext = (p_nom_vres * (EPSILON_VRES * xr.DataArray(avail_factor))).sum("Generator")
+    else:
+        vre_req_ext = 0
+
+    if not vres_idx.empty:
+        # reqs extendable VRE generators
+        avail_factor = n.generators_t.p_max_pu[vres_idx.difference(ext_idx)]
+        renewable_capacity = n.generators.p_nom[vres_idx.difference(ext_idx)]
+        vre_req_fix = (avail_factor * renewable_capacity).sum(axis=1)
+    else:
+        vre_req_fix = 0
+
+    lhs = summed_reserve - vre_req_ext
+    # Right-hand-side
+    demand = get_as_dense(n, "Load", "p_set").sum(axis=1)
+    rhs = EPSILON_LOAD * demand + EPSILON_VRES * vre_req_fix + CONTINGENCY
+
+    n.model.add_constraints(lhs >= rhs, name="Reserve-margin")
+
+    # Need additional constraints (reserve + dispatch <= p_nom): gen_r + gen_p <= gen_p_nom (capacity)
+    to_constrain = {"Link": prod_links, "Generator": prod_gen}
+    for component, producer in to_constrain.items():
+        logger.info(f"adding secondary reserve constraint for {component}s")
+
+        fix_i = producer.query("p_nom_extendable==False").index
+        ext_i = producer.query("p_nom_extendable==True").index
+
+        dispatch = n.model[f"{component}-p"].loc[:, producer.index]
+        reserve = n.model[f"{component}-r"].loc[:, ext_i.union(fix_i)]
+
+        capacity_variable = n.model[f"{component}-p_nom"].loc[ext_i]
+        capacity_variable = capacity_variable.rename({f"{component}-ext": f"{component}"})
+        capacity_fixed = getattr(n, component.lower() + "s").p_nom[fix_i]
+
+        p_max_pu = get_as_dense(n, f"{component}", "p_max_pu")
+
+        lhs = dispatch + reserve
+        # MAY have to check what happens in case pmaxpu is not defined for all items
+        rhs = capacity_variable * p_max_pu[ext_i] + (p_max_pu[fix_i] * capacity_fixed)
+        n.model.add_constraints(
+            lhs - rhs.loc[lhs.indexes] <= 0, name=f"{component}-p-reserve-upper"
+        )
+
+
+def extra_functionality(n: pypsa.Network, _) -> None:
     """
     Add supplementary constraints to the network model. ``pypsa.linopf.network_lopf``.
     If you want to enforce additional custom constraints, this is a good location to add them.
@@ -494,27 +819,41 @@ def extra_functionality(n: pypsa.Network, snapshots: DatetimeIndex) -> None:
 
     Args:
         n (pypsa.Network): the network object to optimize
-        snapshots (DatetimeIndex): the time index of the network
-        config (dict): the configuration dictionary
+        _: dummy for compatibility with pypsa solve
     """
     config = n.config
     add_battery_constraints(n)
     add_transmission_constraints(n)
-    add_chp_constraints(n)
+    add_nuclear_expansion_constraints(n)
+    
+    if config["heat_coupling"]:
+        add_water_tank_charger_constraints(n, config)
+        add_chp_constraints(n)
+        # add_chp_constraints_new_attempt(n)
     if config["run"].get("is_remind_coupled", False):
         logger.info("Adding remind paid off constraints")
         add_remind_paid_off_constraints(n)
+
+    reserve = config.get("operational_reserve", {})
+    if reserve.get("activate", False):
+        logger.info("Adding operational reserve margin constraints")
+        add_operational_reserve_margin(n, config)
+
+    logger.info("Added extra functionality to the network model")
 
 
 def solve_network(
     n: pypsa.Network, config: dict, solving: dict, opts: str = "", **kwargs
 ) -> pypsa.Network:
-    """perform the optimisation
+    """Perform the optimisation
     Args:
         n (pypsa.Network): the pypsa network object
         config (dict): the configuration dictionary
         solving (dict): the solving configuration dictionary
         opts (str): optional wildcards such as ll (not used in pypsa-china)
+
+    Returns:
+        pypsa.Network: the optimized network
     """
     set_of_options = solving["solver"]["options"]
     solver_options = solving["solver_options"][set_of_options] if set_of_options else {}
@@ -566,13 +905,16 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-CHA-higher_minwind_cf",
-            planning_horizons="2025",
+            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
+            planning_horizons="2030",
             topology="current+FCG",
             # heating_demand="positive",
-            configfiles="resources/tmp/remind_coupled_cg.yaml",
+            # configfiles="resources/tmp/remind_coupled_cg.yaml",
+            heating_demand="positive",
+            configfiles="resources/tmp/pseudo-coupled.yaml",
         )
     configure_logging(snakemake)
+    config = snakemake.config
 
     opts = snakemake.wildcards.get("opts", "")
     if "sector_opts" in snakemake.wildcards.keys():
@@ -592,7 +934,6 @@ if __name__ == "__main__":
         tunnel = None
 
     n = pypsa.Network(snakemake.input.network_name)
-
     n = prepare_network(
         n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons, co2_pathway
     )
@@ -611,6 +952,13 @@ if __name__ == "__main__":
     # # TODO: remove ugly hack
     # n.storage_units.p_nom_max = n.storage_units.p_nom * 1.05**exp_years
 
+    calc_nuclear_expansion_limit(
+        n=n,
+        config=config,
+        planning_year=int(snakemake.wildcards.planning_horizons),
+        network_path=snakemake.input.network_name,
+    )
+
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
 
@@ -618,13 +966,23 @@ if __name__ == "__main__":
     # which doesn't work as snakemake is a subprocess
     is_test = snakemake.config["run"].get("is_test", False)
     if not is_test:
+        # Extract export_duals flag from config in main
+        export_duals_flag = snakemake.params.solving["options"].get("export_duals", False)
+
         n = solve_network(
             n,
-            config=snakemake.config,
+            config=config,
             solving=snakemake.params.solving,
             opts=opts,
             log_fn=snakemake.log.solver,
         )
+
+        # Store dual variables in network components for netcdf export
+        try:
+            if export_duals_flag:
+                store_duals_to_network(n)
+        except Exception as e:
+            logging.error(f"Error storing dual variables: {e}")
     else:
         logging.info("Mocking the solve step")
         n = mock_solve(n)
