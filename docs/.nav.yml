@@ -17,6 +17,7 @@ nav:
   - Model: model.md
   - Setup: installation/quick_start.md
   - Configuration: configuration.md
+  - Releases: releases.md
   - Tutorials: tutorials
   - Reference: reference
 
