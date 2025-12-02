@@ -1,26 +1,17 @@
-title: PyPSA-China-PIK
-preserve_directory_names: true 
-hide: true 
-
-flatten_single_child_sections: true 
-
-sort:
-  direction: asc 
-  type: natural
-  by: filename 
-  sections: last 
-  ignore_case: true 
-
+# Configuration for mkdocs-awesome-nav plugin
+# This file explicitly defines the navigation order and titles
 
 nav: 
-  - PyPSA-China-PIK: index.md
+  - Home: index.md
   - Model: model.md
+  - Data: data.md
   - Setup: installation/quick_start.md
   - Configuration: configuration.md
   - Releases: releases.md
   - Tutorials: tutorials
   - Reference: reference
-
-append_unmatched: false 
+  - Miscellaneous: misc.md
+  - Release Guide: release-guide.md
+  - Testing: testing-release-flow.md 
 
 

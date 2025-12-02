@@ -44,12 +44,10 @@ extra:
 
 # Due to snakemake workflow, we need to include the 'scripts' directory in the python path
 plugins:
+  - search
   - gen-files:
       scripts:
       - docs/autogen_ref_pages.py
-  # - literate-nav:
-  #     nav_file: reference_nav.yml
-  - search
   - awesome-nav
   - mkdocstrings:
       default_handler: python
