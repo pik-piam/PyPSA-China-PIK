@@ -1,13 +1,15 @@
-# Sample workflow for building and deploying a MkDocs site to GitHub Pages
-name: Deploy MkDocs with GitHub Pages
+# Workflow for building and deploying versioned MkDocs site to GitHub Pages
+name: Deploy Documentation to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - "main"
+      - "develop"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -16,15 +18,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          fetch-depth: 0 # Fetch all history for mike to work properly
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Install MkDocs and dependencies
         run: |
           python -m pip install --upgrade pip
@@ -35,23 +46,44 @@ jobs:
           pip install mkdocs-material
           pip install mkdocs-include-dir-to-nav
           pip install python-markdown-math
-          pip install mike>=1.1.0
-      - name: Build with MkDocs
-        run: mkdocs build
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
+          pip install mike>=2.0.0
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-      - name: Deploy to GitHub Pages
+      - name: Get current version
+        id: get_version
+        run: |
+          # Extract version from workflow/__init__.py
+          VERSION=$(python -c "exec(open('workflow/__init__.py').read()); print(__version__)")
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Deploying documentation for version: ${VERSION}"
+
+      - name: Determine deployment alias
         id: deployment
-        uses: actions/deploy-pages@v4
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "ALIAS=dev" >> $GITHUB_OUTPUT
+            echo "TITLE=Development (main)" >> $GITHUB_OUTPUT
+            echo "SET_DEFAULT=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            echo "ALIAS=develop" >> $GITHUB_OUTPUT
+            echo "TITLE=Development (develop)" >> $GITHUB_OUTPUT
+            echo "SET_DEFAULT=false" >> $GITHUB_OUTPUT
+          else
+            echo "ALIAS=preview" >> $GITHUB_OUTPUT
+            echo "TITLE=Preview" >> $GITHUB_OUTPUT
+            echo "SET_DEFAULT=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy development docs with mike
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          ALIAS="${{ steps.deployment.outputs.ALIAS }}"
+          TITLE="${{ steps.deployment.outputs.TITLE }}"
+
+          # Deploy current version with appropriate alias
+          mike deploy --push --update-aliases $ALIAS "$TITLE"
+
+          # Set as default if from main branch
+          if [ "${{ steps.deployment.outputs.SET_DEFAULT }}" = "true" ]; then
+            mike deploy --push --update-aliases $ALIAS latest
+            mike set-default --push latest
+          fi

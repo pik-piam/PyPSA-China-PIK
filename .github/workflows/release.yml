@@ -1,0 +1,122 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*.*.*"
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: "Tag to release (e.g., v1.3.0)"
+                required: true
+                type: string
+
+permissions:
+    contents: write
+    pages: write
+    id-token: write
+
+jobs:
+    create-release:
+        name: Create GitHub Release
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Get version from tag
+              id: get_version
+              run: |
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                    VERSION="${{ inputs.tag }}"
+                  else
+                    VERSION=${GITHUB_REF#refs/tags/}
+                  fi
+                  echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+                  echo "VERSION_NUMBER=${VERSION#v}" >> $GITHUB_OUTPUT
+
+            - name: Extract changelog for this version
+              id: changelog
+              run: |
+                  VERSION="${{ steps.get_version.outputs.VERSION_NUMBER }}"
+
+                  # Extract the changelog section for this version
+                  awk -v ver="## \\[$VERSION\\]" '
+                    $0 ~ ver {flag=1; next}
+                    /^## \[/ && flag {exit}
+                    flag && NF {print}
+                  ' CHANGELOG.md > release_notes.md
+
+                  # If no specific notes found, use a default message
+                  if [ ! -s release_notes.md ]; then
+                    echo "Release $VERSION of PyPSA-China (PIK)" > release_notes.md
+                    echo "" >> release_notes.md
+                    echo "For detailed changes, see the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)." >> release_notes.md
+                  fi
+
+            - name: Create Release
+              uses: softprops/action-gh-release@v1
+              with:
+                  tag_name: ${{ steps.get_version.outputs.VERSION }}
+                  name: PyPSA-China PIK ${{ steps.get_version.outputs.VERSION }}
+                  body_path: release_notes.md
+                  draft: false
+                  prerelease: false
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    deploy-versioned-docs:
+        name: Deploy Versioned Documentation
+        runs-on: ubuntu-latest
+        needs: create-release
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Get version from tag
+              id: get_version
+              run: |
+                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                    VERSION="${{ inputs.tag }}"
+                  else
+                    VERSION=${GITHUB_REF#refs/tags/}
+                  fi
+                  echo "VERSION=${VERSION#v}" >> $GITHUB_OUTPUT
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+
+            - name: Configure Git
+              run: |
+                  git config --global user.name "github-actions[bot]"
+                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install mkdocs
+                  pip install mkdocs_gen_files
+                  pip install "mkdocstrings[python]"
+                  pip install mkdocs-awesome-nav
+                  pip install mkdocs-material
+                  pip install mkdocs-include-dir-to-nav
+                  pip install python-markdown-math
+                  pip install mike>=2.0.0
+
+            - name: Deploy documentation with mike
+              run: |
+                  VERSION="${{ steps.get_version.outputs.VERSION }}"
+                  mike deploy --push --update-aliases $VERSION latest
+                  mike set-default --push latest
+
+            - name: Create documentation update message
+              run: |
+                  VERSION="${{ steps.get_version.outputs.VERSION }}"
+                  echo "📚 Documentation for version $VERSION has been deployed to GitHub Pages"
+                  echo "View at: https://pik-piam.github.io/PyPSA-China-PIK/"

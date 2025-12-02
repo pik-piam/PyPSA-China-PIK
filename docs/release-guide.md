@@ -141,7 +141,7 @@ After the workflows complete:
 
 For urgent bug fixes on a released version:
 
-1. Create a hotfix branch from the release tag:
+1. Create a hotfix or patch branch from the release tag:
    ```bash
    git checkout -b hotfix/vX.Y.Z+1 vX.Y.Z
    ```
