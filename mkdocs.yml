@@ -34,7 +34,7 @@ theme:
 docs_dir: "./docs"
 nav:
   - .nav.yml
-  - tutorials/.nav.yml
+  # - tutorials/.nav.yml
 
 # Version configuration
 extra:
