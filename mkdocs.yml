@@ -1,5 +1,8 @@
 
 site_name: PyPSA China (PIK) #(PIK edition) Documentation
+site_url: https://pik-piam.github.io/PyPSA-China-PIK/
+repo_url: https://github.com/pik-piam/PyPSA-China-PIK
+repo_name: pik-piam/PyPSA-China-PIK
 
 theme:
   name: "material"
@@ -36,11 +39,15 @@ nav:
   - .nav.yml
   # - tutorials/.nav.yml
 
-# Version configuration
+# Version configuration and social links
 extra:
   version:
     provider: mike
     default: latest
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/pik-piam/PyPSA-China-PIK
+      name: PyPSA-China-PIK on GitHub
 
 # Due to snakemake workflow, we need to include the 'scripts' directory in the python path
 plugins:
