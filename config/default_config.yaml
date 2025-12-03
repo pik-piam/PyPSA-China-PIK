@@ -4,7 +4,7 @@
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
-  name: "1201_newcosts_nuclear2700"
+  name: "1202_pypsa_china_newcosts_solar3600"
 foresight: "overnight"
 
 paths:
@@ -25,6 +25,7 @@ scenario:
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
+    - 2020
     - 2025
     - 2030
     - 2035
@@ -374,9 +375,9 @@ fetch_regions:
 subsidies:
   # New format: subsidies.fuel_type -> province -> value (EUR/MWh) only allowed for negative values (subsidies)
   gas:
-    Guangdong: -8
-    Jiangsu:  -8.5
-    Zhejiang: -9
-    Beijing: -10  
-    Tianjin: -10
-    Shanghai: -10
+    Guangdong: -10
+    Jiangsu:  -10
+    Zhejiang: -10
+    Beijing: -11  
+    Tianjin: -11
+    Shanghai: -11
