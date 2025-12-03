@@ -233,6 +233,7 @@ def add_power_capacities_installed_before_baseyear(
         "air heat pump": "heat pump",
         "nuclear": "nuclear",
         "PHS": "PHS",
+        "biomass": "biomass",
     }
     costs_map = {
         "coal power plant": "coal",
@@ -248,6 +249,7 @@ def add_power_capacities_installed_before_baseyear(
         "heat pump": "central ground-sourced heat pump",
         "ground-sourced heat pump": "central ground-sourced heat pump",
         "nuclear": "nuclear",
+        "biomass": "biomass",
     }
 
     # add techs that may have a direct match to the technoecon data
@@ -745,7 +747,7 @@ if __name__ == "__main__":
             "add_existing_baseyear",
             topology="current+FCG",
             co2_pathway="exp175default",
-            planning_horizons="2030",
+            planning_horizons="2020",
             # configfiles="resources/tmp/pseudo_coupled.yml",
             heating_demand="positive",
         )

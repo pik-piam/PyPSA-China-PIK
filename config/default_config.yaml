@@ -4,7 +4,7 @@
 # DO NOT FORGET TO LOOK AT THE TECHNOLOGY CONFIGURATION FILES
 
 run:
-  name: "1202_pypsa_china_newcosts_solar3600"
+  name: "1202_pypsa_china_newcosts_solar3600_addbiomass"
 foresight: "overnight"
 
 paths:
@@ -315,7 +315,7 @@ solving:
 lines:
   line_length_factor: 1.25
   expansion:
-    transmission_limit: vopt # opt for optimal (unconstrained), v for volume, c for cost. eg. c1.25 limits cost increase to 25% of the base year
+    transmission_limit: c1.05 # opt for optimal (unconstrained), v for volume, c for cost. eg. c1.25 limits cost increase to 25% of the base year
     base_year: 2020 # base step year, the exp limit is relative to this year
 
 security:
@@ -327,7 +327,7 @@ existing_capacities:
   grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
   collapse_years: True # Treat as a single unit when preparing & solving network 
   threshold_capacity: 80 # MW
-  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
+  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS", "biomass"]
   node_assignment: simple # simple | gps
 
 

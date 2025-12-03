@@ -348,7 +348,7 @@ coal,2020,FOM,1.6,%/year,Lazard s Levelized Cost of Energy Analysis - Version 13
 coal,2020,VOM,3.5,EUR/MWh_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 coal,2020,efficiency,0.4391891891891891,per unit,Linear increase from Xiang et al nat energy 2023 to DKEA catalogue 2023 value for 2060,
 coal,2020,fuel,8.15,EUR/MWh_th,BP 2019,
-coal,2020,investment,505.3,EUR/kW_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
+coal,2020,investment,505.3,EUR/kW_e,"https://www.cctd.com.cn/show-19-203452-1.html ""China Power Industry Annual Development Report 2020"" in Chinese",
 coal,2020,lifetime,40.0,years,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 csp-tower,2020,FOM,1.0,%/year,ATB CSP data (https://atb.nrel.gov/electricity/2021/concentrating_solar_power),
 csp-tower,2020,investment,144.88,"EUR/kW_th,dp",ATB CSP data (https://atb.nrel.gov/electricity/2021/concentrating_solar_power) and NREL SAM v2021.12.2 (https://sam.nrel.gov/).,
@@ -549,11 +549,11 @@ nuclear,2020,FOM,1.4,%/year,Lazard s Levelized Cost of Energy Analysis - Version
 nuclear,2020,VOM,3.5,EUR/MWh_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 nuclear,2020,efficiency,0.33,per unit,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 nuclear,2020,fuel,2.6,EUR/MWh_th,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
-nuclear,2020,investment,2520.0,USD/kW_e,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
+nuclear,2020,investment,2520.0,USD/kW_e,"https://www.energypolicy.columbia.edu/wp-content/uploads/2023/12/QCFNuclearCosts-CGEP_Report_112923.pdf""The Uncertain Costs of New Nuclear Reactors: What Study Estimates Reveal about the Potential for Nuclear in a Decarbonizing World""",
 nuclear,2020,lifetime,40.0,years,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 offwind,2020,FOM,2.51,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","21 Offshore turbines:  Fixed O&M [EUR/MW_e/y, 2020]"
 offwind,2020,VOM,0.02,EUR/MWhel,RES costs made up to fix curtailment order, from old pypsa cost assumptions
-offwind,2020,investment,1804.77,"EUR/kW_e, 2020","Danish Energy Agency, technology_data_for_el_and_dh.xlsx","21 Offshore turbines:  Nominal investment [MEUR/MW_e, 2020] grid connection costs substracted from investment costs"
+offwind,2020,investment,1804.77,"EUR/kW_e, 2020","“Cost values for 2020–2030 are taken from the Danish Energy Agency dataset technology_data_for_el_and_dh.xlsx. Cost projections for 2030–2060 follow Sun et al. (Prediction of Power System Cost and Price Level Under the Goal of Carbon Peak and Carbon Neutralization, in Chinese).”","21 Offshore turbines:  Nominal investment [MEUR/MW_e, 2020] grid connection costs substracted from investment costs"
 offwind,2020,lifetime,27.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",21 Offshore turbines:  Technical lifetime [years]
 offwind-ac-connection-submarine,2020,investment,2685.0,EUR/MW/km,DEA https://ens.dk/en/our-services/projections-and-models/technology-data, from old pypsa cost assumptions
 offwind-ac-connection-underground,2020,investment,1342.0,EUR/MW/km,DEA https://ens.dk/en/our-services/projections-and-models/technology-data, from old pypsa cost assumptions
@@ -570,7 +570,7 @@ oil,2020,investment,343.0,EUR/kW,"Danish Energy Agency, technology_data_for_el_a
 oil,2020,lifetime,25.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",50 Diesel engine farm:  Technical lifetime
 onwind,2020,FOM,1.25,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Fixed O&M
 onwind,2020,VOM,1.5,EUR/MWh,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Variable O&M
-onwind,2020,investment,780.0,EUR/kW,zhu et.al.2025,20 Onshore turbines:  Nominal investment
+onwind,2020,investment,780.0,EUR/kW,"Baseline 2020 cost values are taken from the China Power Industry Annual Development Report 2020, supplemented by CCTD data (https://www.cctd.com.cn) for cross-checks. Future cost reduction trends (2020–2050) follow NREL ATB data (https://atb.nrel.gov) and the NREL ATB TRENDS 2022–2050 report.",20 Onshore turbines:  Nominal investment
 onwind,2020,lifetime,27.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Technical lifetime
 retrofit,2020,VOM,69.0,USD/tCO2,"Lockwood T. A compararitive review of next-generation carbon capture technologies for coal-fired power plant[J]. Energy procedia, 2017, 114: 2658-2670.",
 retrofit,2020,investment,180.0,USD/kW,"Fan J L, Xu M, Li F, et al. Carbon capture and storage (CCS) retrofit potential of coal-fired power plants in China: the technology lock-in and cost optimization perspective[J]. Applied energy, 2018, 229: 326-334.",
@@ -585,7 +585,7 @@ seawater desalination,2020,investment,40219.78,EUR/(m^3-H2O/h),"Caldera et al 20
 seawater desalination,2020,lifetime,30.0,years,"Caldera et al 2016: Local cost of seawater RO desalination based on solar PV and windenergy: A global estimate. (https://doi.org/10.1016/j.desal.2016.02.004), Table 1.",
 solar,2020,FOM,1.58,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",22 Rooftop PV residential:  Fixed O&M [2020-EUR/MW_e/y]
 solar,2020,VOM,0.01,EUR/MWhel,RES costs made up to fix curtailment order, from old pypsa cost assumptions
-solar,2020,investment,432.0,EUR/kW_e,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",22 Rooftop PV residential:  Nominal investment [2020-MEUR/MW_e]
+solar,2020,investment,432.0,EUR/kW_e,"The 2020 baseline cost values are taken from the study Prediction of Power System Cost and Price Level Under the Goal of Carbon Peak and Carbon Neutralization (in Chinese). Future cost reduction trends for 2020–2060 follow Qixing Sun, Chao Zhang, Chengren Li, Peipei You, Xiao Gao, Qian Zhao, Zhao Xu, Sijia Liu, and Li Yanlin. Prediction of Power System Cost and Price Level Under the Goal of Carbon Peak and Carbon Neutralization�� (in Chinese).",22 Rooftop PV residential:  Nominal investment [2020-MEUR/MW_e]
 solar,2020,lifetime,35.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",22 Rooftop PV residential:  Technical lifetime [years]
 solar-rooftop,2020,FOM,1.15,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",22 Rooftop PV residential:  Fixed O&M [2020-EUR/MW_e/y]
 solar-rooftop,2020,discount rate,0.04,per unit,standard for decentral, from old pypsa cost assumptions

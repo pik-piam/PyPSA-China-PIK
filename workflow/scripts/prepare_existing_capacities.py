@@ -75,6 +75,7 @@ def read_existing_capacities(paths_dict: dict[str, os.PathLike], techs: list) ->
         "coal boiler": "central coal boiler",
         "ground heat pump": "central ground-sourced heat pump",
         "nuclear": "nuclear",
+        "biomass": "biomass",
     }
     carrier = {k: v for k, v in carrier.items() if k in techs}
 
@@ -215,6 +216,7 @@ if __name__ == "__main__":
     costs = load_costs(tech_costs, config["costs"], config["electricity"], baseyear, n_years)
 
     techs = config["existing_capacities"]["techs"]
+    print("techs", techs)
     existing_capacities = read_existing_capacities(data_paths, techs)
     existing_capacities = existing_capacities.query("Fueltype in @techs | Tech in @techs")
 
