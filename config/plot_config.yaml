@@ -4,7 +4,6 @@ plotting:
     reference_costs: true
   network_style_config_file: "config/plotting_styles/network_map.mplstyle"
   transparent: false
-  region_only: true  # Only plot China region, hide surrounding geographies
   statistics:
     clip_numerical_zeroes: true
     add_labels:

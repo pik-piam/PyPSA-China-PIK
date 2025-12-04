@@ -13,7 +13,6 @@ import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 import pypsa
 from _helpers import (
     configure_logging,
@@ -36,32 +35,6 @@ from pypsa.plot import add_legend_circles, add_legend_lines, add_legend_patches
 logger = logging.getLogger(__name__)
 
 
-def _get_projection(projection_name="LambertConformal", **kwargs):
-    """Get cartopy projection based on name
-    
-    Args:
-        projection_name: Name of the projection. Default: "LambertConformal"
-        **kwargs: Additional parameters for the projection
-    
-    Returns:
-        cartopy.crs projection object
-    """
-    projection_name = projection_name.lower()
-    
-    if projection_name == "lambertconformal":
-        central_longitude = kwargs.get("central_longitude", 105.0)
-        standard_parallels = kwargs.get("standard_parallels", (25.0, 47.0))
-        return ccrs.LambertConformal(
-            central_longitude=central_longitude,
-            standard_parallels=standard_parallels
-        )
-    elif projection_name == "platecarree":
-        return ccrs.PlateCarree()
-    else:
-        logger.warning(f"Unknown projection '{projection_name}', using LambertConformal")
-        return ccrs.LambertConformal(central_longitude=105.0, standard_parallels=(25.0, 47.0))
-
-
 def plot_map(
     network: pypsa.Network,
     tech_colors: dict,
@@ -75,8 +48,6 @@ def plot_map(
     bus_unit_conv=PLOT_COST_UNITS,
     edge_unit_conv=PLOT_CAP_UNITS,
     ax=None,
-    region_only=True,
-    province_shapes: gpd.GeoDataFrame = None,
     **kwargs,
 ) -> plt.Axes:
     """Plot the network on a map
@@ -93,21 +64,12 @@ def plot_map(
         add_ref_bus_sizes (bool, optional): add reference bus sizes in legend.
             Defaults to True.
         ax (plt.Axes, optional): the plotting ax. Defaults to None (new figure).
-        region_only (bool, optional): do not plot surrounding geographies. Defaults to True.
-        province_shapes (gpd.GeoDataFrame, optional): province shapes to plot in background.
     """
 
-    # Get projection from kwargs or use default LambertConformal
-    projection_name = kwargs.get("projection", "LambertConformal")
-    projection_kwargs = kwargs.get("projection_kwargs", {})
-    projection = _get_projection(projection_name, **projection_kwargs)
-    
     if not ax:
-        fig, ax = plt.subplots(subplot_kw={"projection": projection})
-        ax.set_facecolor('white')
+        fig, ax = plt.subplots()
     else:
         fig = ax.get_figure()
-        ax.set_facecolor('white')
 
     bus_colors = pd.Series(bus_colors)
     if bus_sizes.index.nlevels > 1:
@@ -117,16 +79,7 @@ def plot_map(
     if not missing.empty:
         raise ValueError(f"Missing colors for bus carriers: {missing.tolist()}")
 
-    # Prepare extent for boundaries if region_only and province_shapes provided
-    expanded_extent = None
-    if region_only and province_shapes is not None:
-        bounds = province_shapes.total_bounds[[0, 2, 1, 3]]
-        xmin, xmax, ymin, ymax = bounds
-        expanded_extent = [xmin - 1, xmax + 1, ymin - 1, ymax + 1]
-        ax.set_extent(expanded_extent, crs=ccrs.PlateCarree())
-    
-    # Use network.plot.map() instead of deprecated network.plot()
-    network.plot.map(
+    network.plot(
         bus_sizes=bus_sizes,
         bus_colors=bus_colors,
         line_colors=edge_colors,
@@ -134,51 +87,19 @@ def plot_map(
         line_widths=edge_widths,
         link_widths=edge_widths,
         ax=ax,
-        color_geomap=not region_only,
+        color_geomap=True,
         boundaries=kwargs.get("boundaries", None),
-        margin=kwargs.get("margin", 0.1),
     )
 
-    # Remove gridlines
-    # Gridlines are removed by not calling ax.gridlines()
-    
-    # Draw boundaries after network.plot.map() to ensure they're visible
-    # Use low zorder so network data (pies, lines) appear on top
-    if region_only and province_shapes is not None and expanded_extent is not None:
-        # Re-apply extent in case network.plot.map() changed it
-        ax.set_extent(expanded_extent, crs=ccrs.PlateCarree())
-        
-        # Draw province boundaries (low zorder as base layer)
-        ax.add_geometries(
-            province_shapes.geometry,
-            ccrs.PlateCarree(),
-            facecolor="white",
-            edgecolor="lightgray",
-            linewidth=0.5,
-            alpha=0.5,
-            zorder=1,
-        )
-        
-        # Draw country boundary (slightly higher but still base layer)
-        country_boundary = province_shapes.dissolve()
-        ax.add_geometries(
-            country_boundary.geometry,
-            ccrs.PlateCarree(),
-            facecolor="none",
-            edgecolor="black",
-            linewidth=1.5,
-            zorder=2,
-        )
-    elif not region_only:
-        # Use cartopy features for non-region-only mode
-        ax.add_feature(cfeature.BORDERS, linewidth=0.5, edgecolor="gray")
-        states_provinces = cfeature.NaturalEarthFeature(
-            category="cultural",
-            name="admin_1_states_provinces_lines",
-            scale="50m",
-            facecolor="none",
-        )
-        ax.add_feature(states_provinces, edgecolor="lightgray", alpha=0.7)
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5, edgecolor="gray")
+    states_provinces = cfeature.NaturalEarthFeature(
+        category="cultural",
+        name="admin_1_states_provinces_lines",
+        scale="50m",
+        facecolor="none",
+    )
+    # Add our states feature.
+    ax.add_feature(states_provinces, edgecolor="lightgray", alpha=0.7)
 
     if add_legend:
         carriers = bus_sizes.index.get_level_values(1).unique()
@@ -196,7 +117,7 @@ def plot_map(
         else:
             colors += edge_colors.values.to_list()
             labels = carriers.to_list() + edge_colors.index.to_list()
-        leg_opt = {"bbox_to_anchor": (1.2, 0.9), "frameon": False}
+        leg_opt = {"bbox_to_anchor": (1.42, 1.04), "frameon": False}
         add_legend_patches(ax, colors, labels, legend_kw=leg_opt)
 
     if add_ref_edge_sizes & isinstance(edge_colors, str):
@@ -206,17 +127,13 @@ def plot_map(
 
         labels = [f"{float(s) / edge_unit_conv} {ref_unit}" for s in ref_sizes]
         ref_sizes = list(map(lambda x: float(x) / size_factor, ref_sizes))
-        # Add title as first label to put it on the same line
-        title_text = kwargs.get("edge_ref_title", "Grid cap.")
-        labels = [title_text] + labels
-        ref_sizes = [0] + ref_sizes  # Add zero size for title (invisible line)
         legend_kw = dict(
-            loc="lower left",
-            bbox_to_anchor=(0, -0.1),
+            loc="upper left",
+            bbox_to_anchor=(0.26, 1.0),
             frameon=False,
             labelspacing=0.8,
             handletextpad=2,
-            ncol=len(labels),  # All items in one row
+            title=kwargs.get("edge_ref_title", "Grid cap."),
         )
         add_legend_lines(
             ax, ref_sizes, labels, patch_kw=dict(color=edge_colors), legend_kw=legend_kw
@@ -229,18 +146,14 @@ def plot_map(
         ref_sizes = kwargs.get("ref_bus_sizes", [2e10, 1e10, 5e10])
         labels = [f"{float(s) / bus_unit_conv:.0f} {ref_unit}" for s in ref_sizes]
         ref_sizes = list(map(lambda x: float(x) / size_factor, ref_sizes))
-        # Add title as first label to put it on the same line
-        title_text = kwargs.get("bus_ref_title", "UNDEFINED TITLE")
-        labels = [title_text] + labels
-        ref_sizes = [0] + ref_sizes  # Add zero size for title (invisible circle)
 
         legend_kw = {
-            "loc": "lower left",
-            "bbox_to_anchor": (0.05, -0.05),
+            "loc": "upper left",
+            "bbox_to_anchor": (0.0, 1.0),
             "labelspacing": 0.8,
             "frameon": False,
             "handletextpad": 0,
-            "ncol": len(labels),  # All items in one row
+            "title": kwargs.get("bus_ref_title", "UNDEFINED TITLE"),
         }
 
         add_legend_circles(
@@ -263,7 +176,7 @@ def add_cost_pannel(
     preferred_order: pd.Index,
     tech_colors: dict,
     plot_additions: bool,
-    ax_loc=[0.2, 0.85, 0.6, 0.05],
+    ax_loc=[-0.09, 0.28, 0.09, 0.45],
     **kwargs: dict,
 ) -> None:
     """Add a cost pannel to the figure
@@ -275,7 +188,7 @@ def add_cost_pannel(
         tech_colors (dict): the tech colors
         plot_additions (bool): plot the additions
         ax_loc (list, optional): the location of the cost pannel.
-            Defaults to [0.2, 0.95, 0.6, 0.05].
+            Defaults to [-0.09, 0.28, 0.09, 0.45].
     """
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
@@ -290,24 +203,21 @@ def add_cost_pannel(
             color_list.append("lightgrey")  # Default color for missing carriers
 
     df.loc[reordered, df.columns].T.plot(
-        kind="barh",
+        kind="bar",
         ax=ax3,
         stacked=True,
         color=color_list,
         **kwargs,
     )
     ax3.legend().remove()
-    ax3.xaxis.tick_top()
-    ax3.xaxis.set_label_position('top')
-    ax3.set_xlabel("annualized system cost bEUR/a")
-    ax3.set_yticklabels(ax3.get_yticklabels(), rotation="horizontal")
-    ax3.grid(axis="x")
-    ax3.set_xlim([0, df.sum().max() * 1.1])
+    ax3.set_ylabel("annualized system cost bEUR/a")
+    ax3.set_xticklabels(ax3.get_xticklabels(), rotation="horizontal")
+    ax3.grid(axis="y")
+    ax3.set_ylim([0, df.sum().max() * 1.1])
     if plot_additions:
         # add label
         percent = np.round((df.sum()["added"] / df.sum()["total"]) * 100)
-        ax3.text(df.sum().max() * 0.85, 0.5, str(percent) + "%", color="black", 
-                 ha='center', va='center', transform=ax3.get_xaxis_transform())
+        ax3.text(0.85, (df.sum()["added"] + 15), str(percent) + "%", color="black")
 
     fig.tight_layout()
     return ax3
@@ -322,8 +232,6 @@ def plot_cost_map(
     capex_only=False,
     cost_pannel=True,
     save_path: os.PathLike = None,
-    region_only=None,
-    provinces: gpd.GeoDataFrame = None,
 ):
     """Plot the cost of each node on a map as well as the line capacities
 
@@ -336,18 +244,12 @@ def plot_cost_map(
               Defaults to True.
         cost_pannel (bool, optional): add a bar graph with costs. Defaults to True.
         save_path (os.PathLike, optional): save figure to path (or not if None). Defaults to None.
-        region_only (bool, optional): do not plot neighbouring regions. Defaults to True.
-        provinces (gpd.GeoDataFrame, optional): province shapes for plotting. Defaults to None.
     raises:
         ValueError: if plot_additions and not capex_only
     """
 
     if plot_additions and not capex_only:
         raise ValueError("Cannot plot additions without capex only")
-
-    # Get region_only from config if not provided
-    if region_only is None:
-        region_only = opts.get("region_only", True)
 
     tech_colors = make_nice_tech_colors(opts["tech_colors"], opts["nice_names"])
 
@@ -412,18 +314,12 @@ def plot_cost_map(
     preferred_order = pd.Index(opts["preferred_order"])
     carriers = carriers.tolist()
 
-    # Get projection (use LambertConformal for China)
-    projection = _get_projection("LambertConformal", central_longitude=105.0, standard_parallels=(25.0, 47.0))
-    
     # Make figure with right number of pannels
     if plot_additions:
-        fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": projection})
-        ax1.set_facecolor('white')
-        ax2.set_facecolor('white')
+        fig, (ax1, ax2) = plt.subplots(1, 2, subplot_kw={"projection": ccrs.PlateCarree()})
         fig.set_size_inches(opts["cost_map"]["figsize_w_additions"])
     else:
-        fig, ax1 = plt.subplots(subplot_kw={"projection": projection})
-        ax1.set_facecolor('white')
+        fig, ax1 = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
         fig.set_size_inches(opts["cost_map"]["figsize"])
 
     # Add the total costs
@@ -440,8 +336,6 @@ def plot_cost_map(
         ax=ax1,
         add_legend=not plot_additions,
         bus_ref_title=f"System costs{' (CAPEX)' if capex_only else ''}",
-        region_only=region_only,
-        province_shapes=provinces,
         **opts["cost_map"],
     )
 
@@ -458,8 +352,6 @@ def plot_cost_map(
             ax=ax2,
             bus_ref_title=f"Added costs{' (CAPEX)' if capex_only else ''}",
             add_legend=True,
-            region_only=region_only,
-            province_shapes=provinces,
             **opts["cost_map"],
         )
 
@@ -486,7 +378,7 @@ def plot_cost_map(
             preferred_order,
             tech_colors,
             plot_additions,
-            ax_loc=[0.2, 0.85, 0.6, 0.05],
+            ax_loc=[-0.09, 0.28, 0.09, 0.45],
         )
         # Set x-label angle to 45 degrees for better readability
         for label in ax3.get_xticklabels():
@@ -507,8 +399,6 @@ def plot_energy_map(
     plot_ac_imports=False,
     exclude_batteries=True,
     components=["Generator", "Link"],
-    region_only=None,
-    provinces: gpd.GeoDataFrame = None,
 ):
     """A map plot of energy, either AC or heat
 
@@ -521,17 +411,11 @@ def plot_energy_map(
         plot_ac_imports (bool, optional): plot electricity imports. Defaults to False.
         exclude_batteries (bool, optional): exclude battery dischargers from the supply pie.
         components (list, optional): the components to plot. Defaults to ["Generator", "Link"].
-        region_only (bool, optional): do not plot surrounding geographies. Defaults to True.
-        provinces (gpd.GeoDataFrame, optional): province shapes for plotting. Defaults to None.
     raises:
         ValueError: if carrier is not AC or heat
     """
     if carrier not in ["AC", "heat"]:
         raise ValueError("Carrier must be either 'AC' or 'heat'")
-
-    # Get region_only from config if not provided
-    if region_only is None:
-        region_only = opts.get("region_only", True)
 
     # make the statistics. Buses not assigned to a region will be included
     # if they are linked to a region (e.g. turbine link w carrier = hydroelectricity)
@@ -564,21 +448,12 @@ def plot_energy_map(
 
     # TODO make line handling nicer
     line_lower_threshold = opts.get("min_edge_capacity", 500)
-    # Get projection (use LambertConformal for China)
-    projection = _get_projection("LambertConformal", central_longitude=105.0, standard_parallels=(25.0, 47.0))
-    # Make figure
-    fig, ax = plt.subplots(subplot_kw={"projection": projection})
-    ax.set_facecolor('white')
+    # Make figur
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
     fig.set_size_inches(opts["energy_map"]["figsize"])
     # get colors
     bus_colors = network.carriers.loc[network.carriers.nice_name.isin(carriers_list), "color"]
     bus_colors.rename(opts["nice_names"], inplace=True)
-    logger.info(f"[plot_energy_map] carriers_list (original): {carriers_list}")
-    logger.info(f"[plot_energy_map] bus_colors.index (after rename): {bus_colors.index.tolist()}")
-    # Exclude Battery Discharger from bus_colors
-    if "Battery Discharger" in bus_colors.index:
-        bus_colors = bus_colors.drop("Battery Discharger")
-        logger.info(f"[plot_energy_map] Removed Battery Discharger from bus_colors")
 
     preferred_order = pd.Index(opts["preferred_order"])
     reordered = preferred_order.intersection(bus_colors.index).append(
@@ -615,20 +490,6 @@ def plot_energy_map(
         )
     else:
         bus_sizes = supply_pies / opts_plot["bus_size_factor"]
-    
-    # Debug: check bus_sizes index before mapping
-    if bus_sizes.index.nlevels > 1:
-        carrier_level_original = bus_sizes.index.get_level_values(1).unique()
-        logger.info(f"[plot_energy_map] bus_sizes carrier level (original): {carrier_level_original.tolist()}")
-    
-    # Exclude Battery Discharger from bus_sizes
-    # Note: carrier level is already nice_names (from supply_pies which uses get_location_and_carrier)
-    if bus_sizes.index.nlevels > 1:
-        carrier_level = bus_sizes.index.get_level_values(1)
-        # Filter out Battery Discharger
-        mask = carrier_level != "Battery Discharger"
-        bus_sizes = bus_sizes.loc[mask]
-    
     ax = plot_map(
         network,
         tech_colors=tech_colors,  # colors.to_dict(),
@@ -640,8 +501,6 @@ def plot_energy_map(
         edge_unit_conv=PLOT_CAP_UNITS,
         bus_unit_conv=PLOT_SUPPLY_UNITS,
         add_legend=True,
-        region_only=region_only,
-        province_shapes=provinces,
         **opts_plot,
     )
     # # Add the optional cost pannel
@@ -649,10 +508,7 @@ def plot_energy_map(
         df = supply_pies.groupby(level=1).sum().to_frame()
         df = df.fillna(0)
         df.rename(columns={0: ""}, inplace=True)
-        # Exclude Battery Discharger (df.index is already nice_names from supply_pies)
-        if "Battery Discharger" in df.index:
-            df = df.drop("Battery Discharger")
-        add_energy_pannel(df, fig, preferred_order, bus_colors, ax_loc=[0.1, 0.8, 0.7, 0.05])
+        add_energy_pannel(df, fig, preferred_order, bus_colors, ax_loc=[-0.09, 0.28, 0.09, 0.45])
 
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, ncol=1, bbox_to_anchor=[1, 1], loc="upper left")
@@ -667,7 +523,7 @@ def add_energy_pannel(
     fig: plt.Figure,
     preferred_order: pd.Index,
     colors: pd.Series,
-    ax_loc=[0.2, 0.95, 0.6, 0.05],
+    ax_loc=[-0.09, 0.28, 0.09, 0.45],
 ) -> None:
     """Add a cost pannel to the figure
 
@@ -676,26 +532,24 @@ def add_energy_pannel(
         fig (plt.Figure): the figure object to which the cost pannel will be added
         preferred_order (pd.Index): index, the order in whiich to plot
         colors (pd.Series): the colors for the techs, with the correct index and no extra techs
-        ax_loc (list, optional): the pannel location. Defaults to [0.15, 0.0, 0.5, 0.15].
+        ax_loc (list, optional): the pannel location. Defaults to [-0.09, 0.28, 0.09, 0.45].
     """
     ax3 = fig.add_axes(ax_loc)
     reordered = preferred_order.intersection(df.index).append(df.index.difference(preferred_order))
     df = df / PLOT_SUPPLY_UNITS
     # only works if colors has correct index
     df.loc[reordered, df.columns].T.plot(
-        kind="barh",
+        kind="bar",
         ax=ax3,
         stacked=True,
         color=colors[reordered],
     )
 
     ax3.legend().remove()
-    ax3.xaxis.tick_top()
-    ax3.xaxis.set_label_position('top')
-    ax3.set_xlabel("Electricity supply [TWh]")
-    ax3.set_yticklabels(ax3.get_yticklabels(), rotation="horizontal")
-    ax3.grid(axis="x")
-    ax3.set_xlim([0, df.sum().max() * 1.1])
+    ax3.set_ylabel("Electricity supply [TWh]")
+    ax3.set_xticklabels(ax3.get_xticklabels(), rotation="horizontal")
+    ax3.grid(axis="y")
+    ax3.set_ylim([0, df.sum().max() * 1.1])
 
     fig.tight_layout()
 
@@ -705,8 +559,6 @@ def plot_nodal_prices(
     opts: dict,
     carrier="AC",
     save_path: os.PathLike = None,
-    region_only=None,
-    provinces: gpd.GeoDataFrame = None,
 ):
     """A map plot of energy, either AC or heat
 
@@ -715,17 +567,11 @@ def plot_nodal_prices(
         opts (dict): the plotting options (snakemake.config["plotting"])
         save_path (os.PathLike, optional): Fig outp path. Defaults to None (no save).
         carrier (str, optional): the energy carrier. Defaults to "AC".
-        region_only (bool, optional): do not plot surrounding geographies. Defaults to True.
-        provinces (gpd.GeoDataFrame, optional): province shapes for plotting. Defaults to None.
     raises:
         ValueError: if carrier is not AC or heat
     """
     if carrier not in ["AC", "heat"]:
         raise ValueError("Carrier must be either 'AC' or 'heat'")
-
-    # Get region_only from config if not provided
-    if region_only is None:
-        region_only = opts.get("region_only", True)
 
     # demand weighed prices per node
     nodal_prices = (
@@ -754,11 +600,8 @@ def plot_nodal_prices(
     )
     consum_pies = energy_consum.groupby(level=1).sum()
 
-    # Get projection (use LambertConformal for China)
-    projection = _get_projection("LambertConformal", central_longitude=105.0, standard_parallels=(25.0, 47.0))
     # Make figure
-    fig, ax = plt.subplots(subplot_kw={"projection": projection})
-    ax.set_facecolor('white')
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()})
     fig.set_size_inches(opts["price_map"]["figsize"])
     # get colors
 
@@ -791,8 +634,6 @@ def plot_nodal_prices(
         edge_unit_conv=PLOT_CAP_UNITS,
         bus_unit_conv=PLOT_SUPPLY_UNITS,
         add_legend=False,
-        region_only=region_only,
-        province_shapes=provinces,
         **opts["price_map"],
     )
 
@@ -831,7 +672,6 @@ if __name__ == "__main__":
     config = snakemake.config
 
     n = pypsa.Network(snakemake.input.network)
-    prov_shapes = gpd.read_file(snakemake.input.province_shape)
     # determine whether links correspond to network nodes
     determine_plottable(n)
     # from _helpers import assign_locations
@@ -855,7 +695,6 @@ if __name__ == "__main__":
         save_path=snakemake.output.cost_map,
         capex_only=not additions,
         plot_additions=additions,
-        provinces=prov_shapes,
     )
     p = snakemake.output.cost_map.replace(".png", "_additions.png")
     plot_cost_map(
@@ -864,7 +703,6 @@ if __name__ == "__main__":
         save_path=p,
         capex_only=not additions,
         plot_additions=additions,
-        provinces=prov_shapes,
     )
     plot_energy_map(
         n,
@@ -873,7 +711,6 @@ if __name__ == "__main__":
         carrier="AC",
         energy_pannel=True,
         components=["Generator", "Link"],
-        provinces=prov_shapes,
     )
 
     if config.get("heat_coupling"):
@@ -885,7 +722,6 @@ if __name__ == "__main__":
             carrier="heat",
             energy_pannel=True,
             components=["Generator", "Link"],
-            provinces=prov_shapes,
         )
 
     p = snakemake.output.cost_map.replace("cost.png", "nodal_prices.png")
@@ -894,7 +730,6 @@ if __name__ == "__main__":
         carrier="AC",
         opts=config["plotting"],
         save_path=snakemake.output.cost_map,
-        provinces=prov_shapes,
     )
 
     logger.info("Network successfully plotted")

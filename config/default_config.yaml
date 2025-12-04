@@ -11,7 +11,7 @@ paths:
   results_dir: "results/"
   costs_dir: "resources/data/costs/default"
   yearly_regional_load: 
-    ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+    ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv" # 2025 load is repalced by the 2024 national bureau of statistics: https://data.stats.gov.cn/easyquery.htm?cn=E0103
     # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
 #TODO merge into paths
