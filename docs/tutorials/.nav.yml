@@ -1,0 +1,10 @@
+title: Tutorials
+preserve_directory_names: true
+hide: true
+
+nav:
+  - Running PyPSA-China: running.md
+  - Snakemake Tips & Tricks: snakemake_tricks.md
+  - Coupling with REMIND: coupling.md
+
+append_unmatched: false

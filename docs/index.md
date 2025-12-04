@@ -40,7 +40,12 @@ The workflow consists of gathering and preparing relevant data, formulating the 
 
 ## Authors and Credits
 
-This version has is maintained by the PIK team. It is not yet published, please contact us in case you are interested in using the model.
+This version has is maintained by the [PIK RD3-ETL team](https://www.pik-potsdam.de/en/institute/labs/energy-transition/energy-transition-lab). It is not yet published, please contact us in case you are interested in using the model.
 
 The model is based on the `PyPSA-EUR` work by the Tom Brown Group, originally adapted to China by Hailiang Liu et al for their study of [hydro-power in china](https://doi.org/10.1016/j.apenergy.2019.02.009) and extended by Xiaowei Zhou et al for their  ["Multi-energy system horizon planning: Early decarbonisation in China avoids stranded assets"](https://doi.org/10.1049/ein2.12011) paper. It has received significant upgrades.
 
+
+[![GitHub stars](https://img.shields.io/github/stars/pik-piam/PyPSA-China-PIK?style=social)](https://github.com/pik-piam/PyPSA-China-PIK/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/pik-piam/PyPSA-China-PIK?style=social)](https://github.com/pik-piam/PyPSA-China-PIK/network/members)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://pik-piam.github.io/PyPSA-China-PIK/)
