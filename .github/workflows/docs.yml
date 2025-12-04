@@ -86,10 +86,10 @@ jobs:
 
           # Deploy current version with appropriate alias
           if [ "${{ steps.deployment.outputs.SET_DEFAULT }}" = "true" ]; then
-            # For main branch: deploy as both alias and latest, then set latest as default
-            mike deploy --push --update-aliases "$ALIAS" latest "$TITLE"
+            # For main branch: deploy as both alias and latest, then set latest as default 
+            mike deploy --push --update-aliases "$VERSION" latest -t "Version $VERSION"
             mike set-default --push latest
           else
             # For other branches: just deploy with the alias
-            mike deploy --push --update-aliases "$ALIAS" "$TITLE"
+            mike deploy --push --update-aliases "$ALIAS" -t "$TITLE"
           fi
