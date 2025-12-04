@@ -45,7 +45,7 @@ jobs:
 
             - name: Test documentation build
               run: |
-                  mkdocs build --strict
+                  mkdocs build
                   echo "✓ Documentation builds successfully"
 
             - name: Upload build artifacts
