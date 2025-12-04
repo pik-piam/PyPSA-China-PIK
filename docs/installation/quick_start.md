@@ -64,7 +64,7 @@
     === "Manual download (faster)"
 
         !!!note "Sources"
-            Manually fetch the data (faster but requires copy-pasting): https://zenodo.org/records/16810831
+            Manually fetch the data (faster but requires copy-pasting): https://zenodo.org/records/17719794
 
             Destinations are in `resources/data` folders (rasters, cutouts, existing infrastructure).
 

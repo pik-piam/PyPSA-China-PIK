@@ -33,7 +33,7 @@ There are two options to penalise emissions.
 Currently, only CO2 is controlled but it is straightforward to add new GHGs or harmful emissions.
 
 ## Electricity Demand
-Historical hourly electricity demand for each province is scaled according to future demand projections/scenarios. The default historical data is NDRC data for the [year 2019](https://doi.org/10.5281/zenodo.8322210), which includes peak/valley daily demands and typical hourly profiles. It is possible to split projections by sectors.
+Historical hourly electricity demand for each province is scaled according to future demand projections/scenarios. The default historical data is NDRC data for the [year 2018](https://doi.org/10.5281/zenodo.8322210), which includes peak/valley daily demands and typical hourly profiles. It is possible to split projections by sectors.
 
 ### REMIND coupling
 In coupled runs, sectoral or total demands are provided by the REMIND IAM. Hourly profiles for each sector are scaled by the REMIND total
