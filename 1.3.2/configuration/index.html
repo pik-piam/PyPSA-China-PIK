@@ -1,0 +1,3315 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://pik-piam.github.io/PyPSA-China-PIK/1.3.2/configuration/">
+      
+      
+        <link rel="prev" href="../installation/quick_start/">
+      
+      
+        <link rel="next" href="../releases/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/img/pypsa_china.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Configuration - PyPSA China (PIK)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../docs/assets/styles/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#configuration-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="PyPSA China (PIK)" class="md-header__button md-logo" aria-label="PyPSA China (PIK)" data-md-component="logo">
+      
+  <img src="../assets/img/logo_small.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PyPSA China (PIK)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Configuration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6m0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4M7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pik-piam/PyPSA-China-PIK" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pik-piam/PyPSA-China-PIK
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../model/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Model
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../data/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Data
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../installation/quick_start/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Setup
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Configuration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../releases/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Releases
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tutorials/running/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/add_brownfield/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../release-guide/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Release Guide
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="PyPSA China (PIK)" class="md-nav__button md-logo" aria-label="PyPSA China (PIK)" data-md-component="logo">
+      
+  <img src="../assets/img/logo_small.png" alt="logo">
+
+    </a>
+    PyPSA China (PIK)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pik-piam/PyPSA-China-PIK" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pik-piam/PyPSA-China-PIK
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/quick_start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Paths
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grid-topology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grid Topology
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scenario-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#co2-scenarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CO2 Scenarios
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#snapshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Snapshots
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-fetch-toggles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data fetch toggles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#atlite-weather" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Atlite Weather
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#renewable-energy-technologies-atlite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Renewable Energy Technologies Atlite
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Renewable Energy Technologies Atlite">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wind
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#solar-pv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Solar PV
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heat-demand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heat Demand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bus-and-carrier-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bus and Carrier Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technology-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Technology Categories
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sector-and-component-switches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sector and component Switches
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hydro-dams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hydro Dams
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hydrogen-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hydrogen Storage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solving-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Solving Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Solving Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#general-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        General Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transmission-lines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transmission Lines
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#existing-capacities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Existing Capacities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#region-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Region Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputoutput-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input/Output Settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technology-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TECHNOLOGY CONFIG
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transmission-efficiency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transmission Efficiency
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Transmission Efficiency">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dc-transmission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DC Transmission
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hydrogen-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hydrogen Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#combined-heat-and-power-chp-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combined Heat and Power (CHP) Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solar-technology-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Solar Technology Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heat-pump-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heat Pump Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thermal-energy-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thermal Energy Storage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#electricity-sector-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Electricity Sector Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Electricity Sector Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#storage-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hydroelectric-power" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hydroelectric Power
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fossil-fuel-ramping-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fossil Fuel Ramping Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nuclear-reactor-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nuclear Reactor Parameters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#economic-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Economic Parameters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Economic Parameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#discount-rates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discount Rates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#currency-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Currency Conversion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#solar-pv-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Solar PV Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../releases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/running/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running PyPSA-China
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/snakemake_tricks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Snakemake Tips & Tricks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/coupling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coupling with REMIND
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/add_brownfield/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add brownfield
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/add_electricity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add electricity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/add_existing_baseyear/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add existing baseyear
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/add_sectors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Add sectors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_biomass_potential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build biomass potential
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_cop_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build cop profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_cutout/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build cutout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_load_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build load profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_population/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build population
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_population_gridcell_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build population gridcell map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_powerplants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build powerplants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_province_shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build province shapes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_renewable_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build renewable profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_solar_thermal_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build solar thermal profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_temperature_profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build temperature profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/build_transport_demand/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build transport demand
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/calculate_gebco_slope/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Calculate gebco slope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/constants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Constants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/determine_availability_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Determine availability matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/fetch_rasters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fetch rasters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/fetch_shapes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fetch shapes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Functions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/make_summary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Make summary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/plot_input_costs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot input costs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/plot_inputs_visualisation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot inputs visualisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/plot_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot network
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/plot_network_heat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot network heat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/plot_statistics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot statistics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/plot_summary_all/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot summary all
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/plot_time_series/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot time series
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/prepare_existing_capacities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prepare existing capacities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/prepare_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Prepare network
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/readers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Readers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/readers_geospatial/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Readers geospatial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SUMMARY
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/solve_network/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Solve network
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_37" >
+        
+          
+          <label class="md-nav__link" for="__nav_8_37" id="__nav_8_37_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remind coupling
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_37_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8_37">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Remind coupling
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/remind_coupling/disaggregate_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Disaggregate data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/remind_coupling/ev_refshare_extrapolator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ev refshare extrapolator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/remind_coupling/extrapolate_regional_references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extrapolate regional references
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/remind_coupling/generic_etl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Generic etl
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/remind_coupling/make_pypsa_config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Make pypsa config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference/remind_coupling/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="configuration-reference">Configuration Reference</h1>
+<p>This is documentation for the PyPSA-China configuration (<code>config/default_config.yaml</code> &amp; <code>config/technology_config.yaml</code>). The configuration file controls various aspects of the PyPSA-China energy system modeling workflow.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#run-configuration">Run Configuration</a></li>
+<li><a href="#file-paths">File Paths</a></li>
+<li><a href="#grid-topology">Grid Topology</a></li>
+<li><a href="#scenario-configuration">Scenarios</a></li>
+<li><a href="#co2-scenarios">CO2 Scenarios</a></li>
+<li><a href="#snapshots">Time Snapshots</a></li>
+<li><a href="#logging">Logging</a></li>
+<li><a href="#data-fetch-toggles">Data Fetch Toggles</a></li>
+<li><a href="#atlite-weather">Atlite Weather Settings</a></li>
+<li><a href="#renewable-energy-technologies-atlite">Renewable Energy Technologies</a></li>
+<li><a href="#heat-demand">Heat Demand</a></li>
+<li><a href="#reporting">Reporting</a></li>
+<li><a href="#bus-and-carrier-configuration">Bus and Carriers</a></li>
+<li><a href="#technology-categories">Technology Categories</a></li>
+<li><a href="#sector-and-component-switches">Sectors &amp; Component</a></li>
+<li><a href="#hydro-dams">Hydro Dams</a></li>
+<li><a href="#hydrogen-storage">Hydrogen Storage</a></li>
+<li><a href="#solving-configuration">Solving</a></li>
+<li><a href="#transmission-lines">Transmission Lines</a></li>
+<li><a href="#security-constraints">Security Constraints</a></li>
+<li><a href="#existing-capacities">Existing Capacities</a></li>
+<li><a href="#region-configuration">Regions</a></li>
+<li><a href="#inputoutput-settings">Input/Output Settings</a></li>
+<li><a href="#transmission-efficiency">Transmission Efficiency</a></li>
+<li><a href="#combined-heat-and-power-chp-parameters">Combined Heat and Power (CHP) Parameters</a></li>
+<li><a href="#solar-technology-parameters">Solar Technology Parameters</a></li>
+<li><a href="#heat-pump-configuration">Heat Pump Configuration</a></li>
+<li><a href="#thermal-energy-storage">Thermal Energy Storage</a></li>
+<li><a href="#electricity-sector-configuration">Electricity Sector Configuration</a></li>
+<li><a href="#hydroelectric-power">Hydroelectric Power</a></li>
+<li><a href="#fossil-fuel-ramping-constraints">Fossil Fuel Ramping Constraints</a></li>
+<li><a href="#nuclear-reactor-parameters">Nuclear Reactor Parameters</a></li>
+<li><a href="#economic-parameters">Economic Parameters</a></li>
+</ul>
+<h2 id="usage-notes">Usage Notes</h2>
+<ol>
+<li>
+<p><strong>File Organization</strong>: Configuration files should be placed in the <code>config/</code> directory.</p>
+</li>
+<li>
+<p><strong>Customization</strong>: Do not edit <code>default_config.yaml</code>. Overwrite the variables you need in <code>my_config.yaml</code>. See <a href="../running">running section</a></p>
+</li>
+<li>
+<p><strong>Technology Configuration</strong>: Additional technology parameters are defined in separate files in  <code>config/technology_config.yaml</code> </p>
+</li>
+<li>
+<p><strong>Solver Selection</strong>: Remember to select a solver that is installed.</p>
+</li>
+</ol>
+<h2 id="run-configuration">Run Configuration</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">run</span><span class="p">:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unamed_run</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">is_remind_coupled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nt">foresight</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;overnight&quot;</span>
+</code></pre></div>
+<ul>
+<li><strong><code>run.name</code></strong>: Identifier for the model run. Used for organizing results and logs.</li>
+<li><strong><code>run.is_remind_coupled</code></strong>: Boolean indicating whether the model run is coupled with REMIND. Set to <code>false</code> for standalone PyPSA-China runs. True overwrites numerous settings.</li>
+<li><strong><code>foresight</code></strong>: ["overnight"|"myopic"] Set to <code>"overnight"</code> for perfect foresight within one time horizon. Each horizon is solved independently. Set to <code>myopic</code> to obtain a sequential pathway of overnight horizons, with the result of the previous horizon acting as the brownfield for the next horizon.</li>
+</ul>
+<h2 id="file-paths">File Paths</h2>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">paths</span><span class="p">:</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">results_dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;results/&quot;</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">costs_dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/costs/default&quot;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">yearly_regional_load</span><span class="p">:</span><span class="w"> </span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">ac</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/load/Provincial_Load_2020_2060_MWh.csv&quot;</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="nt">ac_to_mwh</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</code></pre></div>
+- <strong><code>results_dir</code></strong>: Directory where model results are stored
+- <strong><code>costs_dir</code></strong>: Directory containing technology &amp; cost data
+- <strong><code>yearly_regional_load.ac</code></strong>: Path to provincial electricity load data file
+- <strong><code>yearly_regional_load.ac_to_mwh</code></strong>: Conversion factor to MWh (set to 1 if load file is already in MWh)</p>
+<h2 id="grid-topology">Grid Topology</h2>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">edge_paths</span><span class="p">:</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">current</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/grids/edges_current.csv&quot;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">current+FCG</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/grids/edges_current_FCG.csv&quot;</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">current+Neighbor</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/grids/edges_current_neighbor.csv&quot;</span>
+</code></pre></div>
+Paths to named transmission line topology files for different scenarios. Predefined
+  - <code>"current"</code>: Existing transmission network
+  - <code>"current+FCG"</code>: Fully connected grid (represents current expansion plans)
+  - <code>"current+Neighbor"</code>: current + all neighbours connected</p>
+<h2 id="scenario-configuration">Scenario Configuration</h2>
+<p>A scenario is a set of time horizons with a carbon reduction pathway. The variations become snakemake wildcards.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">scenario</span><span class="p">:</span><span class="w"> </span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">co2_pathway</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;exp175default&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">topology</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;current+FCG&quot;</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">planning_horizons</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">year_list</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="nt">heating_demand</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;positive&quot;</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<ul>
+<li><strong><code>co2_pathway</code></strong>: List of named CO2 emission scenarios to model</li>
+<li><strong><code>topology</code></strong>: Grid topology configuration. Must correspond to an edge_path</li>
+<li><strong><code>planning_horizons</code></strong>: Years to model</li>
+<li><strong><code>heating_demand</code></strong>: Heating demand scenarios (will be overhauled)</li>
+</ul>
+<h2 id="co2-scenarios">CO2 Scenarios</h2>
+<p>Emission reduction pathways. <code>scenario.co2_pathway</code> entries must be defined here.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">co2_scenarios</span><span class="p">:</span><span class="w"> </span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">exp175default</span><span class="p">:</span><span class="w"> </span><span class="c1"># pathway name</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">control</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;reduction&quot;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">pathway</span><span class="p">:</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">      </span><span class="s">&#39;2020&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">      </span><span class="s">&#39;2025&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.22623418</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">      </span><span class="c1"># ... additional years</span>
+</code></pre></div>
+<p>Defines CO2 emission reduction scenarios:
+- <strong><code>control</code></strong>: Control mechanism (<code>"price"</code>, <code>"reduction"</code>, <code>"budget"</code>, or <code>None</code>)
+- <strong><code>pathway</code></strong>: Yearly values for the price, reduction or budget. Ignored if <code>control=None</code>.</p>
+<h2 id="snapshots">Snapshots</h2>
+<p>Snapshots are the modelled timestamps</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">snapshots</span><span class="p">:</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;01-01</span><span class="nv"> </span><span class="s">00:00&quot;</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;12-31</span><span class="nv"> </span><span class="s">23:00&quot;</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">bounds</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;both&#39;</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="nt">freq</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;5h&#39;</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="nt">frequency</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5.</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="nt">end_year_plus1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+Controls the temporal resolution of the model:
+- <strong><code>start</code></strong>: Start date and time (MM-DD HH:MM format)
+- <strong><code>end</code></strong>: End date and time
+- <strong><code>bounds</code></strong>: Include start/end points (<code>'both'</code>, <code>'left'</code>, <code>'right'</code>)
+- <strong><code>freq</code></strong>: Frequency string for pandas (e.g., <code>'5h'</code> for 5-hour intervals)
+- <strong><code>frequency</code></strong>: weight of a snapshot (eg 5 means that the generation for that timestamp will be multiplifed by 5 to get actual MWh values &amp; costs)
+- <strong><code>end_year_plus1</code></strong>: bool: not single year?</p>
+<div class="admonition warning">
+<p class="admonition-title">Time sampling</p>
+<p>Lower resolutions are currently dumbly sampled as 1 in n. Nonetheless it is possible to get mixes and costs close to those of the 1hr resolution.</p>
+</div>
+<h2 id="logging">Logging</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">logging_level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INFO</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nt">logging</span><span class="p">:</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INFO</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;%(levelname)s:%(name)s:%(message)s&#39;</span>
+</code></pre></div>
+<ul>
+<li><strong><code>logging_level</code></strong>: Global logging level</li>
+<li><strong><code>logging.level</code></strong>: Detailed logging level</li>
+<li><strong><code>logging.format</code></strong>: Log message format string</li>
+</ul>
+<h2 id="data-fetch-toggles">Data fetch toggles</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">enable</span><span class="p">:</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">build_cutout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">retrieve_cutout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">retrieve_raster</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+<p>Controls whether the data fetch workflow steps are enabled:
+- <strong><code>build_cutout</code></strong>: Build new weather data cutouts
+- <strong><code>retrieve_cutout</code></strong>: Download existing cutouts (not in correct file structure, must be manually copied)
+- <strong><code>retrieve_raster</code></strong>: Download existing raster data</p>
+<h2 id="atlite-weather">Atlite Weather</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">atlite</span><span class="p">:</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">cutout_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;China-2020c&quot;</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">freq</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;h&quot;</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">nprocesses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="nt">show_progress</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="nt">monthly_requests</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="nt">cutouts</span><span class="p">:</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="nt">China-2020c</span><span class="p">:</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">      </span><span class="nt">module</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">era5</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">      </span><span class="nt">dx</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.25</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">      </span><span class="nt">dy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.25</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">      </span><span class="nt">weather_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020</span>
+</code></pre></div>
+<p>Configuration for weather data processing:
+- <strong><code>cutout_name</code></strong>: Name of cutout (searched for in <code>resources/cutouts/</code>)
+- <strong><code>freq</code></strong>: Temporal frequency for weather data
+- <strong><code>nprocesses</code></strong>: Number of parallel processes
+- <strong><code>show_progress</code></strong>: Display progress bars
+- <strong><code>monthly_requests</code></strong>: Split requests by month
+- <strong><code>cutouts</code></strong>: config(s) for one or more cutout names
+  - <strong><code>module</code></strong>: Weather data source (e.g., <code>era5</code>)
+  - <strong><code>dx</code>/<code>dy</code></strong>: Spatial resolution in degrees
+  - <strong><code>weather_year</code></strong>: weather year to fetch/use</p>
+<h2 id="renewable-energy-technologies-atlite">Renewable Energy Technologies Atlite</h2>
+<h3 id="wind">Wind</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nt">renewable</span><span class="p">:</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">onwind | offwind</span><span class="p">:</span><span class="w"> </span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="nt">cutout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cutout-name</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="nt">resource</span><span class="p">:</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">      </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wind</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">      </span><span class="nt">turbine</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">model</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">    </span><span class="nt">resource_classes</span><span class="p">:</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">      </span><span class="nt">min_cf_delta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.05</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">      </span><span class="nt">n</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="nt">capacity_per_sqkm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">    </span><span class="nt">potential</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">simple</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">    </span><span class="nt">natura</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">    </span><span class="nt">clip_p_max_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.e-2</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">    </span><span class="nt">min_p_nom_max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.e-2</span>
+</code></pre></div>
+<h3 id="solar-pv">Solar PV</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="w">  </span><span class="nt">solar</span><span class="p">:</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">    </span><span class="nt">cutout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cutout-name</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="nt">resource</span><span class="p">:</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">      </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pv</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">      </span><span class="nt">panel</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">model</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">      </span><span class="nt">orientation</span><span class="p">:</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">        </span><span class="nt">slope</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">35.</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">        </span><span class="nt">azimuth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">180.</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">    </span><span class="nt">resource_classes</span><span class="p">:</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">      </span><span class="nt">min_cf_delta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.02</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="w">      </span><span class="nt">n</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="w">    </span><span class="nt">capacity_per_sqkm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5.1</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">    </span><span class="nt">potential</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">simple</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">    </span><span class="nt">correction_factor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">    </span><span class="nt">natura</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">    </span><span class="nt">clip_p_max_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.e-2</span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">    </span><span class="nt">min_p_nom_max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.e-2</span>
+</code></pre></div>
+<p><strong>Common renewable parameters:</strong>
+- <strong><code>cutout</code></strong>: Weather data cutout name to use
+- <strong><code>resource.method</code></strong>: Resource calculation method
+- <strong><code>resource.turbine | panel</code></strong>: Technology specification
+- <strong><code>resource_classes</code></strong>: Capacity factor binning to reduce provincial aggregation effects
+  - <strong><code>n</code></strong>: Number of resource bins
+  - <strong><code>min_cf_delta</code></strong>: Minimum capacity factor difference between bins
+- <strong><code>capacity_per_sqkm</code></strong>: Max installable Power density (MW/km²)
+- <strong><code>potential</code></strong>: Potential calculation method (<code>simple</code> or <code>conservative</code>)
+- <strong><code>correction_factor</code></strong>: Technology-specific correction factor
+- <strong><code>natura</code></strong>: Consider nature protection areas
+- <strong><code>max_depth</code></strong>: Maximum water depth for offshore wind (m)
+- <strong><code>clip_p_max_pu</code></strong>: Minimum capacity factor threshold
+- <strong><code>min_p_nom_max</code></strong>: Minimum installable capacity threshold</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nt">renewable_potential_cutoff</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span><span class="w">  </span><span class="c1"># MW</span>
+</code></pre></div>
+Skip locations with potential below this threshold to reduce problem size.</p>
+<h2 id="heat-demand">Heat Demand</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nt">heat_demand</span><span class="p">:</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">start_day</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;01-04&quot;</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="nt">end_day</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;30-09&quot;</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span><span class="nt">heating_start_temp</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">15.0</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="nt">heating_lin_slope</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">  </span><span class="nt">heating_offet</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="nt">solar_thermal_angle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">45</span>
+</code></pre></div>
+<ul>
+<li><strong><code>start_day</code>/<code>end_day</code></strong>: Heating season dates (DD-MM format)</li>
+<li><strong><code>heating_start_temp</code></strong>: Temperature threshold for heating demand (°C)</li>
+<li><strong><code>heating_lin_slope</code></strong>: Linear relationship slope</li>
+<li><strong><code>heating_offset</code></strong>: Linear model offset</li>
+<li><strong><code>solar_thermal_angle</code></strong>: Solar thermal collector angle (degrees)</li>
+</ul>
+<h2 id="reporting">Reporting</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nt">reporting</span><span class="p">:</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">adjust_link_capacities_by_efficiency</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+<ul>
+<li><strong><code>adjust_link_capacities_by_efficiency</code></strong>: PyPSA links capacities are in input. Typical reporting for AC is in output capacitiy. If true Adjust link capacities by efficiency for consistent AC-side reporting.</li>
+</ul>
+<h2 id="bus-and-carrier-configuration">Bus and Carrier Configuration</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nt">bus_suffix</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;</span><span class="nv"> </span><span class="s">central</span><span class="nv"> </span><span class="s">heat&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;</span><span class="nv"> </span><span class="s">decentral</span><span class="nv"> </span><span class="s">heat&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;</span><span class="nv"> </span><span class="s">gas&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;</span><span class="nv"> </span><span class="s">coal&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nt">bus_carrier</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="s">&quot;&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;AC&quot;</span><span class="p p-Indicator">,</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">    </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">central</span><span class="nv"> </span><span class="s">heat&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;heat&quot;</span><span class="p p-Indicator">,</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">    </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">decentral</span><span class="nv"> </span><span class="s">heat&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;heat&quot;</span><span class="p p-Indicator">,</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">    </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">gas&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;gas&quot;</span><span class="p p-Indicator">,</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">    </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">coal&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;coal&quot;</span><span class="p p-Indicator">,</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>Defines bus types and their corresponding energy carriers:
+- <strong><code>bus_suffix</code></strong>: List of bus name suffixes
+- <strong><code>bus_carrier</code></strong>: Mapping of suffixes to carrier types</p>
+<h2 id="technology-categories">Technology Categories</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">Techs</span><span class="p">:</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">vre_techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;onwind&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;offwind&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;solar&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;solar</span><span class="nv"> </span><span class="s">thermal&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;hydroelectricity&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;nuclear&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;biomass&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;beccs&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;heat</span><span class="nv"> </span><span class="s">pump&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;resistive</span><span class="nv"> </span><span class="s">heater&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;Sabatier&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;H2</span><span class="nv"> </span><span class="s">CHP&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;fuel</span><span class="nv"> </span><span class="s">cell&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="nt">conv_techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;OCGT&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;CCGT&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;CHP</span><span class="nv"> </span><span class="s">gas&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;gas</span><span class="nv"> </span><span class="s">boiler&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;coal</span><span class="nv"> </span><span class="s">boiler&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;coal</span><span class="nv"> </span><span class="s">power</span><span class="nv"> </span><span class="s">plant&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;CHP</span><span class="nv"> </span><span class="s">coal&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span><span class="nt">store_techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;H2&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;battery&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;water</span><span class="nv"> </span><span class="s">tanks&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;PHS&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="nt">coal_cc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="nt">hydrogen_lines</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+<p>Technology categorization:
+- <strong><code>vre_techs</code></strong>: Variable renewable energy technologies
+- <strong><code>conv_techs</code></strong>: Conventional generation technologies
+- <strong><code>store_techs</code></strong>: Storage technologies
+- <strong><code>coal_cc</code></strong>: Enable coal with carbon capture retrofit (myopic only). Coal carbon capture new-builds are controled via "vre_techs" for overnight.
+- <strong><code>hydrogen_lines</code></strong>: Enable hydrogen transmission lines</p>
+<h2 id="sector-and-component-switches">Sector and component Switches</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">heat_coupling</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nt">add_biomass</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="nt">add_hydro</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="nt">add_H2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="nt">add_methanation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="nt">line_losses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="nt">no_lines</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+</code></pre></div>
+<p>Control which components to include in the model:
+- <strong><code>heat_coupling</code></strong>: Enable heat sector coupling
+- <strong><code>add_biomass</code></strong>: Include biomass technologies
+- <strong><code>add_hydro</code></strong>: Include hydroelectric power
+- <strong><code>add_H2</code></strong>: Include hydrogen technologies (and pipelines)
+- <strong><code>add_methanation</code></strong>: Include methanation processes
+- <strong><code>line_losses</code></strong>: Model transmission line losses
+- <strong><code>no_lines</code></strong>: Disable transmission lines (autartik)</p>
+<h2 id="hydro-dams">Hydro Dams</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nt">hydro_dams</span><span class="p">:</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="nt">dams_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/dams_large.csv&quot;</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="nt">inflow_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle&quot;</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">  </span><span class="nt">inflow_date_start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1979-01-01&quot;</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">  </span><span class="nt">inflow_date_end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2017-01-01&quot;</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">  </span><span class="nt">reservoir_initial_capacity_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/reservoir_initial_capacity.pickle&quot;</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">  </span><span class="nt">reservoir_effective_capacity_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/reservoir_effective_capacity.pickle&quot;</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">  </span><span class="nt">river_links_stations</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">  </span><span class="nt">p_nom_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/p_nom/hydro_p_nom.h5&quot;</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">  </span><span class="nt">p_max_pu_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/p_nom/hydro_p_max_pu.h5&quot;</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">  </span><span class="nt">p_max_pu_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hydro_p_max_pu&quot;</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">  </span><span class="nt">damn_flows_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/dam_flow_links.csv&quot;</span>
+</code></pre></div>
+<p>Hydroelectric dam configuration:
+- <strong><code>dams_path</code></strong>: CSV file with dam locations and characteristics
+- <strong><code>inflow_path</code></strong>: Historical inflow data
+- <strong><code>inflow_date_start</code>/<code>inflow_date_end</code></strong>: Date range for inflow data
+- <strong><code>reservoir_*_capacity_path</code></strong>: Reservoir capacity data files
+- <strong><code>p_nom_path</code></strong>: Installed capacity data
+- <strong><code>p_max_pu_path</code></strong>: Maximum capacity factor time series
+- <strong><code>damn_flows_path</code></strong>: Dam flow connections</p>
+<h2 id="hydrogen-storage">Hydrogen Storage</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nt">H2</span><span class="p">:</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="nt">geo_storage_nodes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;Sichuan&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Chongqing&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Hubei&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Jiangxi&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Anhui&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Jiangsu&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Shandong&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Guangdong&quot;</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<ul>
+<li><strong><code>geo_storage_nodes</code></strong>: Provinces with geological hydrogen storage potential</li>
+</ul>
+<h2 id="solving-configuration">Solving Configuration</h2>
+<h3 id="general-options">General Options</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nt">solving</span><span class="p">:</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span><span class="nt">options</span><span class="p">:</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">    </span><span class="nt">formulation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kirchhoff</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">    </span><span class="nt">load_shedding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">    </span><span class="nt">voll</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e5</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="w">    </span><span class="nt">noisy_costs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="w">    </span><span class="nt">min_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">    </span><span class="nt">max_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="w">    </span><span class="nt">clip_p_max_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="w">    </span><span class="nt">skip_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="w">    </span><span class="nt">track_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+<ul>
+<li><strong><code>formulation</code></strong>: Network formulation (<code>kirchhoff</code> or <code>angles</code>)</li>
+<li><strong><code>load_shedding</code></strong>: Allow unserved energy</li>
+<li><strong><code>voll</code></strong>: Value of lost load (EUR/MWh)</li>
+<li><strong><code>noisy_costs</code></strong>: Add noise to costs for degeneracy handling</li>
+<li><strong><code>min_iterations</code>/<code>max_iterations</code></strong>: Iteration bounds for iterative solving</li>
+<li><strong><code>clip_p_max_pu</code></strong>: Minimum capacity factor threshold</li>
+<li><strong><code>skip_iterations</code>/<code>track_iterations</code></strong>: Iteration control</li>
+</ul>
+<h2 id="transmission-lines">Transmission Lines</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nt">lines</span><span class="p">:</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="nt">line_length_factor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.25</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="nt">expansion</span><span class="p">:</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">    </span><span class="nt">transmission_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vopt</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">    </span><span class="nt">base_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020</span>
+</code></pre></div>
+<ul>
+<li><strong><code>line_length_factor</code></strong>: Line length increase factor, representing impossibility to build perfectly straight</li>
+<li><strong><code>expansion.transmission_limit</code></strong>: Transmission expansion constraint</li>
+<li><code>[v]opt</code>: Optimal (unconstrained)</li>
+<li><code>v1.03</code>: Volume-constrained (3% increase limit PER YEAR not horizon)</li>
+<li><code>c1.03</code>: Cost-constrained (3% increase limit PER YEAR not horizon)</li>
+<li><strong><code>expansion.base_year</code></strong>: Reference year for expansion limits (to calculate max exp). Should be year of input network topology file (which has capacities)</li>
+</ul>
+<h2 id="security-constraints">Security Constraints</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nt">security</span><span class="p">:</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="nt">line_margin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">70</span><span class="w">  </span><span class="c1"># Max percent of line capacity</span>
+</code></pre></div>
+<ul>
+<li><strong><code>line_margin</code></strong>: Security margin for transmission lines (% of capacity)</li>
+</ul>
+<h2 id="existing-capacities">Existing Capacities</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nt">existing_capacities</span><span class="p">:</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="nt">add</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="nt">grouping_years</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">1980</span><span class="p p-Indicator">,</span><span class="nv">1985</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1990</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1995</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2000</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2005</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2010</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2015</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2019</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2020</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2025</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2030</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2035</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2040</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2045</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2050</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2055</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2060</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span><span class="nt">threshold_capacity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">  </span><span class="nt">techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;coal&#39;</span><span class="p p-Indicator">,</span><span class="s">&#39;CHP</span><span class="nv"> </span><span class="s">coal&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;CHP</span><span class="nv"> </span><span class="s">gas&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;OCGT&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;CCGT&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;solar&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;solar</span><span class="nv"> </span><span class="s">thermal&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;onwind&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;offwind&#39;</span><span class="p p-Indicator">,</span><span class="s">&#39;coal</span><span class="nv"> </span><span class="s">boiler&#39;</span><span class="p p-Indicator">,</span><span class="s">&#39;ground</span><span class="nv"> </span><span class="s">heat</span><span class="nv"> </span><span class="s">pump&#39;</span><span class="p p-Indicator">,</span><span class="s">&#39;nuclear&#39;</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>Configuration for incorporating existing power plant capacities:
+- <strong><code>add</code></strong>: Include existing GEM capacities in the model. These are retired only if they reach end of life (determined based on the costs tech config)
+- <strong><code>grouping_years</code></strong>: Years for capacity grouping
+- <strong><code>threshold_capacity</code></strong>: Minimum capacity threshold
+- <strong><code>techs</code></strong>: Technologies to include from existing capacity data</p>
+<h2 id="region-configuration">Region Configuration</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nt">fetch_regions</span><span class="p">:</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">  </span><span class="nt">simplify_tol</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+</code></pre></div>
+<ul>
+<li><strong><code>simplify_tol</code></strong>: Tolerance for region boundary simplification</li>
+</ul>
+<h2 id="inputoutput-settings">Input/Output Settings</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nt">io</span><span class="p">:</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">  </span><span class="nt">nc_compression</span><span class="p">:</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="w">    </span><span class="nt">level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="w">    </span><span class="nt">zlib</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+</code></pre></div>
+<p>Controls compression settings for NetCDF output files:
+- <strong><code>level</code></strong>: Compression level (0-9, higher = more compression)
+- <strong><code>zlib</code></strong>: Enable zlib compression</p>
+<h2 id="technology-config">TECHNOLOGY CONFIG</h2>
+<p>The below are in <code>config/technology_config.yaml</code></p>
+<h2 id="transmission-efficiency">Transmission Efficiency</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nt">transmission_efficiency</span><span class="p">:</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">  </span><span class="nt">DC</span><span class="p">:</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span><span class="nt">efficiency_static</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.98</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span><span class="nt">efficiency_per_1000km</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.977</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="w">  </span><span class="nt">H2 pipeline</span><span class="p">:</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">    </span><span class="nt">efficiency_static</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="w">    </span><span class="nt">efficiency_per_1000km</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.979</span>
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="w">    </span><span class="nt">compression_per_1000km</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.019</span>
+</code></pre></div>
+<p>Defines transmission efficiency parameters for different carriers &amp; technologies:</p>
+<h3 id="dc-transmission">DC Transmission</h3>
+<ul>
+<li><strong><code>efficiency_static</code></strong>: Base efficiency for DC transmission lines (98%)</li>
+<li><strong><code>efficiency_per_1000km</code></strong>: Distance-dependent efficiency factor per 1000 km (97.7% per 1000 km)</li>
+</ul>
+<h3 id="hydrogen-pipeline">Hydrogen Pipeline</h3>
+<ul>
+<li><strong><code>efficiency_static</code></strong>: Base efficiency for hydrogen pipelines (100% - no static losses)</li>
+<li><strong><code>efficiency_per_1000km</code></strong>: Distance-dependent efficiency factor per 1000 km (97.9% per 1000 km)</li>
+<li><strong><code>compression_per_1000km</code></strong>: Energy required for compression per 1000 km (1.9% of transported energy)</li>
+</ul>
+<p>The total efficiency for transmission links is calculated as:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>Total efficiency = efficiency_static × (efficiency_per_1000km)^(distance_km/1000)
+</code></pre></div></p>
+<h2 id="combined-heat-and-power-chp-parameters">Combined Heat and Power (CHP) Parameters</h2>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nt">chp_parameters</span><span class="p">:</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">  </span><span class="nt">eff_th</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5304</span>
+</code></pre></div>
+CHP is treated either as a pre-defined values or using a back pressure coeficient (see DK Energy catalogue). For coal CHP use the back pressure (variable ratio). For gas CHP use pre-defined parameter.</p>
+<p><strong>TODO</strong> this is legacy, check implentation is OK. CHP often runs heat first in China but code seems to maintain electric eff</p>
+<h2 id="solar-technology-parameters">Solar Technology Parameters</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nt">solar_cf_correction</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span>
+</code></pre></div>
+<ul>
+<li><strong><code>solar_cf_correction</code></strong>: Correction factor applied to solar capacity factors (85%)</li>
+</ul>
+<p>This factor accounts for various real-world effects that reduce solar Thermal performance compared to theoretical values. <strong>NOT APPLIED TO PV</strong></p>
+<h2 id="heat-pump-configuration">Heat Pump Configuration</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nt">time_dep_hp_cop</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+</code></pre></div>
+<ul>
+<li><strong><code>time_dep_hp_cop</code></strong>: Enable time-dependent coefficient of performance (COP) for heat pumps</li>
+</ul>
+<p>When enabled, heat pump efficiency varies with ambient temperature conditions throughout the year.</p>
+<h2 id="thermal-energy-storage">Thermal Energy Storage</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="nt">water_tanks</span><span class="p">:</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="w">  </span><span class="nt">tes_tau</span><span class="p">:</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">    </span><span class="nt">decentral</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.</span><span class="w"> </span><span class="c1"># days</span>
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="w">    </span><span class="nt">central</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">180</span><span class="w"> </span><span class="c1"># days</span>
+</code></pre></div>
+<p>Standing loss parameters for thermal energy storage (water tanks):
+- <strong><code>decentral</code></strong>: Time constant for decentralized thermal storage (3 days)
+- <strong><code>central</code></strong>: Time constant for centralized thermal storage (180 days)</p>
+<p>The time constant (tau) determines the rate of thermal losses.</p>
+<h2 id="electricity-sector-configuration">Electricity Sector Configuration</h2>
+<p>Partially legacy and to be revised</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nt">electricity</span><span class="p">:</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span><span class="nt">max_hours</span><span class="p">:</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">    </span><span class="nt">battery</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">    </span><span class="nt">H2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">168</span>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">  </span><span class="nt">min_charge</span><span class="p">:</span>
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="w">    </span><span class="nt">battery</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span><span class="w"> </span><span class="c1"># fraction of e_nom</span>
+</code></pre></div>
+<h3 id="storage-parameters">Storage Parameters</h3>
+<ul>
+<li><strong><code>max_hours.battery</code></strong>: Maximum storage duration for batteries (6 hours)</li>
+<li><strong><code>max_hours.H2</code></strong>: Maximum storage duration for hydrogen storage (168 hours = 1 week)</li>
+<li><strong><code>min_charge.battery</code></strong>: Minimum state of charge for batteries (10% of nominal energy capacity)</li>
+</ul>
+<h2 id="hydroelectric-power">Hydroelectric Power</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="nt">hydro</span><span class="p">:</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">  </span><span class="nt">hydro_capital_cost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">  </span><span class="nt">marginal_cost</span><span class="p">:</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="w">    </span><span class="nt">reservoir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="w">  </span><span class="nt">PHS_max_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24</span><span class="w"> </span><span class="c1"># hours</span>
+</code></pre></div>
+<ul>
+<li><strong><code>hydro_capital_cost</code></strong>: Include capital costs for hydroelectric plants</li>
+<li><strong><code>marginal_cost.reservoir</code></strong>: Marginal cost of storage (defaults to zeo)</li>
+<li><strong><code>PHS_max_hours</code></strong>: Maximum storage duration for pumped hydro storage (24 hours)</li>
+</ul>
+<h2 id="fossil-fuel-ramping-constraints">Fossil Fuel Ramping Constraints</h2>
+<p>Operational ramping constraints for fossil fuel power plants:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="nt">fossil_ramps</span><span class="p">:</span>
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="w">  </span><span class="nt">tech</span><span class="p">:</span>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="w">    </span><span class="nt">ramp_limit_up</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span><span class="w"> </span><span class="c1"># fraction of p_nom per hour</span>
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="w">    </span><span class="nt">ramp_limit_down</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span><span class="w"> </span><span class="c1"># fraction of p_nom per hour</span>
+</code></pre></div>
+<ul>
+<li><strong><code>ramp_limit_up</code></strong>: Maximum upward ramping rate (50% of nominal capacity per hour)</li>
+<li><strong><code>ramp_limit_down</code></strong>: Maximum downward ramping rate (50% of nominal capacity per hour)</li>
+</ul>
+<h2 id="nuclear-reactor-parameters">Nuclear Reactor Parameters</h2>
+<p>Instead of solving unit commitment problem, which is computationally expensive, can stylise baseload generation.
+The upper limit reflects planned and unplanned outages</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="nt">nuclear_reactors</span><span class="p">:</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">  </span><span class="nt">p_max_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.88</span><span class="w"> </span><span class="c1"># fraction of p_nom, after IEAE</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">  </span><span class="nt">p_min_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.7</span><span class="w"> </span><span class="c1"># fraction of p_nom</span>
+</code></pre></div>
+Operational constraints for nuclear power plants:
+- <strong><code>p_max_pu</code></strong>: Maximum power output (% of nominal capacity)
+- <strong><code>p_min_pu</code></strong>: Minimum power output (% of nominal capacity)</p>
+<h2 id="economic-parameters">Economic Parameters</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nt">costs</span><span class="p">:</span>
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="w">  </span><span class="nt">discountrate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.06</span>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="w">  </span><span class="nt">social_discount_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.02</span>
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="w">  </span><span class="nt">USD2013_to_EUR2013</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.9189</span>
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="w">  </span><span class="nt">marginal_cost</span><span class="p">:</span>
+<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="w">    </span><span class="nt">hydro</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.</span>
+<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a><span class="w">  </span><span class="nt">pv_utility_fraction</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</code></pre></div>
+<h3 id="discount-rates">Discount Rates</h3>
+<ul>
+<li><strong><code>discountrate</code></strong>: Financial discount rate for investment decisions (6%)</li>
+<li><strong><code>social_discount_rate</code></strong>: Social discount rate for welfare analysis (2%)</li>
+</ul>
+<p>The financial discount rate is used for technology investment decisions, while the social discount rate is applied for broader economic impact assessments.</p>
+<h3 id="currency-conversion">Currency Conversion</h3>
+<ul>
+<li><strong><code>USD2013_to_EUR2013</code></strong>: Exchange rate from USD to EUR for 2013 prices (0.9189 EUR/USD) - used for technoeconomic conversion. Weakpoint, only one currency.
+Also tech costs are now in Euro2015 from DK EA</li>
+</ul>
+<h3 id="solar-pv-configuration">Solar PV Configuration</h3>
+<ul>
+<li><strong><code>pv_utility_fraction</code></strong>: Fraction of solar PV that is utility-scale (100%)</li>
+</ul>
+<p>This parameter distinguishes between utility-scale and residential/distributed solar installations, affecting cost assumptions and grid integration characteristics.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../installation/quick_start/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Setup">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Setup
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../releases/" class="md-footer__link md-footer__link--next" aria-label="Next: Releases">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Releases
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Potsdam Institute for Climate Impact Research (PIK) 2024
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/pik-piam/PyPSA-China-PIK" target="_blank" rel="noopener" title="PyPSA-China-PIK on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "toc.integrate", "search.suggest", "search.highlight", "content.tabs.link", "content.code.annotation", "content.code.copy", "navigation.footer"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,7 @@
+mkdocs>=1.4.0
+mkdocs-material>=9.0.0
+mkdocs-gen-files
+mkdocstrings[python]
+mkdocs-awesome-nav
+mike>=1.1.0
+python-markdown-math
