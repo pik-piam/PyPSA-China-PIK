@@ -1700,8 +1700,11 @@ def prepare_network(
     
     # Apply fuel subsidies as post-processing step
     subsidy_config = config.get("subsidies", {})
-    if subsidy_config:
-        add_fuel_subsidies(network, subsidy_config)
+    if subsidy_config and subsidy_config.get("enabled", True):
+        # Remove 'enabled' key before passing to add_fuel_subsidies
+        subsidy_config_clean = {k: v for k, v in subsidy_config.items() if k != "enabled"}
+        if subsidy_config_clean:
+            add_fuel_subsidies(network, subsidy_config_clean)
     
     return network
 

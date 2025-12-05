@@ -373,6 +373,7 @@ fetch_regions:
     land: 0.05
 
 subsidies:
+  enabled: false  # Set to false to disable fuel subsidies
   # New format: subsidies.fuel_type -> province -> value (EUR/MWh) only allowed for negative values (subsidies)
   gas:
     Guangdong: -10
