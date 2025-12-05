@@ -3,8 +3,8 @@
 
 ## Time resolution
 - the time step can be chosen in discrete hours. The time step applies to all snapshots, it is not currently possible to have different time meshes for subsets of snapshots.
-- the time step simply choses 1 from every $\delta t$. For example 4 hours will take 0:00,4:00,8:00,12:00,16:00,20:00
-- the time step weight should be chosen such that $n_{steps}*n_{weights} = n_{modelled_years}*8760$
+- the time step simply choses 1 from every $$\delta t$$. For example 4 hours will take 0:00,4:00,8:00,12:00,16:00,20:00
+- the time step weight should be chosen such that $$n_{steps}*n_{weights} = n_{modelled_years}*8760$$
 - leap days are currently dropped
 
 A better time meshing should be developed at some point.

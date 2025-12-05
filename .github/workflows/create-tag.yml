@@ -1,0 +1,98 @@
+name: Create Release Tag
+
+on:
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Version number (e.g., 1.3.0 without the v prefix)"
+                required: true
+                type: string
+            create_release:
+                description: "Create GitHub Release immediately"
+                required: true
+                type: boolean
+                default: true
+
+permissions:
+    contents: write
+
+jobs:
+    create-tag:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Validate version format
+              run: |
+                  VERSION="${{ inputs.version }}"
+                  if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                    echo "Error: Version must be in format X.Y.Z (e.g., 1.3.0)"
+                    exit 1
+                  fi
+                  echo "Version format is valid: $VERSION"
+
+            - name: Check if tag already exists
+              run: |
+                  VERSION="v${{ inputs.version }}"
+                  if git rev-parse "$VERSION" >/dev/null 2>&1; then
+                    echo "Error: Tag $VERSION already exists"
+                    exit 1
+                  fi
+                  echo "Tag $VERSION does not exist, proceeding..."
+
+            - name: Verify version in workflow/__init__.py
+              run: |
+                  VERSION="${{ inputs.version }}"
+                  CURRENT_VERSION=$(python -c "exec(open('workflow/__init__.py').read()); print(__version__)")
+
+                  echo "Version in workflow/__init__.py: $CURRENT_VERSION"
+                  echo "Version to tag: $VERSION"
+
+                  if [ "$CURRENT_VERSION" != "$VERSION" ]; then
+                    echo "Warning: Version in workflow/__init__.py ($CURRENT_VERSION) does not match tag version ($VERSION)"
+                    echo "Please update workflow/__init__.py before creating the tag"
+                    exit 1
+                  fi
+
+            - name: Verify CHANGELOG.md has entry
+              run: |
+                  VERSION="${{ inputs.version }}"
+
+                  if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
+                    echo "Warning: No entry found for version $VERSION in CHANGELOG.md"
+                    echo "Please add a changelog entry before creating the tag"
+                    exit 1
+                  fi
+                  echo "CHANGELOG.md contains entry for version $VERSION"
+
+            - name: Configure Git
+              run: |
+                  git config --global user.name "github-actions[bot]"
+                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+            - name: Create and push tag
+              run: |
+                  VERSION="v${{ inputs.version }}"
+                  git tag -a "$VERSION" -m "Release $VERSION"
+                  git push origin "$VERSION"
+                  echo "Successfully created and pushed tag: $VERSION"
+
+            - name: Trigger release workflow
+              if: ${{ inputs.create_release }}
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      await github.rest.actions.createWorkflowDispatch({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        workflow_id: 'release.yml',
+                        ref: 'main',
+                        inputs: {
+                          tag: 'v${{ inputs.version }}'
+                        }
+                      });
+                      console.log('Triggered release workflow for v${{ inputs.version }}');
