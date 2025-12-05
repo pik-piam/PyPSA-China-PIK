@@ -107,8 +107,8 @@ Once the tag is pushed, the Release workflow automatically:
 2. **Deploys Versioned Documentation**:
    - Builds documentation with MkDocs
    - Deploys to GitHub Pages using mike
-   - Updates version aliases (vX.Y.Z and latest)
-   - Sets the new version as default
+   - Creates version vX.Y.Z with alias 'stable'
+   - Sets 'stable' as the default version (releases take precedence over development)
 
 ### 6. Verify the Release
 
@@ -219,11 +219,14 @@ mike set-default VERSION --push
 # Delete a version
 mike delete VERSION --push
 
-# Deploy without updating latest alias
+# Deploy without updating any alias
 mike deploy VERSION --push
 
-# Deploy and update latest alias
-mike deploy --update-aliases VERSION latest --push
+# Deploy release with stable alias (done by release workflow)
+mike deploy --update-aliases VERSION stable --push
+
+# Deploy development with latest alias (done by docs workflow on develop)
+mike deploy --update-aliases dev latest --push
 ```
 
 ### Local Testing
