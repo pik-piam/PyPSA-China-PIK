@@ -99,16 +99,27 @@ pip install pytest pytest-cov black flake8
 
 ### Submitting a Pull Request
 
-1. **Push your branch** to your fork:
+1. **Ensure pre-commit checks pass** (Important!)
+   ```bash
+   # Run pre-commit on all files
+   pre-commit run --all-files
+   
+   # Or run on specific files
+   pre-commit run --files path/to/your/files
+   ```
+   
+   The pre-commit checks will automatically run in CI, but running them locally first saves time.
+
+2. **Push your branch** to your fork:
    ```bash
    git push origin feature/your-feature-name
    ```
 
-2. **Open a Pull Request** on GitHub
-3. **Fill out the PR template** completely
-4. **Link related issues** using keywords like "Closes #123"
-5. **Wait for review** and address any feedback
-6. **Ensure CI checks pass**
+3. **Open a Pull Request** on GitHub
+4. **Fill out the PR template** completely
+5. **Link related issues** using keywords like "Closes #123"
+6. **Wait for review** and address any feedback
+7. **Ensure CI checks pass** - All checks (including pre-commit) must pass before the PR can be merged
 
 ## Coding Standards
 
