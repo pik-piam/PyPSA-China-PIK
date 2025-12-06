@@ -103,11 +103,11 @@ pip install pytest pytest-cov black flake8
    ```bash
    # Run pre-commit on all files
    pre-commit run --all-files
-   
+
    # Or run on specific files
    pre-commit run --files path/to/your/files
    ```
-   
+
    The pre-commit checks will automatically run in CI, but running them locally first saves time.
 
 2. **Push your branch** to your fork:
