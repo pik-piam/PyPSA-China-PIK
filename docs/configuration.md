@@ -43,7 +43,7 @@ This is documentation for the PyPSA-China configuration (`config/default_config.
 
 1. **File Organization**: Configuration files should be placed in the `config/` directory.
 
-2. **Customization**: Do not edit `default_config.yaml`. Overwrite the variables you need in `my_config.yaml`. See [running section](../running)
+2. **Customization**: Do not edit `default_config.yaml`. Overwrite the variables you need in `my_config.yaml`. See [running section](../running). Then run `snakemake --configfile config/my_config.yaml`
 
 3. **Technology Configuration**: Additional technology parameters are defined in separate files in  `config/technology_config.yaml` 
 
@@ -55,13 +55,13 @@ This is documentation for the PyPSA-China configuration (`config/default_config.
 ```yaml
 run:
   name: unamed_run
-  is_remind_coupled: true
+  is_remind_coupled: false
 foresight: "overnight"
 ```
 
 - **`run.name`**: Identifier for the model run. Used for organizing results and logs.
-- **`run.is_remind_coupled`**: Boolean indicating whether the model run is coupled with REMIND. Set to `false` for standalone PyPSA-China runs. True overwrites numerous settings.
-- **`foresight`**: ["overnight"|"myopic"] Set to `"overnight"` for perfect foresight within one time horizon. Each horizon is solved independently. Set to `myopic` to obtain a sequential pathway of overnight horizons, with the result of the previous horizon acting as the brownfield for the next horizon.
+- **`run.is_remind_coupled`**: Boolean indicating whether the model run is coupled with REMIND. Set to `false` for standalone PyPSA-China runs. `True` overwrites numerous settings and affects the behaviour of the path manager.
+- **`foresight`**: ["overnight"] Set to `"overnight"` for perfect foresight within one time horizon. Each horizon is solved independently. The `myopic` mode is currently unsupported.
 
 ## File Paths
 
@@ -255,10 +255,13 @@ renewable:
 - **`capacity_per_sqkm`**: Max installable Power density (MW/km²)
 - **`potential`**: Potential calculation method (`simple` or `conservative`)
 - **`correction_factor`**: Technology-specific correction factor
-- **`natura`**: Consider nature protection areas
+- **`natural_reserves`**: Consider nature protection areas
 - **`max_depth`**: Maximum water depth for offshore wind (m)
+- **`max_altitude`**: Maximum altitude at which technolgoy can be built.
+- **`max_slope`**: Maximum terrain slope for renewables (%)
 - **`clip_p_max_pu`**: Minimum capacity factor threshold
 - **`min_p_nom_max`**: Minimum installable capacity threshold
+- **`land_cover_codes`**: Copernicus LC100 land cover codes for allowed areas
 
 ```yaml
 renewable_potential_cutoff: 200  # MW
@@ -315,19 +318,37 @@ Defines bus types and their corresponding energy carriers:
 
 ```yaml
 Techs:
-  vre_techs: ["onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier","H2 CHP", "fuel cell"]
-  conv_techs: ["OCGT", "CCGT", "CHP gas", "gas boiler","coal boiler","coal power plant","CHP coal"]
+  vre_techs: ["onwind","offwind","solar","solar thermal","hydroelectricity", "nuclear","biomass","beccs","heat pump","resistive heater","Sabatier", "fuel cell", "H2 CHP"]
+  non_dispatchable: ["onwind", "offwind", "solar", "solar thermal"]
+  conv_techs: ["CCGT", "CHP gas", "CHP OCGT gas", "gas boiler","coal boiler","coal power plant","CHP coal", "OCGT"]
   store_techs: ["H2","battery","water tanks","PHS"]
-  coal_cc: true
+  coal_ccs_retrofit: false
   hydrogen_lines: true
 ```
 
 Technology categorization:
-- **`vre_techs`**: Variable renewable energy technologies
-- **`conv_techs`**: Conventional generation technologies
+- **`vre_techs`**: Variable renewable energy and clean technologies
+- **`non_dispatchable`**: Technologies without dispatch control (weather-dependent)
+- **`conv_techs`**: Conventional generation technologies (includes CHP OCGT gas)
 - **`store_techs`**: Storage technologies
-- **`coal_cc`**: Enable coal with carbon capture retrofit (myopic only). Coal carbon capture new-builds are controled via "vre_techs" for overnight.
+- **`coal_ccs_retrofit`**: Enable coal with carbon capture retrofit (currently unsupported)
 - **`hydrogen_lines`**: Enable hydrogen transmission lines
+
+## Nuclear Reactor Growth Limits
+
+```yaml
+nuclear_reactors:
+  enable_growth_limit: true
+  max_annual_capacity_addition: 5000  # MW
+  base_year: 2020
+  # base_capacity: 50000  # (optional) MW
+```
+
+Controls nuclear capacity expansion:
+- **`enable_growth_limit`**: Enable/disable annual growth constraints on nuclear capacity
+- **`max_annual_capacity_addition`**: Maximum MW that can be added per year
+- **`base_year`**: Reference year for capacity calculations (should be ≤ first planning year)
+- **`base_capacity`**: (Optional) Base year total capacity in MW. If not set, auto-detected from base_year network
 
 ## Sector and component Switches 
 
@@ -349,6 +370,21 @@ Control which components to include in the model:
 - **`add_methanation`**: Include methanation processes
 - **`line_losses`**: Model transmission line losses
 - **`no_lines`**: Disable transmission lines (autartik)
+
+## Operational Reserves
+
+```yaml
+operational_reserve:
+  activate: false
+  epsilon_load: 0.02
+  epsilon_vres: 0.02
+  contingency: 300000  # MW
+```
+
+- **`activate`**: Enable operational reserve constraints
+- **`epsilon_load`**: Reserve fraction relative to load (2%)
+- **`epsilon_vres`**: Reserve fraction relative to variable renewable energy sources (2%)
+- **`contingency`**: Additional fixed reserve requirement (MW)
 
 ## Hydro Dams
 
@@ -402,6 +438,11 @@ solving:
     clip_p_max_pu: 0.01
     skip_iterations: false
     track_iterations: false
+    export_duals: true
+  solver:
+    name: gurobi
+    options: gurobi-default
+  mem: 80000  # MB
 ```
 
 - **`formulation`**: Network formulation (`kirchhoff` or `angles`)
@@ -411,6 +452,20 @@ solving:
 - **`min_iterations`/`max_iterations`**: Iteration bounds for iterative solving
 - **`clip_p_max_pu`**: Minimum capacity factor threshold
 - **`skip_iterations`/`track_iterations`**: Iteration control
+- **`export_duals`**: Export dual variables for post-processing
+- **`solver.name`**: Solver to use (gurobi, highs, cplex, cbc, glpk)
+- **`solver.options`**: Solver option preset name
+- **`mem`**: Memory allocation in MB
+
+### Solver Options
+
+Multiple solver presets are available:
+- **`gurobi-default`**: Standard barrier method with optimized settings
+- **`gurobi-numeric-focus`**: Prioritizes numeric stability over speed
+- **`gurobi-fallback`**: Uses Gurobi defaults with homogeneous barrier
+- **`highs-default`**: Open-source HiGHS solver configuration
+- **`cplex-default`**: IBM CPLEX barrier method
+- **`cbc-default`/`glpk-default`**: Used in CI testing
 
 ## Transmission Lines
 
@@ -433,35 +488,78 @@ lines:
 
 ```yaml
 security:
-  line_margin: 70  # Max percent of line capacity
+  line_security_margin: 70  # Max percent of line capacity
 ```
 
-- **`line_margin`**: Security margin for transmission lines (% of capacity)
+- **`line_security_margin`**: Security margin for transmission lines (% of capacity)
 
 ## Existing Capacities
 
 ```yaml
 existing_capacities:
   add: True
-  grouping_years: [1980,1985, 1990, 1995, 2000, 2005, 2010, 2015, 2019, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
-  threshold_capacity: 1
-  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'solar thermal', 'onwind', 'offwind','coal boiler','ground heat pump','nuclear']
+  grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
+  collapse_years: True
+  threshold_capacity: 80
+  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS", "biomass"]
+  node_assignment: simple
 ```
 
 Configuration for incorporating existing power plant capacities:
 - **`add`**: Include existing GEM capacities in the model. These are retired only if they reach end of life (determined based on the costs tech config)
 - **`grouping_years`**: Years for capacity grouping
-- **`threshold_capacity`**: Minimum capacity threshold
+- **`collapse_years`**: Treat grouped capacities as a single unit when preparing & solving network
+- **`threshold_capacity`**: Minimum capacity threshold (MW)
 - **`techs`**: Technologies to include from existing capacity data
+- **`node_assignment`**: Method for assigning plants to nodes (`simple` or `gps`)
 
 ## Region Configuration
 
 ```yaml
 fetch_regions:
-  simplify_tol: 0.5
+  simplify_tol:
+    eez: 0.5
+    land: 0.05
 ```
 
-- **`simplify_tol`**: Tolerance for region boundary simplification
+- **`simplify_tol.eez`**: Tolerance for EEZ (Exclusive Economic Zone) boundary simplification
+- **`simplify_tol.land`**: Tolerance for land region boundary simplification (lower value for better GPS plant assignment)
+
+## Node Configuration
+
+```yaml
+nodes:
+  split_provinces: False
+  exclude_provinces: ["Macau", "HongKong"]
+  splits:
+    InnerMongolia:
+      West: ["Hulunbuir", "Xing'an", "Tongliao", "Chifeng", "Xilin Gol"]
+      East: ["Alxa", "Baotou", "Baynnur", "Hohhot", "Ordos", "Ulaan Chab", "Wuhai"]
+```
+
+- **`split_provinces`**: Split provinces (admin level 1) using admin level 2 (counties/prefectures). Currently not fully supported by build_loads and reporting.
+- **`exclude_provinces`**: List of provinces to exclude from splitting
+- **`splits`**: Custom groupings of admin level 2 regions within provinces
+
+## Fuel Subsidies
+
+```yaml
+subsidies:
+  enabled: false
+  gas:
+    Guangdong: -10
+    Jiangsu: -10
+    Zhejiang: -10
+    Beijing: -11
+    Tianjin: -11
+    Shanghai: -11
+```
+
+Provincial fuel subsidies configuration:
+- **`enabled`**: Enable/disable fuel subsidy system
+- **`gas`**: Gas subsidies by province (EUR/MWh, negative values represent subsidies)
+
+Subsidies reduce the effective marginal cost of fuel in specific provinces.
 
 ## Input/Output Settings
 
@@ -512,11 +610,30 @@ Total efficiency = efficiency_static × (efficiency_per_1000km)^(distance_km/100
 
 ```yaml
 chp_parameters:
-  eff_th: 0.5304
-```
-CHP is treated either as a pre-defined values or using a back pressure coeficient (see DK Energy catalogue). For coal CHP use the back pressure (variable ratio). For gas CHP use pre-defined parameter.
+  coal:
+    total_eff: 0.9
+    heat_to_power: 1.5
+  gas:
+    total_eff: 0.9
+    heat_to_power: 0.9
+  OCGT:
+    heat_to_power: 1
+    total_eff: 0.82
 
-**TODO** this is legacy, check implentation is OK. CHP often runs heat first in China but code seems to maintain electric eff
+use_historical_efficiency:
+  coal_boiler: True
+```
+
+CHP efficiency parameters by technology:
+- **`coal.total_eff`**: Total combined efficiency for coal CHP (90%, from Danish Energy Tech Catalogue)
+- **`coal.heat_to_power`**: Heat-to-power ratio for extraction CHP (1.5, typical for China from Nature Energy 2024)
+- **`gas.total_eff`**: Total combined efficiency for CCGT CHP (90%)
+- **`gas.heat_to_power`**: Heat-to-power ratio for gas CHP (0.9)
+- **`OCGT.total_eff`**: Total efficiency for OCGT CHP (82%, from GE aeroderivative data)
+- **`OCGT.heat_to_power`**: Heat-to-power ratio for simple cycle gas turbine (1.0)
+- **`use_historical_efficiency.coal_boiler`**: Use historical efficiency values when building new coal boilers
+
+**Note**: Efficiency may decrease with reduced power output, which is not currently captured in the model.
 
 ## Solar Technology Parameters
 
@@ -543,13 +660,15 @@ When enabled, heat pump efficiency varies with ambient temperature conditions th
 ```yaml
 water_tanks:
   tes_tau:
-    decentral: 3. # days
-    central: 180 # days
+    decentral: 3.  # days
+    central: 180  # days
+  p_nom_over_e_nom: 0.2
 ```
 
 Standing loss parameters for thermal energy storage (water tanks):
 - **`decentral`**: Time constant for decentralized thermal storage (3 days)
 - **`central`**: Time constant for centralized thermal storage (180 days)
+- **`p_nom_over_e_nom`**: Maximum power-to-energy ratio (0.2 = 5-hour discharge time)
 
 The time constant (tau) determines the rate of thermal losses.
 
@@ -576,12 +695,12 @@ electricity:
 hydro:
   hydro_capital_cost: True
   marginal_cost:
-    reservoir: 0
-  PHS_max_hours: 24 # hours
+    reservoir: 0.  # EUR/MWh
+  PHS_max_hours: 24  # hours
 ```
 
 - **`hydro_capital_cost`**: Include capital costs for hydroelectric plants
-- **`marginal_cost.reservoir`**: Marginal cost of storage (defaults to zeo)
+- **`marginal_cost.reservoir`**: Marginal cost of reservoir operation (0 EUR/MWh)
 - **`PHS_max_hours`**: Maximum storage duration for pumped hydro storage (24 hours)
 
 
