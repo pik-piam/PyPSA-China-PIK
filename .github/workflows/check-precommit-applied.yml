@@ -1,0 +1,96 @@
+name: pre-commit
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout full repo history to ensure diff calculation works
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      # Cache pre-commit environments
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit on diff
+        id: run_precommit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -e
+
+          echo "🔍 Determining diff range..."
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            FROM_REF="$BASE_SHA"
+            TO_REF="$HEAD_SHA"
+            echo "PR event: checking diff from $FROM_REF to $TO_REF"
+          elif [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            FROM_REF="$BEFORE_SHA"
+            TO_REF="$HEAD_SHA"
+            echo "Push event: checking diff from $FROM_REF to $TO_REF"
+          else
+            # Edge case: unknown base; check all files
+            echo "⚠️  Unable to determine diff automatically — running on all files."
+            set +e
+            pre-commit run --all-files
+            EXIT_CODE=$?
+            set -e
+            echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Run pre-commit on diff
+          set +e
+          pre-commit run --from-ref "$FROM_REF" --to-ref "$TO_REF"
+          EXIT_CODE=$?
+          set -e
+
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+
+      - name: Check for uncommitted changes from pre-commit
+        run: |
+          if ! git diff --quiet; then
+            echo "❌ pre-commit hooks modified files."
+            echo "   Please run the following locally:"
+            echo ""
+            echo "       pre-commit install"
+            echo "       pre-commit run --all-files"
+            echo ""
+            echo "   Then commit and push the changes."
+            echo ""
+            git diff --color
+            exit 1
+          fi
+
+          echo "✔️ No changes detected. pre-commit checks passed."
+
+      - name: Fail if hooks returned errors
+        if: steps.run_precommit.outputs.exit_code != '0'
+        run: |
+          echo "❌ pre-commit hooks reported issues."
+          exit 1
