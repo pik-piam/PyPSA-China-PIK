@@ -11,7 +11,7 @@ paths:
   results_dir: "results/"
   costs_dir: "resources/data/costs/default"
   yearly_regional_load: 
-    ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
+    ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv" # 2025 load is repalced by the 2024 national bureau of statistics: https://data.stats.gov.cn/easyquery.htm?cn=E0103
     # conversion factor to MWh in case ac load file in another unit
     ac_to_mwh: 1
 #TODO merge into paths
@@ -25,6 +25,7 @@ scenario:
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
+    - 2020
     - 2025
     - 2030
     - 2035
@@ -314,7 +315,7 @@ solving:
 lines:
   line_length_factor: 1.25
   expansion:
-    transmission_limit: vopt # opt for optimal (unconstrained), v for volume, c for cost. eg. c1.25 limits cost increase to 25% of the base year
+    transmission_limit: c1.05 # opt for optimal (unconstrained), v for volume, c for cost. eg. c1.25 limits cost increase to 25% of the base year
     base_year: 2020 # base step year, the exp limit is relative to this year
 
 security:
@@ -326,7 +327,7 @@ existing_capacities:
   grouping_years: [1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050, 2055, 2060]
   collapse_years: True # Treat as a single unit when preparing & solving network 
   threshold_capacity: 80 # MW
-  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS"]
+  techs: ['coal','CHP coal', 'CHP gas', 'OCGT', 'CCGT', 'solar', 'onwind', 'offwind', 'nuclear', "PHS", "biomass"]
   node_assignment: simple # simple | gps
 
 
@@ -372,11 +373,12 @@ fetch_regions:
     land: 0.05
 
 subsidies:
+  enabled: false  # Set to false to disable fuel subsidies
   # New format: subsidies.fuel_type -> province -> value (EUR/MWh) only allowed for negative values (subsidies)
   gas:
-    Guangdong: -8
-    Jiangsu:  -8.5
-    Zhejiang: -9
-    Beijing: -10  
-    Tianjin: -10
-    Shanghai: -10
+    Guangdong: -10
+    Jiangsu:  -10
+    Zhejiang: -10
+    Beijing: -11  
+    Tianjin: -11
+    Shanghai: -11

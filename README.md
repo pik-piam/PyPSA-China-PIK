@@ -1,5 +1,9 @@
 # PyPSA-China：An Open-Source Optimisation model of the Chinese Energy System
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://pik-piam.github.io/PyPSA-China-PIK/)
+[![GitHub release](https://img.shields.io/github/v/release/pik-piam/PyPSA-China-PIK)](https://github.com/pik-piam/PyPSA-China-PIK/releases)
+
 PyPSA-China (PIK) is a open-source model of the Chinese energy system covering electricity and heat. It co-optimizes dispatch and investments under user-set constraints, such as limits to environmental impacts, to minimize costs. The model works at provincial resolution and can simulate a full year at hourly resolution.
 
 ## PIK version
@@ -8,11 +12,19 @@ This is the PIK implementation of the PyPSA-China power model, first published b
 ## Overview
 PyPSA-China should be understood as a modelling worklow, using snakemake as workflow manager, around the [PyPSA python power system analysis](https://pypsa.org/) package. The workflow collects data, builds the power system network and plots the results. It is akin to its more mature sister project, [PyPSA-EUR](https://github.com/PyPSA/pypsa-eur), from which it is derived.
 
-Unlike PyPSA-EUR, which simplifies high resolution data into a user-defined network size, the PyPSA-China network is currently fixed to one node per province. This is in large part due to data availability issues.
+Unlike PyPSA-EUR, which simplifies high resolution electricity grid data to a user-defined network size, the PyPSA-China network is currently fixed to one node per province (with a 340 node version in the works). This is in large part due to data availability issues.
 
 The PyPSA can perform a number of different study types (investment decision, operational decisions, simulate AC power flows). Currently only capacity expansion problems are explicitly implemented in PyPSA-China.
 
 The PyPSA-CHINA-PIK is currently under development. Please contact us if you intend to use it for publications.
+
+## Quick Links
+
+- 📖 [Documentation](https://pik-piam.github.io/PyPSA-China-PIK/)
+- 📝 [Changelog](CHANGELOG.md)
+- 🚀 [Releases](https://github.com/pik-piam/PyPSA-China-PIK/releases)
+- 🤝 [Contributing Guide](CONTRIBUTING.md)
+- 📋 [Release Guide](docs/release-guide.md) (for maintainers)
 
 # License
 The code is released under the [MIT license](https://github.com/irr-github/PyPSA-China-PIK/blob/main/LICENSES/MIT.txt), however some of the data used is more restrictive. 
@@ -25,27 +37,6 @@ The documentation can be found at https://pik-piam.github.io/PyPSA-China-PIK/
 ## Installation
 
 An installation guide is provided at https://pik-piam.github.io/PyPSA-China-PIK/ 
-
-> [!NOTE] Set-up on the PIK cluster
->    Gurobi license activation from the compute nodes requires internet access. The workaround is an ssh tunnel to the login nodes, which can be set-up on the compute nodes with
-```bash
-    # interactive session on the compute nodes
-    srun --qos=priority --pty bash
-    # key pair gen (here ed25518 but can be rsa)
-    ssh-keygen -t ed25519 -f ~/.ssh/id_rsa.cluster_internal_exchange -C "$USER@cluster_internal_exchange"
-    # leave the compute nodes
-    exit
-```
-
-> You will then need to add the contents of the public key `~/.ssh/id_rsa.cluster_internal_exchange.pub` to your authorised `~/.ssh/authorized_keys`, eg. with `cat <key_name> >> authorized_keys`
-
-> TROUBLE SHOOTING
-> you may have some issues with the solver tunnel failing (permission denied). One of these two steps should solve it
-> option 1: name the exchange key `id_rsa`.
-> option 2: copy the contents to authorized_keys from the compute nodes (from the ssh_dir `srun --qos=priority --pty bash; cat <key_name> >> authorized_keys;exit`)
-
-> In addition you should have your .profile & .bashrc setup as per https://gitlab.pik-potsdam.de/rse/rsewiki/-/wikis/Cluster-Access
-and add `module load anaconda/2024.10` (or latest) to it
 
 ## Getting the data
 You will need to enable data retrieval in the config

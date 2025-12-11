@@ -20,7 +20,7 @@ plotting:
     figsize: [10, 8]
     figsize_w_additions: [14, 8]
     boundaries: [71, 135., 10, 56.]
-    bus_size_factor: 1.e+10
+    bus_size_factor: 2.e+10
     linewidth_factor: 6.e+3
     bus_size_factor_demand: 2.e+7
     bus_size_factor_heat: 5.e+4
@@ -33,9 +33,9 @@ plotting:
   energy_map:
     figsize: [9, 8]
     boundaries: [71, 135., 0, 56.]
-    bus_size_factor: 4.e+8
+    bus_size_factor: 8.e+8
     bus_size_factor_heat: 2.e+8
-    linewidth_factor: 7.5e+3
+    linewidth_factor: 1.2e+4
     linewidth_factor_heat: 5.e+3
     bus_size_factor_demand: 2.e+7
     min_edge_capacity : 5.e+2 # MW

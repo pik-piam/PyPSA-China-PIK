@@ -318,7 +318,7 @@ def add_fuel_subsidies(n: pypsa.Network, subsidy_config: dict):
         subs_electricity = subs_to_apply / efficiencies
         
         # Subtract subsidy from marginal cost (negative subsidy = cost reduction)
-        n.generators.loc[mask, "marginal_cost"] -= subs_electricity
+        n.generators.loc[mask, "marginal_cost"] += subs_electricity
         
         logger.info(
             f"Applied subsidies for carrier '{carrier}' to {len(mask)} generators "
@@ -1700,8 +1700,11 @@ def prepare_network(
     
     # Apply fuel subsidies as post-processing step
     subsidy_config = config.get("subsidies", {})
-    if subsidy_config:
-        add_fuel_subsidies(network, subsidy_config)
+    if subsidy_config and subsidy_config.get("enabled", True):
+        # Remove 'enabled' key before passing to add_fuel_subsidies
+        subsidy_config_clean = {k: v for k, v in subsidy_config.items() if k != "enabled"}
+        if subsidy_config_clean:
+            add_fuel_subsidies(network, subsidy_config_clean)
     
     return network
 

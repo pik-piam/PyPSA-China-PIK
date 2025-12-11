@@ -36,8 +36,30 @@ sns.set_theme("paper", style="whitegrid")
 logger = logging.getLogger(__name__)
 
 
+def format_axis_label(name: str, unit: str) -> str:
+    """Format axis label by cleaning name and conditionally adding unit.
+
+    Args:
+        name (str): The name/description for the axis.
+        unit (str): The unit of measurement (may be empty/None).
+
+    Returns:
+        str: Formatted label with underscores replaced by spaces,
+            capitalized, and unit only included if non-empty.
+    """
+    clean_name = name.replace("_", " ").capitalize()
+    if unit and unit.strip():
+        return f"{clean_name} [{unit}]"
+    return clean_name
+
+
 def plot_static_per_carrier(
-    ds: pd.Series, ax: axes.Axes, colors: pd.Series, drop_zero_vals=True, add_labels=True
+    ds: pd.Series,
+    ax: axes.Axes,
+    colors: pd.Series,
+    drop_zero_vals=True,
+    add_labels=True,
+    autofigsize=True,
 ):
     """Generic function to plot different statics
 
@@ -46,20 +68,43 @@ def plot_static_per_carrier(
         ax (matplotlib.axes.Axes): plotting axes
         colors (pd.Series): colors for the carriers
         drop_zero_vals (bool, optional): Drop zeroes from data. Defaults to True.
-        add_labels (bool, optional): Add value labels on bars. If None, reads from config. Defaults to None.
+        add_labels (bool, optional): Add value labels on bars. Defaults to True.
+        autofigsize (bool, optional): Automatically size figure based on number
+            of bars. Defaults to True.
     """
-    if not ax:
-        fig, ax = plt.subplots()
-    else:
-        fig = ax.get_figure()
-
     if drop_zero_vals:
         ds = ds[ds != 0]
     ds = ds.dropna()
+
+    n_bars = len(ds)
+
+    # Determine figure size
+    if autofigsize:
+        bar_height = 0.4  # Height per bar in inches
+        fig_height = max(4, min(n_bars * bar_height, 16))  # Between 4 and 16 inches
+        figsize = (8, fig_height)
+    else:
+        figsize = None  # Use matplotlib default
+
+    # Create or get figure
+    if not ax:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig = ax.get_figure()
+        if autofigsize:
+            fig.set_size_inches(8, fig_height)
+
     c = colors[ds.index.get_level_values("carrier")]
     ds = ds.pipe(rename_index)
-    label = f"{ds.attrs['name']} [{ds.attrs['unit']}]"
-    ds.plot.barh(color=c.values, xlabel=label, ax=ax)
+    label = format_axis_label(ds.attrs["name"], ds.attrs["unit"])
+    ds.plot.barh(color=c.values, xlabel=label, ax=ax, alpha=0.9)
+
+    # Remove y-axis label
+    ax.set_ylabel("")
+
+    # Adjust spacing between bars
+    ax.margins(y=0.01)
+
     if add_labels:
         ymax = ax.get_xlim()[1] * 1.05
         for i, (index, value) in enumerate(ds.items()):
@@ -92,7 +137,8 @@ def filter_small_caps(n: pypsa.Network, threshold=100):
 
 def set_link_output_capacities(n: pypsa.Network, carriers: list) -> pd.DataFrame:
     """Set link capacity to output and not input.
-    PyPSA uses input link capacities but typically want to report output capacities (e.g MWel)
+    PyPSA uses input link capacities but typically want to report output
+    capacities (e.g MWel)
 
     Args:
         n (pypsa.Network): The PyPSA network instance.
@@ -104,7 +150,8 @@ def set_link_output_capacities(n: pypsa.Network, carriers: list) -> pd.DataFrame
     # Temporarily save original link capacities
     original_p_nom_opt = n.links.p_nom_opt.copy()
 
-    # For links where bus1 is AC, multiply capacity by efficiency coefficient to get AC side capacity
+    # For links where bus1 is AC, multiply capacity by efficiency
+    # coefficient to get AC side capacity
     ac_links = n.links[n.links.bus1.map(n.buses.carrier).isin(carriers)].index
     n.links.loc[ac_links, "p_nom_opt"] *= n.links.loc[ac_links, "efficiency"]
 
@@ -144,9 +191,10 @@ def add_second_xaxis(data: pd.Series, ax, label, **kwargs):
     kwargs.update(defaults)
 
     ax2 = ax.twiny()
-    # # y_pos creates a sequence of integers (e.g., [0, 1, 2, 3]) to serve as distinct vertical positions
-    # for each data point on the shared Y-axis. This is necessary because data.values are plotted
-    # horizontally on the secondary X-axis (ax2), requiring vertical separation for clarity.
+    # y_pos creates a sequence of integers (e.g., [0, 1, 2, 3]) to serve
+    # as distinct vertical positions for each data point on the shared Y-axis.
+    # This is necessary because data.values are plotted horizontally on the
+    # secondary X-axis (ax2), requiring vertical separation for clarity.
     y_pos = range(len(data))
 
     ax2.plot(
@@ -281,7 +329,7 @@ def plot_capacity_factor(
         )
 
     ax.set_yticks(list(x_pos))
-    ax.set_yticklabels(cf_filtered.index)
+    ax.set_yticklabels([label.capitalize() for label in cf_filtered.index])
     ax.set_xlabel("Capacity Factor")
     ax.set_xlim(0, max(cf_filtered.max(), theo_cf_filtered.max()) * 1.1)
     ax.grid(False)
@@ -410,6 +458,10 @@ if __name__ == "__main__":
     set_plot_test_backend(snakemake.config)
 
     n = pypsa.Network(snakemake.input.network)
+    # rename "AC" link to Transmission
+    hv_mask = n.links.carrier == "AC"
+    n.links.loc[hv_mask, "carrier"] = "Transmission Lines"
+
     carriers = snakemake.params.carriers
     config = snakemake.config["plotting"]
     outp_dir = snakemake.output.stats_dir
@@ -474,13 +526,13 @@ if __name__ == "__main__":
             "post": lambda ds: ds.groupby(["carrier", "bus_carrier"]).sum(),
             "conversion": PLOT_CAP_UNITS,
             "extra": None,
+            "unit": PLOT_CAP_LABEL,
             "filename": "optimal_capacity.png",
         },
         "capital_expenditure": {
             "calc": n.statistics.capex,
             "pre": None,
             "post": lambda ds: ds.groupby(["carrier", "bus_carrier"]).sum(),
-            "unit": None,
             "unit": "bn eur",
             "conversion": 1e9,
             "extra": None,
@@ -564,7 +616,8 @@ if __name__ == "__main__":
         if stat == "optimal_capacity":
             pass
         # Calculate
-        ds = settings["calc"](groupby=grouper, bus_carrier=carriers, nice_names=False).dropna()
+        _carriers = filter_carriers(n, carriers)
+        ds = settings["calc"](groupby=grouper, carrier=_carriers, nice_names=False).dropna()
 
         conversion = settings.get("conversion", 1)
         ds /= conversion

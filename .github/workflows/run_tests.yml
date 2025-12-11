@@ -4,53 +4,54 @@ name: CI Workflow for Snakemake and pytest
 on:
   push:
     branches:
-      - main  # Trigger the workflow when pushing to the main branch
+      - main # Trigger the workflow when pushing to the main branch
       - py-tests # when pushing to py-tests branch for dev
   pull_request:
     branches:
-      - main  # Trigger on pull requests to main branch
+      - main # Trigger on pull requests to main branch
+      - develop # also test develop PRs
 
 jobs:
   run-tests:
-    runs-on: ubuntu-latest  # Set the environment to Ubuntu
+    runs-on: ubuntu-latest # Set the environment to Ubuntu
 
     steps:
-    # Step 1: Checkout the repository
-    - uses: actions/checkout@v4
+      # Step 1: Checkout the repository
+      - uses: actions/checkout@v4
 
-    # Step 2: Install Miniforge (no env creation here)
-    - name: Setup Miniforge
-      uses: conda-incubator/setup-miniconda@v3
-      with:
-        miniforge-version: latest
-        installation-dir: /home/runner/miniforge3
-        use-mamba: true
-        auto-activate-base: false
-        channels: conda-forge,bioconda
-        channel-priority: strict
-        pkgs-dirs: /home/runner/.conda/pkgs
+      # Step 2: Install Miniforge (no env creation here)
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          installation-dir: /home/runner/miniforge3
+          use-mamba: true
+          auto-activate-base: false
+          channels: conda-forge,bioconda
+          channel-priority: strict
+          pkgs-dirs: /home/runner/.conda/pkgs
 
-    # Step 3: Restore full Conda environment cache AFTER setup
-    - name: Restore Conda env cache
-      id: env-cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          /home/runner/miniforge3/envs/pypsa-china
-          /home/runner/.conda/pkgs
-          /home/runner/.cache/mamba
-        key: ${{ runner.os }}-conda-env-${{ hashFiles('workflow/envs/environment.yaml') }}
+      # Step 3: Restore full Conda environment cache AFTER setup
+      - name: Restore Conda env cache
+        id: env-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /home/runner/miniforge3/envs/pypsa-china
+            /home/runner/.conda/pkgs
+            /home/runner/.cache/mamba
+          key: ${{ runner.os }}-conda-env-${{ hashFiles('workflow/envs/environment.yaml') }}
 
-    # Step 4: Create env only if cache miss
-    - name: Create env
-      if: steps.env-cache.outputs.cache-hit != 'true'
-      shell: bash -el {0}
-      run: |
-        conda config --add envs_dirs /home/runner/miniforge3/envs
-        mamba env create -n pypsa-china -f workflow/envs/environment.yaml
+      # Step 4: Create env only if cache miss
+      - name: Create env
+        if: steps.env-cache.outputs.cache-hit != 'true'
+        shell: bash -el {0}
+        run: |
+          conda config --add envs_dirs /home/runner/miniforge3/envs
+          mamba env create -n pypsa-china -f workflow/envs/environment.yaml
 
-    # Step 5: Run tests
-    - name: Run pytest
-      shell: bash -el {0}
-      run: |
-        conda run -n pypsa-china pytest -v -s
+      # Step 5: Run tests
+      - name: Run pytest
+        shell: bash -el {0}
+        run: |
+          conda run -n pypsa-china pytest -v -s

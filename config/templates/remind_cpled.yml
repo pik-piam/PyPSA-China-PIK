@@ -54,7 +54,7 @@ remind_etl:
     - name: loads
       method: "convert_load"
       frames:
-        ac_load: p32_load
+        ac_load: p32_load_sector # in the remind output, changed from p32_load
         h2_el_load: null
         heat_el_load: null
     # using mapping table to assign tech groups to remind techs
@@ -94,7 +94,7 @@ remind_etl:
         currency_conversion: 0.9 # approx USD2017 to EUR2015
   disagg:
     - name: disagg_load
-      method: "disagg_load_ref"
+      method: "disagg_load_ref" #changed from disagg_acload_ref to disagg_load_ref
     - name: harmonize_model_caps
       method: harmonize_capacities
     - name: available_cap
