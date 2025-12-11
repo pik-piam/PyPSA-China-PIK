@@ -824,10 +824,32 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#nuclear-reactor-growth-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nuclear Reactor Growth Limits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#sector-and-component-switches" class="md-nav__link">
     <span class="md-ellipsis">
       
         Sector and component Switches
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operational-reserves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operational Reserves
       
     </span>
   </a>
@@ -879,6 +901,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#solver-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Solver Options
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -922,6 +955,28 @@
     <span class="md-ellipsis">
       
         Region Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#node-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fuel-subsidies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fuel Subsidies
       
     </span>
   </a>
@@ -2708,7 +2763,7 @@
 <p><strong>File Organization</strong>: Configuration files should be placed in the <code>config/</code> directory.</p>
 </li>
 <li>
-<p><strong>Customization</strong>: Do not edit <code>default_config.yaml</code>. Overwrite the variables you need in <code>my_config.yaml</code>. See <a href="../running">running section</a></p>
+<p><strong>Customization</strong>: Do not edit <code>default_config.yaml</code>. Overwrite the variables you need in <code>my_config.yaml</code>. See <a href="../running">running section</a>. Then run <code>snakemake --configfile config/my_config.yaml</code></p>
 </li>
 <li>
 <p><strong>Technology Configuration</strong>: Additional technology parameters are defined in separate files in  <code>config/technology_config.yaml</code> </p>
@@ -2720,13 +2775,13 @@
 <h2 id="run-configuration">Run Configuration</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">run</span><span class="p">:</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unamed_run</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">is_remind_coupled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">is_remind_coupled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nt">foresight</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;overnight&quot;</span>
 </code></pre></div>
 <ul>
 <li><strong><code>run.name</code></strong>: Identifier for the model run. Used for organizing results and logs.</li>
-<li><strong><code>run.is_remind_coupled</code></strong>: Boolean indicating whether the model run is coupled with REMIND. Set to <code>false</code> for standalone PyPSA-China runs. True overwrites numerous settings.</li>
-<li><strong><code>foresight</code></strong>: ["overnight"|"myopic"] Set to <code>"overnight"</code> for perfect foresight within one time horizon. Each horizon is solved independently. Set to <code>myopic</code> to obtain a sequential pathway of overnight horizons, with the result of the previous horizon acting as the brownfield for the next horizon.</li>
+<li><strong><code>run.is_remind_coupled</code></strong>: Boolean indicating whether the model run is coupled with REMIND. Set to <code>false</code> for standalone PyPSA-China runs. <code>True</code> overwrites numerous settings and affects the behaviour of the path manager.</li>
+<li><strong><code>foresight</code></strong>: ["overnight"] Set to <code>"overnight"</code> for perfect foresight within one time horizon. Each horizon is solved independently. The <code>myopic</code> mode is currently unsupported.</li>
 </ul>
 <h2 id="file-paths">File Paths</h2>
 <p><div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">paths</span><span class="p">:</span>
@@ -2889,10 +2944,13 @@ Controls the temporal resolution of the model:
 - <strong><code>capacity_per_sqkm</code></strong>: Max installable Power density (MW/km²)
 - <strong><code>potential</code></strong>: Potential calculation method (<code>simple</code> or <code>conservative</code>)
 - <strong><code>correction_factor</code></strong>: Technology-specific correction factor
-- <strong><code>natura</code></strong>: Consider nature protection areas
+- <strong><code>natural_reserves</code></strong>: Consider nature protection areas
 - <strong><code>max_depth</code></strong>: Maximum water depth for offshore wind (m)
+- <strong><code>max_altitude</code></strong>: Maximum altitude at which technolgoy can be built.
+- <strong><code>max_slope</code></strong>: Maximum terrain slope for renewables (%)
 - <strong><code>clip_p_max_pu</code></strong>: Minimum capacity factor threshold
-- <strong><code>min_p_nom_max</code></strong>: Minimum installable capacity threshold</p>
+- <strong><code>min_p_nom_max</code></strong>: Minimum installable capacity threshold
+- <strong><code>land_cover_codes</code></strong>: Copernicus LC100 land cover codes for allowed areas</p>
 <p><div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nt">renewable_potential_cutoff</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span><span class="w">  </span><span class="c1"># MW</span>
 </code></pre></div>
 Skip locations with potential below this threshold to reduce problem size.</p>
@@ -2934,26 +2992,40 @@ Skip locations with potential below this threshold to reduce problem size.</p>
 - <strong><code>bus_carrier</code></strong>: Mapping of suffixes to carrier types</p>
 <h2 id="technology-categories">Technology Categories</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">Techs</span><span class="p">:</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">vre_techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;onwind&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;offwind&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;solar&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;solar</span><span class="nv"> </span><span class="s">thermal&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;hydroelectricity&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;nuclear&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;biomass&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;beccs&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;heat</span><span class="nv"> </span><span class="s">pump&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;resistive</span><span class="nv"> </span><span class="s">heater&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;Sabatier&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;H2</span><span class="nv"> </span><span class="s">CHP&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;fuel</span><span class="nv"> </span><span class="s">cell&quot;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="nt">conv_techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;OCGT&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;CCGT&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;CHP</span><span class="nv"> </span><span class="s">gas&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;gas</span><span class="nv"> </span><span class="s">boiler&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;coal</span><span class="nv"> </span><span class="s">boiler&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;coal</span><span class="nv"> </span><span class="s">power</span><span class="nv"> </span><span class="s">plant&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;CHP</span><span class="nv"> </span><span class="s">coal&quot;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span><span class="nt">store_techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;H2&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;battery&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;water</span><span class="nv"> </span><span class="s">tanks&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;PHS&quot;</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="nt">coal_cc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="nt">hydrogen_lines</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="nt">vre_techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;onwind&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;offwind&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;solar&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;solar</span><span class="nv"> </span><span class="s">thermal&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;hydroelectricity&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;nuclear&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;biomass&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;beccs&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;heat</span><span class="nv"> </span><span class="s">pump&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;resistive</span><span class="nv"> </span><span class="s">heater&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;Sabatier&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;fuel</span><span class="nv"> </span><span class="s">cell&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;H2</span><span class="nv"> </span><span class="s">CHP&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="nt">non_dispatchable</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;onwind&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;offwind&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;solar&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;solar</span><span class="nv"> </span><span class="s">thermal&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span><span class="nt">conv_techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;CCGT&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;CHP</span><span class="nv"> </span><span class="s">gas&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;CHP</span><span class="nv"> </span><span class="s">OCGT</span><span class="nv"> </span><span class="s">gas&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;gas</span><span class="nv"> </span><span class="s">boiler&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;coal</span><span class="nv"> </span><span class="s">boiler&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;coal</span><span class="nv"> </span><span class="s">power</span><span class="nv"> </span><span class="s">plant&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;CHP</span><span class="nv"> </span><span class="s">coal&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;OCGT&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="nt">store_techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;H2&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;battery&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;water</span><span class="nv"> </span><span class="s">tanks&quot;</span><span class="p p-Indicator">,</span><span class="s">&quot;PHS&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="nt">coal_ccs_retrofit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">  </span><span class="nt">hydrogen_lines</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 <p>Technology categorization:
-- <strong><code>vre_techs</code></strong>: Variable renewable energy technologies
-- <strong><code>conv_techs</code></strong>: Conventional generation technologies
+- <strong><code>vre_techs</code></strong>: Variable renewable energy and clean technologies
+- <strong><code>non_dispatchable</code></strong>: Technologies without dispatch control (weather-dependent)
+- <strong><code>conv_techs</code></strong>: Conventional generation technologies (includes CHP OCGT gas)
 - <strong><code>store_techs</code></strong>: Storage technologies
-- <strong><code>coal_cc</code></strong>: Enable coal with carbon capture retrofit (myopic only). Coal carbon capture new-builds are controled via "vre_techs" for overnight.
+- <strong><code>coal_ccs_retrofit</code></strong>: Enable coal with carbon capture retrofit (currently unsupported)
 - <strong><code>hydrogen_lines</code></strong>: Enable hydrogen transmission lines</p>
+<h2 id="nuclear-reactor-growth-limits">Nuclear Reactor Growth Limits</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">nuclear_reactors</span><span class="p">:</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="nt">enable_growth_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="nt">max_annual_capacity_addition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5000</span><span class="w">  </span><span class="c1"># MW</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span><span class="nt">base_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">  </span><span class="c1"># base_capacity: 50000  # (optional) MW</span>
+</code></pre></div>
+<p>Controls nuclear capacity expansion:
+- <strong><code>enable_growth_limit</code></strong>: Enable/disable annual growth constraints on nuclear capacity
+- <strong><code>max_annual_capacity_addition</code></strong>: Maximum MW that can be added per year
+- <strong><code>base_year</code></strong>: Reference year for capacity calculations (should be ≤ first planning year)
+- <strong><code>base_capacity</code></strong>: (Optional) Base year total capacity in MW. If not set, auto-detected from base_year network</p>
 <h2 id="sector-and-component-switches">Sector and component Switches</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">heat_coupling</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nt">add_biomass</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="nt">add_hydro</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="nt">add_H2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="nt">add_methanation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="nt">line_losses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="nt">no_lines</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nt">heat_coupling</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="nt">add_biomass</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="nt">add_hydro</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="nt">add_H2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="nt">add_methanation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="nt">line_losses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="nt">no_lines</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 </code></pre></div>
 <p>Control which components to include in the model:
 - <strong><code>heat_coupling</code></strong>: Enable heat sector coupling
@@ -2963,19 +3035,32 @@ Skip locations with potential below this threshold to reduce problem size.</p>
 - <strong><code>add_methanation</code></strong>: Include methanation processes
 - <strong><code>line_losses</code></strong>: Model transmission line losses
 - <strong><code>no_lines</code></strong>: Disable transmission lines (autartik)</p>
+<h2 id="operational-reserves">Operational Reserves</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nt">operational_reserve</span><span class="p">:</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="nt">activate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="nt">epsilon_load</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.02</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">  </span><span class="nt">epsilon_vres</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.02</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span><span class="nt">contingency</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">300000</span><span class="w">  </span><span class="c1"># MW</span>
+</code></pre></div>
+<ul>
+<li><strong><code>activate</code></strong>: Enable operational reserve constraints</li>
+<li><strong><code>epsilon_load</code></strong>: Reserve fraction relative to load (2%)</li>
+<li><strong><code>epsilon_vres</code></strong>: Reserve fraction relative to variable renewable energy sources (2%)</li>
+<li><strong><code>contingency</code></strong>: Additional fixed reserve requirement (MW)</li>
+</ul>
 <h2 id="hydro-dams">Hydro Dams</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nt">hydro_dams</span><span class="p">:</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="nt">dams_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/dams_large.csv&quot;</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="nt">inflow_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle&quot;</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">  </span><span class="nt">inflow_date_start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1979-01-01&quot;</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">  </span><span class="nt">inflow_date_end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2017-01-01&quot;</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">  </span><span class="nt">reservoir_initial_capacity_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/reservoir_initial_capacity.pickle&quot;</span>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">  </span><span class="nt">reservoir_effective_capacity_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/reservoir_effective_capacity.pickle&quot;</span>
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">  </span><span class="nt">river_links_stations</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">  </span><span class="nt">p_nom_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/p_nom/hydro_p_nom.h5&quot;</span>
-<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">  </span><span class="nt">p_max_pu_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/p_nom/hydro_p_max_pu.h5&quot;</span>
-<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">  </span><span class="nt">p_max_pu_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hydro_p_max_pu&quot;</span>
-<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">  </span><span class="nt">damn_flows_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/dam_flow_links.csv&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nt">hydro_dams</span><span class="p">:</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span><span class="nt">dams_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/dams_large.csv&quot;</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span><span class="nt">inflow_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/daily_hydro_inflow_per_dam_1979_2016_m3.pickle&quot;</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">  </span><span class="nt">inflow_date_start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1979-01-01&quot;</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">  </span><span class="nt">inflow_date_end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2017-01-01&quot;</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="w">  </span><span class="nt">reservoir_initial_capacity_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/reservoir_initial_capacity.pickle&quot;</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="w">  </span><span class="nt">reservoir_effective_capacity_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/reservoir_effective_capacity.pickle&quot;</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">  </span><span class="nt">river_links_stations</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="w">  </span><span class="nt">p_nom_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/p_nom/hydro_p_nom.h5&quot;</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="w">  </span><span class="nt">p_max_pu_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/p_nom/hydro_p_max_pu.h5&quot;</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="w">  </span><span class="nt">p_max_pu_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hydro_p_max_pu&quot;</span>
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="w">  </span><span class="nt">damn_flows_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;resources/data/hydro/dam_flow_links.csv&quot;</span>
 </code></pre></div>
 <p>Hydroelectric dam configuration:
 - <strong><code>dams_path</code></strong>: CSV file with dam locations and characteristics
@@ -2986,25 +3071,30 @@ Skip locations with potential below this threshold to reduce problem size.</p>
 - <strong><code>p_max_pu_path</code></strong>: Maximum capacity factor time series
 - <strong><code>damn_flows_path</code></strong>: Dam flow connections</p>
 <h2 id="hydrogen-storage">Hydrogen Storage</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nt">H2</span><span class="p">:</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="nt">geo_storage_nodes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;Sichuan&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Chongqing&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Hubei&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Jiangxi&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Anhui&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Jiangsu&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Shandong&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Guangdong&quot;</span><span class="p p-Indicator">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nt">H2</span><span class="p">:</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="nt">geo_storage_nodes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;Sichuan&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Chongqing&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Hubei&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Jiangxi&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Anhui&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Jiangsu&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Shandong&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Guangdong&quot;</span><span class="p p-Indicator">]</span>
 </code></pre></div>
 <ul>
 <li><strong><code>geo_storage_nodes</code></strong>: Provinces with geological hydrogen storage potential</li>
 </ul>
 <h2 id="solving-configuration">Solving Configuration</h2>
 <h3 id="general-options">General Options</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nt">solving</span><span class="p">:</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span><span class="nt">options</span><span class="p">:</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">    </span><span class="nt">formulation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kirchhoff</span>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">    </span><span class="nt">load_shedding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">    </span><span class="nt">voll</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e5</span>
-<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="w">    </span><span class="nt">noisy_costs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="w">    </span><span class="nt">min_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
-<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">    </span><span class="nt">max_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span>
-<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="w">    </span><span class="nt">clip_p_max_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span>
-<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="w">    </span><span class="nt">skip_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="w">    </span><span class="nt">track_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nt">solving</span><span class="p">:</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="nt">options</span><span class="p">:</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">    </span><span class="nt">formulation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kirchhoff</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span><span class="nt">load_shedding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">    </span><span class="nt">voll</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e5</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">    </span><span class="nt">noisy_costs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="w">    </span><span class="nt">min_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="w">    </span><span class="nt">max_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="w">    </span><span class="nt">clip_p_max_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="w">    </span><span class="nt">skip_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="w">    </span><span class="nt">track_iterations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="w">    </span><span class="nt">export_duals</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="w">  </span><span class="nt">solver</span><span class="p">:</span>
+<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gurobi</span>
+<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="w">    </span><span class="nt">options</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gurobi-default</span>
+<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a><span class="w">  </span><span class="nt">mem</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80000</span><span class="w">  </span><span class="c1"># MB</span>
 </code></pre></div>
 <ul>
 <li><strong><code>formulation</code></strong>: Network formulation (<code>kirchhoff</code> or <code>angles</code>)</li>
@@ -3014,13 +3104,25 @@ Skip locations with potential below this threshold to reduce problem size.</p>
 <li><strong><code>min_iterations</code>/<code>max_iterations</code></strong>: Iteration bounds for iterative solving</li>
 <li><strong><code>clip_p_max_pu</code></strong>: Minimum capacity factor threshold</li>
 <li><strong><code>skip_iterations</code>/<code>track_iterations</code></strong>: Iteration control</li>
+<li><strong><code>export_duals</code></strong>: Export dual variables for post-processing</li>
+<li><strong><code>solver.name</code></strong>: Solver to use (gurobi, highs, cplex, cbc, glpk)</li>
+<li><strong><code>solver.options</code></strong>: Solver option preset name</li>
+<li><strong><code>mem</code></strong>: Memory allocation in MB</li>
 </ul>
+<h3 id="solver-options">Solver Options</h3>
+<p>Multiple solver presets are available:
+- <strong><code>gurobi-default</code></strong>: Standard barrier method with optimized settings
+- <strong><code>gurobi-numeric-focus</code></strong>: Prioritizes numeric stability over speed
+- <strong><code>gurobi-fallback</code></strong>: Uses Gurobi defaults with homogeneous barrier
+- <strong><code>highs-default</code></strong>: Open-source HiGHS solver configuration
+- <strong><code>cplex-default</code></strong>: IBM CPLEX barrier method
+- <strong><code>cbc-default</code>/<code>glpk-default</code></strong>: Used in CI testing</p>
 <h2 id="transmission-lines">Transmission Lines</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="nt">lines</span><span class="p">:</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="nt">line_length_factor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.25</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="nt">expansion</span><span class="p">:</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">    </span><span class="nt">transmission_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vopt</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">    </span><span class="nt">base_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nt">lines</span><span class="p">:</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="nt">line_length_factor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.25</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="nt">expansion</span><span class="p">:</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">    </span><span class="nt">transmission_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vopt</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">    </span><span class="nt">base_year</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020</span>
 </code></pre></div>
 <ul>
 <li><strong><code>line_length_factor</code></strong>: Line length increase factor, representing impossibility to build perfectly straight</li>
@@ -3031,36 +3133,72 @@ Skip locations with potential below this threshold to reduce problem size.</p>
 <li><strong><code>expansion.base_year</code></strong>: Reference year for expansion limits (to calculate max exp). Should be year of input network topology file (which has capacities)</li>
 </ul>
 <h2 id="security-constraints">Security Constraints</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nt">security</span><span class="p">:</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="nt">line_margin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">70</span><span class="w">  </span><span class="c1"># Max percent of line capacity</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nt">security</span><span class="p">:</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">  </span><span class="nt">line_security_margin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">70</span><span class="w">  </span><span class="c1"># Max percent of line capacity</span>
 </code></pre></div>
 <ul>
-<li><strong><code>line_margin</code></strong>: Security margin for transmission lines (% of capacity)</li>
+<li><strong><code>line_security_margin</code></strong>: Security margin for transmission lines (% of capacity)</li>
 </ul>
 <h2 id="existing-capacities">Existing Capacities</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nt">existing_capacities</span><span class="p">:</span>
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="nt">add</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="nt">grouping_years</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">1980</span><span class="p p-Indicator">,</span><span class="nv">1985</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1990</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1995</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2000</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2005</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2010</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2015</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2019</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2020</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2025</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2030</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2035</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2040</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2045</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2050</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2055</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2060</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span><span class="nt">threshold_capacity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
-<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">  </span><span class="nt">techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;coal&#39;</span><span class="p p-Indicator">,</span><span class="s">&#39;CHP</span><span class="nv"> </span><span class="s">coal&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;CHP</span><span class="nv"> </span><span class="s">gas&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;OCGT&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;CCGT&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;solar&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;solar</span><span class="nv"> </span><span class="s">thermal&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;onwind&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;offwind&#39;</span><span class="p p-Indicator">,</span><span class="s">&#39;coal</span><span class="nv"> </span><span class="s">boiler&#39;</span><span class="p p-Indicator">,</span><span class="s">&#39;ground</span><span class="nv"> </span><span class="s">heat</span><span class="nv"> </span><span class="s">pump&#39;</span><span class="p p-Indicator">,</span><span class="s">&#39;nuclear&#39;</span><span class="p p-Indicator">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nt">existing_capacities</span><span class="p">:</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">  </span><span class="nt">add</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="w">  </span><span class="nt">grouping_years</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">1985</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1990</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1995</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2000</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2005</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2010</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2015</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2020</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2025</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2030</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2035</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2040</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2045</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2050</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2055</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">2060</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="w">  </span><span class="nt">collapse_years</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="w">  </span><span class="nt">threshold_capacity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">80</span>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">  </span><span class="nt">techs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;coal&#39;</span><span class="p p-Indicator">,</span><span class="s">&#39;CHP</span><span class="nv"> </span><span class="s">coal&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;CHP</span><span class="nv"> </span><span class="s">gas&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;OCGT&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;CCGT&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;solar&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;onwind&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;offwind&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;nuclear&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;PHS&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;biomass&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">  </span><span class="nt">node_assignment</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">simple</span>
 </code></pre></div>
 <p>Configuration for incorporating existing power plant capacities:
 - <strong><code>add</code></strong>: Include existing GEM capacities in the model. These are retired only if they reach end of life (determined based on the costs tech config)
 - <strong><code>grouping_years</code></strong>: Years for capacity grouping
-- <strong><code>threshold_capacity</code></strong>: Minimum capacity threshold
-- <strong><code>techs</code></strong>: Technologies to include from existing capacity data</p>
+- <strong><code>collapse_years</code></strong>: Treat grouped capacities as a single unit when preparing &amp; solving network
+- <strong><code>threshold_capacity</code></strong>: Minimum capacity threshold (MW)
+- <strong><code>techs</code></strong>: Technologies to include from existing capacity data
+- <strong><code>node_assignment</code></strong>: Method for assigning plants to nodes (<code>simple</code> or <code>gps</code>)</p>
 <h2 id="region-configuration">Region Configuration</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="nt">fetch_regions</span><span class="p">:</span>
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">  </span><span class="nt">simplify_tol</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nt">fetch_regions</span><span class="p">:</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">  </span><span class="nt">simplify_tol</span><span class="p">:</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span><span class="nt">eez</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span><span class="nt">land</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.05</span>
 </code></pre></div>
 <ul>
-<li><strong><code>simplify_tol</code></strong>: Tolerance for region boundary simplification</li>
+<li><strong><code>simplify_tol.eez</code></strong>: Tolerance for EEZ (Exclusive Economic Zone) boundary simplification</li>
+<li><strong><code>simplify_tol.land</code></strong>: Tolerance for land region boundary simplification (lower value for better GPS plant assignment)</li>
 </ul>
+<h2 id="node-configuration">Node Configuration</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nt">nodes</span><span class="p">:</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">  </span><span class="nt">split_provinces</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="w">  </span><span class="nt">exclude_provinces</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;Macau&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;HongKong&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="w">  </span><span class="nt">splits</span><span class="p">:</span>
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="w">    </span><span class="nt">InnerMongolia</span><span class="p">:</span>
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="w">      </span><span class="nt">West</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;Hulunbuir&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Xing&#39;an&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Tongliao&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Chifeng&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Xilin</span><span class="nv"> </span><span class="s">Gol&quot;</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="w">      </span><span class="nt">East</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;Alxa&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Baotou&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Baynnur&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Hohhot&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Ordos&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Ulaan</span><span class="nv"> </span><span class="s">Chab&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Wuhai&quot;</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<ul>
+<li><strong><code>split_provinces</code></strong>: Split provinces (admin level 1) using admin level 2 (counties/prefectures). Currently not fully supported by build_loads and reporting.</li>
+<li><strong><code>exclude_provinces</code></strong>: List of provinces to exclude from splitting</li>
+<li><strong><code>splits</code></strong>: Custom groupings of admin level 2 regions within provinces</li>
+</ul>
+<h2 id="fuel-subsidies">Fuel Subsidies</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nt">subsidies</span><span class="p">:</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">  </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">  </span><span class="nt">gas</span><span class="p">:</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">    </span><span class="nt">Guangdong</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-10</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="w">    </span><span class="nt">Jiangsu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-10</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="w">    </span><span class="nt">Zhejiang</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-10</span>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="w">    </span><span class="nt">Beijing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-11</span>
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="w">    </span><span class="nt">Tianjin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-11</span>
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">    </span><span class="nt">Shanghai</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-11</span>
+</code></pre></div>
+<p>Provincial fuel subsidies configuration:
+- <strong><code>enabled</code></strong>: Enable/disable fuel subsidy system
+- <strong><code>gas</code></strong>: Gas subsidies by province (EUR/MWh, negative values represent subsidies)</p>
+<p>Subsidies reduce the effective marginal cost of fuel in specific provinces.</p>
 <h2 id="inputoutput-settings">Input/Output Settings</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nt">io</span><span class="p">:</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">  </span><span class="nt">nc_compression</span><span class="p">:</span>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="w">    </span><span class="nt">level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="w">    </span><span class="nt">zlib</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nt">io</span><span class="p">:</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">  </span><span class="nt">nc_compression</span><span class="p">:</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">    </span><span class="nt">level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="w">    </span><span class="nt">zlib</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
 </code></pre></div>
 <p>Controls compression settings for NetCDF output files:
 - <strong><code>level</code></strong>: Compression level (0-9, higher = more compression)
@@ -3068,14 +3206,14 @@ Skip locations with potential below this threshold to reduce problem size.</p>
 <h2 id="technology-config">TECHNOLOGY CONFIG</h2>
 <p>The below are in <code>config/technology_config.yaml</code></p>
 <h2 id="transmission-efficiency">Transmission Efficiency</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nt">transmission_efficiency</span><span class="p">:</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">  </span><span class="nt">DC</span><span class="p">:</span>
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span><span class="nt">efficiency_static</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.98</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span><span class="nt">efficiency_per_1000km</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.977</span>
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="w">  </span><span class="nt">H2 pipeline</span><span class="p">:</span>
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">    </span><span class="nt">efficiency_static</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="w">    </span><span class="nt">efficiency_per_1000km</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.979</span>
-<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="w">    </span><span class="nt">compression_per_1000km</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.019</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nt">transmission_efficiency</span><span class="p">:</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="w">  </span><span class="nt">DC</span><span class="p">:</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span><span class="nt">efficiency_static</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.98</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">    </span><span class="nt">efficiency_per_1000km</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.977</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="w">  </span><span class="nt">H2 pipeline</span><span class="p">:</span>
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="w">    </span><span class="nt">efficiency_static</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w">    </span><span class="nt">efficiency_per_1000km</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.979</span>
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="w">    </span><span class="nt">compression_per_1000km</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.019</span>
 </code></pre></div>
 <p>Defines transmission efficiency parameters for different carriers &amp; technologies:</p>
 <h3 id="dc-transmission">DC Transmission</h3>
@@ -3090,46 +3228,66 @@ Skip locations with potential below this threshold to reduce problem size.</p>
 <li><strong><code>compression_per_1000km</code></strong>: Energy required for compression per 1000 km (1.9% of transported energy)</li>
 </ul>
 <p>The total efficiency for transmission links is calculated as:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>Total efficiency = efficiency_static × (efficiency_per_1000km)^(distance_km/1000)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>Total efficiency = efficiency_static × (efficiency_per_1000km)^(distance_km/1000)
 </code></pre></div></p>
 <h2 id="combined-heat-and-power-chp-parameters">Combined Heat and Power (CHP) Parameters</h2>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nt">chp_parameters</span><span class="p">:</span>
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">  </span><span class="nt">eff_th</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5304</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nt">chp_parameters</span><span class="p">:</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span><span class="nt">coal</span><span class="p">:</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">    </span><span class="nt">total_eff</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.9</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">    </span><span class="nt">heat_to_power</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.5</span>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">  </span><span class="nt">gas</span><span class="p">:</span>
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="w">    </span><span class="nt">total_eff</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.9</span>
+<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="w">    </span><span class="nt">heat_to_power</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.9</span>
+<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="w">  </span><span class="nt">OCGT</span><span class="p">:</span>
+<a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="w">    </span><span class="nt">heat_to_power</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="w">    </span><span class="nt">total_eff</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.82</span>
+<a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a>
+<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a><span class="nt">use_historical_efficiency</span><span class="p">:</span>
+<a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a><span class="w">  </span><span class="nt">coal_boiler</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
 </code></pre></div>
-CHP is treated either as a pre-defined values or using a back pressure coeficient (see DK Energy catalogue). For coal CHP use the back pressure (variable ratio). For gas CHP use pre-defined parameter.</p>
-<p><strong>TODO</strong> this is legacy, check implentation is OK. CHP often runs heat first in China but code seems to maintain electric eff</p>
+<p>CHP efficiency parameters by technology:
+- <strong><code>coal.total_eff</code></strong>: Total combined efficiency for coal CHP (90%, from Danish Energy Tech Catalogue)
+- <strong><code>coal.heat_to_power</code></strong>: Heat-to-power ratio for extraction CHP (1.5, typical for China from Nature Energy 2024)
+- <strong><code>gas.total_eff</code></strong>: Total combined efficiency for CCGT CHP (90%)
+- <strong><code>gas.heat_to_power</code></strong>: Heat-to-power ratio for gas CHP (0.9)
+- <strong><code>OCGT.total_eff</code></strong>: Total efficiency for OCGT CHP (82%, from GE aeroderivative data)
+- <strong><code>OCGT.heat_to_power</code></strong>: Heat-to-power ratio for simple cycle gas turbine (1.0)
+- <strong><code>use_historical_efficiency.coal_boiler</code></strong>: Use historical efficiency values when building new coal boilers</p>
+<p><strong>Note</strong>: Efficiency may decrease with reduced power output, which is not currently captured in the model.</p>
 <h2 id="solar-technology-parameters">Solar Technology Parameters</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nt">solar_cf_correction</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="nt">solar_cf_correction</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.85</span>
 </code></pre></div>
 <ul>
 <li><strong><code>solar_cf_correction</code></strong>: Correction factor applied to solar capacity factors (85%)</li>
 </ul>
 <p>This factor accounts for various real-world effects that reduce solar Thermal performance compared to theoretical values. <strong>NOT APPLIED TO PV</strong></p>
 <h2 id="heat-pump-configuration">Heat Pump Configuration</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nt">time_dep_hp_cop</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="nt">time_dep_hp_cop</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
 </code></pre></div>
 <ul>
 <li><strong><code>time_dep_hp_cop</code></strong>: Enable time-dependent coefficient of performance (COP) for heat pumps</li>
 </ul>
 <p>When enabled, heat pump efficiency varies with ambient temperature conditions throughout the year.</p>
 <h2 id="thermal-energy-storage">Thermal Energy Storage</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="nt">water_tanks</span><span class="p">:</span>
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="w">  </span><span class="nt">tes_tau</span><span class="p">:</span>
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">    </span><span class="nt">decentral</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.</span><span class="w"> </span><span class="c1"># days</span>
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="w">    </span><span class="nt">central</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">180</span><span class="w"> </span><span class="c1"># days</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="nt">water_tanks</span><span class="p">:</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">  </span><span class="nt">tes_tau</span><span class="p">:</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">    </span><span class="nt">decentral</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.</span><span class="w">  </span><span class="c1"># days</span>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">    </span><span class="nt">central</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">180</span><span class="w">  </span><span class="c1"># days</span>
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">  </span><span class="nt">p_nom_over_e_nom</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.2</span>
 </code></pre></div>
 <p>Standing loss parameters for thermal energy storage (water tanks):
 - <strong><code>decentral</code></strong>: Time constant for decentralized thermal storage (3 days)
-- <strong><code>central</code></strong>: Time constant for centralized thermal storage (180 days)</p>
+- <strong><code>central</code></strong>: Time constant for centralized thermal storage (180 days)
+- <strong><code>p_nom_over_e_nom</code></strong>: Maximum power-to-energy ratio (0.2 = 5-hour discharge time)</p>
 <p>The time constant (tau) determines the rate of thermal losses.</p>
 <h2 id="electricity-sector-configuration">Electricity Sector Configuration</h2>
 <p>Partially legacy and to be revised</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nt">electricity</span><span class="p">:</span>
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span><span class="nt">max_hours</span><span class="p">:</span>
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">    </span><span class="nt">battery</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span>
-<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">    </span><span class="nt">H2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">168</span>
-<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">  </span><span class="nt">min_charge</span><span class="p">:</span>
-<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="w">    </span><span class="nt">battery</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span><span class="w"> </span><span class="c1"># fraction of e_nom</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nt">electricity</span><span class="p">:</span>
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="w">  </span><span class="nt">max_hours</span><span class="p">:</span>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="w">    </span><span class="nt">battery</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6</span>
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="w">    </span><span class="nt">H2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">168</span>
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="w">  </span><span class="nt">min_charge</span><span class="p">:</span>
+<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="w">    </span><span class="nt">battery</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span><span class="w"> </span><span class="c1"># fraction of e_nom</span>
 </code></pre></div>
 <h3 id="storage-parameters">Storage Parameters</h3>
 <ul>
@@ -3138,23 +3296,23 @@ CHP is treated either as a pre-defined values or using a back pressure coeficien
 <li><strong><code>min_charge.battery</code></strong>: Minimum state of charge for batteries (10% of nominal energy capacity)</li>
 </ul>
 <h2 id="hydroelectric-power">Hydroelectric Power</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="nt">hydro</span><span class="p">:</span>
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">  </span><span class="nt">hydro_capital_cost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">  </span><span class="nt">marginal_cost</span><span class="p">:</span>
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="w">    </span><span class="nt">reservoir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="w">  </span><span class="nt">PHS_max_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24</span><span class="w"> </span><span class="c1"># hours</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="nt">hydro</span><span class="p">:</span>
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="w">  </span><span class="nt">hydro_capital_cost</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="w">  </span><span class="nt">marginal_cost</span><span class="p">:</span>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="w">    </span><span class="nt">reservoir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.</span><span class="w">  </span><span class="c1"># EUR/MWh</span>
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="w">  </span><span class="nt">PHS_max_hours</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24</span><span class="w">  </span><span class="c1"># hours</span>
 </code></pre></div>
 <ul>
 <li><strong><code>hydro_capital_cost</code></strong>: Include capital costs for hydroelectric plants</li>
-<li><strong><code>marginal_cost.reservoir</code></strong>: Marginal cost of storage (defaults to zeo)</li>
+<li><strong><code>marginal_cost.reservoir</code></strong>: Marginal cost of reservoir operation (0 EUR/MWh)</li>
 <li><strong><code>PHS_max_hours</code></strong>: Maximum storage duration for pumped hydro storage (24 hours)</li>
 </ul>
 <h2 id="fossil-fuel-ramping-constraints">Fossil Fuel Ramping Constraints</h2>
 <p>Operational ramping constraints for fossil fuel power plants:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="nt">fossil_ramps</span><span class="p">:</span>
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="w">  </span><span class="nt">tech</span><span class="p">:</span>
-<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="w">    </span><span class="nt">ramp_limit_up</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span><span class="w"> </span><span class="c1"># fraction of p_nom per hour</span>
-<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="w">    </span><span class="nt">ramp_limit_down</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span><span class="w"> </span><span class="c1"># fraction of p_nom per hour</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="nt">fossil_ramps</span><span class="p">:</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="w">  </span><span class="nt">tech</span><span class="p">:</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="w">    </span><span class="nt">ramp_limit_up</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span><span class="w"> </span><span class="c1"># fraction of p_nom per hour</span>
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="w">    </span><span class="nt">ramp_limit_down</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span><span class="w"> </span><span class="c1"># fraction of p_nom per hour</span>
 </code></pre></div>
 <ul>
 <li><strong><code>ramp_limit_up</code></strong>: Maximum upward ramping rate (50% of nominal capacity per hour)</li>
@@ -3163,21 +3321,21 @@ CHP is treated either as a pre-defined values or using a back pressure coeficien
 <h2 id="nuclear-reactor-parameters">Nuclear Reactor Parameters</h2>
 <p>Instead of solving unit commitment problem, which is computationally expensive, can stylise baseload generation.
 The upper limit reflects planned and unplanned outages</p>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="nt">nuclear_reactors</span><span class="p">:</span>
-<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">  </span><span class="nt">p_max_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.88</span><span class="w"> </span><span class="c1"># fraction of p_nom, after IEAE</span>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">  </span><span class="nt">p_min_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.7</span><span class="w"> </span><span class="c1"># fraction of p_nom</span>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="nt">nuclear_reactors</span><span class="p">:</span>
+<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="w">  </span><span class="nt">p_max_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.88</span><span class="w"> </span><span class="c1"># fraction of p_nom, after IEAE</span>
+<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="w">  </span><span class="nt">p_min_pu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.7</span><span class="w"> </span><span class="c1"># fraction of p_nom</span>
 </code></pre></div>
 Operational constraints for nuclear power plants:
 - <strong><code>p_max_pu</code></strong>: Maximum power output (% of nominal capacity)
 - <strong><code>p_min_pu</code></strong>: Minimum power output (% of nominal capacity)</p>
 <h2 id="economic-parameters">Economic Parameters</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nt">costs</span><span class="p">:</span>
-<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="w">  </span><span class="nt">discountrate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.06</span>
-<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="w">  </span><span class="nt">social_discount_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.02</span>
-<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="w">  </span><span class="nt">USD2013_to_EUR2013</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.9189</span>
-<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="w">  </span><span class="nt">marginal_cost</span><span class="p">:</span>
-<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="w">    </span><span class="nt">hydro</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.</span>
-<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a><span class="w">  </span><span class="nt">pv_utility_fraction</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="nt">costs</span><span class="p">:</span>
+<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="w">  </span><span class="nt">discountrate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.06</span>
+<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="w">  </span><span class="nt">social_discount_rate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.02</span>
+<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="w">  </span><span class="nt">USD2013_to_EUR2013</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.9189</span>
+<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="w">  </span><span class="nt">marginal_cost</span><span class="p">:</span>
+<a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="w">    </span><span class="nt">hydro</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.</span>
+<a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="w">  </span><span class="nt">pv_utility_fraction</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 </code></pre></div>
 <h3 id="discount-rates">Discount Rates</h3>
 <ul>
