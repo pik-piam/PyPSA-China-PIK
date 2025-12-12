@@ -116,7 +116,7 @@ pip install pytest pytest-cov black flake8
    ```
 
 2. **Open a Pull Request** on GitHub:
-   - **Target branch**: 
+   - **Target branch**:
      - Use `develop` for new features and non-critical bug fixes
      - Use `main` only for hotfixes or critical patches to the current stable release
    - Most contributions should target the `develop` branch
