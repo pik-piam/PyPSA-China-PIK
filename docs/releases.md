@@ -10,8 +10,9 @@ The current stable release is **v1.3.2**. See the [CHANGELOG](https://github.com
 
 You can view documentation for different versions using the version selector in the navigation bar. Available versions:
 
-- **latest** - The most recent stable release (currently v1.3.2)
-- **dev** - Development version from the main branch
+- **stable** - The most recent stable release (points to latest version tag, e.g., v1.3.2)
+- **latest** - Latest development version from the develop branch
+- **vX.Y.Z** - Specific release versions (e.g., v1.3.2)
 
 ## Release Schedule
 

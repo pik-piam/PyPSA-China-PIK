@@ -115,11 +115,32 @@ pip install pytest pytest-cov black flake8
    git push origin feature/your-feature-name
    ```
 
-3. **Open a Pull Request** on GitHub
-4. **Fill out the PR template** completely
-5. **Link related issues** using keywords like "Closes #123"
-6. **Wait for review** and address any feedback
-7. **Ensure CI checks pass** - All checks (including pre-commit) must pass before the PR can be merged
+2. **Open a Pull Request** on GitHub:
+   - **Target branch**: 
+     - Use `develop` for new features and non-critical bug fixes
+     - Use `main` only for hotfixes or critical patches to the current stable release
+   - Most contributions should target the `develop` branch
+
+3. **Fill out the PR template** completely
+4. **Link related issues** using keywords like "Closes #123"
+5. **Wait for review** and address any feedback
+6. **Ensure CI checks pass**
+
+### Branch Strategy
+
+- **develop**: Active development branch for new features and improvements
+  - Continuous integration and testing
+  - Documentation deployed as "latest" version
+  - Merged to `main` before releases
+
+- **main**: Stable branch reflecting the latest release
+  - Should always be in a releasable state
+  - Tagged with version numbers for releases
+  - Documentation deployed as "stable" version
+
+- **feature branches**: For individual features or bug fixes
+  - Created from and merged back to `develop`
+  - Named descriptively: `feature/description` or `fix/description`
 
 ## Coding Standards
 
@@ -127,23 +148,18 @@ pip install pytest pytest-cov black flake8
 
 - Follow [PEP 8](https://pep8.org/) style guide
 - Use meaningful variable and function names
-- Add docstrings to functions and classes:
+- Add docstrings to functions and classes using Google style with type hints:
   ```python
   def my_function(param1: str, param2: int) -> bool:
       """
       Brief description of function.
 
-      Parameters
-      ----------
-      param1 : str
-          Description of param1
-      param2 : int
-          Description of param2
+      Args:
+          param1 (str): Description of param1
+          param2 (int): Description of param2
 
-      Returns
-      -------
-      bool
-          Description of return value
+      Returns:
+          bool: Description of return value
       """
       pass
   ```
@@ -259,6 +275,7 @@ Releases are managed by project maintainers:
 - Welcome newcomers and help them get started
 - Focus on constructive feedback
 - Maintain a professional environment
+- Questions are always welcome but please check the documentation first!
 
 ## Questions?
 
