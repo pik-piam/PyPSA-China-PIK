@@ -40,24 +40,14 @@ def calc_nuclear_expansion_limit(
     """
     nuclear_cfg = config.setdefault("nuclear_reactors", {})
 
-    # Check if growth limit is enabled
     if not nuclear_cfg.get("enable_growth_limit", True):
-        logger.info("Nuclear expansion limit constraint is disabled")
         return
 
     annual_addition = nuclear_cfg.get("max_annual_capacity_addition")
-    if not annual_addition:
-        logger.warning("Nuclear growth limit enabled but max_annual_capacity_addition missing")
-        return
-
     base_year = nuclear_cfg.get("base_year", 2020)
     n_years = planning_year - base_year
-    if n_years <= 0:
-        logger.info(
-            "Planning year %s is not after base year %s; skipping nuclear expansion limit",
-            planning_year,
-            base_year,
-        )
+
+    if not annual_addition or n_years <= 0:
         return
 
     base_capacity = nuclear_cfg.get("base_capacity")
@@ -70,25 +60,16 @@ def calc_nuclear_expansion_limit(
             base_capacity = n.generators[n.generators.carrier == "nuclear"]["p_nom"].sum()
 
     max_capacity = base_capacity + annual_addition * n_years
-    logger.info(
-        f"Adding nuclear expansion limit for {planning_year}: {max_capacity:.0f} MW "
-        f"[{base_capacity:.0f} + {annual_addition:.0f} × {n_years} years]"
-    )
-
     nuclear_gens_ext = n.generators[
         (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
     ].index
 
-    if len(nuclear_gens_ext) == 0:
-        logger.warning("No extendable nuclear generators found")
-        return
-
-    # Store the total capacity limit in config for use by add_nuclear_expansion_constraints
-    nuclear_cfg["expansion_limit"] = max_capacity
-    logger.info(
-        f"Nuclear expansion limit calculated: {max_capacity:.0f} MW total capacity "
-        f"for {len(nuclear_gens_ext)} extendable generators"
-    )
+    if len(nuclear_gens_ext) > 0:
+        nuclear_cfg["expansion_limit"] = max_capacity
+        logger.info(
+            f"Nuclear expansion limit for {planning_year}: {max_capacity:.0f} MW "
+            f"[{base_capacity:.0f} + {annual_addition:.0f} × {n_years} years]"
+        )
 
 
 def set_transmission_limit(n: pypsa.Network, kind: str, factor: float, n_years=1):
@@ -241,7 +222,6 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbi
         "CCGT-CCS": "gas ccs",
         "coal power plant": "coal",
         "coal-CCS": "coal ccs",
-        "rooftop pv": "distributed solar",
     }
     freeze += [to_fix[k] for k in to_fix if k in freeze]
 
@@ -343,9 +323,7 @@ def add_nuclear_expansion_constraints(n: pypsa.Network):
     """
     nuclear_config = n.config.get("nuclear_reactors", {})
 
-    # Check if growth limit is enabled
     if not nuclear_config.get("enable_growth_limit", True):
-        logger.info("Nuclear expansion limit constraint is disabled")
         return
 
     nuclear_gens_ext = n.generators[
@@ -355,22 +333,16 @@ def add_nuclear_expansion_constraints(n: pypsa.Network):
     if len(nuclear_gens_ext) == 0:
         return
 
-    # Use expansion_limit if available (calculated by calc_nuclear_expansion_limit)
-    # Otherwise fall back to max_annual_capacity_addition (for backward compatibility)
-    limit = nuclear_config.get("expansion_limit")
+    limit = nuclear_config.get("expansion_limit") or nuclear_config.get(
+        "max_annual_capacity_addition"
+    )
     if limit is None:
-        limit = nuclear_config.get("max_annual_capacity_addition")
-        if limit is None:
-            logger.warning("No nuclear expansion limit found in config, skipping constraint")
-            return
-        logger.warning(
-            f"Using max_annual_capacity_addition ({limit:.0f} MW) as limit. "
-            f"This may be incorrect. Consider using calc_nuclear_expansion_limit() first."
-        )
+        return
 
-    # Add global constraint: sum of all nuclear p_nom <= total_limit
-    lhs = n.model["Generator-p_nom"].loc[nuclear_gens_ext].sum()
-    n.model.add_constraints(lhs <= limit, name="nuclear_expansion_limit")
+    n.model.add_constraints(
+        n.model["Generator-p_nom"].loc[nuclear_gens_ext].sum() <= limit,
+        name="nuclear_expansion_limit",
+    )
 
 
 def add_battery_constraints(n: pypsa.Network):
