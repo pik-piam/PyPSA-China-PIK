@@ -8,12 +8,12 @@ Associated with the `solve_networks` rule in the Snakefile.
 """
 
 import logging
+import os
 
 import numpy as np
 import pandas as pd
 import pypsa
 import xarray as xr
-import os
 from _helpers import ConfigManager, configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env
 from _pypsa_helpers import filter_carriers, mock_solve, store_duals_to_network
 from constants import YEAR_HRS
@@ -31,7 +31,7 @@ def calc_nuclear_expansion_limit(
 ) -> None:
     """
     Calculate and apply the nuclear expansion limit from configuration.
-    
+
     Args:
         n (pypsa.Network): the network object
         config (dict): full configuration dictionary (mutated in place)
@@ -39,14 +39,17 @@ def calc_nuclear_expansion_limit(
         network_path (str): path to the current network file, used to locate base year
     """
     nuclear_cfg = config.setdefault("nuclear_reactors", {})
-    if not nuclear_cfg.get("enable_growth_limit"):
+
+    # Check if growth limit is enabled
+    if not nuclear_cfg.get("enable_growth_limit", True):
+        logger.info("Nuclear expansion limit constraint is disabled")
         return
-    
+
     annual_addition = nuclear_cfg.get("max_annual_capacity_addition")
     if not annual_addition:
         logger.warning("Nuclear growth limit enabled but max_annual_capacity_addition missing")
         return
-    
+
     base_year = nuclear_cfg.get("base_year", 2020)
     n_years = planning_year - base_year
     if n_years <= 0:
@@ -56,7 +59,7 @@ def calc_nuclear_expansion_limit(
             base_year,
         )
         return
-    
+
     base_capacity = nuclear_cfg.get("base_capacity")
     if base_capacity is None:
         base_path = network_path.replace(f"ntwk_{planning_year}.nc", f"ntwk_{base_year}.nc")
@@ -65,7 +68,7 @@ def calc_nuclear_expansion_limit(
             base_capacity = n_base.generators[n_base.generators.carrier == "nuclear"]["p_nom"].sum()
         else:
             base_capacity = n.generators[n.generators.carrier == "nuclear"]["p_nom"].sum()
-    
+
     max_capacity = base_capacity + annual_addition * n_years
     logger.info(
         f"Adding nuclear expansion limit for {planning_year}: {max_capacity:.0f} MW "
@@ -75,15 +78,16 @@ def calc_nuclear_expansion_limit(
     nuclear_gens_ext = n.generators[
         (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
     ].index
-    
+
     if len(nuclear_gens_ext) == 0:
         logger.warning("No extendable nuclear generators found")
         return
-    
-    n.generators.loc[nuclear_gens_ext, "p_nom_max"] = max_capacity
+
+    # Store the total capacity limit in config for use by add_nuclear_expansion_constraints
     nuclear_cfg["expansion_limit"] = max_capacity
     logger.info(
-        f"Nuclear expansion limit set: {max_capacity:.0f} MW for {len(nuclear_gens_ext)} generators"
+        f"Nuclear expansion limit calculated: {max_capacity:.0f} MW total capacity "
+        f"for {len(nuclear_gens_ext)} extendable generators"
     )
 
 
@@ -237,6 +241,7 @@ def freeze_components(n: pypsa.Network, config: dict, exclude: list = ["H2 turbi
         "CCGT-CCS": "gas ccs",
         "coal power plant": "coal",
         "coal-CCS": "coal ccs",
+        "rooftop pv": "distributed solar",
     }
     freeze += [to_fix[k] for k in to_fix if k in freeze]
 
@@ -325,25 +330,47 @@ def prepare_network(
 def add_nuclear_expansion_constraints(n: pypsa.Network):
     """
     Add nuclear expansion limit constraint if configured.
-    
+
+    This function adds a global constraint limiting the total capacity of all
+    extendable nuclear generators. The limit should be calculated by
+    calc_nuclear_expansion_limit() and stored in config["nuclear_reactors"]["expansion_limit"].
+
+    If expansion_limit is not available, it falls back to using max_annual_capacity_addition
+    (which is incorrect but maintains backward compatibility).
+
     Args:
         n (pypsa.Network): the network object
     """
-    limit = n.config.get("nuclear_reactors", {}).get("expansion_limit")
-    if limit is None:
+    nuclear_config = n.config.get("nuclear_reactors", {})
+
+    # Check if growth limit is enabled
+    if not nuclear_config.get("enable_growth_limit", True):
+        logger.info("Nuclear expansion limit constraint is disabled")
         return
-    
+
     nuclear_gens_ext = n.generators[
         (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
     ].index
-    
+
     if len(nuclear_gens_ext) == 0:
         return
-    
-    # Add global constraint: sum of all nuclear p_nom <= limit
+
+    # Use expansion_limit if available (calculated by calc_nuclear_expansion_limit)
+    # Otherwise fall back to max_annual_capacity_addition (for backward compatibility)
+    limit = nuclear_config.get("expansion_limit")
+    if limit is None:
+        limit = nuclear_config.get("max_annual_capacity_addition")
+        if limit is None:
+            logger.warning("No nuclear expansion limit found in config, skipping constraint")
+            return
+        logger.warning(
+            f"Using max_annual_capacity_addition ({limit:.0f} MW) as limit. "
+            f"This may be incorrect. Consider using calc_nuclear_expansion_limit() first."
+        )
+
+    # Add global constraint: sum of all nuclear p_nom <= total_limit
     lhs = n.model["Generator-p_nom"].loc[nuclear_gens_ext].sum()
     n.model.add_constraints(lhs <= limit, name="nuclear_expansion_limit")
-    logger.info(f"Applied global nuclear constraint: sum(p_nom) <= {limit:.0f} MW")
 
 
 def add_battery_constraints(n: pypsa.Network):
@@ -672,8 +699,10 @@ def add_remind_paid_off_constraints(n: pypsa.Network) -> None:
             continue
         else:
             paidoff_comp.dropna(subset=[paid_off_col], inplace=True)
-        _remind_only_techs = n.config["existing_capacities"].get("remind_only_tech_groups", [])
-        paidoff_comp = paidoff_comp.query("tech_group not in @_remind_only_techs")
+
+        # techs that only exist as paid-off don't have usual counterparts
+        remind_only = n.config["existing_capacities"].get("remind_only_tech_groups", [])  # noqa: F841
+        paidoff_comp = paidoff_comp.query("tech_group not in @remind_only")
 
         if paidoff_comp.empty:
             continue
@@ -726,14 +755,14 @@ def add_operational_reserve_margin(n: pypsa.network, config):
             contingency: 400000 # MW
     """
     reserve_config = config["operational_reserve"]
-    _VRE_TECHS = config["Techs"].get("non_dispatchable", ["onwind", "offwind", "solar"])
+    VRE_TECHS = config["Techs"].get("non_dispatchable", ["onwind", "offwind", "solar"])  # noqa F841
     EPSILON_LOAD, EPSILON_VRES = reserve_config["epsilon_load"], reserve_config["epsilon_vres"]
     CONTINGENCY = float(reserve_config["contingency"])
 
     # AC producers
     ac_mask = n.generators.bus.map(n.buses.carrier) == "AC"
-    _ac_buses = n.buses.query("carrier =='AC'").index
-    _attached_carriers = filter_carriers(n, "AC")
+    ac_buses = n.buses.query("carrier =='AC'").index  # noqa: F841
+    attached_carriers = filter_carriers(n, "AC")  # noqa: F841
     # conceivably a link could have a negative efficiency and flow towards bus0 - don't consider
     prod_links = n.links.query("carrier in @_attached_carriers & not bus0 in @_ac_buses")
     transport_links = prod_links.bus0.map(n.buses.carrier) == prod_links.bus1.map(n.buses.carrier)
@@ -825,7 +854,7 @@ def extra_functionality(n: pypsa.Network, _) -> None:
     add_battery_constraints(n)
     add_transmission_constraints(n)
     add_nuclear_expansion_constraints(n)
-    
+
     if config["heat_coupling"]:
         add_water_tank_charger_constraints(n, config)
         add_chp_constraints(n)
