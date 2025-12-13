@@ -15,13 +15,39 @@ Requires: GDAL (gdalwarp, gdaldem)
 
 import subprocess
 import os
-import sys
 import logging
+import shutil
 from pathlib import Path
+from _helpers import mock_snakemake
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+
+def check_gdal_availability():
+    """Check if GDAL tools are available in the system.
+    
+    Raises:
+        RuntimeError: If required GDAL tools are not found.
+    """
+    required_tools = ['gdalwarp', 'gdaldem']
+    missing_tools = []
+    
+    for tool in required_tools:
+        if not shutil.which(tool):
+            missing_tools.append(tool)
+    
+    if missing_tools:
+        error_msg = (
+            f"Required GDAL tools not found: {', '.join(missing_tools)}\n"
+            f"Please install GDAL. If using conda: conda install -c conda-forge gdal\n"
+            f"Or ensure GDAL is installed and available in your PATH."
+        )
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
+    
+    logger.info(f"✓ GDAL tools available: {', '.join(required_tools)}")
 
 
 def setup_proj_environment():
@@ -60,13 +86,25 @@ def run_command(cmd: str, description: str):
 
     if result.returncode != 0:
         logger.error(f"Command failed with return code {result.returncode}")
-        logger.error(f"STDERR: {result.stderr}")
-        raise RuntimeError(f"{description} failed")
+        logger.error(f"Command: {cmd}")
+        
+        # Log stdout if present (some tools output errors to stdout)
+        if result.stdout:
+            logger.error(f"STDOUT:\n{result.stdout}")
+        
+        # Log stderr with better formatting
+        if result.stderr:
+            logger.error(f"STDERR:\n{result.stderr}")
+        else:
+            logger.error("No error output captured")
+        
+        raise RuntimeError(f"{description} failed: {result.stderr.strip() if result.stderr else 'Unknown error'}")
 
     if result.stdout:
         logger.debug(f"STDOUT: {result.stdout}")
     if result.stderr:
-        logger.warning(f"STDERR: {result.stderr}")
+        # GDAL often outputs progress info to stderr, so only warn if there's content
+        logger.debug(f"STDERR: {result.stderr}")
 
     logger.info(f"✓ {description} completed successfully")
     return result
@@ -98,6 +136,9 @@ def calculate_slope(input_gebco, output_slope, threads=4, log_file=None):
     # Create output directory if needed
     output_slope.parent.mkdir(parents=True, exist_ok=True)
 
+    # Check GDAL availability
+    check_gdal_availability()
+    
     # Set up PROJ environment for GDAL
     setup_proj_environment()
 
@@ -162,19 +203,13 @@ def calculate_slope(input_gebco, output_slope, threads=4, log_file=None):
 
 if __name__ == "__main__":
     # When called from snakemake
-    if "snakemake" in globals():
-        calculate_slope(
-            input_gebco=snakemake.input.gebco,
-            output_slope=snakemake.output.slope,
-            threads=snakemake.threads,
-            log_file=snakemake.log[0] if snakemake.log else None,
-        )
-    # When called from command line
-    elif len(sys.argv) >= 3:
-        input_file = sys.argv[1]
-        output_file = sys.argv[2]
-        threads = int(sys.argv[3]) if len(sys.argv) > 3 else 4
-        calculate_slope(input_file, output_file, threads)
-    else:
-        print("Usage: python calculate_gebco_slope.py <input_gebco> <output_slope> [threads]")
-        sys.exit(1)
+    if "snakemake" not in globals():
+        snakemake = mock_snakemake("calculate_gebco_slope")
+
+    calculate_slope(
+        input_gebco=snakemake.input.gebco,
+        output_slope=snakemake.output.slope,
+        threads=snakemake.threads,
+        log_file=snakemake.log[0] if snakemake.log else None,
+    )
+    logger.info("GEBCO slope calculation script finished.")

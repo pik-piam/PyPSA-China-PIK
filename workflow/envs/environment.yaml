@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-name: pypsa-china
+name: pypsa-china-test
 channels:
   - conda-forge
   - bioconda
@@ -20,6 +20,7 @@ dependencies:
   # Dependencies of the workflow itself
   - xlrd
   - libgdal-hdf5
+  - libgdal-netcdf
   - rioxarray
   - openpyxl
   - pycountry
