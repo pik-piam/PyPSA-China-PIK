@@ -27,17 +27,17 @@ logger = logging.getLogger(__name__)
 
 def check_gdal_availability():
     """Check if GDAL tools are available in the system.
-    
+
     Raises:
         RuntimeError: If required GDAL tools are not found.
     """
-    required_tools = ['gdalwarp', 'gdaldem']
+    required_tools = ["gdalwarp", "gdaldem"]
     missing_tools = []
-    
+
     for tool in required_tools:
         if not shutil.which(tool):
             missing_tools.append(tool)
-    
+
     if missing_tools:
         error_msg = (
             f"Required GDAL tools not found: {', '.join(missing_tools)}\n"
@@ -46,7 +46,7 @@ def check_gdal_availability():
         )
         logger.error(error_msg)
         raise RuntimeError(error_msg)
-    
+
     logger.info(f"✓ GDAL tools available: {', '.join(required_tools)}")
 
 
@@ -87,18 +87,20 @@ def run_command(cmd: str, description: str):
     if result.returncode != 0:
         logger.error(f"Command failed with return code {result.returncode}")
         logger.error(f"Command: {cmd}")
-        
+
         # Log stdout if present (some tools output errors to stdout)
         if result.stdout:
             logger.error(f"STDOUT:\n{result.stdout}")
-        
+
         # Log stderr with better formatting
         if result.stderr:
             logger.error(f"STDERR:\n{result.stderr}")
         else:
             logger.error("No error output captured")
-        
-        raise RuntimeError(f"{description} failed: {result.stderr.strip() if result.stderr else 'Unknown error'}")
+
+        raise RuntimeError(
+            f"{description} failed: {result.stderr.strip() if result.stderr else 'Unknown error'}"
+        )
 
     if result.stdout:
         logger.debug(f"STDOUT: {result.stdout}")
@@ -138,7 +140,7 @@ def calculate_slope(input_gebco, output_slope, threads=4, log_file=None):
 
     # Check GDAL availability
     check_gdal_availability()
-    
+
     # Set up PROJ environment for GDAL
     setup_proj_environment()
 
@@ -166,11 +168,7 @@ def calculate_slope(input_gebco, output_slope, threads=4, log_file=None):
         run_command(cmd1, "Step 1: Reproject to Mollweide (ESRI:54009)")
         logger.info("Calculating slope...")
         # Step 2: Calculate slope in percent
-        cmd2 = (
-            f"gdaldem slope -p "
-            f"-of netCDF -co FORMAT=NC4 "
-            f"{mollweide_file} {slope_mollweide_file}"
-        )
+        cmd2 = f"gdaldem slope -p -of netCDF -co FORMAT=NC4 {mollweide_file} {slope_mollweide_file}"
         run_command(cmd2, "Step 2: Calculate slope (percent)")
 
         # Step 3: Reproject back to EPSG:4326 with compression
