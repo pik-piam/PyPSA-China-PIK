@@ -18,6 +18,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+
 from _helpers import mock_snakemake
 
 # Set up logging
