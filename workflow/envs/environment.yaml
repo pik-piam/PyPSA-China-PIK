@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-name: pypsa-china-test
+name: pypsa-china
 channels:
   - conda-forge
   - bioconda
