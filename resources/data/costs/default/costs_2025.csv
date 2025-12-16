@@ -552,7 +552,7 @@ nuclear,2025,fuel,2.6,EUR/MWh_th,Lazard s Levelized Cost of Energy Analysis - Ve
 nuclear,2025,investment,2520.0,USD/kW_e,"https://www.energypolicy.columbia.edu/wp-content/uploads/2023/12/QCFNuclearCosts-CGEP_Report_112923.pdf""The Uncertain Costs of New Nuclear Reactors: What Study Estimates Reveal about the Potential for Nuclear in a Decarbonizing World""",
 nuclear,2025,lifetime,40.0,years,Lazard s Levelized Cost of Energy Analysis - Version 13.0,
 offwind,2025,FOM,2.37,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx","21 Offshore turbines:  Fixed O&M [EUR/MW_e/y, 2020]"
-offwind,2025,VOM,0.02,EUR/MWhel,RES costs made up to fix curtailment order, from old pypsa cost assumptions
+offwind,2025,VOM,0.017,EUR/MWhel,RES costs made up to fix curtailment order, from old pypsa cost assumptions
 offwind,2025,investment,1664.16,"EUR/kW_e, 2020","“Cost values for 2020–2030 are taken from the Danish Energy Agency dataset technology_data_for_el_and_dh.xlsx. Cost projections for 2030–2060 follow Sun et al. (Prediction of Power System Cost and Price Level Under the Goal of Carbon Peak and Carbon Neutralization, in Chinese).”","21 Offshore turbines:  Nominal investment [MEUR/MW_e, 2020] grid connection costs substracted from investment costs"
 offwind,2025,lifetime,30.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",21 Offshore turbines:  Technical lifetime [years]
 offwind-ac-connection-submarine,2025,investment,2685.0,EUR/MW/km,DEA https://ens.dk/en/our-services/projections-and-models/technology-data, from old pypsa cost assumptions
@@ -569,7 +569,7 @@ oil,2025,fuel,50.0,EUR/MWhth,IEA WEM2017 97USD/boe = http://www.iea.org/media/we
 oil,2025,investment,343.0,EUR/kW,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",50 Diesel engine farm:  Specific investment
 oil,2025,lifetime,25.0,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",50 Diesel engine farm:  Technical lifetime
 onwind,2025,FOM,1.23,%/year,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Fixed O&M
-onwind,2025,VOM,1.42,EUR/MWh,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Variable O&M
+onwind,2025,VOM,0.005,EUR/MWh,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Variable O&M
 onwind,2025,investment,683.495,EUR/kW,"Baseline 2020 cost values are taken from the China Power Industry Annual Development Report 2020, supplemented by CCTD data (https://www.cctd.com.cn) for cross-checks. Future cost reduction trends (2020–2050) follow NREL ATB data (https://atb.nrel.gov) and the NREL ATB TRENDS 2022–2050 report.",20 Onshore turbines:  Nominal investment
 onwind,2025,lifetime,28.5,years,"Danish Energy Agency, technology_data_for_el_and_dh.xlsx",20 Onshore turbines:  Technical lifetime
 retrofit,2025,VOM,69.0,USD/tCO2,"Lockwood T. A compararitive review of next-generation carbon capture technologies for coal-fired power plant[J]. Energy procedia, 2017, 114: 2658-2670.",
