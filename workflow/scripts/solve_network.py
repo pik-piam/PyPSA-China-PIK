@@ -65,7 +65,6 @@ def calc_nuclear_expansion_limit(
     ].index
 
     if len(nuclear_gens_ext) > 0:
-        nuclear_cfg["expansion_limit"] = max_capacity
         logger.info(
             f"Nuclear expansion limit for {planning_year}: {max_capacity:.0f} MW "
             f"[{base_capacity:.0f} + {annual_addition:.0f} × {n_years} years]"
@@ -312,11 +311,7 @@ def add_nuclear_expansion_constraints(n: pypsa.Network):
     Add nuclear expansion limit constraint if configured.
 
     This function adds a global constraint limiting the total capacity of all
-    extendable nuclear generators. The limit should be calculated by
-    calc_nuclear_expansion_limit() and stored in config["nuclear_reactors"]["expansion_limit"].
-
-    If expansion_limit is not available, it falls back to using max_annual_capacity_addition
-    (which is incorrect but maintains backward compatibility).
+    extendable nuclear generators. The limit is based on max_annual_capacity_addition.
 
     Args:
         n (pypsa.Network): the network object
@@ -333,9 +328,7 @@ def add_nuclear_expansion_constraints(n: pypsa.Network):
     if len(nuclear_gens_ext) == 0:
         return
 
-    limit = nuclear_config.get("expansion_limit") or nuclear_config.get(
-        "max_annual_capacity_addition"
-    )
+    limit = nuclear_config.get("max_annual_capacity_addition")
     if limit is None:
         return
 
