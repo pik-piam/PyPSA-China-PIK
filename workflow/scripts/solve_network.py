@@ -14,6 +14,7 @@ import pandas as pd
 import pypsa
 import xarray as xr
 import os
+import re
 from _helpers import ConfigManager, configure_logging, mock_snakemake, setup_gurobi_tunnel_and_env
 from _pypsa_helpers import filter_carriers, mock_solve, store_duals_to_network
 from constants import YEAR_HRS
@@ -21,6 +22,112 @@ from pypsa.descriptors import get_switchable_as_dense as get_as_dense
 
 pypsa.pf.logger.setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
+
+
+# TODO move to prepare_network after refactor of workflow
+def add_fuel_subsidies(n: pypsa.Network, subsidy_config: dict, planning_year: int = None):
+    """Apply fuel subsidies to generators as a post-processing step.
+
+    Subsidies are applied to generators based on their carrier and location.
+    The subsidy values (in EUR/MWh fuel) are divided by efficiency to convert
+    to electricity basis (EUR/MWhel). Links are not modified as they get their
+    fuel from generators.
+
+    Args:
+        n (pypsa.Network): The network object to modify.
+        subsidy_config (dict): Subsidy configuration dictionary with keys like
+            "coal" or "gas", each containing either:
+            - dict mapping provinces to subsidy values (year-independent)
+            - dict mapping years to dicts of provinces to subsidy values (year-dependent)
+        planning_year (int, optional): Planning year for year-dependent subsidies.
+            Required if subsidies are year-dependent.
+    """
+    if not subsidy_config:
+        return
+
+    carriers = subsidy_config.keys()
+
+    for carrier in carriers:
+        carrier_config = subsidy_config.get(carrier, {})
+        carrier_config = {str(k): v for k, v in carrier_config.items()}
+        if not carrier_config:
+            continue
+
+        # Determine if subsidies are year-dependent
+        # Check if all keys are years (int or str matching 4-digit year pattern)
+        all_keys_are_years = all(
+            isinstance(k, int) or (isinstance(k, str) and re.match(r"^\d{4}$", k))
+            for k in carrier_config.keys()
+        )
+
+        if all_keys_are_years:
+            # Extract subsidies for the specific planning year
+            year_key = str(planning_year) if str(planning_year) in carrier_config else planning_year
+            if year_key not in carrier_config:
+                logger.warning(
+                    f"No subsidies configured for carrier '{carrier}' in year {planning_year}. "
+                    f"Available years: {list(carrier_config.keys())}. Skipping subsidy application."
+                )
+                continue
+            subs_dict = carrier_config[year_key]
+        else:
+            # Year-independent: use the config directly
+            subs_dict = carrier_config
+
+        # Convert subsidy dict to Series indexed by province
+        subs = pd.Series(subs_dict, dtype=float)
+
+        # Check that subsidies are non-positive (negative = subsidy, positive would be a reward)
+        if (subs > 0).any():
+            raise ValueError(
+                f"Positive subsidy values found for carrier '{carrier}': "
+                f"{subs[subs > 0].to_dict()}. Only zero or negative values are allowed "
+                f"(negative reduces marginal cost, positive would increase it)."
+            )
+
+        # Check if location column exists
+        if "location" not in n.generators.columns:
+            logger.warning(
+                f"Location column not found in generators. "
+                f"Cannot apply subsidies for carrier '{carrier}'."
+            )
+            continue
+
+        # Query generators with matching carrier and location in subsidy provinces
+        mask = n.generators.query(
+            "carrier == @carrier and location in @subs.index"
+        ).index
+
+        if mask.empty:
+            logger.warning(
+                f"No generators found with carrier '{carrier}' and locations "
+                f"in {list(subs.index)}. Skipping subsidy application."
+            )
+            continue
+
+        # Merge subsidies with generators by location with fallback to province
+        gen_locs = n.generators.loc[mask, "location"]
+        subs_to_apply = gen_locs.map(subs).fillna(0.0)
+
+        # Check if all provinces were found
+        missing_provs = set(subs.index) - set(gen_locs.unique())
+        if missing_provs:
+            logger.warning(
+                f"Subsidies specified for provinces | nodes {missing_provs} but no "
+                f"generators found with carrier '{carrier}' in these nodes | provinces."
+            )
+
+        # Apply subsidies: divide by efficiency to convert from fuel to electricity basis
+        # Handle cases where efficiency might be NaN or missing
+        efficiencies = n.generators.loc[mask, "efficiency"].fillna(1.0)
+        subs_electricity = subs_to_apply / efficiencies
+
+        # Subtract subsidy from marginal cost (negative subsidy = cost reduction)
+        n.generators.loc[mask, "marginal_cost"] += subs_electricity
+        logger.info(
+            f"Applied subsidies for carrier '{carrier}' to {len(mask)} generators "
+            f"in provinces {sorted(gen_locs.unique())}"
+        )
 
 
 def calc_nuclear_expansion_limit(
@@ -31,7 +138,7 @@ def calc_nuclear_expansion_limit(
 ) -> None:
     """
     Calculate and apply the nuclear expansion limit from configuration.
-    
+
     Args:
         n (pypsa.Network): the network object
         config (dict): full configuration dictionary (mutated in place)
@@ -41,12 +148,12 @@ def calc_nuclear_expansion_limit(
     nuclear_cfg = config.setdefault("nuclear_reactors", {})
     if not nuclear_cfg.get("enable_growth_limit"):
         return
-    
+
     annual_addition = nuclear_cfg.get("max_annual_capacity_addition")
     if not annual_addition:
         logger.warning("Nuclear growth limit enabled but max_annual_capacity_addition missing")
         return
-    
+
     base_year = nuclear_cfg.get("base_year", 2020)
     n_years = planning_year - base_year
     if n_years <= 0:
@@ -56,7 +163,7 @@ def calc_nuclear_expansion_limit(
             base_year,
         )
         return
-    
+
     base_capacity = nuclear_cfg.get("base_capacity")
     if base_capacity is None:
         base_path = network_path.replace(f"ntwk_{planning_year}.nc", f"ntwk_{base_year}.nc")
@@ -65,7 +172,7 @@ def calc_nuclear_expansion_limit(
             base_capacity = n_base.generators[n_base.generators.carrier == "nuclear"]["p_nom"].sum()
         else:
             base_capacity = n.generators[n.generators.carrier == "nuclear"]["p_nom"].sum()
-    
+
     max_capacity = base_capacity + annual_addition * n_years
     logger.info(
         f"Adding nuclear expansion limit for {planning_year}: {max_capacity:.0f} MW "
@@ -75,11 +182,11 @@ def calc_nuclear_expansion_limit(
     nuclear_gens_ext = n.generators[
         (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
     ].index
-    
+
     if len(nuclear_gens_ext) == 0:
         logger.warning("No extendable nuclear generators found")
         return
-    
+
     n.generators.loc[nuclear_gens_ext, "p_nom_max"] = max_capacity
     nuclear_cfg["expansion_limit"] = max_capacity
     logger.info(
@@ -325,21 +432,21 @@ def prepare_network(
 def add_nuclear_expansion_constraints(n: pypsa.Network):
     """
     Add nuclear expansion limit constraint if configured.
-    
+
     Args:
         n (pypsa.Network): the network object
     """
     limit = n.config.get("nuclear_reactors", {}).get("expansion_limit")
     if limit is None:
         return
-    
+
     nuclear_gens_ext = n.generators[
         (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
     ].index
-    
+
     if len(nuclear_gens_ext) == 0:
         return
-    
+
     # Add global constraint: sum of all nuclear p_nom <= limit
     lhs = n.model["Generator-p_nom"].loc[nuclear_gens_ext].sum()
     n.model.add_constraints(lhs <= limit, name="nuclear_expansion_limit")
@@ -825,7 +932,7 @@ def extra_functionality(n: pypsa.Network, _) -> None:
     add_battery_constraints(n)
     add_transmission_constraints(n)
     add_nuclear_expansion_constraints(n)
-    
+
     if config["heat_coupling"]:
         add_water_tank_charger_constraints(n, config)
         add_chp_constraints(n)
@@ -905,13 +1012,13 @@ if __name__ == "__main__":
     if "snakemake" not in globals():
         snakemake = mock_snakemake(
             "solve_networks",
-            co2_pathway="SSP2-PkBudg1000-pseudo-coupled",
-            planning_horizons="2030",
+            co2_pathway="exp175default",
+            planning_horizons="2025",
             topology="current+FCG",
             # heating_demand="positive",
             # configfiles="resources/tmp/remind_coupled_cg.yaml",
             heating_demand="positive",
-            configfiles="resources/tmp/pseudo-coupled.yaml",
+            # configfiles="resources/tmp/pseudo-coupled.yaml",
         )
     configure_logging(snakemake)
     config = snakemake.config
@@ -937,6 +1044,16 @@ if __name__ == "__main__":
     n = prepare_network(
         n, solve_opts, snakemake.config, snakemake.wildcards.planning_horizons, co2_pathway
     )
+
+    # Apply fuel subsidies
+    subsidy_config = snakemake.config.get("subsidies", {"enabled": False})
+    if subsidy_config and subsidy_config.get("enabled", True):
+        # Remove 'enabled' key before passing to add_fuel_subsidies
+        subsidy_config_clean = {k: v for k, v in subsidy_config.items() if k != "enabled"}
+        if subsidy_config_clean:
+            add_fuel_subsidies(
+                n, subsidy_config_clean, planning_year=snakemake.wildcards.planning_horizons
+            )
 
     line_exp_limits = snakemake.config["lines"].get(
         "expansion", {"transmission_limit": "copt", "base_year": 2020}
