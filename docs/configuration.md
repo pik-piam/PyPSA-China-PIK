@@ -542,18 +542,33 @@ nodes:
 - **`splits`**: Custom groupings of admin level 2 regions within provinces
 
 ## Fuel Subsidies
+Fuel subsidies can be speficied for all years or per year
 
-```yaml
-subsidies:
-  enabled: false
-  gas:
-    Guangdong: -10
-    Jiangsu: -10
-    Zhejiang: -10
-    Beijing: -11
-    Tianjin: -11
-    Shanghai: -11
-```
+    === "All years"
+      ```yaml
+      subsidies:
+        enabled: false
+        gas:
+          Guangdong: -10
+          Jiangsu: -10
+          Zhejiang: -10
+          Beijing: -11
+          Tianjin: -11
+          Shanghai: -11
+      ```
+    === "Year by year"
+      ```yaml
+      subsidies:
+        enabled: false
+        gas:
+          2020:
+            Guangdong: -10
+            Jiangsu: -10
+            Zhejiang: -10
+            Beijing: -11
+            Tianjin: -11
+            Shanghai: -11
+      ```
 
 Provincial fuel subsidies configuration:
 - **`enabled`**: Enable/disable fuel subsidy system
