@@ -310,7 +310,8 @@ def prepare_network(
 def add_nuclear_expansion_constraints(n: pypsa.Network):
     """Add nuclear expansion limit constraint if configured."""
 
-    max_capacity = n.config.get("nuclear_max_capacity")
+    config = getattr(n, "config", {})
+    max_capacity = config.get("nuclear_max_capacity") if isinstance(config, dict) else None
 
     if max_capacity is None:
         return
@@ -811,7 +812,7 @@ def extra_functionality(n: pypsa.Network, _) -> None:
         n (pypsa.Network): the network object to optimize
         _: dummy for compatibility with pypsa solve
     """
-    config = n.config
+    config = getattr(n, "config", {})
     add_battery_constraints(n)
     add_transmission_constraints(n)
     add_nuclear_expansion_constraints(n)
@@ -949,7 +950,7 @@ if __name__ == "__main__":
         network_path=snakemake.input.network_name,
     )
     if nuclear_limit is not None:
-        n.config["nuclear_max_capacity"] = nuclear_limit
+        config["nuclear_max_capacity"] = nuclear_limit
 
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
