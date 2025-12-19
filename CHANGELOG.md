@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Global Energy Monitor data integration
 - Technology configuration system
 - Network plotting with customizable styles
+- Policies (subsidies) and differentiated fuel costs
 
 ### Changed
 - Improved documentation structure with tutorials and reference guides
@@ -67,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Notes
 
-PyPSA-China (PIK) is adapted from the Zhou et al. version, which was originally developed by Hailiang Liu et al. This changelog tracks changes from version 1.0.0 onwards in the PIK implementation.
+PyPSA-China (PIK) is based on the paper by Zhou et al, which extends a version original developed by Hailiang Liu et al. This changelog tracks changes from version 1.0.0 onwards in the PIK implementation.
 
 For detailed information about specific changes, see the [commit history](https://github.com/pik-piam/PyPSA-China-PIK/commits/main) on GitHub.
 

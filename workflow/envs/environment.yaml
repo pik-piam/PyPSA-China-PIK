@@ -13,6 +13,7 @@ dependencies:
   - pypsa=0.35.1
   - atlite>=0.4.0
   - dask
+  - coincbc
   - snakemake-storage-plugin-http
   # - pyasyncore
   # - pyasynchat

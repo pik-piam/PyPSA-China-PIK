@@ -267,10 +267,9 @@ def plot_residual_load_duration_curve(
         )
         .groupby(level=1)
         .sum()
-        .loc[vre_techs]
-        .sum()
     )
-
+    tech_filter = [t for t in vre_techs if t in vre_supply.index]
+    vre_supply = vre_supply.loc[tech_filter].sum()
     residual = (load - vre_supply).sort_values(ascending=False) / PLOT_CAP_UNITS
     residual.reset_index(drop=True).plot(ax=ax, lw=3)
     ax.set_ylabel(f"Residual Load [{PLOT_CAP_LABEL}]")
@@ -529,7 +528,7 @@ if __name__ == "__main__":
             # co2_pathway="SSP2-PkBudg1000-CHA-pypsaelh2",
             heating_demand="positive",
             # configfiles=["resources/tmp/remind_coupled_cg.yaml"],
-            planning_horizons="2050",
+            planning_horizons="2025",
             winter_day1="12-10 21:00",  # mm-dd HH:MM
             winter_day2="12-17 12:00",  # mm-dd HH:MM
             spring_day1="03-31 21:00",  # mm-dd HH:MM

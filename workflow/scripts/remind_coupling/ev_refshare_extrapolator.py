@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class GompertzModel:
     """Simplified Gompertz model for vehicle ownership prediction.
-    
+
     Args:
         saturation_level: Maximum vehicle ownership per 1000 people (default: 500)
         alpha: Fixed Gompertz parameter (default: -5.58)
@@ -185,11 +185,11 @@ def extrapolate_reference(years: list, input_files: dict, output_dir: str, confi
             - 'ssp2_pop': SSP2 future population projections
             - 'ssp2_gdp': SSP2 future GDP projections
         output_dir (str): Output directory for results (CSV files will be saved here)
-        config (dict, optional): Gompertz model parameters from 
+        config (dict, optional): Gompertz model parameters from
             sectors.electric_vehicles.gompertz configuration:
             - 'saturation_level': Maximum vehicles per 1000 people (default: 500)
             - 'alpha': Fixed Gompertz parameter (default: -5.58)
-    
+
     Outputs:
         Saves two CSV files to output_dir:
         - ev_passenger_shares.csv: Provincial shares of passenger EV demand

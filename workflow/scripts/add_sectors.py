@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def add_carrier_if_missing(n: pypsa.Network, carrier_name: str):
     """Add a carrier to the network if it doesn't already exist.
-    
+
     Args:
         n (pypsa.Network): PyPSA network to modify.
         carrier_name (str): Name of the carrier to add.
@@ -27,7 +27,7 @@ def attach_simple_ev(
     """
     Attach electric vehicle demand and charging links to the PyPSA network.
 
-    This function implements an EV demand model with a fixed charging profile.  
+    This function implements an EV demand model with a fixed charging profile.
     For each node, it creates:
       • an EV load bus,
       • a Load component representing the EV charging demand time series,
@@ -52,9 +52,9 @@ def attach_simple_ev(
     total_number_evs = total_energy / max(options["annual_consumption"], 1e-6)
     node_ratio = p_set.sum() / max(total_energy, 1e-6)
     number_evs = node_ratio * total_number_evs
-    charge_power = (
-        number_evs * options["charge_rate"] * options["share_charger"]
-    ).clip(lower=0.001)
+    charge_power = (number_evs * options["charge_rate"] * options["share_charger"]).clip(
+        lower=0.001
+    )
 
     logger.info("EV %s: %s vehicles (direct charging)", ev_type, f"{int(total_number_evs):,}")
     logger.debug(
@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
     transport_cfg = ev_cfg.get("transport", {})
     logger.info("Transport configuration: %s", transport_cfg)
-    
+
     passenger_cfg = transport_cfg.get("passenger_bev", {})
     if passenger_cfg.get("enable", False):
         charging = pd.read_csv(
@@ -143,6 +143,4 @@ if __name__ == "__main__":
         logger.info("Freight EV disabled; skipping.")
 
     network.export_to_netcdf(snakemake.output.network)
-    logger.info(
-        "Network with EV sectors exported to %s", snakemake.output.network
-    )
+    logger.info("Network with EV sectors exported to %s", snakemake.output.network)

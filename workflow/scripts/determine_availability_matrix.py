@@ -27,7 +27,6 @@ import geopandas as gpd
 import numpy as np
 from _helpers import configure_logging, mock_snakemake
 from constants import OFFSHORE_WIND_NODES, PROV_NAMES
-from pandas import concat
 from readers_geospatial import read_offshore_province_shapes, read_province_shapes
 
 logger = logging.getLogger(__name__)
@@ -61,7 +60,6 @@ if __name__ == "__main__":
     excluder = atlite.ExclusionContainer(crs=3035, res=res)
 
     if not params["natural_reserves"]:
-
         if technology == "offwind":
             protected_shp = gpd.read_file(snakemake.input["natural_reserves"])
             protected_shape = gpd.tools.overlay(
@@ -90,7 +88,7 @@ if __name__ == "__main__":
 
         if codes is None:
             logger.warning(
-                f"No land_cover_codes defined for {technology}, " "skipping land cover filtering"
+                f"No land_cover_codes defined for {technology}, skipping land cover filtering"
             )
         else:
             logger.info(f"Using Copernicus LC100 land cover codes for {technology}: {codes}")
