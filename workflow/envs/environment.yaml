@@ -20,6 +20,7 @@ dependencies:
   # Dependencies of the workflow itself
   - xlrd
   - libgdal-hdf5
+  - libgdal-netcdf
   - rioxarray
   - openpyxl
   - pycountry
@@ -64,7 +65,7 @@ dependencies:
   - pip:
     - vresutils>=0.3.1
     - tsam>=1.1.0
-    - gurobipy==11.0.3
+    - gurobipy==12.0.3
     - jwt
     - remind-pypsa-coupling>=0.1.2
     - mkdocs>=1.4.0
