@@ -310,7 +310,7 @@ def prepare_network(
 def add_nuclear_expansion_constraints(n: pypsa.Network):
     """Add nuclear expansion limit constraint if configured."""
 
-    max_capacity = getattr(n, "nuclear_max_capacity", None)
+    max_capacity = n.config.get("nuclear_max_capacity")
 
     if max_capacity is None:
         return
@@ -948,7 +948,8 @@ if __name__ == "__main__":
         planning_year=int(snakemake.wildcards.planning_horizons),
         network_path=snakemake.input.network_name,
     )
-    n.nuclear_max_capacity = nuclear_limit
+    if nuclear_limit is not None:
+        n.config["nuclear_max_capacity"] = nuclear_limit
 
     if tunnel:
         logger.info(f"tunnel process alive? {tunnel.poll()}")
