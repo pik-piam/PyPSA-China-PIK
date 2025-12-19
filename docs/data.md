@@ -8,7 +8,7 @@ Marcel Buchhorn, Bruno Smets, Luc Bertels, Bert De Roo, Myroslava Lesiv, Nandin-
 
 - Source: Copernicus Global Land Service:
 - Link: https://land.copernicus.eu/en/products/global-dynamic-land-cover/copernicus-global-land-service-land-cover-100m-collection-3-epoch-2019-globe
-- License: Creative Commons Attribution 4.0 International 
+- License: Creative Commons Attribution 4.0 International
 - Description: 100m resolution land classification
 
 ### Administrative regions
@@ -50,3 +50,9 @@ Gridded population data
 - License: CC-BY 4.0 (reference)
 - Description: Gridded population data.
 
+### EV charging load
+Weipeng Zhan, Yuan Liao, Junjun Deng, Zhenpo Wang, & Sonia Yeh. (2025). Large-scale empirical study of electric vehicle usage patterns and charging infrastructure needs. *npj Sustainable Mobility and Transport*.
+- Source: Nature Portfolio
+- Link: https://www.nature.com/articles/s44333-024-00023-3
+- License: [Nature Portfolio license](https://www.nature.com/articles/s44333-024-00023-3)
+- Description: Empirical data on electric vehicle usage patterns and charging infrastructure needs, including charging ratio profiles for passenger and freight vehicles used to generate time-series charging demand.

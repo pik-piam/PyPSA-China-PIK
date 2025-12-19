@@ -20,6 +20,7 @@ dependencies:
   # Dependencies of the workflow itself
   - xlrd
   - libgdal-hdf5
+  - libgdal-netcdf
   - rioxarray
   - openpyxl
   - pycountry
@@ -74,3 +75,4 @@ dependencies:
     - mkdocs-awesome-nav
     - mike>=1.1.0
     - python-markdown-math
+    - pre-commit>=4.0.0

@@ -154,6 +154,7 @@ def set_link_output_capacities(n: pypsa.Network, carriers: list) -> pd.DataFrame
     # coefficient to get AC side capacity
     ac_links = n.links[n.links.bus1.map(n.buses.carrier).isin(carriers)].index
     n.links.loc[ac_links, "p_nom_opt"] *= n.links.loc[ac_links, "efficiency"]
+    n.links.loc[ac_links, "p_nom"] *= n.links.loc[ac_links, "efficiency"]
 
     # ignore lossy link dummies
     pseudo_links = n.links.query("Link.str.contains('reversed') & capital_cost ==0 ").index
