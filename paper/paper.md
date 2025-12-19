@@ -78,7 +78,6 @@ To the best of the authors’ knowledge, few fully-open models of China’s powe
 -	**Active development**: higher resolution and further sectors under development.
 
 # Model Overview
-![Overview of the PyPSA-China-PIK workflow](assets/workflow_overview.pdf)
 
 `PyPSA-China-PIK` is best understood as a workflow built on-top of the Python Power System Analysis ([PyPSA](https://pypsa.readthedocs.io/en/stable/)) modeling framework[@PyPSA]. The steps  are: 
 1.	Data fetch of open energy systems (existing power system infrastructure, weather and land-use) data.
@@ -92,6 +91,8 @@ To the best of the authors’ knowledge, few fully-open models of China’s powe
 -	Weather data is collected from ECMWF’s ERA5 by `atlite`[@atlite2021]. Renewable potentials and hourly availability are aggregated by capacity factor at sub-provincial resolution.
 -	Existing power plant capacities from the Global Energy Monitor Integrated Power Tracker[@GlobalIntegratedPower2025]
 -	Techno-economic data: costs, lifetimes and efficiencies compiled from literature.
+
+![Overview of the PyPSA-China-PIK workflow](assets/workflow_overview.png
 
 # Functionalities  
 The core `PyPSA-China-PIK` functionalities are:
