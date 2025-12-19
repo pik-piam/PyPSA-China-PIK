@@ -5,7 +5,7 @@ REMIND national-level outputs to the provincial level. For example, EV passenger
 shares indicate what fraction of national EV demand belongs to each province.
 
 This provides a general framework to coordinate the extrapolation of sector-specific
-reference share files. Each sector has its own specialized module implementing the 
+reference share files. Each sector has its own specialized module implementing the
 `extrapolate_reference` function.
 """
 
@@ -51,7 +51,9 @@ class SectorReferenceGenerator:
             except ImportError as e:
                 logger.warning(f"Could not load {sector} sector module: {e}")
 
-    def extrapolate_references(self, years: list[int], input_files: dict[str, str], output_dir: str):
+    def extrapolate_references(
+        self, years: list[int], input_files: dict[str, str], output_dir: str
+    ):
         """Extrapolate provincial disaggregation shares for all available sectors.
 
         Generates reference share files that indicate what fraction of national-level
@@ -60,7 +62,7 @@ class SectorReferenceGenerator:
 
         Args:
             years (list[int]): List of target years for projections (e.g., [2020, 2025, 2030]).
-            input_files (dict[str, str]): Dictionary mapping data types to file paths 
+            input_files (dict[str, str]): Dictionary mapping data types to file paths
                 (e.g., historical GDP, population, sector-specific data).
             output_dir (str): Directory to save extrapolated reference share files.
         """

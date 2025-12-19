@@ -5,7 +5,7 @@ run:
   name: "reproduce_historical_load"
 foresight: "overnight"
 
-scenario: 
+scenario:
   co2_pathway: ["exp175default"] # co2_scenarios that will be used
   topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
   planning_horizons:
@@ -22,7 +22,7 @@ subsidies:
       Guangdong: -10.16
       Jiangsu:  -10.16
       Zhejiang: -10.15
-      Beijing: -12.5  
+      Beijing: -12.5
       Tianjin: -12.5
       Shanghai: -12.5
       Xinjiang: -10

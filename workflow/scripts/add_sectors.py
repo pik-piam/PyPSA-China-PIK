@@ -27,7 +27,7 @@ def attach_simple_ev(
     """
     Attach electric vehicle demand and charging links to the PyPSA network.
 
-    This function implements an EV demand model with a fixed charging profile.  
+    This function implements an EV demand model with a fixed charging profile.
     For each node, it creates:
       • an EV load bus,
       • a Load component representing the EV charging demand time series,
@@ -52,9 +52,9 @@ def attach_simple_ev(
     total_number_evs = total_energy / max(options["annual_consumption"], 1e-6)
     node_ratio = p_set.sum() / max(total_energy, 1e-6)
     number_evs = node_ratio * total_number_evs
-    charge_power = (
-        number_evs * options["charge_rate"] * options["share_charger"]
-    ).clip(lower=0.001)
+    charge_power = (number_evs * options["charge_rate"] * options["share_charger"]).clip(
+        lower=0.001
+    )
 
     logger.info("EV %s: %s vehicles (direct charging)", ev_type, f"{int(total_number_evs):,}")
     logger.debug(
@@ -143,6 +143,4 @@ if __name__ == "__main__":
         logger.info("Freight EV disabled; skipping.")
 
     network.export_to_netcdf(snakemake.output.network)
-    logger.info(
-        "Network with EV sectors exported to %s", snakemake.output.network
-    )
+    logger.info("Network with EV sectors exported to %s", snakemake.output.network)

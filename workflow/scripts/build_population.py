@@ -29,7 +29,7 @@ def load_pop_csv(csv_path: os.PathLike) -> pd.DataFrame:
         ValueError: If the province names do not match expected names
     """
     # Read CSV, skipping comment lines that start with #
-    df = pd.read_csv(csv_path, index_col=0, header=0, comment='#')
+    df = pd.read_csv(csv_path, index_col=0, header=0, comment="#")
     df = df.apply(pd.to_numeric)
     df = df[POP_YEAR][df.index.isin(PROV_NAMES)]
     if not sorted(df.index.to_list()) == sorted(PROV_NAMES):

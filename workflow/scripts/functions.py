@@ -24,7 +24,7 @@ def get_poly_center(poly: Polygon):
     for plotting and spatial analysis in geographic applications.
 
     Args:
-        poly (Polygon): A (shapely) polygon geometry object with a 
+        poly (Polygon): A (shapely) polygon geometry object with a
             centroid attribute that has x and y coordinate arrays.
 
     Returns:

@@ -94,9 +94,7 @@ def add_fuel_subsidies(n: pypsa.Network, subsidy_config: dict, planning_year: in
             continue
 
         # Query generators with matching carrier and location in subsidy provinces
-        mask = n.generators.query(
-            "carrier == @carrier and location in @subs.index"
-        ).index
+        mask = n.generators.query("carrier == @carrier and location in @subs.index").index
 
         if mask.empty:
             logger.warning(
@@ -426,7 +424,6 @@ def add_nuclear_expansion_constraints(n: pypsa.Network):
 
     if max_capacity is None:
         return
-
 
     nuclear_gens_ext = n.generators[
         (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)

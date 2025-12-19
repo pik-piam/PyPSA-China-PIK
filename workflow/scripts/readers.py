@@ -1,7 +1,7 @@
 """File reading support functions for PyPSA-China-PIK workflow.
 
 This module provides functions for reading and processing yearly load projections
-from REMIND data, with support for sector coupling (electric vehicles) and 
+from REMIND data, with support for sector coupling (electric vehicles) and
 flexible data format handling.
 """
 
@@ -13,9 +13,9 @@ import pandas as pd
 def aggregate_sectoral_loads(yearly_proj: pd.DataFrame, config: dict) -> pd.DataFrame:
     """Aggregate REMIND load sectors according to the model configuration.
 
-    Sectors that are NOT enabled for independent modeling will be aggregated 
-    into the main electricity load. For example, if EV sector is not enabled 
-    as an independent sector (enabled: false), its load will be added to the 
+    Sectors that are NOT enabled for independent modeling will be aggregated
+    into the main electricity load. For example, if EV sector is not enabled
+    as an independent sector (enabled: false), its load will be added to the
     AC load in the aggregation.
 
     Args:
@@ -76,7 +76,7 @@ def read_yearly_load_projections(
 ) -> pd.DataFrame:
     """Read and process yearly load projections from CSV files.
 
-    Supports both simple load data and REMIND sector-coupled data with 
+    Supports both simple load data and REMIND sector-coupled data with
     electric vehicle integration. Automatically detects data format and
     applies appropriate processing.
 
@@ -122,8 +122,7 @@ def read_yearly_load_projections(
 
     if province_col is None:
         raise ValueError(
-            f"No province column found in {file_path}. "
-            f"Expected one of: {province_candidates}"
+            f"No province column found in {file_path}. Expected one of: {province_candidates}"
         )
 
     if province_col != "province":
