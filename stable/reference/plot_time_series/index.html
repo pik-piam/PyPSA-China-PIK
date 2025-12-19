@@ -2874,7 +2874,8 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>workflow/scripts/plot_time_series.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-315">315</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-314">314</a></span>
+<span class="normal"><a href="#__codelineno-0-315">315</a></span>
 <span class="normal"><a href="#__codelineno-0-316">316</a></span>
 <span class="normal"><a href="#__codelineno-0-317">317</a></span>
 <span class="normal"><a href="#__codelineno-0-318">318</a></span>
@@ -2929,64 +2930,63 @@ Args:
 <span class="normal"><a href="#__codelineno-0-367">367</a></span>
 <span class="normal"><a href="#__codelineno-0-368">368</a></span>
 <span class="normal"><a href="#__codelineno-0-369">369</a></span>
-<span class="normal"><a href="#__codelineno-0-370">370</a></span>
-<span class="normal"><a href="#__codelineno-0-371">371</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-315" name="__codelineno-0-315"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_price_duration_by_node</span><span class="p">(</span>
-<a id="__codelineno-0-316" name="__codelineno-0-316"></a>    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
-<a id="__codelineno-0-317" name="__codelineno-0-317"></a>    <span class="n">carrier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;AC&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-318" name="__codelineno-0-318"></a>    <span class="n">logy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-319" name="__codelineno-0-319"></a>    <span class="n">y_lower</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
-<a id="__codelineno-0-320" name="__codelineno-0-320"></a>    <span class="n">fig_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-<a id="__codelineno-0-321" name="__codelineno-0-321"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
-<a id="__codelineno-0-322" name="__codelineno-0-322"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the price duration curve for the given carrier by node</span>
-<a id="__codelineno-0-323" name="__codelineno-0-323"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-324" name="__codelineno-0-324"></a><span class="sd">        network (pypsa.Network): the pypsa network object</span>
-<a id="__codelineno-0-325" name="__codelineno-0-325"></a><span class="sd">        carrier (str, optional): the load carrier, defaults to AC (bus suffix)</span>
-<a id="__codelineno-0-326" name="__codelineno-0-326"></a><span class="sd">        logy (bool, optional): use log scale for y axis, defaults to True</span>
-<a id="__codelineno-0-327" name="__codelineno-0-327"></a><span class="sd">        y_lower (float, optional): lower limit for y axis, defaults to 1e-3</span>
-<a id="__codelineno-0-328" name="__codelineno-0-328"></a><span class="sd">        fig_shape (tuple, optional): shape of the figure, defaults to (8, 4)</span>
-<a id="__codelineno-0-329" name="__codelineno-0-329"></a>
-<a id="__codelineno-0-330" name="__codelineno-0-330"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-331" name="__codelineno-0-331"></a><span class="sd">        plt.Axes: the plotting axes</span>
-<a id="__codelineno-0-332" name="__codelineno-0-332"></a><span class="sd">    Raises:</span>
-<a id="__codelineno-0-333" name="__codelineno-0-333"></a><span class="sd">        ValueError: if the figure shape is too small for the number of regions</span>
-<a id="__codelineno-0-334" name="__codelineno-0-334"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-335" name="__codelineno-0-335"></a>
-<a id="__codelineno-0-336" name="__codelineno-0-336"></a>    <span class="k">if</span> <span class="n">carrier</span> <span class="o">==</span> <span class="s2">&quot;AC&quot;</span><span class="p">:</span>
-<a id="__codelineno-0-337" name="__codelineno-0-337"></a>        <span class="n">suffix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-<a id="__codelineno-0-338" name="__codelineno-0-338"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-339" name="__codelineno-0-339"></a>        <span class="n">suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">carrier</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-0-340" name="__codelineno-0-340"></a>
-<a id="__codelineno-0-341" name="__codelineno-0-341"></a>    <span class="n">nodal_prices</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">buses_t</span><span class="o">.</span><span class="n">marginal_price</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">PROV_NAMES</span><span class="p">)</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">]</span>
-<a id="__codelineno-0-342" name="__codelineno-0-342"></a>
-<a id="__codelineno-0-343" name="__codelineno-0-343"></a>    <span class="k">if</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodal_prices</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
-<a id="__codelineno-0-344" name="__codelineno-0-344"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-<a id="__codelineno-0-345" name="__codelineno-0-345"></a>            <span class="sa">f</span><span class="s2">&quot;Figure shape </span><span class="si">{</span><span class="n">fig_shape</span><span class="si">}</span><span class="s2"> is too small for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">nodal_prices</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2"> regions. &quot;</span>
-<a id="__codelineno-0-346" name="__codelineno-0-346"></a>            <span class="o">+</span> <span class="s2">&quot;Please increase the number of subplots.&quot;</span>
-<a id="__codelineno-0-347" name="__codelineno-0-347"></a>        <span class="p">)</span>
-<a id="__codelineno-0-348" name="__codelineno-0-348"></a>    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">fig_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
-<a id="__codelineno-0-349" name="__codelineno-0-349"></a>
-<a id="__codelineno-0-350" name="__codelineno-0-350"></a>    <span class="c1"># region by region sorting of prices</span>
-<a id="__codelineno-0-351" name="__codelineno-0-351"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">region</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodal_prices</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
-<a id="__codelineno-0-352" name="__codelineno-0-352"></a>        <span class="n">reg_pr</span> <span class="o">=</span> <span class="n">nodal_prices</span><span class="p">[</span><span class="n">region</span><span class="p">]</span>
-<a id="__codelineno-0-353" name="__codelineno-0-353"></a>        <span class="n">reg_pr</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-<a id="__codelineno-0-354" name="__codelineno-0-354"></a>            <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">%</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">label</span><span class="o">=</span><span class="n">region</span>
-<a id="__codelineno-0-355" name="__codelineno-0-355"></a>        <span class="p">)</span>
-<a id="__codelineno-0-356" name="__codelineno-0-356"></a>        <span class="n">axes</span><span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">%</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<a id="__codelineno-0-357" name="__codelineno-0-357"></a>        <span class="k">if</span> <span class="n">logy</span><span class="p">:</span>
-<a id="__codelineno-0-358" name="__codelineno-0-358"></a>            <span class="n">axes</span><span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">%</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">semilogy</span><span class="p">()</span>
-<a id="__codelineno-0-359" name="__codelineno-0-359"></a>        <span class="k">if</span> <span class="n">y_lower</span><span class="p">:</span>
-<a id="__codelineno-0-360" name="__codelineno-0-360"></a>            <span class="n">axes</span><span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">%</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">y_lower</span><span class="p">,</span> <span class="n">reg_pr</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">)</span>
-<a id="__codelineno-0-361" name="__codelineno-0-361"></a>        <span class="k">elif</span> <span class="n">reg_pr</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">1e-5</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">logy</span><span class="p">:</span>
-<a id="__codelineno-0-362" name="__codelineno-0-362"></a>            <span class="n">axes</span><span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">%</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">reg_pr</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">)</span>
-<a id="__codelineno-0-363" name="__codelineno-0-363"></a>    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">(</span><span class="n">h_pad</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">w_pad</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
-<a id="__codelineno-0-364" name="__codelineno-0-364"></a>    <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axes</span><span class="o">.</span><span class="n">flat</span><span class="p">:</span>
-<a id="__codelineno-0-365" name="__codelineno-0-365"></a>        <span class="c1"># Remove all x-tick labels except the largest value</span>
-<a id="__codelineno-0-366" name="__codelineno-0-366"></a>        <span class="n">xticks</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xticks</span><span class="p">()</span>
-<a id="__codelineno-0-367" name="__codelineno-0-367"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">xticks</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-<a id="__codelineno-0-368" name="__codelineno-0-368"></a>            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="n">xticks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xticks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
-<a id="__codelineno-0-369" name="__codelineno-0-369"></a>            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">xticks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">xticks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
-<a id="__codelineno-0-370" name="__codelineno-0-370"></a>
-<a id="__codelineno-0-371" name="__codelineno-0-371"></a>    <span class="k">return</span> <span class="n">ax</span>
+<span class="normal"><a href="#__codelineno-0-370">370</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-314" name="__codelineno-0-314"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_price_duration_by_node</span><span class="p">(</span>
+<a id="__codelineno-0-315" name="__codelineno-0-315"></a>    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+<a id="__codelineno-0-316" name="__codelineno-0-316"></a>    <span class="n">carrier</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;AC&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-317" name="__codelineno-0-317"></a>    <span class="n">logy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-318" name="__codelineno-0-318"></a>    <span class="n">y_lower</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+<a id="__codelineno-0-319" name="__codelineno-0-319"></a>    <span class="n">fig_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+<a id="__codelineno-0-320" name="__codelineno-0-320"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
+<a id="__codelineno-0-321" name="__codelineno-0-321"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the price duration curve for the given carrier by node</span>
+<a id="__codelineno-0-322" name="__codelineno-0-322"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-323" name="__codelineno-0-323"></a><span class="sd">        network (pypsa.Network): the pypsa network object</span>
+<a id="__codelineno-0-324" name="__codelineno-0-324"></a><span class="sd">        carrier (str, optional): the load carrier, defaults to AC (bus suffix)</span>
+<a id="__codelineno-0-325" name="__codelineno-0-325"></a><span class="sd">        logy (bool, optional): use log scale for y axis, defaults to True</span>
+<a id="__codelineno-0-326" name="__codelineno-0-326"></a><span class="sd">        y_lower (float, optional): lower limit for y axis, defaults to 1e-3</span>
+<a id="__codelineno-0-327" name="__codelineno-0-327"></a><span class="sd">        fig_shape (tuple, optional): shape of the figure, defaults to (8, 4)</span>
+<a id="__codelineno-0-328" name="__codelineno-0-328"></a>
+<a id="__codelineno-0-329" name="__codelineno-0-329"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-330" name="__codelineno-0-330"></a><span class="sd">        plt.Axes: the plotting axes</span>
+<a id="__codelineno-0-331" name="__codelineno-0-331"></a><span class="sd">    Raises:</span>
+<a id="__codelineno-0-332" name="__codelineno-0-332"></a><span class="sd">        ValueError: if the figure shape is too small for the number of regions</span>
+<a id="__codelineno-0-333" name="__codelineno-0-333"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-334" name="__codelineno-0-334"></a>
+<a id="__codelineno-0-335" name="__codelineno-0-335"></a>    <span class="k">if</span> <span class="n">carrier</span> <span class="o">==</span> <span class="s2">&quot;AC&quot;</span><span class="p">:</span>
+<a id="__codelineno-0-336" name="__codelineno-0-336"></a>        <span class="n">suffix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<a id="__codelineno-0-337" name="__codelineno-0-337"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-338" name="__codelineno-0-338"></a>        <span class="n">suffix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">carrier</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-0-339" name="__codelineno-0-339"></a>
+<a id="__codelineno-0-340" name="__codelineno-0-340"></a>    <span class="n">nodal_prices</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">buses_t</span><span class="o">.</span><span class="n">marginal_price</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">PROV_NAMES</span><span class="p">)</span> <span class="o">+</span> <span class="n">suffix</span><span class="p">]</span>
+<a id="__codelineno-0-341" name="__codelineno-0-341"></a>
+<a id="__codelineno-0-342" name="__codelineno-0-342"></a>    <span class="k">if</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodal_prices</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+<a id="__codelineno-0-343" name="__codelineno-0-343"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+<a id="__codelineno-0-344" name="__codelineno-0-344"></a>            <span class="sa">f</span><span class="s2">&quot;Figure shape </span><span class="si">{</span><span class="n">fig_shape</span><span class="si">}</span><span class="s2"> is too small for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">nodal_prices</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2"> regions. &quot;</span>
+<a id="__codelineno-0-345" name="__codelineno-0-345"></a>            <span class="o">+</span> <span class="s2">&quot;Please increase the number of subplots.&quot;</span>
+<a id="__codelineno-0-346" name="__codelineno-0-346"></a>        <span class="p">)</span>
+<a id="__codelineno-0-347" name="__codelineno-0-347"></a>    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">fig_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<a id="__codelineno-0-348" name="__codelineno-0-348"></a>
+<a id="__codelineno-0-349" name="__codelineno-0-349"></a>    <span class="c1"># region by region sorting of prices</span>
+<a id="__codelineno-0-350" name="__codelineno-0-350"></a>    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">region</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">nodal_prices</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+<a id="__codelineno-0-351" name="__codelineno-0-351"></a>        <span class="n">reg_pr</span> <span class="o">=</span> <span class="n">nodal_prices</span><span class="p">[</span><span class="n">region</span><span class="p">]</span>
+<a id="__codelineno-0-352" name="__codelineno-0-352"></a>        <span class="n">reg_pr</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+<a id="__codelineno-0-353" name="__codelineno-0-353"></a>            <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">%</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">label</span><span class="o">=</span><span class="n">region</span>
+<a id="__codelineno-0-354" name="__codelineno-0-354"></a>        <span class="p">)</span>
+<a id="__codelineno-0-355" name="__codelineno-0-355"></a>        <span class="n">axes</span><span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">%</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="__codelineno-0-356" name="__codelineno-0-356"></a>        <span class="k">if</span> <span class="n">logy</span><span class="p">:</span>
+<a id="__codelineno-0-357" name="__codelineno-0-357"></a>            <span class="n">axes</span><span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">%</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">semilogy</span><span class="p">()</span>
+<a id="__codelineno-0-358" name="__codelineno-0-358"></a>        <span class="k">if</span> <span class="n">y_lower</span><span class="p">:</span>
+<a id="__codelineno-0-359" name="__codelineno-0-359"></a>            <span class="n">axes</span><span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">%</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">y_lower</span><span class="p">,</span> <span class="n">reg_pr</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">)</span>
+<a id="__codelineno-0-360" name="__codelineno-0-360"></a>        <span class="k">elif</span> <span class="n">reg_pr</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">1e-5</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">logy</span><span class="p">:</span>
+<a id="__codelineno-0-361" name="__codelineno-0-361"></a>            <span class="n">axes</span><span class="p">[</span><span class="n">i</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">%</span> <span class="n">fig_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">reg_pr</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">)</span>
+<a id="__codelineno-0-362" name="__codelineno-0-362"></a>    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">(</span><span class="n">h_pad</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">w_pad</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<a id="__codelineno-0-363" name="__codelineno-0-363"></a>    <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axes</span><span class="o">.</span><span class="n">flat</span><span class="p">:</span>
+<a id="__codelineno-0-364" name="__codelineno-0-364"></a>        <span class="c1"># Remove all x-tick labels except the largest value</span>
+<a id="__codelineno-0-365" name="__codelineno-0-365"></a>        <span class="n">xticks</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_xticks</span><span class="p">()</span>
+<a id="__codelineno-0-366" name="__codelineno-0-366"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">xticks</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<a id="__codelineno-0-367" name="__codelineno-0-367"></a>            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="n">xticks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xticks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+<a id="__codelineno-0-368" name="__codelineno-0-368"></a>            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">xticks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">xticks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span>
+<a id="__codelineno-0-369" name="__codelineno-0-369"></a>
+<a id="__codelineno-0-370" name="__codelineno-0-370"></a>    <span class="k">return</span> <span class="n">ax</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3111,7 +3111,8 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>workflow/scripts/plot_time_series.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-282">282</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-281">281</a></span>
+<span class="normal"><a href="#__codelineno-0-282">282</a></span>
 <span class="normal"><a href="#__codelineno-0-283">283</a></span>
 <span class="normal"><a href="#__codelineno-0-284">284</a></span>
 <span class="normal"><a href="#__codelineno-0-285">285</a></span>
@@ -3140,38 +3141,37 @@ Args:
 <span class="normal"><a href="#__codelineno-0-308">308</a></span>
 <span class="normal"><a href="#__codelineno-0-309">309</a></span>
 <span class="normal"><a href="#__codelineno-0-310">310</a></span>
-<span class="normal"><a href="#__codelineno-0-311">311</a></span>
-<span class="normal"><a href="#__codelineno-0-312">312</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-282" name="__codelineno-0-282"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_price_duration_curve</span><span class="p">(</span>
-<a id="__codelineno-0-283" name="__codelineno-0-283"></a>    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span> <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-<a id="__codelineno-0-284" name="__codelineno-0-284"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
-<a id="__codelineno-0-285" name="__codelineno-0-285"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the price duration curve for the given carrier</span>
-<a id="__codelineno-0-286" name="__codelineno-0-286"></a>
-<a id="__codelineno-0-287" name="__codelineno-0-287"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-288" name="__codelineno-0-288"></a><span class="sd">        network (pypsa.Network): the pypasa network object</span>
-<a id="__codelineno-0-289" name="__codelineno-0-289"></a><span class="sd">        carrier (str, optional): the load carrier, defaults to AC</span>
-<a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="sd">        ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.</span>
-<a id="__codelineno-0-291" name="__codelineno-0-291"></a><span class="sd">        figsize (tuple, optional): size of the figure (if no ax given), defaults to (8, 8)</span>
-<a id="__codelineno-0-292" name="__codelineno-0-292"></a>
-<a id="__codelineno-0-293" name="__codelineno-0-293"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-294" name="__codelineno-0-294"></a><span class="sd">        plt.Axes: the plotting axes</span>
-<a id="__codelineno-0-295" name="__codelineno-0-295"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-296" name="__codelineno-0-296"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">ax</span><span class="p">:</span>
-<a id="__codelineno-0-297" name="__codelineno-0-297"></a>        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
-<a id="__codelineno-0-298" name="__codelineno-0-298"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-299" name="__codelineno-0-299"></a>        <span class="n">fig</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_figure</span><span class="p">()</span>
-<a id="__codelineno-0-300" name="__codelineno-0-300"></a>
-<a id="__codelineno-0-301" name="__codelineno-0-301"></a>    <span class="n">ntwk_el_price</span> <span class="o">=</span> <span class="p">(</span>
-<a id="__codelineno-0-302" name="__codelineno-0-302"></a>        <span class="o">-</span><span class="mi">1</span>
-<a id="__codelineno-0-303" name="__codelineno-0-303"></a>        <span class="o">*</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">revenue</span><span class="p">(</span><span class="n">bus_carrier</span><span class="o">=</span><span class="n">carrier</span><span class="p">,</span> <span class="n">aggregate_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">comps</span><span class="o">=</span><span class="s2">&quot;Load&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-304" name="__codelineno-0-304"></a>        <span class="o">/</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">withdrawal</span><span class="p">(</span><span class="n">bus_carrier</span><span class="o">=</span><span class="n">carrier</span><span class="p">,</span> <span class="n">aggregate_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">comps</span><span class="o">=</span><span class="s2">&quot;Load&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-305" name="__codelineno-0-305"></a>    <span class="p">)</span><span class="o">.</span><span class="n">T</span>
-<a id="__codelineno-0-306" name="__codelineno-0-306"></a>    <span class="n">ntwk_el_price</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;-&quot;</span><span class="p">:</span> <span class="s2">&quot;Load&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-307" name="__codelineno-0-307"></a>    <span class="n">ntwk_el_price</span><span class="o">.</span><span class="n">Load</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
-<a id="__codelineno-0-308" name="__codelineno-0-308"></a>        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Price Duration Curve&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span>
-<a id="__codelineno-0-309" name="__codelineno-0-309"></a>    <span class="p">)</span>
-<a id="__codelineno-0-310" name="__codelineno-0-310"></a>    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-<a id="__codelineno-0-311" name="__codelineno-0-311"></a>
-<a id="__codelineno-0-312" name="__codelineno-0-312"></a>    <span class="k">return</span> <span class="n">ax</span>
+<span class="normal"><a href="#__codelineno-0-311">311</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-281" name="__codelineno-0-281"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_price_duration_curve</span><span class="p">(</span>
+<a id="__codelineno-0-282" name="__codelineno-0-282"></a>    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span> <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<a id="__codelineno-0-283" name="__codelineno-0-283"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
+<a id="__codelineno-0-284" name="__codelineno-0-284"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the price duration curve for the given carrier</span>
+<a id="__codelineno-0-285" name="__codelineno-0-285"></a>
+<a id="__codelineno-0-286" name="__codelineno-0-286"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-287" name="__codelineno-0-287"></a><span class="sd">        network (pypsa.Network): the pypasa network object</span>
+<a id="__codelineno-0-288" name="__codelineno-0-288"></a><span class="sd">        carrier (str, optional): the load carrier, defaults to AC</span>
+<a id="__codelineno-0-289" name="__codelineno-0-289"></a><span class="sd">        ax (plt.Axes, optional): Axes to plot on, if none fig will be created. Defaults to None.</span>
+<a id="__codelineno-0-290" name="__codelineno-0-290"></a><span class="sd">        figsize (tuple, optional): size of the figure (if no ax given), defaults to (8, 8)</span>
+<a id="__codelineno-0-291" name="__codelineno-0-291"></a>
+<a id="__codelineno-0-292" name="__codelineno-0-292"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-293" name="__codelineno-0-293"></a><span class="sd">        plt.Axes: the plotting axes</span>
+<a id="__codelineno-0-294" name="__codelineno-0-294"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-295" name="__codelineno-0-295"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">ax</span><span class="p">:</span>
+<a id="__codelineno-0-296" name="__codelineno-0-296"></a>        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+<a id="__codelineno-0-297" name="__codelineno-0-297"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-298" name="__codelineno-0-298"></a>        <span class="n">fig</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_figure</span><span class="p">()</span>
+<a id="__codelineno-0-299" name="__codelineno-0-299"></a>
+<a id="__codelineno-0-300" name="__codelineno-0-300"></a>    <span class="n">ntwk_el_price</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-301" name="__codelineno-0-301"></a>        <span class="o">-</span><span class="mi">1</span>
+<a id="__codelineno-0-302" name="__codelineno-0-302"></a>        <span class="o">*</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">revenue</span><span class="p">(</span><span class="n">bus_carrier</span><span class="o">=</span><span class="n">carrier</span><span class="p">,</span> <span class="n">aggregate_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">comps</span><span class="o">=</span><span class="s2">&quot;Load&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-303" name="__codelineno-0-303"></a>        <span class="o">/</span> <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">withdrawal</span><span class="p">(</span><span class="n">bus_carrier</span><span class="o">=</span><span class="n">carrier</span><span class="p">,</span> <span class="n">aggregate_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">comps</span><span class="o">=</span><span class="s2">&quot;Load&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-304" name="__codelineno-0-304"></a>    <span class="p">)</span><span class="o">.</span><span class="n">T</span>
+<a id="__codelineno-0-305" name="__codelineno-0-305"></a>    <span class="n">ntwk_el_price</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;-&quot;</span><span class="p">:</span> <span class="s2">&quot;Load&quot;</span><span class="p">},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-306" name="__codelineno-0-306"></a>    <span class="n">ntwk_el_price</span><span class="o">.</span><span class="n">Load</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+<a id="__codelineno-0-307" name="__codelineno-0-307"></a>        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Price Duration Curve&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span>
+<a id="__codelineno-0-308" name="__codelineno-0-308"></a>    <span class="p">)</span>
+<a id="__codelineno-0-309" name="__codelineno-0-309"></a>    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<a id="__codelineno-0-310" name="__codelineno-0-310"></a>
+<a id="__codelineno-0-311" name="__codelineno-0-311"></a>    <span class="k">return</span> <span class="n">ax</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3328,7 +3328,8 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>workflow/scripts/plot_time_series.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-374">374</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-373">373</a></span>
+<span class="normal"><a href="#__codelineno-0-374">374</a></span>
 <span class="normal"><a href="#__codelineno-0-375">375</a></span>
 <span class="normal"><a href="#__codelineno-0-376">376</a></span>
 <span class="normal"><a href="#__codelineno-0-377">377</a></span>
@@ -3388,69 +3389,68 @@ Args:
 <span class="normal"><a href="#__codelineno-0-431">431</a></span>
 <span class="normal"><a href="#__codelineno-0-432">432</a></span>
 <span class="normal"><a href="#__codelineno-0-433">433</a></span>
-<span class="normal"><a href="#__codelineno-0-434">434</a></span>
-<span class="normal"><a href="#__codelineno-0-435">435</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-374" name="__codelineno-0-374"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_price_heatmap</span><span class="p">(</span>
-<a id="__codelineno-0-375" name="__codelineno-0-375"></a>    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
-<a id="__codelineno-0-376" name="__codelineno-0-376"></a>    <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-377" name="__codelineno-0-377"></a>    <span class="n">log_values</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-378" name="__codelineno-0-378"></a>    <span class="n">color_map</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-379" name="__codelineno-0-379"></a>    <span class="n">time_range</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-380" name="__codelineno-0-380"></a>    <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-381" name="__codelineno-0-381"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
-<a id="__codelineno-0-382" name="__codelineno-0-382"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the price heat map (region vs time) for the given carrier</span>
-<a id="__codelineno-0-383" name="__codelineno-0-383"></a>
-<a id="__codelineno-0-384" name="__codelineno-0-384"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-385" name="__codelineno-0-385"></a><span class="sd">        network (pypsa.Network): the pypsa network object</span>
-<a id="__codelineno-0-386" name="__codelineno-0-386"></a><span class="sd">        carrier (str, optional): the carrier for which to get the price. Defaults to &quot;AC&quot;.</span>
-<a id="__codelineno-0-387" name="__codelineno-0-387"></a><span class="sd">        log_values (bool, optional): whether to use log scale for the prices. Defaults to False.</span>
-<a id="__codelineno-0-388" name="__codelineno-0-388"></a><span class="sd">        color_map (str, optional): the color map to use. Defaults to &quot;viridis&quot;.</span>
-<a id="__codelineno-0-389" name="__codelineno-0-389"></a><span class="sd">        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).</span>
-<a id="__codelineno-0-390" name="__codelineno-0-390"></a><span class="sd">        ax (plt.Axes, optional): the plotting axis. Defaults to None (new fig).</span>
-<a id="__codelineno-0-391" name="__codelineno-0-391"></a>
-<a id="__codelineno-0-392" name="__codelineno-0-392"></a><span class="sd">    Returns:</span>
-<a id="__codelineno-0-393" name="__codelineno-0-393"></a><span class="sd">        plt.Axes: the axes for plotting</span>
-<a id="__codelineno-0-394" name="__codelineno-0-394"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-395" name="__codelineno-0-395"></a>
-<a id="__codelineno-0-396" name="__codelineno-0-396"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">ax</span><span class="p">:</span>
-<a id="__codelineno-0-397" name="__codelineno-0-397"></a>        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
-<a id="__codelineno-0-398" name="__codelineno-0-398"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-399" name="__codelineno-0-399"></a>        <span class="n">fig</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_figure</span><span class="p">()</span>
-<a id="__codelineno-0-400" name="__codelineno-0-400"></a>
-<a id="__codelineno-0-401" name="__codelineno-0-401"></a>    <span class="n">carrier_buses</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">carrier</span><span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">carrier</span> <span class="o">==</span> <span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
-<a id="__codelineno-0-402" name="__codelineno-0-402"></a>    <span class="n">nodal_prices</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">buses_t</span><span class="o">.</span><span class="n">marginal_price</span><span class="p">[</span><span class="n">carrier_buses</span><span class="p">]</span>
-<a id="__codelineno-0-403" name="__codelineno-0-403"></a>
-<a id="__codelineno-0-404" name="__codelineno-0-404"></a>    <span class="k">if</span> <span class="n">time_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-405" name="__codelineno-0-405"></a>        <span class="c1"># Filter nodal_prices by the given time range</span>
-<a id="__codelineno-0-406" name="__codelineno-0-406"></a>        <span class="n">nodal_prices</span> <span class="o">=</span> <span class="n">nodal_prices</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_range</span><span class="p">]</span>
-<a id="__codelineno-0-407" name="__codelineno-0-407"></a>    <span class="c1"># Normalize nodal_prices with log transformation</span>
-<a id="__codelineno-0-408" name="__codelineno-0-408"></a>    <span class="k">if</span> <span class="n">log_values</span><span class="p">:</span>
-<a id="__codelineno-0-409" name="__codelineno-0-409"></a>        <span class="c1"># Avoid log(0) by clipping values to a minimum of 0.1</span>
-<a id="__codelineno-0-410" name="__codelineno-0-410"></a>        <span class="n">normalized_prices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">nodal_prices</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>
-<a id="__codelineno-0-411" name="__codelineno-0-411"></a>        <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;Log-Transformed Price [€/MWh]&quot;</span>
-<a id="__codelineno-0-412" name="__codelineno-0-412"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-413" name="__codelineno-0-413"></a>        <span class="n">normalized_prices</span> <span class="o">=</span> <span class="n">nodal_prices</span>
-<a id="__codelineno-0-414" name="__codelineno-0-414"></a>        <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;Price [€/MWh]&quot;</span>
-<a id="__codelineno-0-415" name="__codelineno-0-415"></a>    <span class="c1"># Create a heatmap of normalized nodal_prices</span>
-<a id="__codelineno-0-416" name="__codelineno-0-416"></a>    <span class="n">plot_index</span> <span class="o">=</span> <span class="n">normalized_prices</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%m-</span><span class="si">%d</span><span class="s2"> %H:%M&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
-<a id="__codelineno-0-417" name="__codelineno-0-417"></a>    <span class="n">normalized_prices</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">plot_index</span>
-<a id="__codelineno-0-418" name="__codelineno-0-418"></a>    <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span>
-<a id="__codelineno-0-419" name="__codelineno-0-419"></a>        <span class="n">normalized_prices</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
-<a id="__codelineno-0-420" name="__codelineno-0-420"></a>        <span class="n">cmap</span><span class="o">=</span><span class="n">color_map</span><span class="p">,</span>
-<a id="__codelineno-0-421" name="__codelineno-0-421"></a>        <span class="n">cbar_kws</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">label</span><span class="p">},</span>
-<a id="__codelineno-0-422" name="__codelineno-0-422"></a>        <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
-<a id="__codelineno-0-423" name="__codelineno-0-423"></a>    <span class="p">)</span>
-<a id="__codelineno-0-424" name="__codelineno-0-424"></a>
-<a id="__codelineno-0-425" name="__codelineno-0-425"></a>    <span class="c1"># Customize the plot</span>
-<a id="__codelineno-0-426" name="__codelineno-0-426"></a>    <span class="k">if</span> <span class="n">log_values</span><span class="p">:</span>
-<a id="__codelineno-0-427" name="__codelineno-0-427"></a>        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Heatmap of Log-Transformed Nodal Prices&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-428" name="__codelineno-0-428"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-429" name="__codelineno-0-429"></a>        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Heatmap of Nodal Prices&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-430" name="__codelineno-0-430"></a>
-<a id="__codelineno-0-431" name="__codelineno-0-431"></a>    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-432" name="__codelineno-0-432"></a>    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Nodes&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-433" name="__codelineno-0-433"></a>    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-<a id="__codelineno-0-434" name="__codelineno-0-434"></a>
-<a id="__codelineno-0-435" name="__codelineno-0-435"></a>    <span class="k">return</span> <span class="n">ax</span>
+<span class="normal"><a href="#__codelineno-0-434">434</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-373" name="__codelineno-0-373"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_price_heatmap</span><span class="p">(</span>
+<a id="__codelineno-0-374" name="__codelineno-0-374"></a>    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+<a id="__codelineno-0-375" name="__codelineno-0-375"></a>    <span class="n">carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-376" name="__codelineno-0-376"></a>    <span class="n">log_values</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-377" name="__codelineno-0-377"></a>    <span class="n">color_map</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-378" name="__codelineno-0-378"></a>    <span class="n">time_range</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-379" name="__codelineno-0-379"></a>    <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-380" name="__codelineno-0-380"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
+<a id="__codelineno-0-381" name="__codelineno-0-381"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the price heat map (region vs time) for the given carrier</span>
+<a id="__codelineno-0-382" name="__codelineno-0-382"></a>
+<a id="__codelineno-0-383" name="__codelineno-0-383"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-384" name="__codelineno-0-384"></a><span class="sd">        network (pypsa.Network): the pypsa network object</span>
+<a id="__codelineno-0-385" name="__codelineno-0-385"></a><span class="sd">        carrier (str, optional): the carrier for which to get the price. Defaults to &quot;AC&quot;.</span>
+<a id="__codelineno-0-386" name="__codelineno-0-386"></a><span class="sd">        log_values (bool, optional): whether to use log scale for the prices. Defaults to False.</span>
+<a id="__codelineno-0-387" name="__codelineno-0-387"></a><span class="sd">        color_map (str, optional): the color map to use. Defaults to &quot;viridis&quot;.</span>
+<a id="__codelineno-0-388" name="__codelineno-0-388"></a><span class="sd">        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).</span>
+<a id="__codelineno-0-389" name="__codelineno-0-389"></a><span class="sd">        ax (plt.Axes, optional): the plotting axis. Defaults to None (new fig).</span>
+<a id="__codelineno-0-390" name="__codelineno-0-390"></a>
+<a id="__codelineno-0-391" name="__codelineno-0-391"></a><span class="sd">    Returns:</span>
+<a id="__codelineno-0-392" name="__codelineno-0-392"></a><span class="sd">        plt.Axes: the axes for plotting</span>
+<a id="__codelineno-0-393" name="__codelineno-0-393"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-394" name="__codelineno-0-394"></a>
+<a id="__codelineno-0-395" name="__codelineno-0-395"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">ax</span><span class="p">:</span>
+<a id="__codelineno-0-396" name="__codelineno-0-396"></a>        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<a id="__codelineno-0-397" name="__codelineno-0-397"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-398" name="__codelineno-0-398"></a>        <span class="n">fig</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">get_figure</span><span class="p">()</span>
+<a id="__codelineno-0-399" name="__codelineno-0-399"></a>
+<a id="__codelineno-0-400" name="__codelineno-0-400"></a>    <span class="n">carrier_buses</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">carrier</span><span class="p">[</span><span class="n">network</span><span class="o">.</span><span class="n">buses</span><span class="o">.</span><span class="n">carrier</span> <span class="o">==</span> <span class="n">carrier</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+<a id="__codelineno-0-401" name="__codelineno-0-401"></a>    <span class="n">nodal_prices</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">buses_t</span><span class="o">.</span><span class="n">marginal_price</span><span class="p">[</span><span class="n">carrier_buses</span><span class="p">]</span>
+<a id="__codelineno-0-402" name="__codelineno-0-402"></a>
+<a id="__codelineno-0-403" name="__codelineno-0-403"></a>    <span class="k">if</span> <span class="n">time_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-404" name="__codelineno-0-404"></a>        <span class="c1"># Filter nodal_prices by the given time range</span>
+<a id="__codelineno-0-405" name="__codelineno-0-405"></a>        <span class="n">nodal_prices</span> <span class="o">=</span> <span class="n">nodal_prices</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_range</span><span class="p">]</span>
+<a id="__codelineno-0-406" name="__codelineno-0-406"></a>    <span class="c1"># Normalize nodal_prices with log transformation</span>
+<a id="__codelineno-0-407" name="__codelineno-0-407"></a>    <span class="k">if</span> <span class="n">log_values</span><span class="p">:</span>
+<a id="__codelineno-0-408" name="__codelineno-0-408"></a>        <span class="c1"># Avoid log(0) by clipping values to a minimum of 0.1</span>
+<a id="__codelineno-0-409" name="__codelineno-0-409"></a>        <span class="n">normalized_prices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">nodal_prices</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>
+<a id="__codelineno-0-410" name="__codelineno-0-410"></a>        <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;Log-Transformed Price [€/MWh]&quot;</span>
+<a id="__codelineno-0-411" name="__codelineno-0-411"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-412" name="__codelineno-0-412"></a>        <span class="n">normalized_prices</span> <span class="o">=</span> <span class="n">nodal_prices</span>
+<a id="__codelineno-0-413" name="__codelineno-0-413"></a>        <span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;Price [€/MWh]&quot;</span>
+<a id="__codelineno-0-414" name="__codelineno-0-414"></a>    <span class="c1"># Create a heatmap of normalized nodal_prices</span>
+<a id="__codelineno-0-415" name="__codelineno-0-415"></a>    <span class="n">plot_index</span> <span class="o">=</span> <span class="n">normalized_prices</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%m-</span><span class="si">%d</span><span class="s2"> %H:%M&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+<a id="__codelineno-0-416" name="__codelineno-0-416"></a>    <span class="n">normalized_prices</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">plot_index</span>
+<a id="__codelineno-0-417" name="__codelineno-0-417"></a>    <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span>
+<a id="__codelineno-0-418" name="__codelineno-0-418"></a>        <span class="n">normalized_prices</span><span class="o">.</span><span class="n">T</span><span class="p">,</span>
+<a id="__codelineno-0-419" name="__codelineno-0-419"></a>        <span class="n">cmap</span><span class="o">=</span><span class="n">color_map</span><span class="p">,</span>
+<a id="__codelineno-0-420" name="__codelineno-0-420"></a>        <span class="n">cbar_kws</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">label</span><span class="p">},</span>
+<a id="__codelineno-0-421" name="__codelineno-0-421"></a>        <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
+<a id="__codelineno-0-422" name="__codelineno-0-422"></a>    <span class="p">)</span>
+<a id="__codelineno-0-423" name="__codelineno-0-423"></a>
+<a id="__codelineno-0-424" name="__codelineno-0-424"></a>    <span class="c1"># Customize the plot</span>
+<a id="__codelineno-0-425" name="__codelineno-0-425"></a>    <span class="k">if</span> <span class="n">log_values</span><span class="p">:</span>
+<a id="__codelineno-0-426" name="__codelineno-0-426"></a>        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Heatmap of Log-Transformed Nodal Prices&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-427" name="__codelineno-0-427"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-428" name="__codelineno-0-428"></a>        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Heatmap of Nodal Prices&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-429" name="__codelineno-0-429"></a>
+<a id="__codelineno-0-430" name="__codelineno-0-430"></a>    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-431" name="__codelineno-0-431"></a>    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Nodes&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-432" name="__codelineno-0-432"></a>    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<a id="__codelineno-0-433" name="__codelineno-0-433"></a>
+<a id="__codelineno-0-434" name="__codelineno-0-434"></a>    <span class="k">return</span> <span class="n">ax</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3791,8 +3791,7 @@ Args:
 <span class="normal"><a href="#__codelineno-0-275">275</a></span>
 <span class="normal"><a href="#__codelineno-0-276">276</a></span>
 <span class="normal"><a href="#__codelineno-0-277">277</a></span>
-<span class="normal"><a href="#__codelineno-0-278">278</a></span>
-<span class="normal"><a href="#__codelineno-0-279">279</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-239" name="__codelineno-0-239"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_residual_load_duration_curve</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-278">278</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-239" name="__codelineno-0-239"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_residual_load_duration_curve</span><span class="p">(</span>
 <a id="__codelineno-0-240" name="__codelineno-0-240"></a>    <span class="n">network</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">vre_techs</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Onshore Wind&quot;</span><span class="p">,</span> <span class="s2">&quot;Offshore Wind&quot;</span><span class="p">,</span> <span class="s2">&quot;Solar&quot;</span><span class="p">]</span>
 <a id="__codelineno-0-241" name="__codelineno-0-241"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
 <a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the residual load duration curve for the given carrier</span>
@@ -3823,16 +3822,15 @@ Args:
 <a id="__codelineno-0-267" name="__codelineno-0-267"></a>        <span class="p">)</span>
 <a id="__codelineno-0-268" name="__codelineno-0-268"></a>        <span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <a id="__codelineno-0-269" name="__codelineno-0-269"></a>        <span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-<a id="__codelineno-0-270" name="__codelineno-0-270"></a>        <span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">vre_techs</span><span class="p">]</span>
-<a id="__codelineno-0-271" name="__codelineno-0-271"></a>        <span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-<a id="__codelineno-0-272" name="__codelineno-0-272"></a>    <span class="p">)</span>
-<a id="__codelineno-0-273" name="__codelineno-0-273"></a>
-<a id="__codelineno-0-274" name="__codelineno-0-274"></a>    <span class="n">residual</span> <span class="o">=</span> <span class="p">(</span><span class="n">load</span> <span class="o">-</span> <span class="n">vre_supply</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">/</span> <span class="n">PLOT_CAP_UNITS</span>
-<a id="__codelineno-0-275" name="__codelineno-0-275"></a>    <span class="n">residual</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<a id="__codelineno-0-276" name="__codelineno-0-276"></a>    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Residual Load [</span><span class="si">{</span><span class="n">PLOT_CAP_LABEL</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-277" name="__codelineno-0-277"></a>    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Hours&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-278" name="__codelineno-0-278"></a>
-<a id="__codelineno-0-279" name="__codelineno-0-279"></a>    <span class="k">return</span> <span class="n">ax</span>
+<a id="__codelineno-0-270" name="__codelineno-0-270"></a>    <span class="p">)</span>
+<a id="__codelineno-0-271" name="__codelineno-0-271"></a>    <span class="n">tech_filter</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">vre_techs</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">vre_supply</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+<a id="__codelineno-0-272" name="__codelineno-0-272"></a>    <span class="n">vre_supply</span> <span class="o">=</span> <span class="n">vre_supply</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">tech_filter</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+<a id="__codelineno-0-273" name="__codelineno-0-273"></a>    <span class="n">residual</span> <span class="o">=</span> <span class="p">(</span><span class="n">load</span> <span class="o">-</span> <span class="n">vre_supply</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">/</span> <span class="n">PLOT_CAP_UNITS</span>
+<a id="__codelineno-0-274" name="__codelineno-0-274"></a>    <span class="n">residual</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<a id="__codelineno-0-275" name="__codelineno-0-275"></a>    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Residual Load [</span><span class="si">{</span><span class="n">PLOT_CAP_LABEL</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-276" name="__codelineno-0-276"></a>    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Hours&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-277" name="__codelineno-0-277"></a>
+<a id="__codelineno-0-278" name="__codelineno-0-278"></a>    <span class="k">return</span> <span class="n">ax</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3934,7 +3932,8 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>workflow/scripts/plot_time_series.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-438">438</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-437">437</a></span>
+<span class="normal"><a href="#__codelineno-0-438">438</a></span>
 <span class="normal"><a href="#__codelineno-0-439">439</a></span>
 <span class="normal"><a href="#__codelineno-0-440">440</a></span>
 <span class="normal"><a href="#__codelineno-0-441">441</a></span>
@@ -3978,53 +3977,52 @@ Args:
 <span class="normal"><a href="#__codelineno-0-479">479</a></span>
 <span class="normal"><a href="#__codelineno-0-480">480</a></span>
 <span class="normal"><a href="#__codelineno-0-481">481</a></span>
-<span class="normal"><a href="#__codelineno-0-482">482</a></span>
-<span class="normal"><a href="#__codelineno-0-483">483</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-438" name="__codelineno-0-438"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_vre_heatmap</span><span class="p">(</span>
-<a id="__codelineno-0-439" name="__codelineno-0-439"></a>    <span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
-<a id="__codelineno-0-440" name="__codelineno-0-440"></a>    <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
-<a id="__codelineno-0-441" name="__codelineno-0-441"></a>    <span class="n">color_map</span><span class="o">=</span><span class="s2">&quot;magma&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-442" name="__codelineno-0-442"></a>    <span class="n">log_values</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<a id="__codelineno-0-443" name="__codelineno-0-443"></a>    <span class="n">time_range</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-444" name="__codelineno-0-444"></a><span class="p">):</span>
-<a id="__codelineno-0-445" name="__codelineno-0-445"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the VRE generation per hour and day as a heatmap</span>
-<a id="__codelineno-0-446" name="__codelineno-0-446"></a>
-<a id="__codelineno-0-447" name="__codelineno-0-447"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-448" name="__codelineno-0-448"></a><span class="sd">        n (pypsa.Network): the pypsa network object</span>
-<a id="__codelineno-0-449" name="__codelineno-0-449"></a><span class="sd">        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).</span>
-<a id="__codelineno-0-450" name="__codelineno-0-450"></a><span class="sd">        log_values (bool, optional): whether to use log scale for the values. Defaults to True.</span>
-<a id="__codelineno-0-451" name="__codelineno-0-451"></a><span class="sd">        config (dict, optional): the run config (snakemake.config).</span>
-<a id="__codelineno-0-452" name="__codelineno-0-452"></a>
-<a id="__codelineno-0-453" name="__codelineno-0-453"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-454" name="__codelineno-0-454"></a>
-<a id="__codelineno-0-455" name="__codelineno-0-455"></a>    <span class="n">vres</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;Techs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-<a id="__codelineno-0-456" name="__codelineno-0-456"></a>        <span class="s2">&quot;non_dispatchable&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;Offshore Wind&quot;</span><span class="p">,</span> <span class="s2">&quot;Onshore Wind&quot;</span><span class="p">,</span> <span class="s2">&quot;Solar&quot;</span><span class="p">,</span> <span class="s2">&quot;Solar Residential&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-457" name="__codelineno-0-457"></a>    <span class="p">)</span>
-<a id="__codelineno-0-458" name="__codelineno-0-458"></a>    <span class="n">vre_avail</span> <span class="o">=</span> <span class="p">(</span>
-<a id="__codelineno-0-459" name="__codelineno-0-459"></a>        <span class="n">n</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">supply</span><span class="p">(</span>
-<a id="__codelineno-0-460" name="__codelineno-0-460"></a>            <span class="n">comps</span><span class="o">=</span><span class="s2">&quot;Generator&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-461" name="__codelineno-0-461"></a>            <span class="n">aggregate_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-462" name="__codelineno-0-462"></a>            <span class="n">bus_carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-463" name="__codelineno-0-463"></a>            <span class="n">nice_names</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-0-464" name="__codelineno-0-464"></a>            <span class="n">groupby</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="s2">&quot;carrier&quot;</span><span class="p">],</span>
-<a id="__codelineno-0-465" name="__codelineno-0-465"></a>        <span class="p">)</span>
-<a id="__codelineno-0-466" name="__codelineno-0-466"></a>        <span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier in @vres&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-467" name="__codelineno-0-467"></a>        <span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<a id="__codelineno-0-468" name="__codelineno-0-468"></a>    <span class="p">)</span>
-<a id="__codelineno-0-469" name="__codelineno-0-469"></a>
-<a id="__codelineno-0-470" name="__codelineno-0-470"></a>    <span class="k">if</span> <span class="n">time_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-471" name="__codelineno-0-471"></a>        <span class="n">vre_avail</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_range</span><span class="p">]</span>
-<a id="__codelineno-0-472" name="__codelineno-0-472"></a>
-<a id="__codelineno-0-473" name="__codelineno-0-473"></a>    <span class="k">for</span> <span class="n">tech</span> <span class="ow">in</span> <span class="n">vres</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
-<a id="__codelineno-0-474" name="__codelineno-0-474"></a>        <span class="n">tech_avail</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier == @tech&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-475" name="__codelineno-0-475"></a>        <span class="n">tech_avail</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">tech_avail</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">droplevel</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-0-476" name="__codelineno-0-476"></a>        <span class="n">tech_avail</span> <span class="o">=</span> <span class="n">tech_avail</span><span class="o">.</span><span class="n">T</span>
-<a id="__codelineno-0-477" name="__codelineno-0-477"></a>        <span class="n">tech_avail</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">tech_avail</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%m-</span><span class="si">%d</span><span class="s2"> %H:%M&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-478" name="__codelineno-0-478"></a>        <span class="k">if</span> <span class="n">log_values</span><span class="p">:</span>
-<a id="__codelineno-0-479" name="__codelineno-0-479"></a>            <span class="c1"># Avoid log(0) by clipping values to a minimum of 10</span>
-<a id="__codelineno-0-480" name="__codelineno-0-480"></a>            <span class="n">tech_avail</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">tech_avail</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mi">10</span><span class="p">))</span>
-<a id="__codelineno-0-481" name="__codelineno-0-481"></a>        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
-<a id="__codelineno-0-482" name="__codelineno-0-482"></a>        <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">tech_avail</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">color_map</span><span class="p">)</span>
-<a id="__codelineno-0-483" name="__codelineno-0-483"></a>        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tech</span><span class="si">}</span><span class="s2"> generation by province&quot;</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-482">482</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-437" name="__codelineno-0-437"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_vre_heatmap</span><span class="p">(</span>
+<a id="__codelineno-0-438" name="__codelineno-0-438"></a>    <span class="n">n</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+<a id="__codelineno-0-439" name="__codelineno-0-439"></a>    <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<a id="__codelineno-0-440" name="__codelineno-0-440"></a>    <span class="n">color_map</span><span class="o">=</span><span class="s2">&quot;magma&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-441" name="__codelineno-0-441"></a>    <span class="n">log_values</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="__codelineno-0-442" name="__codelineno-0-442"></a>    <span class="n">time_range</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-443" name="__codelineno-0-443"></a><span class="p">):</span>
+<a id="__codelineno-0-444" name="__codelineno-0-444"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the VRE generation per hour and day as a heatmap</span>
+<a id="__codelineno-0-445" name="__codelineno-0-445"></a>
+<a id="__codelineno-0-446" name="__codelineno-0-446"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-447" name="__codelineno-0-447"></a><span class="sd">        n (pypsa.Network): the pypsa network object</span>
+<a id="__codelineno-0-448" name="__codelineno-0-448"></a><span class="sd">        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).</span>
+<a id="__codelineno-0-449" name="__codelineno-0-449"></a><span class="sd">        log_values (bool, optional): whether to use log scale for the values. Defaults to True.</span>
+<a id="__codelineno-0-450" name="__codelineno-0-450"></a><span class="sd">        config (dict, optional): the run config (snakemake.config).</span>
+<a id="__codelineno-0-451" name="__codelineno-0-451"></a>
+<a id="__codelineno-0-452" name="__codelineno-0-452"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-453" name="__codelineno-0-453"></a>
+<a id="__codelineno-0-454" name="__codelineno-0-454"></a>    <span class="n">vres</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;Techs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+<a id="__codelineno-0-455" name="__codelineno-0-455"></a>        <span class="s2">&quot;non_dispatchable&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;Offshore Wind&quot;</span><span class="p">,</span> <span class="s2">&quot;Onshore Wind&quot;</span><span class="p">,</span> <span class="s2">&quot;Solar&quot;</span><span class="p">,</span> <span class="s2">&quot;Solar Residential&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-456" name="__codelineno-0-456"></a>    <span class="p">)</span>
+<a id="__codelineno-0-457" name="__codelineno-0-457"></a>    <span class="n">vre_avail</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-458" name="__codelineno-0-458"></a>        <span class="n">n</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">supply</span><span class="p">(</span>
+<a id="__codelineno-0-459" name="__codelineno-0-459"></a>            <span class="n">comps</span><span class="o">=</span><span class="s2">&quot;Generator&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-460" name="__codelineno-0-460"></a>            <span class="n">aggregate_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-461" name="__codelineno-0-461"></a>            <span class="n">bus_carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-462" name="__codelineno-0-462"></a>            <span class="n">nice_names</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-0-463" name="__codelineno-0-463"></a>            <span class="n">groupby</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">,</span> <span class="s2">&quot;carrier&quot;</span><span class="p">],</span>
+<a id="__codelineno-0-464" name="__codelineno-0-464"></a>        <span class="p">)</span>
+<a id="__codelineno-0-465" name="__codelineno-0-465"></a>        <span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier in @vres&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-466" name="__codelineno-0-466"></a>        <span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-0-467" name="__codelineno-0-467"></a>    <span class="p">)</span>
+<a id="__codelineno-0-468" name="__codelineno-0-468"></a>
+<a id="__codelineno-0-469" name="__codelineno-0-469"></a>    <span class="k">if</span> <span class="n">time_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-470" name="__codelineno-0-470"></a>        <span class="n">vre_avail</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_range</span><span class="p">]</span>
+<a id="__codelineno-0-471" name="__codelineno-0-471"></a>
+<a id="__codelineno-0-472" name="__codelineno-0-472"></a>    <span class="k">for</span> <span class="n">tech</span> <span class="ow">in</span> <span class="n">vres</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+<a id="__codelineno-0-473" name="__codelineno-0-473"></a>        <span class="n">tech_avail</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier == @tech&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-474" name="__codelineno-0-474"></a>        <span class="n">tech_avail</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">tech_avail</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">droplevel</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-0-475" name="__codelineno-0-475"></a>        <span class="n">tech_avail</span> <span class="o">=</span> <span class="n">tech_avail</span><span class="o">.</span><span class="n">T</span>
+<a id="__codelineno-0-476" name="__codelineno-0-476"></a>        <span class="n">tech_avail</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">tech_avail</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%m-</span><span class="si">%d</span><span class="s2"> %H:%M&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-477" name="__codelineno-0-477"></a>        <span class="k">if</span> <span class="n">log_values</span><span class="p">:</span>
+<a id="__codelineno-0-478" name="__codelineno-0-478"></a>            <span class="c1"># Avoid log(0) by clipping values to a minimum of 10</span>
+<a id="__codelineno-0-479" name="__codelineno-0-479"></a>            <span class="n">tech_avail</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">tech_avail</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mi">10</span><span class="p">))</span>
+<a id="__codelineno-0-480" name="__codelineno-0-480"></a>        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<a id="__codelineno-0-481" name="__codelineno-0-481"></a>        <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">tech_avail</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">color_map</span><span class="p">)</span>
+<a id="__codelineno-0-482" name="__codelineno-0-482"></a>        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tech</span><span class="si">}</span><span class="s2"> generation by province&quot;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4110,7 +4108,8 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>workflow/scripts/plot_time_series.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-486">486</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-485">485</a></span>
+<span class="normal"><a href="#__codelineno-0-486">486</a></span>
 <span class="normal"><a href="#__codelineno-0-487">487</a></span>
 <span class="normal"><a href="#__codelineno-0-488">488</a></span>
 <span class="normal"><a href="#__codelineno-0-489">489</a></span>
@@ -4142,41 +4141,40 @@ Args:
 <span class="normal"><a href="#__codelineno-0-515">515</a></span>
 <span class="normal"><a href="#__codelineno-0-516">516</a></span>
 <span class="normal"><a href="#__codelineno-0-517">517</a></span>
-<span class="normal"><a href="#__codelineno-0-518">518</a></span>
-<span class="normal"><a href="#__codelineno-0-519">519</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-486" name="__codelineno-0-486"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_vre_timemap</span><span class="p">(</span>
-<a id="__codelineno-0-487" name="__codelineno-0-487"></a>    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
-<a id="__codelineno-0-488" name="__codelineno-0-488"></a>    <span class="n">color_map</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-489" name="__codelineno-0-489"></a>    <span class="n">time_range</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<a id="__codelineno-0-490" name="__codelineno-0-490"></a><span class="p">):</span>
-<a id="__codelineno-0-491" name="__codelineno-0-491"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the VRE generation per hour and day as a heatmap</span>
-<a id="__codelineno-0-492" name="__codelineno-0-492"></a>
-<a id="__codelineno-0-493" name="__codelineno-0-493"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-494" name="__codelineno-0-494"></a><span class="sd">        network (pypsa.Network): the pypsa network object</span>
-<a id="__codelineno-0-495" name="__codelineno-0-495"></a><span class="sd">        color_map (str, optional): the color map to use. Defaults to &quot;viridis&quot;.</span>
-<a id="__codelineno-0-496" name="__codelineno-0-496"></a><span class="sd">        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).</span>
-<a id="__codelineno-0-497" name="__codelineno-0-497"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-498" name="__codelineno-0-498"></a>
-<a id="__codelineno-0-499" name="__codelineno-0-499"></a>    <span class="n">vres</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;offwind&quot;</span><span class="p">,</span> <span class="s2">&quot;onwind&quot;</span><span class="p">,</span> <span class="s2">&quot;solar&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-500" name="__codelineno-0-500"></a>    <span class="n">vre_avail</span> <span class="o">=</span> <span class="p">(</span>
-<a id="__codelineno-0-501" name="__codelineno-0-501"></a>        <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">supply</span><span class="p">(</span>
-<a id="__codelineno-0-502" name="__codelineno-0-502"></a>            <span class="n">comps</span><span class="o">=</span><span class="s2">&quot;Generator&quot;</span><span class="p">,</span> <span class="n">aggregate_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bus_carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span> <span class="n">nice_names</span><span class="o">=</span><span class="kc">False</span>
-<a id="__codelineno-0-503" name="__codelineno-0-503"></a>        <span class="p">)</span>
-<a id="__codelineno-0-504" name="__codelineno-0-504"></a>        <span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier in @vres&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-505" name="__codelineno-0-505"></a>        <span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<a id="__codelineno-0-506" name="__codelineno-0-506"></a>    <span class="p">)</span>
-<a id="__codelineno-0-507" name="__codelineno-0-507"></a>    <span class="k">if</span> <span class="n">time_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-<a id="__codelineno-0-508" name="__codelineno-0-508"></a>        <span class="n">vre_avail</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_range</span><span class="p">]</span>
-<a id="__codelineno-0-509" name="__codelineno-0-509"></a>
-<a id="__codelineno-0-510" name="__codelineno-0-510"></a>    <span class="n">vre_avail</span><span class="p">[</span><span class="s2">&quot;day&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">-%m&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-511" name="__codelineno-0-511"></a>    <span class="n">vre_avail</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">hour</span>
-<a id="__codelineno-0-512" name="__codelineno-0-512"></a>
-<a id="__codelineno-0-513" name="__codelineno-0-513"></a>    <span class="k">for</span> <span class="n">tech</span> <span class="ow">in</span> <span class="n">vres</span><span class="p">:</span>
-<a id="__codelineno-0-514" name="__codelineno-0-514"></a>        <span class="n">pivot_</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;day&quot;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">tech</span><span class="p">)</span>
-<a id="__codelineno-0-515" name="__codelineno-0-515"></a>        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<a id="__codelineno-0-516" name="__codelineno-0-516"></a>        <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">pivot_</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">color_map</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
-<a id="__codelineno-0-517" name="__codelineno-0-517"></a>        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tech</span><span class="si">}</span><span class="s2"> generation by hour and day&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-518" name="__codelineno-0-518"></a>
-<a id="__codelineno-0-519" name="__codelineno-0-519"></a>        <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="normal"><a href="#__codelineno-0-518">518</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-485" name="__codelineno-0-485"></a><span class="k">def</span><span class="w"> </span><span class="nf">plot_vre_timemap</span><span class="p">(</span>
+<a id="__codelineno-0-486" name="__codelineno-0-486"></a>    <span class="n">network</span><span class="p">:</span> <span class="n">pypsa</span><span class="o">.</span><span class="n">Network</span><span class="p">,</span>
+<a id="__codelineno-0-487" name="__codelineno-0-487"></a>    <span class="n">color_map</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-488" name="__codelineno-0-488"></a>    <span class="n">time_range</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-0-489" name="__codelineno-0-489"></a><span class="p">):</span>
+<a id="__codelineno-0-490" name="__codelineno-0-490"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot the VRE generation per hour and day as a heatmap</span>
+<a id="__codelineno-0-491" name="__codelineno-0-491"></a>
+<a id="__codelineno-0-492" name="__codelineno-0-492"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-493" name="__codelineno-0-493"></a><span class="sd">        network (pypsa.Network): the pypsa network object</span>
+<a id="__codelineno-0-494" name="__codelineno-0-494"></a><span class="sd">        color_map (str, optional): the color map to use. Defaults to &quot;viridis&quot;.</span>
+<a id="__codelineno-0-495" name="__codelineno-0-495"></a><span class="sd">        time_range (pd.Index, optional): the time range to plot. Defaults to None (all times).</span>
+<a id="__codelineno-0-496" name="__codelineno-0-496"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-497" name="__codelineno-0-497"></a>
+<a id="__codelineno-0-498" name="__codelineno-0-498"></a>    <span class="n">vres</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;offwind&quot;</span><span class="p">,</span> <span class="s2">&quot;onwind&quot;</span><span class="p">,</span> <span class="s2">&quot;solar&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-499" name="__codelineno-0-499"></a>    <span class="n">vre_avail</span> <span class="o">=</span> <span class="p">(</span>
+<a id="__codelineno-0-500" name="__codelineno-0-500"></a>        <span class="n">network</span><span class="o">.</span><span class="n">statistics</span><span class="o">.</span><span class="n">supply</span><span class="p">(</span>
+<a id="__codelineno-0-501" name="__codelineno-0-501"></a>            <span class="n">comps</span><span class="o">=</span><span class="s2">&quot;Generator&quot;</span><span class="p">,</span> <span class="n">aggregate_time</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">bus_carrier</span><span class="o">=</span><span class="s2">&quot;AC&quot;</span><span class="p">,</span> <span class="n">nice_names</span><span class="o">=</span><span class="kc">False</span>
+<a id="__codelineno-0-502" name="__codelineno-0-502"></a>        <span class="p">)</span>
+<a id="__codelineno-0-503" name="__codelineno-0-503"></a>        <span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;carrier in @vres&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-504" name="__codelineno-0-504"></a>        <span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a id="__codelineno-0-505" name="__codelineno-0-505"></a>    <span class="p">)</span>
+<a id="__codelineno-0-506" name="__codelineno-0-506"></a>    <span class="k">if</span> <span class="n">time_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-0-507" name="__codelineno-0-507"></a>        <span class="n">vre_avail</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_range</span><span class="p">]</span>
+<a id="__codelineno-0-508" name="__codelineno-0-508"></a>
+<a id="__codelineno-0-509" name="__codelineno-0-509"></a>    <span class="n">vre_avail</span><span class="p">[</span><span class="s2">&quot;day&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">-%m&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-510" name="__codelineno-0-510"></a>    <span class="n">vre_avail</span><span class="p">[</span><span class="s2">&quot;hour&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">hour</span>
+<a id="__codelineno-0-511" name="__codelineno-0-511"></a>
+<a id="__codelineno-0-512" name="__codelineno-0-512"></a>    <span class="k">for</span> <span class="n">tech</span> <span class="ow">in</span> <span class="n">vres</span><span class="p">:</span>
+<a id="__codelineno-0-513" name="__codelineno-0-513"></a>        <span class="n">pivot_</span> <span class="o">=</span> <span class="n">vre_avail</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s2">&quot;hour&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;day&quot;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">tech</span><span class="p">)</span>
+<a id="__codelineno-0-514" name="__codelineno-0-514"></a>        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<a id="__codelineno-0-515" name="__codelineno-0-515"></a>        <span class="n">sns</span><span class="o">.</span><span class="n">heatmap</span><span class="p">(</span><span class="n">pivot_</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="n">color_map</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+<a id="__codelineno-0-516" name="__codelineno-0-516"></a>        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tech</span><span class="si">}</span><span class="s2"> generation by hour and day&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-517" name="__codelineno-0-517"></a>
+<a id="__codelineno-0-518" name="__codelineno-0-518"></a>        <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

@@ -2307,7 +2307,7 @@
     <div class="doc doc-contents ">
 
         <p>Attach electric vehicle demand and charging links to the PyPSA network.</p>
-<p>This function implements an EV demand model with a fixed charging profile.<br />
+<p>This function implements an EV demand model with a fixed charging profile.
 For each node, it creates:
   • an EV load bus,
   • a Load component representing the EV charging demand time series,
@@ -2516,7 +2516,7 @@ snapshots and with nodes as columns.</p>
 <a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <a id="__codelineno-0-28" name="__codelineno-0-28"></a><span class="sd">    Attach electric vehicle demand and charging links to the PyPSA network.</span>
 <a id="__codelineno-0-29" name="__codelineno-0-29"></a>
-<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">    This function implements an EV demand model with a fixed charging profile.  </span>
+<a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">    This function implements an EV demand model with a fixed charging profile.</span>
 <a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">    For each node, it creates:</span>
 <a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">      • an EV load bus,</span>
 <a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">      • a Load component representing the EV charging demand time series,</span>
@@ -2541,9 +2541,9 @@ snapshots and with nodes as columns.</p>
 <a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="n">total_number_evs</span> <span class="o">=</span> <span class="n">total_energy</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;annual_consumption&quot;</span><span class="p">],</span> <span class="mf">1e-6</span><span class="p">)</span>
 <a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="n">node_ratio</span> <span class="o">=</span> <span class="n">p_set</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">total_energy</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">)</span>
 <a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="n">number_evs</span> <span class="o">=</span> <span class="n">node_ratio</span> <span class="o">*</span> <span class="n">total_number_evs</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="n">charge_power</span> <span class="o">=</span> <span class="p">(</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="n">number_evs</span> <span class="o">*</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;charge_rate&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;share_charger&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="n">charge_power</span> <span class="o">=</span> <span class="p">(</span><span class="n">number_evs</span> <span class="o">*</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;charge_rate&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">options</span><span class="p">[</span><span class="s2">&quot;share_charger&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="n">lower</span><span class="o">=</span><span class="mf">0.001</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="p">)</span>
 <a id="__codelineno-0-58" name="__codelineno-0-58"></a>
 <a id="__codelineno-0-59" name="__codelineno-0-59"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;EV </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> vehicles (direct charging)&quot;</span><span class="p">,</span> <span class="n">ev_type</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">total_number_evs</span><span class="p">)</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>

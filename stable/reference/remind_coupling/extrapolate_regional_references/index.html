@@ -2220,7 +2220,7 @@
 REMIND national-level outputs to the provincial level. For example, EV passenger
 shares indicate what fraction of national EV demand belongs to each province.</p>
 <p>This provides a general framework to coordinate the extrapolation of sector-specific
-reference share files. Each sector has its own specialized module implementing the 
+reference share files. Each sector has its own specialized module implementing the
 <code>extrapolate_reference</code> function.</p>
 
 
@@ -2338,7 +2338,9 @@ REMIND national outputs to provincial level.</p>
 <span class="normal"><a href="#__codelineno-0-86">86</a></span>
 <span class="normal"><a href="#__codelineno-0-87">87</a></span>
 <span class="normal"><a href="#__codelineno-0-88">88</a></span>
-<span class="normal"><a href="#__codelineno-0-89">89</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="k">class</span><span class="w"> </span><span class="nc">SectorReferenceGenerator</span><span class="p">:</span>
+<span class="normal"><a href="#__codelineno-0-89">89</a></span>
+<span class="normal"><a href="#__codelineno-0-90">90</a></span>
+<span class="normal"><a href="#__codelineno-0-91">91</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="k">class</span><span class="w"> </span><span class="nc">SectorReferenceGenerator</span><span class="p">:</span>
 <a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;General framework for generating sectoral disaggregation shares.</span>
 <a id="__codelineno-0-24" name="__codelineno-0-24"></a>
 <a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">    Coordinates the extrapolation of provincial share/ratio data for different</span>
@@ -2370,42 +2372,44 @@ REMIND national outputs to provincial level.</p>
 <a id="__codelineno-0-51" name="__codelineno-0-51"></a>            <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
 <a id="__codelineno-0-52" name="__codelineno-0-52"></a>                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not load </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2"> sector module: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <a id="__codelineno-0-53" name="__codelineno-0-53"></a>
-<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">extrapolate_references</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">years</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">input_files</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Extrapolate provincial disaggregation shares for all available sectors.</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="sd">        Generates reference share files that indicate what fraction of national-level</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="sd">        sectoral demand/activity belongs to each province. For example, EV passenger</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">        shares show the provincial distribution of passenger EV demand.</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">        Args:</span>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">            years (list[int]): List of target years for projections (e.g., [2020, 2025, 2030]).</span>
-<a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">            input_files (dict[str, str]): Dictionary mapping data types to file paths </span>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">                (e.g., historical GDP, population, sector-specific data).</span>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">            output_dir (str): Directory to save extrapolated reference share files.</span>
-<a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">        &quot;&quot;&quot;</span>
-<a id="__codelineno-0-67" name="__codelineno-0-67"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Extrapolating sectoral disaggregation shares&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-68" name="__codelineno-0-68"></a>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a>        <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
-<a id="__codelineno-0-70" name="__codelineno-0-70"></a>        <span class="n">output_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a>        <span class="k">for</span> <span class="n">sector</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sector_modules</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a>            <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-74" name="__codelineno-0-74"></a>                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extrapolating disaggregation shares for </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2"> sector&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-75" name="__codelineno-0-75"></a>
-<a id="__codelineno-0-76" name="__codelineno-0-76"></a>                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s2">&quot;extrapolate_reference&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-77" name="__codelineno-0-77"></a>                    <span class="n">module</span><span class="o">.</span><span class="n">extrapolate_reference</span><span class="p">(</span>
-<a id="__codelineno-0-78" name="__codelineno-0-78"></a>                        <span class="n">years</span><span class="o">=</span><span class="n">years</span><span class="p">,</span>
-<a id="__codelineno-0-79" name="__codelineno-0-79"></a>                        <span class="n">input_files</span><span class="o">=</span><span class="n">input_files</span><span class="p">,</span>
-<a id="__codelineno-0-80" name="__codelineno-0-80"></a>                        <span class="n">output_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">),</span>
-<a id="__codelineno-0-81" name="__codelineno-0-81"></a>                        <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sector</span><span class="p">,</span> <span class="p">{}),</span>
-<a id="__codelineno-0-82" name="__codelineno-0-82"></a>                    <span class="p">)</span>
-<a id="__codelineno-0-83" name="__codelineno-0-83"></a>                <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-84" name="__codelineno-0-84"></a>                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sector module </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2"> missing extrapolate_reference function&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-85" name="__codelineno-0-85"></a>
-<a id="__codelineno-0-86" name="__codelineno-0-86"></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-<a id="__codelineno-0-87" name="__codelineno-0-87"></a>                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to extrapolate disaggregation shares for </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-88" name="__codelineno-0-88"></a>
-<a id="__codelineno-0-89" name="__codelineno-0-89"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sectoral disaggregation shares extrapolation completed&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">extrapolate_references</span><span class="p">(</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">years</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">input_files</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="p">):</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Extrapolate provincial disaggregation shares for all available sectors.</span>
+<a id="__codelineno-0-58" name="__codelineno-0-58"></a>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">        Generates reference share files that indicate what fraction of national-level</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="sd">        sectoral demand/activity belongs to each province. For example, EV passenger</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">        shares show the provincial distribution of passenger EV demand.</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62"></a>
+<a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">        Args:</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">            years (list[int]): List of target years for projections (e.g., [2020, 2025, 2030]).</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">            input_files (dict[str, str]): Dictionary mapping data types to file paths</span>
+<a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">                (e.g., historical GDP, population, sector-specific data).</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">            output_dir (str): Directory to save extrapolated reference share files.</span>
+<a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Extrapolating sectoral disaggregation shares&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-70" name="__codelineno-0-70"></a>
+<a id="__codelineno-0-71" name="__codelineno-0-71"></a>        <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+<a id="__codelineno-0-72" name="__codelineno-0-72"></a>        <span class="n">output_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-73" name="__codelineno-0-73"></a>
+<a id="__codelineno-0-74" name="__codelineno-0-74"></a>        <span class="k">for</span> <span class="n">sector</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sector_modules</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-75" name="__codelineno-0-75"></a>            <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-76" name="__codelineno-0-76"></a>                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extrapolating disaggregation shares for </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2"> sector&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-77" name="__codelineno-0-77"></a>
+<a id="__codelineno-0-78" name="__codelineno-0-78"></a>                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s2">&quot;extrapolate_reference&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-79" name="__codelineno-0-79"></a>                    <span class="n">module</span><span class="o">.</span><span class="n">extrapolate_reference</span><span class="p">(</span>
+<a id="__codelineno-0-80" name="__codelineno-0-80"></a>                        <span class="n">years</span><span class="o">=</span><span class="n">years</span><span class="p">,</span>
+<a id="__codelineno-0-81" name="__codelineno-0-81"></a>                        <span class="n">input_files</span><span class="o">=</span><span class="n">input_files</span><span class="p">,</span>
+<a id="__codelineno-0-82" name="__codelineno-0-82"></a>                        <span class="n">output_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">),</span>
+<a id="__codelineno-0-83" name="__codelineno-0-83"></a>                        <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sector</span><span class="p">,</span> <span class="p">{}),</span>
+<a id="__codelineno-0-84" name="__codelineno-0-84"></a>                    <span class="p">)</span>
+<a id="__codelineno-0-85" name="__codelineno-0-85"></a>                <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-86" name="__codelineno-0-86"></a>                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sector module </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2"> missing extrapolate_reference function&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-87" name="__codelineno-0-87"></a>
+<a id="__codelineno-0-88" name="__codelineno-0-88"></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<a id="__codelineno-0-89" name="__codelineno-0-89"></a>                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to extrapolate disaggregation shares for </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-90" name="__codelineno-0-90"></a>
+<a id="__codelineno-0-91" name="__codelineno-0-91"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sectoral disaggregation shares extrapolation completed&quot;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -2545,7 +2549,7 @@ shares show the provincial distribution of passenger EV demand.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Dictionary mapping data types to file paths 
+                <p>Dictionary mapping data types to file paths
 (e.g., historical GDP, population, sector-specific data).</p>
               </div>
             </td>
@@ -2610,42 +2614,46 @@ shares show the provincial distribution of passenger EV demand.</p>
 <span class="normal"><a href="#__codelineno-0-86">86</a></span>
 <span class="normal"><a href="#__codelineno-0-87">87</a></span>
 <span class="normal"><a href="#__codelineno-0-88">88</a></span>
-<span class="normal"><a href="#__codelineno-0-89">89</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="k">def</span><span class="w"> </span><span class="nf">extrapolate_references</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">years</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">input_files</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Extrapolate provincial disaggregation shares for all available sectors.</span>
-<a id="__codelineno-0-56" name="__codelineno-0-56"></a>
-<a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="sd">    Generates reference share files that indicate what fraction of national-level</span>
-<a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="sd">    sectoral demand/activity belongs to each province. For example, EV passenger</span>
-<a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">    shares show the provincial distribution of passenger EV demand.</span>
-<a id="__codelineno-0-60" name="__codelineno-0-60"></a>
-<a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">    Args:</span>
-<a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">        years (list[int]): List of target years for projections (e.g., [2020, 2025, 2030]).</span>
-<a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">        input_files (dict[str, str]): Dictionary mapping data types to file paths </span>
-<a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">            (e.g., historical GDP, population, sector-specific data).</span>
-<a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">        output_dir (str): Directory to save extrapolated reference share files.</span>
-<a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">    &quot;&quot;&quot;</span>
-<a id="__codelineno-0-67" name="__codelineno-0-67"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Extrapolating sectoral disaggregation shares&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-68" name="__codelineno-0-68"></a>
-<a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
-<a id="__codelineno-0-70" name="__codelineno-0-70"></a>    <span class="n">output_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<a id="__codelineno-0-71" name="__codelineno-0-71"></a>
-<a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="k">for</span> <span class="n">sector</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sector_modules</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-0-73" name="__codelineno-0-73"></a>        <span class="k">try</span><span class="p">:</span>
-<a id="__codelineno-0-74" name="__codelineno-0-74"></a>            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extrapolating disaggregation shares for </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2"> sector&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-75" name="__codelineno-0-75"></a>
-<a id="__codelineno-0-76" name="__codelineno-0-76"></a>            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s2">&quot;extrapolate_reference&quot;</span><span class="p">):</span>
-<a id="__codelineno-0-77" name="__codelineno-0-77"></a>                <span class="n">module</span><span class="o">.</span><span class="n">extrapolate_reference</span><span class="p">(</span>
-<a id="__codelineno-0-78" name="__codelineno-0-78"></a>                    <span class="n">years</span><span class="o">=</span><span class="n">years</span><span class="p">,</span>
-<a id="__codelineno-0-79" name="__codelineno-0-79"></a>                    <span class="n">input_files</span><span class="o">=</span><span class="n">input_files</span><span class="p">,</span>
-<a id="__codelineno-0-80" name="__codelineno-0-80"></a>                    <span class="n">output_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">),</span>
-<a id="__codelineno-0-81" name="__codelineno-0-81"></a>                    <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sector</span><span class="p">,</span> <span class="p">{}),</span>
-<a id="__codelineno-0-82" name="__codelineno-0-82"></a>                <span class="p">)</span>
-<a id="__codelineno-0-83" name="__codelineno-0-83"></a>            <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-84" name="__codelineno-0-84"></a>                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sector module </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2"> missing extrapolate_reference function&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-85" name="__codelineno-0-85"></a>
-<a id="__codelineno-0-86" name="__codelineno-0-86"></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-<a id="__codelineno-0-87" name="__codelineno-0-87"></a>            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to extrapolate disaggregation shares for </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-88" name="__codelineno-0-88"></a>
-<a id="__codelineno-0-89" name="__codelineno-0-89"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sectoral disaggregation shares extrapolation completed&quot;</span><span class="p">)</span>
+<span class="normal"><a href="#__codelineno-0-89">89</a></span>
+<span class="normal"><a href="#__codelineno-0-90">90</a></span>
+<span class="normal"><a href="#__codelineno-0-91">91</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="k">def</span><span class="w"> </span><span class="nf">extrapolate_references</span><span class="p">(</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">years</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">input_files</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-0-56" name="__codelineno-0-56"></a><span class="p">):</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Extrapolate provincial disaggregation shares for all available sectors.</span>
+<a id="__codelineno-0-58" name="__codelineno-0-58"></a>
+<a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">    Generates reference share files that indicate what fraction of national-level</span>
+<a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="sd">    sectoral demand/activity belongs to each province. For example, EV passenger</span>
+<a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">    shares show the provincial distribution of passenger EV demand.</span>
+<a id="__codelineno-0-62" name="__codelineno-0-62"></a>
+<a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">    Args:</span>
+<a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">        years (list[int]): List of target years for projections (e.g., [2020, 2025, 2030]).</span>
+<a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">        input_files (dict[str, str]): Dictionary mapping data types to file paths</span>
+<a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="sd">            (e.g., historical GDP, population, sector-specific data).</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="sd">        output_dir (str): Directory to save extrapolated reference share files.</span>
+<a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Extrapolating sectoral disaggregation shares&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-70" name="__codelineno-0-70"></a>
+<a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+<a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="n">output_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-0-73" name="__codelineno-0-73"></a>
+<a id="__codelineno-0-74" name="__codelineno-0-74"></a>    <span class="k">for</span> <span class="n">sector</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sector_modules</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-0-75" name="__codelineno-0-75"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-0-76" name="__codelineno-0-76"></a>            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extrapolating disaggregation shares for </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2"> sector&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-77" name="__codelineno-0-77"></a>
+<a id="__codelineno-0-78" name="__codelineno-0-78"></a>            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="s2">&quot;extrapolate_reference&quot;</span><span class="p">):</span>
+<a id="__codelineno-0-79" name="__codelineno-0-79"></a>                <span class="n">module</span><span class="o">.</span><span class="n">extrapolate_reference</span><span class="p">(</span>
+<a id="__codelineno-0-80" name="__codelineno-0-80"></a>                    <span class="n">years</span><span class="o">=</span><span class="n">years</span><span class="p">,</span>
+<a id="__codelineno-0-81" name="__codelineno-0-81"></a>                    <span class="n">input_files</span><span class="o">=</span><span class="n">input_files</span><span class="p">,</span>
+<a id="__codelineno-0-82" name="__codelineno-0-82"></a>                    <span class="n">output_dir</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">),</span>
+<a id="__codelineno-0-83" name="__codelineno-0-83"></a>                    <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sector</span><span class="p">,</span> <span class="p">{}),</span>
+<a id="__codelineno-0-84" name="__codelineno-0-84"></a>                <span class="p">)</span>
+<a id="__codelineno-0-85" name="__codelineno-0-85"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-86" name="__codelineno-0-86"></a>                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sector module </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2"> missing extrapolate_reference function&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-87" name="__codelineno-0-87"></a>
+<a id="__codelineno-0-88" name="__codelineno-0-88"></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<a id="__codelineno-0-89" name="__codelineno-0-89"></a>            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to extrapolate disaggregation shares for </span><span class="si">{</span><span class="n">sector</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-90" name="__codelineno-0-90"></a>
+<a id="__codelineno-0-91" name="__codelineno-0-91"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sectoral disaggregation shares extrapolation completed&quot;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2677,9 +2685,7 @@ shares show the provincial distribution of passenger EV demand.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>workflow/scripts/remind_coupling/extrapolate_regional_references.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-92"> 92</a></span>
-<span class="normal"><a href="#__codelineno-0-93"> 93</a></span>
-<span class="normal"><a href="#__codelineno-0-94"> 94</a></span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-94"> 94</a></span>
 <span class="normal"><a href="#__codelineno-0-95"> 95</a></span>
 <span class="normal"><a href="#__codelineno-0-96"> 96</a></span>
 <span class="normal"><a href="#__codelineno-0-97"> 97</a></span>
@@ -2707,37 +2713,39 @@ shares show the provincial distribution of passenger EV demand.</p>
 <span class="normal"><a href="#__codelineno-0-119">119</a></span>
 <span class="normal"><a href="#__codelineno-0-120">120</a></span>
 <span class="normal"><a href="#__codelineno-0-121">121</a></span>
-<span class="normal"><a href="#__codelineno-0-122">122</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<a id="__codelineno-0-93" name="__codelineno-0-93"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Main entry point for generating provincial disaggregation shares.&quot;&quot;&quot;</span>
-<a id="__codelineno-0-94" name="__codelineno-0-94"></a>    <span class="k">if</span> <span class="s2">&quot;snakemake&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">():</span>
-<a id="__codelineno-0-95" name="__codelineno-0-95"></a>        <span class="n">snakemake</span> <span class="o">=</span> <span class="n">setup</span><span class="o">.</span><span class="n">_mock_snakemake</span><span class="p">(</span>
-<a id="__codelineno-0-96" name="__codelineno-0-96"></a>            <span class="s2">&quot;generate_sector_references&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-97" name="__codelineno-0-97"></a>            <span class="n">config_files</span><span class="o">=</span><span class="s2">&quot;resources/tmp/remind_coupled_cg.yaml&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-98" name="__codelineno-0-98"></a>        <span class="p">)</span>
-<a id="__codelineno-0-99" name="__codelineno-0-99"></a>    <span class="k">else</span><span class="p">:</span>
-<a id="__codelineno-0-100" name="__codelineno-0-100"></a>        <span class="n">snakemake</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="s2">&quot;snakemake&quot;</span><span class="p">]</span>
-<a id="__codelineno-0-101" name="__codelineno-0-101"></a>
-<a id="__codelineno-0-102" name="__codelineno-0-102"></a>    <span class="n">configure_logging</span><span class="p">(</span><span class="n">snakemake</span><span class="p">)</span>
-<a id="__codelineno-0-103" name="__codelineno-0-103"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting generation of sectoral disaggregation shares&quot;</span><span class="p">)</span>
-<a id="__codelineno-0-104" name="__codelineno-0-104"></a>
-<a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="n">params</span> <span class="o">=</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">params</span>
-<a id="__codelineno-0-106" name="__codelineno-0-106"></a>    <span class="n">years</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">years</span>
-<a id="__codelineno-0-107" name="__codelineno-0-107"></a>    <span class="n">config</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">gompertz_config</span>
-<a id="__codelineno-0-108" name="__codelineno-0-108"></a>
-<a id="__codelineno-0-109" name="__codelineno-0-109"></a>    <span class="n">input_files</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-0-110" name="__codelineno-0-110"></a>        <span class="s2">&quot;historical_gdp&quot;</span><span class="p">:</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">historical_gdp</span><span class="p">,</span>
-<a id="__codelineno-0-111" name="__codelineno-0-111"></a>        <span class="s2">&quot;historical_pop&quot;</span><span class="p">:</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">historical_pop</span><span class="p">,</span>
-<a id="__codelineno-0-112" name="__codelineno-0-112"></a>        <span class="s2">&quot;historical_cars&quot;</span><span class="p">:</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">historical_cars</span><span class="p">,</span>
-<a id="__codelineno-0-113" name="__codelineno-0-113"></a>        <span class="s2">&quot;ssp2_pop&quot;</span><span class="p">:</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">ssp2_pop</span><span class="p">,</span>
-<a id="__codelineno-0-114" name="__codelineno-0-114"></a>        <span class="s2">&quot;ssp2_gdp&quot;</span><span class="p">:</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">ssp2_gdp</span><span class="p">,</span>
-<a id="__codelineno-0-115" name="__codelineno-0-115"></a>    <span class="p">}</span>
-<a id="__codelineno-0-116" name="__codelineno-0-116"></a>
-<a id="__codelineno-0-117" name="__codelineno-0-117"></a>    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">snakemake</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">ev_passenger_shares</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+<span class="normal"><a href="#__codelineno-0-122">122</a></span>
+<span class="normal"><a href="#__codelineno-0-123">123</a></span>
+<span class="normal"><a href="#__codelineno-0-124">124</a></span></pre></div></td><td class="code"><div><pre><span></span><code><a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<a id="__codelineno-0-95" name="__codelineno-0-95"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Main entry point for generating provincial disaggregation shares.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-96" name="__codelineno-0-96"></a>    <span class="k">if</span> <span class="s2">&quot;snakemake&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">():</span>
+<a id="__codelineno-0-97" name="__codelineno-0-97"></a>        <span class="n">snakemake</span> <span class="o">=</span> <span class="n">setup</span><span class="o">.</span><span class="n">_mock_snakemake</span><span class="p">(</span>
+<a id="__codelineno-0-98" name="__codelineno-0-98"></a>            <span class="s2">&quot;generate_sector_references&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-99" name="__codelineno-0-99"></a>            <span class="n">config_files</span><span class="o">=</span><span class="s2">&quot;resources/tmp/remind_coupled_cg.yaml&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-100" name="__codelineno-0-100"></a>        <span class="p">)</span>
+<a id="__codelineno-0-101" name="__codelineno-0-101"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="__codelineno-0-102" name="__codelineno-0-102"></a>        <span class="n">snakemake</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="s2">&quot;snakemake&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-103" name="__codelineno-0-103"></a>
+<a id="__codelineno-0-104" name="__codelineno-0-104"></a>    <span class="n">configure_logging</span><span class="p">(</span><span class="n">snakemake</span><span class="p">)</span>
+<a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting generation of sectoral disaggregation shares&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-106" name="__codelineno-0-106"></a>
+<a id="__codelineno-0-107" name="__codelineno-0-107"></a>    <span class="n">params</span> <span class="o">=</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">params</span>
+<a id="__codelineno-0-108" name="__codelineno-0-108"></a>    <span class="n">years</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">years</span>
+<a id="__codelineno-0-109" name="__codelineno-0-109"></a>    <span class="n">config</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">gompertz_config</span>
+<a id="__codelineno-0-110" name="__codelineno-0-110"></a>
+<a id="__codelineno-0-111" name="__codelineno-0-111"></a>    <span class="n">input_files</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-0-112" name="__codelineno-0-112"></a>        <span class="s2">&quot;historical_gdp&quot;</span><span class="p">:</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">historical_gdp</span><span class="p">,</span>
+<a id="__codelineno-0-113" name="__codelineno-0-113"></a>        <span class="s2">&quot;historical_pop&quot;</span><span class="p">:</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">historical_pop</span><span class="p">,</span>
+<a id="__codelineno-0-114" name="__codelineno-0-114"></a>        <span class="s2">&quot;historical_cars&quot;</span><span class="p">:</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">historical_cars</span><span class="p">,</span>
+<a id="__codelineno-0-115" name="__codelineno-0-115"></a>        <span class="s2">&quot;ssp2_pop&quot;</span><span class="p">:</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">ssp2_pop</span><span class="p">,</span>
+<a id="__codelineno-0-116" name="__codelineno-0-116"></a>        <span class="s2">&quot;ssp2_gdp&quot;</span><span class="p">:</span> <span class="n">snakemake</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">ssp2_gdp</span><span class="p">,</span>
+<a id="__codelineno-0-117" name="__codelineno-0-117"></a>    <span class="p">}</span>
 <a id="__codelineno-0-118" name="__codelineno-0-118"></a>
-<a id="__codelineno-0-119" name="__codelineno-0-119"></a>    <span class="n">generator</span> <span class="o">=</span> <span class="n">SectorReferenceGenerator</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
-<a id="__codelineno-0-120" name="__codelineno-0-120"></a>    <span class="n">generator</span><span class="o">.</span><span class="n">extrapolate_references</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">input_files</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_dir</span><span class="p">))</span>
-<a id="__codelineno-0-121" name="__codelineno-0-121"></a>
-<a id="__codelineno-0-122" name="__codelineno-0-122"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generation of sectoral disaggregation shares finished&quot;</span><span class="p">)</span>
+<a id="__codelineno-0-119" name="__codelineno-0-119"></a>    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">snakemake</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">ev_passenger_shares</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
+<a id="__codelineno-0-120" name="__codelineno-0-120"></a>
+<a id="__codelineno-0-121" name="__codelineno-0-121"></a>    <span class="n">generator</span> <span class="o">=</span> <span class="n">SectorReferenceGenerator</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<a id="__codelineno-0-122" name="__codelineno-0-122"></a>    <span class="n">generator</span><span class="o">.</span><span class="n">extrapolate_references</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">input_files</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_dir</span><span class="p">))</span>
+<a id="__codelineno-0-123" name="__codelineno-0-123"></a>
+<a id="__codelineno-0-124" name="__codelineno-0-124"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Generation of sectoral disaggregation shares finished&quot;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
