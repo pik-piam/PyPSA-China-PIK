@@ -55,8 +55,9 @@ include: "rules/postprocess.smk"
 include: "rules/fetch_data.smk"
 include: "rules/visualize_inputs.smk"
 
-# Mark calculate_gebco_slope as local rule (always runs locally, not on Slurm)
-localrules: calculate_gebco_slope
+# Mark calculate_gebco_slope as local rule only when the rule is defined
+if not config["run"].get("is_test", False):
+    localrules: calculate_gebco_slope
 
 if config["run"].get("is_test", False):
     localrules: build_population, dag, fetch_region_shapes
@@ -191,12 +192,12 @@ if not config["run"].get("is_test", False):
     rule calculate_gebco_slope:
         """
         Calculate slope from GEBCO altimetry/bathymetry data.
-        
+
         Process:
         1. Reproject to Mollweide (ESRI:54009) - equal-area projection for accurate slope
         2. Calculate slope in percent using gdaldem
         3. Reproject back to EPSG:4326 for compatibility with atlite
-        
+
         Output CRS: EPSG:4326 (WGS84 Geographic)
         Output format: NetCDF4 with DEFLATE compression
         """
@@ -208,7 +209,7 @@ if not config["run"].get("is_test", False):
             "logs/gebco_slope_calculation.log"
         script:
             "scripts/calculate_gebco_slope.py"
-        
+
 
 rule build_availability_matrix:
     params:
