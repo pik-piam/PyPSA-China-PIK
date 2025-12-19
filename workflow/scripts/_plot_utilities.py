@@ -14,25 +14,25 @@ import pypsa
 
 def validate_hex_colors(tech_colors: dict[str, str], fill_color = "#999999") -> dict[str, str]:
     """Validate and standardize hex color codes in technology color mappings.
-    
+
     Ensures all color codes in the technology colors dictionary are valid hexadecimal
     color codes. Invalid or malformed colors are replaced with a default gray color.
-    
+
     Args:
         tech_colors (Dict[str, str]): Dictionary mapping technology names to color codes. Expected
             format is {'tech_name': '#RRGGBB'} or {'tech_name': '#RGB'}.
         fill_color (str, optional): Default color to use for invalid entries. Defaults to '#999999'.
-            
+
     Returns:
         dict[str,str] with validated hex color codes. All valid colors are converted
         to lowercase, while invalid colors are replaced with '#999999' (gray).
-        
+
     Example:
         >>> colors = {'solar': '#FFD700', 'wind': 'invalid', 'coal': '#8B4513'}
         >>> validated = validate_hex_colors(colors)
         >>> print(validated)
         {'solar': '#ffd700', 'wind': '#999999', 'coal': '#8b4513'}
-        
+
     Note:
         Accepts both 3-digit (#RGB) and 6-digit (#RRGGBB) hex color formats.
         All valid colors are standardized to lowercase.
@@ -463,16 +463,16 @@ def annotate_heatmap(
 
 def setup_plot_export_hook(plot_accessor_class, export_dir="plot_exports", verbose=True):
     """Setup a monkey patch to auto-export data to CSV whenever pandas plots are created.
-    
+
     Args:
         plot_accessor_class: The PlotAccessor class to patch (e.g., pandas.plotting.PlotAccessor).
         export_dir (str, optional): Directory where CSV exports will be saved. 
             Defaults to "plot_exports".
         verbose (bool, optional): Whether to print export messages. Defaults to True.
-    
+
     Returns:
         callable: Function to remove the patch and restore original behavior.
-    
+
     Example:
         >>> from pandas.plotting import PlotAccessor
         >>> remove_hook = setup_plot_export_hook(PlotAccessor)
@@ -481,15 +481,16 @@ def setup_plot_export_hook(plot_accessor_class, export_dir="plot_exports", verbo
     """
     import os
     import time
+
     import pandas as pd
-    
+
     # Create export directory
     os.makedirs(export_dir, exist_ok=True)
-    
+
     # Store original __call__ if not already stored
     if not hasattr(plot_accessor_class, '_original_call'):
         plot_accessor_class._original_call = plot_accessor_class.__call__
-    
+
     def patched_plot_call(self, *args, **kwargs):
         """Patched __call__ method for PlotAccessor to export data before plotting."""
         # Create timestamped filename
@@ -498,22 +499,22 @@ def setup_plot_export_hook(plot_accessor_class, export_dir="plot_exports", verbo
         else:
             ts = time.strftime("%Y%m%d_%H%M%S")
             fname = os.path.join(export_dir, f"plot_export_{ts}.csv")
-        
+
         # Export the data
         if isinstance(self._parent, pd.Series):
             self._parent.to_frame().to_csv(fname, index=True)
         else:
             self._parent.to_csv(fname, index=True)
-        
+
         if verbose:
             print(f"[pandas-plot-hook] Exported plotted data to {fname}")
-        
+
         # Call the original __call__ method
         return self._original_call(*args, **kwargs)
-    
+
     # Apply the patch
     plot_accessor_class.__call__ = patched_plot_call
-    
+
     # Return function to remove the patch
     def remove_hook():
         """Remove the plot export hook and restore original behavior."""
@@ -522,7 +523,7 @@ def setup_plot_export_hook(plot_accessor_class, export_dir="plot_exports", verbo
             delattr(plot_accessor_class, '_original_call')
             if verbose:
                 print("[pandas-plot-hook] Hook removed, original behavior restored.")
-    
+
     return remove_hook
 
 

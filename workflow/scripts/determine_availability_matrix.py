@@ -27,7 +27,6 @@ import geopandas as gpd
 import numpy as np
 from _helpers import configure_logging, mock_snakemake
 from constants import OFFSHORE_WIND_NODES, PROV_NAMES
-from pandas import concat
 from readers_geospatial import read_offshore_province_shapes, read_province_shapes
 
 logger = logging.getLogger(__name__)

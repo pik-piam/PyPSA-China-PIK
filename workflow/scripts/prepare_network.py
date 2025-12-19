@@ -1616,7 +1616,7 @@ def prepare_network(
         add_voltage_links(network, config)
 
     assign_locations(network)
-    
+
     return network
 
 

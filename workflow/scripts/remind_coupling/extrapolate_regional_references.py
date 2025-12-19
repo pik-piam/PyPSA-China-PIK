@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class SectorReferenceGenerator:
     """General framework for generating sectoral disaggregation shares.
-    
+
     Coordinates the extrapolation of provincial share/ratio data for different
     sectors (e.g., EV, heat). These shares are used to spatially disaggregate
     REMIND national outputs to provincial level.
@@ -53,7 +53,7 @@ class SectorReferenceGenerator:
 
     def extrapolate_references(self, years: list[int], input_files: dict[str, str], output_dir: str):
         """Extrapolate provincial disaggregation shares for all available sectors.
-        
+
         Generates reference share files that indicate what fraction of national-level
         sectoral demand/activity belongs to each province. For example, EV passenger
         shares show the provincial distribution of passenger EV demand.

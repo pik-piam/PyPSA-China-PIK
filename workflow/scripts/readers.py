@@ -12,7 +12,7 @@ import pandas as pd
 
 def aggregate_sectoral_loads(yearly_proj: pd.DataFrame, config: dict) -> pd.DataFrame:
     """Aggregate REMIND load sectors according to the model configuration.
-    
+
     Sectors that are NOT enabled for independent modeling will be aggregated 
     into the main electricity load. For example, if EV sector is not enabled 
     as an independent sector (enabled: false), its load will be added to the 
@@ -75,11 +75,11 @@ def read_yearly_load_projections(
     config: dict = None,
 ) -> pd.DataFrame:
     """Read and process yearly load projections from CSV files.
-    
+
     Supports both simple load data and REMIND sector-coupled data with 
     electric vehicle integration. Automatically detects data format and
     applies appropriate processing.
-    
+
     Args:
         file_path (os.PathLike): Path to the yearly projections CSV file.
             Defaults to "resources/data/load/Province_Load_2020_2060.csv".
@@ -88,21 +88,21 @@ def read_yearly_load_projections(
         config (dict, optional): Configuration dictionary for sector processing.
             Required when processing REMIND data with sector columns.
             Should contain 'sectors' and 'sector_mapping' keys.
-    
+
     Returns:
         pd.DataFrame: Processed load projections data with:
             - Province names as index (for simple data) or columns
             - Year columns as integers
             - Data converted by the conversion factor
-    
+
     Raises:
         ValueError: If required columns are missing or configuration is invalid
         FileNotFoundError: If the input file does not exist
-    
+
     Examples:
         >>> # Simple load data
         >>> data = read_yearly_load_projections("simple_load.csv")
-        
+
         >>> # REMIND data with electric vehicles
         >>> config = {
         ...     "sectors": {"electric_vehicles": True},

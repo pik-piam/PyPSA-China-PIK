@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def add_carrier_if_missing(n: pypsa.Network, carrier_name: str):
     """Add a carrier to the network if it doesn't already exist.
-    
+
     Args:
         n (pypsa.Network): PyPSA network to modify.
         carrier_name (str): Name of the carrier to add.
@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
     transport_cfg = ev_cfg.get("transport", {})
     logger.info("Transport configuration: %s", transport_cfg)
-    
+
     passenger_cfg = transport_cfg.get("passenger_bev", {})
     if passenger_cfg.get("enable", False):
         charging = pd.read_csv(

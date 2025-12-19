@@ -421,9 +421,12 @@ def add_nuclear_expansion_constraints(n: pypsa.Network):
     Args:
         n (pypsa.Network): the network object
     """
-    limit = n.config.get("nuclear_reactors", {}).get("expansion_limit")
-    if limit is None:
+    config = getattr(n, "config", {})
+    max_capacity = config.get("nuclear_max_capacity") if isinstance(config, dict) else None
+
+    if max_capacity is None:
         return
+
 
     nuclear_gens_ext = n.generators[
         (n.generators.carrier == "nuclear") & (n.generators.p_nom_extendable == True)
