@@ -48,6 +48,8 @@ affiliations:
     name: Potsdam Institute for Climate Impact Research, Potsdam, Germany
   - index: 2
     name: College of Environmental Sciences and Engineering, Peking University, Beijing, China
+
+bibliography: paper.bib
 ---
 # Summary
 Open-source energy system models are essential for understanding and planning future energy systems. They also provide a transparent knowledge basis for evidence-based decision-making [@pfenningerImportanceOpenData2017]. However, such open-source, open-data models remain scarce for China. To address this gap, we present `PyPSA-China-PIK` - a fully open-source, open-data model of China's current and future power sector. The model co-optimizes investments in electricity generation, storage, and transmission capacity, together with their dispatch, to minimize the total cost of supplying electricity and other energy carriers. The optimization is subject to user-defined constraints including environmental policies such as carbon prices or budgets and operational reserve margins to ensure system reliability.
@@ -76,7 +78,7 @@ To the best of the authors’ knowledge, few fully-open models of China’s powe
 -	**Active development**: higher resolution and further sectors under development.
 
 # Model Overview
-![Overview of the PyPSA-China-PIK workflow](figures/workflow_overview.pdf)
+![Overview of the PyPSA-China-PIK workflow](assets/workflow_overview.pdf)
 
 `PyPSA-China-PIK` is best understood as a workflow built on-top of the Python Power System Analysis ([PyPSA](https://pypsa.readthedocs.io/en/stable/)) modeling framework[@PyPSA]. The steps  are: 
 1.	Data fetch of open energy systems (existing power system infrastructure, weather and land-use) data.
@@ -105,7 +107,7 @@ An advanced feature is incorporating transformation pathways from the REMIND int
 # Validation
 Unlike in PyPSA, power dispatch in China is not currently based on least-cost principles[@xiangAssessingRolesEfficient2023]. However, upgrades to represent gas-generation in urban areas and differentiated fuel costs mean the model reproduces historical data with high accuracy (figure 2).
 
-![Validation of the model against historical generation mix reported by Ember](figures/joss_validation.png)
+![Validation of the model against historical generation mix reported by Ember](assets/joss_validation.png)
 
 # Acknowledgements
 This work was made possible thanks to funding from the Energy Foundation China, grant G-2407-35694.
