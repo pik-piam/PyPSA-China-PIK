@@ -1,0 +1,34 @@
+# A Configuration to reproduce historical mix for 2020 and 2025
+# run with `snakemake --configfile=examples/historical.yml`
+
+run:
+  name: "reproduce_historical_load"
+foresight: "overnight"
+
+scenario:
+  co2_pathway: ["exp175default"] # co2_scenarios that will be used
+  topology: "current+FCG" # "current" or "FCG" or "current+FCG" or "current+Neighbor"
+  planning_horizons:
+    - 2020
+    - 2025
+
+subsidies:
+  enabled: True  # Set to false to disable fuel subsidies
+  # Year-dependent format: subsidies.fuel_type -> year -> province -> value (EUR/MWh)
+  # Only negative values allowed (subsidies reduce marginal cost)
+  # Gas favoured over coal in urban areas due to PM2.5 concerns
+  gas:
+    2020:
+      Guangdong: -10.16
+      Jiangsu:  -10.16
+      Zhejiang: -10.15
+      Beijing: -12.5
+      Tianjin: -12.5
+      Shanghai: -12.5
+      Xinjiang: -10
+  # location dependent fuel prices (cheaper in Shaanxi and Inner Mongolia for example)
+  coal:
+    2020:
+      Xinjiang: -4
+      InnerMongolia: -4.5
+      Hebei: -4

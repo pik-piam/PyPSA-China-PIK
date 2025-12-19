@@ -19,28 +19,28 @@ from shapely.geometry import Polygon
 # polynomial centroid for plotting
 def get_poly_center(poly: Polygon):
     """Get the geographic centroid of a polygon geometry.
-    
+
     Extracts the centroid coordinates from a polygon object, typically used
     for plotting and spatial analysis in geographic applications.
-    
+
     Args:
-        poly (Polygon): A (shapely) polygon geometry object with a 
+        poly (Polygon): A (shapely) polygon geometry object with a
             centroid attribute that has x and y coordinate arrays.
-            
+
     Returns:
         tuple: A tuple containing (x, y) coordinates of the polygon centroid
             as floating point numbers.
-            
+
     Example:
         >>> from shapely.geometry import Polygon
         >>> polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         >>> center = get_poly_center(polygon)
         >>> print(center)
         (0.5, 0.5)
-        
+
     Note:
-        This function assumes the polygon object has a centroid attribute
-        with xy arrays containing coordinate data.
+    This function assumes the polygon object has a centroid attribute
+    with xy arrays containing coordinate data.
     """
     return (poly.centroid.xy[0][0], poly.centroid.xy[1][0])
 
@@ -69,18 +69,18 @@ def cartesian(s1: pd.Series, s2: pd.Series) -> pd.DataFrame:
 
 def haversine(p1, p2) -> float:
     """Calculate the great circle distance between two points on Earth.
-    
+
     Uses the Haversine formula to compute the shortest distance over the Earth's
     surface between two points specified in decimal degrees latitude and longitude.
     This is useful for calculating distances between geographic locations.
-    
+
     Args:
         p1 (shapely.Point): location 1 in decimal deg
         p2 (shapely.Point): location 2 in decimal deg
 
     Returns:
         float: Great circle distance between the two points in kilometers.
-        
+
     Example:
         >>> from shapely.geometry import Point
         >>> beijing = Point(116.4074, 39.9042)  # longitude, latitude
@@ -88,7 +88,7 @@ def haversine(p1, p2) -> float:
         >>> distance = haversine(beijing, shanghai)
         >>> print(f"Distance: {distance:.1f} km")
         Distance: 1067.1 km
-        
+
     Note:
         The function assumes the Earth is a perfect sphere with radius 6371 km.
     """
@@ -112,7 +112,7 @@ def area_from_lon_lat_poly(geometry: Polygon):
 
     Args:
         geometry (Polygon): Polygon geometry in lon-lat coordinates.
-    
+
     Returns:
         float: Area of the polygon in m^2.
     """

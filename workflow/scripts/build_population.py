@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def load_pop_csv(csv_path: os.PathLike) -> pd.DataFrame:
     """Load the national bureau of statistics of China population.
-    
+
     Supports both formats:
     - Yearbook format (2.5 pop at year end by Region)
     - Historical data format with comment lines
@@ -24,12 +24,12 @@ def load_pop_csv(csv_path: os.PathLike) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: The population for constants.POP_YEAR by province
-        
+
     Raises:
         ValueError: If the province names do not match expected names
     """
     # Read CSV, skipping comment lines that start with #
-    df = pd.read_csv(csv_path, index_col=0, header=0, comment='#')
+    df = pd.read_csv(csv_path, index_col=0, header=0, comment="#")
     df = df.apply(pd.to_numeric)
     df = df[POP_YEAR][df.index.isin(PROV_NAMES)]
     if not sorted(df.index.to_list()) == sorted(PROV_NAMES):

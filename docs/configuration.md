@@ -2,7 +2,7 @@
 
 This is documentation for the PyPSA-China configuration (`config/default_config.yaml` & `config/technology_config.yaml`). The configuration file controls various aspects of the PyPSA-China energy system modeling workflow.
 
-## Table of Contents 
+## Table of Contents
 
 - [Run Configuration](#run-configuration)
 - [File Paths](#file-paths)
@@ -45,7 +45,7 @@ This is documentation for the PyPSA-China configuration (`config/default_config.
 
 2. **Customization**: Do not edit `default_config.yaml`. Overwrite the variables you need in `my_config.yaml`. See [running section](../running). Then run `snakemake --configfile config/my_config.yaml`
 
-3. **Technology Configuration**: Additional technology parameters are defined in separate files in  `config/technology_config.yaml` 
+3. **Technology Configuration**: Additional technology parameters are defined in separate files in  `config/technology_config.yaml`
 
 4. **Solver Selection**: Remember to select a solver that is installed.
 
@@ -69,7 +69,7 @@ foresight: "overnight"
 paths:
   results_dir: "results/"
   costs_dir: "resources/data/costs/default"
-  yearly_regional_load: 
+  yearly_regional_load:
     ac: "resources/data/load/Provincial_Load_2020_2060_MWh.csv"
     ac_to_mwh: 1
 ```
@@ -96,7 +96,7 @@ Paths to named transmission line topology files for different scenarios. Predefi
 A scenario is a set of time horizons with a carbon reduction pathway. The variations become snakemake wildcards.
 
 ```yaml
-scenario: 
+scenario:
   co2_pathway: ["exp175default"]
   topology: "current+FCG"
   planning_horizons: [year_list]
@@ -112,7 +112,7 @@ scenario:
 Emission reduction pathways. `scenario.co2_pathway` entries must be defined here.
 
 ```yaml
-co2_scenarios: 
+co2_scenarios:
   exp175default: # pathway name
     control: "reduction"
     pathway:
@@ -205,10 +205,10 @@ Configuration for weather data processing:
 
 ## Renewable Energy Technologies Atlite
 
-### Wind 
+### Wind
 ```yaml
 renewable:
-  onwind | offwind: 
+  onwind | offwind:
     cutout: cutout-name
     resource:
       method: wind
@@ -350,7 +350,7 @@ Controls nuclear capacity expansion:
 - **`base_year`**: Reference year for capacity calculations (should be ≤ first planning year)
 - **`base_capacity`**: (Optional) Base year total capacity in MW. If not set, auto-detected from base_year network
 
-## Sector and component Switches 
+## Sector and component Switches
 
 ```yaml
 heat_coupling: false
@@ -542,18 +542,33 @@ nodes:
 - **`splits`**: Custom groupings of admin level 2 regions within provinces
 
 ## Fuel Subsidies
+Fuel subsidies can be speficied for all years or per year
 
-```yaml
-subsidies:
-  enabled: false
-  gas:
-    Guangdong: -10
-    Jiangsu: -10
-    Zhejiang: -10
-    Beijing: -11
-    Tianjin: -11
-    Shanghai: -11
-```
+    === "All years"
+      ```yaml
+      subsidies:
+        enabled: false
+        gas:
+          Guangdong: -10
+          Jiangsu: -10
+          Zhejiang: -10
+          Beijing: -11
+          Tianjin: -11
+          Shanghai: -11
+      ```
+    === "Year by year"
+      ```yaml
+      subsidies:
+        enabled: false
+        gas:
+          2020:
+            Guangdong: -10
+            Jiangsu: -10
+            Zhejiang: -10
+            Beijing: -11
+            Tianjin: -11
+            Shanghai: -11
+      ```
 
 Provincial fuel subsidies configuration:
 - **`enabled`**: Enable/disable fuel subsidy system
@@ -708,7 +723,7 @@ hydro:
 ## Fossil Fuel Ramping Constraints
 
 Operational ramping constraints for fossil fuel power plants:
- 
+
 ```yaml
 fossil_ramps:
   tech:
@@ -760,4 +775,3 @@ Also tech costs are now in Euro2015 from DK EA
 - **`pv_utility_fraction`**: Fraction of solar PV that is utility-scale (100%)
 
 This parameter distinguishes between utility-scale and residential/distributed solar installations, affecting cost assumptions and grid integration characteristics.
-
