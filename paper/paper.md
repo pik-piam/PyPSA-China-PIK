@@ -114,6 +114,6 @@ Unlike in PyPSA, power dispatch in China is not currently based on least-cost pr
 # Acknowledgements
 This work was made possible thanks to funding from the Energy Foundation China, grant G-2407-35694.
 The authors gratefully acknowledge the Ministry of Research, Science and Culture (MWFK) of Land Brandenburg for supporting this project by providing resources on the high performance computer system at the Potsdam Institute for Climate Impact Research. (Grant No. 22-Z105-05/002/001).
-We are also indebted to Dr. Fabian Neumann for useful discussions and advice. 
+We are also indebted to Dr. Fabian Neumann for useful discussions and advice and to Dr. Xiaowei Zhou for answers about his code. 
 
 # References
