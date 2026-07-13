@@ -105,7 +105,7 @@ To create a release:
    ```bash
    # Update version in workflow/__init__.py
    __version__ = "1.3.0"
-   
+
    # Update CHANGELOG.md with release date
    ## [1.3.0] - 2025-12-02
    ```
@@ -121,7 +121,7 @@ To create a release:
    - Go to Actions → "Create Release Tag"
    - Enter version (e.g., `1.3.0`)
    - Click "Run workflow"
-   
+
    OR manually:
    ```bash
    git tag -a v1.3.0 -m "Release version 1.3.0"

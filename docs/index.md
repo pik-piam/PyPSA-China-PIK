@@ -1,6 +1,6 @@
 # Welcome to the PyPSA-China documentation!
 
-This is the documentation for the **Python Power System Analysis for China** (`PyPSA-China`) model, maintained by the [Energy Transition Lab](https://www.pik-potsdam.de/en/institute/labs/energy-transition/energy-transition-lab) at the Potsdam Institute for Climate Impact Studies. `PyPSA-China` is an open model to simulate the future of energy in China at provincial level. Currently, electricity and heat are covered as energy sectors. 
+This is the documentation for the **Python Power System Analysis for China** (`PyPSA-China`) model, maintained by the [Energy Transition Lab](https://www.pik-potsdam.de/en/institute/labs/energy-transition/energy-transition-lab) at the Potsdam Institute for Climate Impact Studies. `PyPSA-China` is an open model to simulate the future of energy in China at provincial level. Currently, electricity and heat are covered as energy sectors.
 The model can be partially coupled to the [REMIND](https://www.pik-potsdam.de/en/institute/departments/transformation-pathways/models/remind) Integrated Assesment Model to obtain multi-sectoral demand pathways. In this mode, battery electric vehicles can also be modelled.
 
 ## What is PyPSA-China?
@@ -9,7 +9,7 @@ The model can be partially coupled to the [REMIND](https://www.pik-potsdam.de/en
 
 `PyPSA-China` is built around the [PyPSA](https://pypsa.org/) "Python for Power System Analysis" (pronounced "pipes-ah") energy system modelling toolbox. PyPSA provides python objects that represent mixed AC and DC electricity networks, generators with optional unit commitment or variable generation, storage units and transformers as well as efficient bindings to open-source and commercial solvers.
 
-Currently, hourly (and lower) time resolutions and provincial level demand and transmission are supported. It is possible to improve the spatial resolution as for other `PyPSA` workflows (EUR, USA, earth) if open data is available.  
+Currently, hourly (and lower) time resolutions and provincial level demand and transmission are supported. It is possible to improve the spatial resolution as for other `PyPSA` workflows (EUR, USA, earth) if open data is available.
 
 
 ## Capabilities
@@ -32,9 +32,9 @@ The model has been validated against short term energy trends. **Todo: add figur
 
 ## Learning
 
-The model comes with an [installation guide](installation/quick_start), [model overview](model) [basic tutorials](tutorials/running/) and references for the [code](reference/SUMMARY/) and [configuration options](configuration). `PyPSA-China` is best understood as workflow, managed by the low-code [snakemake tool](https://snakemake.readthedocs.io/en/stable/). It is possible to run the workflow with minimal knowledge of `snakemake` and we have listed a few useful [tricks](tutorials/snakemake_tricks/) but we recommend going over the snakemake documentation.  
+The model comes with an [installation guide](installation/quick_start), [model overview](model) [basic tutorials](tutorials/running/) and references for the [code](reference/SUMMARY/) and [configuration options](configuration). `PyPSA-China` is best understood as workflow, managed by the low-code [snakemake tool](https://snakemake.readthedocs.io/en/stable/). It is possible to run the workflow with minimal knowledge of `snakemake` and we have listed a few useful [tricks](tutorials/snakemake_tricks/) but we recommend going over the snakemake documentation.
 
-The workflow consists of gathering and preparing relevant data, formulating the problem as a PyPSA network object, minimising the system costs using a solver and post-processing the data. The `atlite` package is used to compute renewable generator availability and potentials. You may want to look into the [PyPSA documentation](https://pypsa.readthedocs.io/en/stable/) and the [atlite documentation](https://atlite.readthedocs.io/en/latest/). 
+The workflow consists of gathering and preparing relevant data, formulating the problem as a PyPSA network object, minimising the system costs using a solver and post-processing the data. The `atlite` package is used to compute renewable generator availability and potentials. You may want to look into the [PyPSA documentation](https://pypsa.readthedocs.io/en/stable/) and the [atlite documentation](https://atlite.readthedocs.io/en/latest/).
 
 ![PyPSA-China Workflow](./assets/img/pypsa-china-workflow.png)
 

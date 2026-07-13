@@ -26,7 +26,7 @@ PyPSA-China natively supports coupling with the [REMIND](https://www.pik-potsdam
 - 📋 [Release Guide](docs/release-guide.md) (for maintainers)
 
 # License
-The code is released under the [MIT license](https://github.com/pypsa/PyPSA-China/blob/main/LICENSES/MIT.txt), however some of the data used is more restrictive. 
+The code is released under the [MIT license](https://github.com/pypsa/PyPSA-China/blob/main/LICENSES/MIT.txt), however some of the data used is more restrictive.
 
 # Documentation
 The documentation can be found at https://pypsa.github.io/PyPSA-China/
@@ -35,7 +35,7 @@ The documentation can be found at https://pypsa.github.io/PyPSA-China/
 
 ## Installation
 
-An installation guide is provided at https://pypsa.github.io/PyPSA-China/ 
+An installation guide is provided at https://pypsa.github.io/PyPSA-China/
 
 ## Getting the data
 You will need to enable data retrieval in the config
@@ -51,7 +51,7 @@ Some of the files are very large - expect a slow process!
 
 ## Usage
 
-Detailed instructions in the documentation. 
+Detailed instructions in the documentation.
 ### local execution
 - local execution can be started (once the environment is activated) with `snakemake`
 - to customize the options, create `my_config.yaml` and launch `snakemake --configfile `my_config.yaml`. Configuration options are summarised in the documentation.
@@ -60,7 +60,3 @@ This is relevant for slurm HPCs and other remotes with a submit job command
 - The workflow can be launched with `snakemake --profile config/compute_profile`
 - [PIK HPC users only] use `snakemake --profile config/pik_hpc_profile`
 - If you are not running on the PIK hpc, you will need make a new profile for your machine under `config/<compute_profile>/config.yaml`
-
-
-
-

@@ -6,7 +6,7 @@
 
 ## Installation
 
-1. **Install the [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) package manager** 
+1. **Install the [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) package manager**
 
     It may be possible to run the workflow with a better manager such as `uv` but it will not work out of the box
 
@@ -14,8 +14,8 @@
 
         !!!note "Conda tips"
 
-            Conda is a rather large install with a GUI and features not required by PyPSA-China. You may prefer to use the lighter miniconda, which is our recommendation. 
-            
+            Conda is a rather large install with a GUI and features not required by PyPSA-China. You may prefer to use the lighter miniconda, which is our recommendation.
+
             You can check whether you already have conda with `which anaconda` or `which conda`. Newer condas have a faster dependcy solver - as the package is rather large we strongly recommend you update to `v> 2024.10`.
 
     === "Windows"
@@ -23,11 +23,11 @@
         !!!note "Conda tips"
 
             Conda is a rather large install with a GUI and features not required by PyPSA-China. You may prefer to use the lighter miniconda, which is our recommendation
-            
+
             You can check whether you already have conda with `where anaconda` or `where conda`. Newer condas have a faster dependcy solver - as the package is rather large we strongly recommend you update to `v> 2024.9`.
 
 
-2. **Setup the environment**: This can take a long time 
+2. **Setup the environment**: This can take a long time
 
     === "Unix/MacOS/WSL"
         ```bash title="install dependencies"
@@ -45,7 +45,7 @@
         ```bash title="activate environment"
         conda activate pypsa-china
         ```
-        
+
 4. **Fetch data**
 
 

@@ -17,7 +17,7 @@ jobs:
 
     steps:
       # Step 1: Checkout the repository
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Step 2: Install Miniforge (no env creation here)
       - name: Setup Miniforge
@@ -34,7 +34,7 @@ jobs:
       # Step 3: Restore full Conda environment cache AFTER setup
       - name: Restore Conda env cache
         id: env-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             /home/runner/miniforge3/envs/pypsa-china
