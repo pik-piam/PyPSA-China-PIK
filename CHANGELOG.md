@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Official release preparation with versioned documentation
-- Comprehensive documentation at https://pik-piam.github.io/PyPSA-China-PIK/
+- Comprehensive documentation at https://pypsa.github.io/PyPSA-China/
 - MkDocs-based documentation with Material theme
 - Support for versioned documentation using mike
 - GitHub Actions workflow for automated documentation deployment
@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multiple enhancements to the modeling workflow
 - Improved data handling and processing
 
-## [1.0.x] - Initial PIK Releases
+## [1.0.x] - Initial Release
 
 ### Added
 - Initial PIK adaptation of PyPSA-China
@@ -68,10 +68,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Notes
 
-PyPSA-China (PIK) is based on the paper by Zhou et al, which extends a version original developed by Hailiang Liu et al. This changelog tracks changes from version 1.0.0 onwards in the PIK implementation.
+PyPSA-China is based on the paper by Zhou et al, which extends a version original developed by Hailiang Liu et al. This changelog tracks changes from version 1.0.0 onwards in the re-implementation.
 
-For detailed information about specific changes, see the [commit history](https://github.com/pik-piam/PyPSA-China-PIK/commits/main) on GitHub.
+For detailed information about specific changes, see the [commit history](https://github.com/pypsa/PyPSA-China/commits/main) on GitHub.
 
-[Unreleased]: https://github.com/pik-piam/PyPSA-China-PIK/compare/v1.3.0...HEAD
-[1.3.0]: https://github.com/pik-piam/PyPSA-China-PIK/releases/tag/v1.3.0
-[1.2.0]: https://github.com/pik-piam/PyPSA-China-PIK/releases/tag/v1.2.0
+[Unreleased]: https://github.com/pypsa/PyPSA-China/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/pypsa/PyPSA-China/releases/tag/v1.3.0
+[1.2.0]: https://github.com/pypsa/PyPSA-China/releases/tag/v1.2.0

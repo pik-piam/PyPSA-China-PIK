@@ -83,7 +83,7 @@ This document provides a complete summary of the release infrastructure that has
 ### For Users
 
 Users can:
-1. View versioned documentation at https://pik-piam.github.io/PyPSA-China-PIK/
+1. View versioned documentation at https://pypsa.github.io/PyPSA-China/
 2. Select specific versions using the version selector
 3. Download specific releases from GitHub
 4. Track changes via CHANGELOG.md
@@ -105,7 +105,7 @@ To create a release:
    ```bash
    # Update version in workflow/__init__.py
    __version__ = "1.3.0"
-   
+
    # Update CHANGELOG.md with release date
    ## [1.3.0] - 2025-12-02
    ```
@@ -121,7 +121,7 @@ To create a release:
    - Go to Actions → "Create Release Tag"
    - Enter version (e.g., `1.3.0`)
    - Click "Run workflow"
-   
+
    OR manually:
    ```bash
    git tag -a v1.3.0 -m "Release version 1.3.0"
@@ -198,7 +198,7 @@ Standardized PR descriptions with checklist
 
 3. **Verify Deployment**:
    - Check GitHub release page
-   - Verify documentation at https://pik-piam.github.io/PyPSA-China-PIK/
+   - Verify documentation at https://pypsa.github.io/PyPSA-China/
    - Test version selector
 
 ### Optional Enhancements

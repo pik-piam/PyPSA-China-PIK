@@ -1,13 +1,13 @@
 
-# Running the workflow 
+# Running the workflow
 
 ## Snakefile & config
-PyPSA-China execution is controlled by the [snakemake](https://snakemake.readthedocs.io/en/stable/) workflow manager. The `snakefile` should be understood as a control file. All implemented functionalities are accessible via the config and CLI args, the control should only be edited if you need new features (or to fix bugs). 
+PyPSA-China execution is controlled by the [snakemake](https://snakemake.readthedocs.io/en/stable/) workflow manager. The `snakefile` should be understood as a control file. All implemented functionalities are accessible via the config and CLI args, the control should only be edited if you need new features (or to fix bugs).
 
-The workflow is intended to be managed via the config files rather than the CLI argumnents. As explained below, the config files allow the control of nearly all aspects of the PyPSA-China execution.  
+The workflow is intended to be managed via the config files rather than the CLI argumnents. As explained below, the config files allow the control of nearly all aspects of the PyPSA-China execution.
 
 ## Default run (local)
-If the pypsa-china environment is  [installed & activated](../../installation/quick_start/), you can lauch run a with the default settings 
+If the pypsa-china environment is  [installed & activated](../../installation/quick_start/), you can lauch run a with the default settings
 ```bash title="launch default run"
 cd <my_install_location>
 snakemake
@@ -44,9 +44,9 @@ You can run any of the modules as standalone python thanks to the `mock_snakemak
 
 ## Remote/hpc execution with profiles
 
-The `--profile` arg allows you to specify execution snakemake options via a yaml config file. This is a better alternative to the CLI in many cases. 
+The `--profile` arg allows you to specify execution snakemake options via a yaml config file. This is a better alternative to the CLI in many cases.
 
-The `--profile` is especially useful for specifying and controlling remote execution, for example on an HPC. You will find a slurm HPC example in the config under `pik_hpc_profile/`. This allows you to set the compute resources per rule. Note that the profile must be called `config.yaml` 
+The `--profile` is especially useful for specifying and controlling remote execution, for example on an HPC. You will find a slurm HPC example in the config under `pik_hpc_profile/`. This allows you to set the compute resources per rule. Note that the profile must be called `config.yaml`
 
 The profile can also include any other snakemake flag, such as re-run conditions and verbosity.
 
@@ -67,7 +67,7 @@ EXAMPLES ARE CURRENTLY UNAVAILABLE
 It is possible to run each script as standalone using the `mock_snakemake` helper utility. The python file will run the __main__ script, reading the Snakefile.
 
 ### specific settings
-You can edit the wildcards in mocksnakemake. You can also mock passing a configfile ontop of defaults by adding it to the snakefile (add configfile:"my_config" after the default configs)  
+You can edit the wildcards in mocksnakemake. You can also mock passing a configfile ontop of defaults by adding it to the snakefile (add configfile:"my_config" after the default configs)
 
 # Questions?
-Please contact us if needed. Note that pypsa-China-PIK is currently under active development and we recommend waiting until the alpha or first stable release.
+Please contact us if needed. Note that PyPSA-China is currently under active development and we recommend waiting until the alpha or first stable release.

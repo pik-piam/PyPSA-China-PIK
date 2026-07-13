@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Contributors to PyPSA-China-PIK <https://github.com/PIK-Piam/PyPSA-China-PIK>
+# SPDX-FileCopyrightText: Contributors to PyPSA-China <https://github.com/pypsa/PyPSA-China>
 #
 # SPDX-License-Identifier: MIT
 """
@@ -98,9 +98,9 @@ if __name__ == "__main__":
     traffic_passenger = pd.read_csv(
         snakemake.input.charging_data_passenger, usecols=["count"]
     ).squeeze("columns")
-    traffic_freight = pd.read_csv(
-        snakemake.input.charging_data_freight, usecols=["count"]
-    ).squeeze("columns")
+    traffic_freight = pd.read_csv(snakemake.input.charging_data_freight, usecols=["count"]).squeeze(
+        "columns"
+    )
 
     charging_demand_passenger = build_transport_demand(
         traffic_passenger, nodes, ev_passenger_load, snapshots

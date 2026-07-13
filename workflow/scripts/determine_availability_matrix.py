@@ -10,7 +10,7 @@ several GIS datasets like the Copernicus land use data, GEBCO bathymetry data.
 Natural reserves are from https://zenodo.org/records/14875797
 
 The copernicus land monitoring data is/can be fetched by the pipeline.
-The GEBCO data is stored in the PyPSA-China-PIK zenodo bundle or must
+The GEBCO data is stored in the PyPSA-China zenodo bundle or must
  be manually downloaded from the `General Bathymetric Chart of the Oceans (GEBCO)
   <https://www.gebco.net/data_and_products/gridded_bathymetry_data/>`_.
 
