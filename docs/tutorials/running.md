@@ -70,4 +70,4 @@ It is possible to run each script as standalone using the `mock_snakemake` helpe
 You can edit the wildcards in mocksnakemake. You can also mock passing a configfile ontop of defaults by adding it to the snakefile (add configfile:"my_config" after the default configs)  
 
 # Questions?
-Please contact us if needed. Note that pypsa-China-PIK is currently under active development and we recommend waiting until the alpha or first stable release.
+Please contact us if needed. Note that PyPSA-China is currently under active development and we recommend waiting until the alpha or first stable release.

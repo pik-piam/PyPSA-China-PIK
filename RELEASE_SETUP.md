@@ -83,7 +83,7 @@ This document provides a complete summary of the release infrastructure that has
 ### For Users
 
 Users can:
-1. View versioned documentation at https://pik-piam.github.io/PyPSA-China-PIK/
+1. View versioned documentation at https://pypsa.github.io/PyPSA-China/
 2. Select specific versions using the version selector
 3. Download specific releases from GitHub
 4. Track changes via CHANGELOG.md
@@ -198,7 +198,7 @@ Standardized PR descriptions with checklist
 
 3. **Verify Deployment**:
    - Check GitHub release page
-   - Verify documentation at https://pik-piam.github.io/PyPSA-China-PIK/
+   - Verify documentation at https://pypsa.github.io/PyPSA-China/
    - Test version selector
 
 ### Optional Enhancements

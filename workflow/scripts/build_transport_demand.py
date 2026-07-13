@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Contributors to PyPSA-China-PIK <https://github.com/PIK-Piam/PyPSA-China-PIK>
+# SPDX-FileCopyrightText: Contributors to PyPSA-China <https://github.com/pypsa/PyPSA-China>
 #
 # SPDX-License-Identifier: MIT
 """

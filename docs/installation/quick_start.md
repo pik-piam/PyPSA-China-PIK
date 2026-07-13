@@ -2,7 +2,7 @@
 # Quick Start
 
 !!!note "System requirements"
-    With the low-resolution settings, PyPSA-China-PIK will run on a local machine or laptop. Solving a full year at hourly resolution will require a high performance cluster or server with around 50GB of RAM - depending on your settings.
+    With the low-resolution settings, PyPSA-China will run on a local machine or laptop. Solving a full year at hourly resolution will require a high performance cluster or server with around 50GB of RAM - depending on your settings.
 
 ## Installation
 

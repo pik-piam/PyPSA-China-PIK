@@ -1,10 +1,10 @@
 # Release Notes
 
-This page provides an overview of releases and how to work with different versions of PyPSA-China (PIK).
+This page provides an overview of releases and how to work with different versions of PyPSA-China.
 
 ## Current Release
 
-The current stable release is **v1.3.2**. See the [CHANGELOG](https://github.com/pik-piam/PyPSA-China-PIK/blob/main/CHANGELOG.md) for detailed information about changes in this and previous versions.
+The current stable release is **v1.3.2**. See the [CHANGELOG](https://github.com/pypsa/PyPSA-China/blob/main/CHANGELOG.md) for detailed information about changes in this and previous versions.
 
 ## Documentation
 
@@ -16,7 +16,7 @@ You can view documentation for different versions using the version selector in 
 
 ## Release Schedule
 
-PyPSA-China (PIK) follows semantic versioning:
+PyPSA-China follows semantic versioning:
 
 - **Major releases** (X.0.0) - Significant changes, may include breaking changes
 - **Minor releases** (X.Y.0) - New features, backward compatible
@@ -28,8 +28,8 @@ PyPSA-China (PIK) follows semantic versioning:
 
 ```bash
 # Clone the repository
-git clone https://github.com/pik-piam/PyPSA-China-PIK.git
-cd PyPSA-China-PIK
+git clone https://github.com/pypsa/PyPSA-China.git
+cd PyPSA-China
 git checkout v1.3.2
 ```
 
@@ -37,8 +37,8 @@ git checkout v1.3.2
 
 ```bash
 # Clone the repository
-git clone https://github.com/pik-piam/PyPSA-China-PIK.git
-cd PyPSA-China-PIK
+git clone https://github.com/pypsa/PyPSA-China.git
+cd PyPSA-China
 # Stay on main branch for latest development version
 ```
 
@@ -46,8 +46,8 @@ cd PyPSA-China-PIK
 
 ```bash
 # Clone the repository
-git clone https://github.com/pik-piam/PyPSA-China-PIK.git
-cd PyPSA-China-PIK
+git clone https://github.com/pypsa/PyPSA-China.git
+cd PyPSA-China
 git checkout vX.Y.Z  # Replace with desired version
 ```
 
@@ -73,13 +73,13 @@ When upgrading between versions, please review the CHANGELOG for:
 
 If you encounter issues after upgrading or have questions about a specific release:
 
-1. Check the [documentation](https://pik-piam.github.io/PyPSA-China-PIK/)
-2. Review [closed issues](https://github.com/pik-piam/PyPSA-China-PIK/issues?q=is%3Aissue+is%3Aclosed) for similar problems
-3. Open a new [issue](https://github.com/pik-piam/PyPSA-China-PIK/issues/new/choose)
+1. Check the [documentation](https://pypsa.github.io/PyPSA-China/)
+2. Review [closed issues](https://github.com/pypsa/PyPSA-China/issues?q=is%3Aissue+is%3Aclosed) for similar problems
+3. Open a new [issue](https://github.com/pypsa/PyPSA-China/issues/new/choose)
 
 ## Release History
 
-For the complete release history and detailed change information, see the [CHANGELOG](https://github.com/pik-piam/PyPSA-China-PIK/blob/main/CHANGELOG.md).
+For the complete release history and detailed change information, see the [CHANGELOG](https://github.com/pypsa/PyPSA-China/blob/main/CHANGELOG.md).
 
 ### Version 1.3.2 (2025-12-02)
 
@@ -101,7 +101,7 @@ To stay informed about new releases:
 
 ## Contributing to Releases
 
-Interested in contributing to the next release? See our [Contributing Guide](https://github.com/pik-piam/PyPSA-China-PIK/blob/main/CONTRIBUTING.md) for information on:
+Interested in contributing to the next release? See our [Contributing Guide](https://github.com/pypsa/PyPSA-China/blob/main/CONTRIBUTING.md) for information on:
 
 - How to propose features
 - Development workflow

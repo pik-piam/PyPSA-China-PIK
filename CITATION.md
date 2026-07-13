@@ -2,18 +2,18 @@
 
 ## How to Cite
 
-If you use PyPSA-China (PIK) in your research, please cite:
+If you use PyPSA-China in your research, please cite:
 
 ### Software Citation
 
 ```bibtex
-@software{pypsa_china_pik,
-  author = {{PIK RD3-ETL Team}},
-  title = {PyPSA-China (PIK): An Open-Source Optimisation Model of the Chinese Energy System},
+@software{pypsa_china,
+  author = {{PIK RD3-ETL Team, Zhou, Xiaowei}},
+  title = {PyPSA-China: An Open-Source Optimisation Model of the Chinese Energy System},
   year = {2024},
   publisher = {GitHub},
   journal = {GitHub repository},
-  url = {https://github.com/pik-piam/PyPSA-China-PIK},
+  url = {https://github.com/pypsa/PyPSA-China},
   version = {1.3.2,
   doi = {10.5281/zenodo.XXXXXXX}  % Add Zenodo DOI when available
 }

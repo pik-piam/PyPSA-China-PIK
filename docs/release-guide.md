@@ -1,4 +1,4 @@
-# Release Guide for PyPSA-China (PIK)
+# Release Guide for PyPSA-China
 
 This guide is for maintainers who are preparing and publishing releases.
 
@@ -54,7 +54,7 @@ Update the CHANGELOG with the new version:
 
 Add the version link at the bottom:
 ```markdown
-[X.Y.Z]: https://github.com/pik-piam/PyPSA-China-PIK/releases/tag/vX.Y.Z
+[X.Y.Z]: https://github.com/pypsa/PyPSA-China/releases/tag/vX.Y.Z
 ```
 
 ### 3. Commit Changes
@@ -115,11 +115,11 @@ Once the tag is pushed, the Release workflow automatically:
 After the workflows complete:
 
 1. **Check the GitHub Release**:
-   - Visit https://github.com/pik-piam/PyPSA-China-PIK/releases
+   - Visit https://github.com/pypsa/PyPSA-China/releases
    - Verify the release appears with correct version and notes
 
 2. **Check the Documentation**:
-   - Visit https://pik-piam.github.io/PyPSA-China-PIK/
+   - Visit https://pypsa.github.io/PyPSA-China/
    - Verify the version selector shows the new version
    - Check that content is correct for the new version
 

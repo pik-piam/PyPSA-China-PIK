@@ -1,4 +1,4 @@
-"""File reading support functions for PyPSA-China-PIK workflow.
+"""File reading support functions for PyPSA-China workflow.
 
 This module provides functions for reading and processing yearly load projections
 from REMIND data, with support for sector coupling (electric vehicles) and

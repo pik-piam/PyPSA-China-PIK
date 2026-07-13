@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: MIT
 """
-Adapted from pypsa-EUR by the pypsa China-PIK authors
+Adapted from pypsa-EUR by the PyPSA-China authors
 
 Calculates for each clustered region the
 (i) installable capacity (based on land-use from :mod:`determine_availability_matrix`)

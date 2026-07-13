@@ -1,4 +1,4 @@
 """Track version"""
 
-# pypsa-China PIK editions
+# pypsa-China
 __version__ = "1.3.2"

@@ -1,6 +1,6 @@
-# Contributing to PyPSA-China (PIK)
+# Contributing to PyPSA-China
 
-Thank you for your interest in contributing to PyPSA-China (PIK)! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to PyPSA-China! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -18,10 +18,10 @@ Thank you for your interest in contributing to PyPSA-China (PIK)! This document 
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/your-username/PyPSA-China-PIK.git
-   cd PyPSA-China-PIK
+   git clone https://github.com/your-username/PyPSA-China.git
+   cd PyPSA-China
    ```
-3. **Set up the development environment** following the [installation guide](https://pik-piam.github.io/PyPSA-China-PIK/installation/quick_start/)
+3. **Set up the development environment** following the [installation guide](https://pypsa.github.io/PyPSA-China/installation/quick_start/)
 4. **Create a branch** for your changes:
    ```bash
    git checkout -b feature/your-feature-name
@@ -279,14 +279,14 @@ Releases are managed by project maintainers:
 
 ## Questions?
 
-- Check the [documentation](https://pik-piam.github.io/PyPSA-China-PIK/)
-- Open a [discussion](https://github.com/pik-piam/PyPSA-China-PIK/discussions)
+- Check the [documentation](https://pypsa.github.io/PyPSA-China/)
+- Open a [discussion](https://github.com/pypsa/PyPSA-China/discussions)
 - Contact the maintainers via GitHub issues
 
 ## License
 
-By contributing to PyPSA-China (PIK), you agree that your contributions will be licensed under the [MIT License](LICENSES/MIT.txt).
+By contributing to PyPSA-China, you agree that your contributions will be licensed under the [MIT License](LICENSES/MIT.txt).
 
 ---
 
-Thank you for contributing to PyPSA-China (PIK)! 🎉
+Thank you for contributing to PyPSA-China! 🎉

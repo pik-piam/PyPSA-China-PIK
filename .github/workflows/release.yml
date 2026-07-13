@@ -51,7 +51,7 @@ jobs:
 
           # If no specific notes found, use a default message
           if [ ! -s release_notes.md ]; then
-            echo "Release $VERSION of PyPSA-China (PIK)" > release_notes.md
+            echo "Release $VERSION of PyPSA-China" > release_notes.md
             echo "" >> release_notes.md
             echo "For detailed changes, see the [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)." >> release_notes.md
           fi
@@ -60,7 +60,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.get_version.outputs.VERSION }}
-          name: PyPSA-China PIK ${{ steps.get_version.outputs.VERSION }}
+          name: PyPSA-China ${{ steps.get_version.outputs.VERSION }}
           body_path: release_notes.md
           draft: false
           prerelease: false
@@ -121,4 +121,4 @@ jobs:
         run: |
           VERSION="${{ steps.get_version.outputs.VERSION }}"
           echo "📚 Documentation for version $VERSION has been deployed to GitHub Pages"
-          echo "View at: https://pik-piam.github.io/PyPSA-China-PIK/"
+          echo "View at: https://pypsa.github.io/PyPSA-China/"

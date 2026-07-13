@@ -2,7 +2,7 @@
 Functions to add brownfield capacities to the network for a reference year
 - adds VREs per grade and corrects technical potential. Best available grade is chosen
 """
-# SPDX-FileCopyrightText: : 2025 The PyPSA-China-PIK Authors
+# SPDX-FileCopyrightText: : 2025 The PyPSA-China Authors
 #
 # SPDX-License-Identifier: MIT
 
