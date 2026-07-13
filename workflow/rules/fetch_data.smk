@@ -41,7 +41,7 @@ if config["enable"].get("retrieve_raster", True):
         """retrieve GEBCO 2025 bathymetry data from Zenodo bundle"""
         input:
             gebco=storage.http(
-                "https://zenodo.org/record/17697456/files/GEBCO_tiff.zip"
+                "https://zenodo.org/records/17697456/files/GEBCO_tiff.zip"
             ),
         output:
             gebco="resources/data/landuse_availability/GEBCO_tiff/gebco_2025_CN.tif",
@@ -98,7 +98,7 @@ elif config["enable"].get("retrieve_cutout", False):
     rule retrieve_cutout:
         input:
             zenodo_cutout=storage.http(
-                "https://zenodo.org/record/16792792/files/China-2020c.nc"
+                "https://zenodo.org/records/16792792/files/China-2020c.nc"
             ),
         output:
             cutout="resources/cutouts/China-2020c.nc",

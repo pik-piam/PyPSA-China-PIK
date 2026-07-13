@@ -34,3 +34,5 @@ __pycache__
 !**.gitkeep
 .vscode/launch.json
 /workflow/logs/*
+.claude
+CLAUDE.md

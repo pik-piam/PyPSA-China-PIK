@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: MIT
+# PyPSA-China-PIK environment for local macOS execution.
+# Tested 2026-05-12 on macOS arm64 (under x86_64 anaconda via Rosetta).
+# Differs from environment.yaml by hard-pinning 4 versions for the solve path.
+
+name: pypsa-china
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  # --- HARD PINS (necessary for solve to work) ---
+  - python=3.12.*           # 3.13 breaks numpy<2 indirect chain
+  - pypsa=0.35.1            # PIK code targets this exact API
+  - linopy=0.5.5            # 0.6+ adds force_dim_names check incompat w/ pypsa 0.35.1
+  - xarray=2024.10.0        # 2025+ breaks Dataset constructor used by linopy 0.5.5
+  - numpy<2                 # required by xarray 2024.10
+
+  # --- core (unpinned: conda picks compatible) ---
+  - pip
+  - atlite>=0.4.0
+  - dask
+  - coincbc
+  - snakemake-storage-plugin-http
+  - xlrd
+  - libgdal-hdf5
+  - libgdal-netcdf
+  - rioxarray<0.21          # 0.21+ requires numpy>=2; cap to numpy 1.26 compatible
+  - openpyxl
+  - pycountry
+  - seaborn
+  - snakemake-minimal>=9.0
+  - memory_profiler
+  - yaml
+  - pytables
+  - lxml
+  - powerplantmatching>=0.4.8
+  - pandas<3
+  - geopandas<2
+  - netcdf4
+  - networkx
+  - scipy
+  - shapely
+  - progressbar2
+  - pyomo
+  - matplotlib
+  - proj
+  - fiona
+  - geopy
+  - tqdm
+  - pytz
+  - country_converter
+  - tabula-py
+  - chardet
+  - ultraplot
+  - ipython
+  - pytest
+  - cartopy
+  - descartes
+  - rasterio
+
+  - pip:
+    - vresutils>=0.3.1
+    - tsam>=1.1.0
+    - gurobipy==12.0.3
+    - jwt
+    - remind-pypsa-coupling>=0.1.2
+    - mkdocs>=1.4.0
+    - mkdocs-material>=9.0.0
+    - mkdocs-gen-files
+    - mkdocstrings[python]
+    - mkdocs-awesome-nav
+    - mike>=1.1.0
+    - python-markdown-math
+    - pre-commit>=4.0.0
