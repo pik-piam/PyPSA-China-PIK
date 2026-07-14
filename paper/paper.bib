@@ -51,8 +51,6 @@
   keywords = {Read},
 }
 
-
-
 @article{baumstarkREMIND2021,
   title = {{{REMIND2}}.1: {{Transformation}} and Innovation Dynamics of the  Energy-Economic System within Climate and Sustainability Limits},
   shorttitle = {{{REMIND2}}.1},
@@ -89,6 +87,15 @@
   langid = {english},
   keywords = {Energy grids and networks,Wind energy},
   file = {C:\Users\ivanra\Zotero\storage\Z3WVLJKN\Davidson et al. - 2016 - Modelling the potential for wind energy integration on China’s coal-heavy electricity grid.pdf}
+}
+
+@article{delmastroFutureHeatPumps,
+  title = {The {{Future}} of {{Heat Pumps}} in {{China}}},
+  author = {Delmastro, Chiara and Martinez Gordon, fael and {et.}, .},
+  langid = {english},
+  keywords = {China,IEA,Read},
+  file = {C:\Users\ivanra\Zotero\storage\UCYM4WIZ\Gask - The Future of Heat Pumps in China.pdf},
+  year=2024,
 }
 
 @misc{GlobalDynamicLand,
@@ -230,6 +237,37 @@
   keywords = {China-PSM,Read},
 }
 
+@article{neumannAssessmentsLinearPower2022,
+  title = {Assessments of Linear Power Flow and Transmission Loss Approximations in Coordinated Capacity Expansion Problems},
+  author = {Neumann, Fabian and Hagenmeyer, Veit and Brown, Tom},
+  year = 2022,
+  month = may,
+  journal = {Applied Energy},
+  volume = {314},
+  pages = {118859},
+  issn = {0306-2619},
+  doi = {10.1016/j.apenergy.2022.118859},
+  urldate = {2025-01-14},
+  abstract = {With rising shares of renewables and the need to properly assess trade-offs between transmission, storage and sectoral integration as balancing options, building a bridge between energy system models and detailed power flow studies becomes increasingly important, but is computationally challenging. Here, we compare approximations for two nonlinear phenomena, power flow and transmission losses, in linear capacity expansion problems that co-optimise investments in generation, storage and transmission infrastructure. We evaluate different flow representations discussing differences in investment decisions, nodal prices, the deviation of optimised flows and losses from simulated AC power flows, and the computational performance. By using the open European power system model PyPSA-Eur, we obtain detailed and reproducible results aiming at facilitating the selection of a suitable power flow model. Given the differences in complexity, the optimal choice depends on the application, the user's available computational resources, and the level of spatial detail considered. Although the commonly used transport model can already identify key features of a cost-efficient system while being quick to solve, severe deficiencies under high loading conditions arise due to the lack of a physical grid representation. Moreover, disregarding transmission losses overestimates optimal grid expansion by 20\%. Adding a convex relaxation of quadratic losses with three tangents to the linearised power flow and accounting for changing line impedances as the network is reinforced suffices to represent power flows and losses adequately in design studies. We show that the obtained investment and dispatch decisions are then sufficiently physical to be used in more detailed nonlinear simulations of AC power flow evaluating their technical feasibility.},
+  keywords = {Capacity expansion planning,Energy system modelling,Grid reinforcement,Linear optimal power flow,Read,Transmission losses},
+  file = {C\:\\Users\\ivanra\\Zotero\\storage\\E7FKKGCY\\Neumann et al. - 2022 - Assessments of linear power flow and transmission loss approximations in coordinated capacity expans.pdf;C\:\\Users\\ivanra\\Zotero\\storage\\CRCT7XWZ\\S0306261922002938.html}
+}
+
+@article{odenwellerREMINDPyPSAEurIntegratingPower2026,
+  title = {{{REMIND-PyPSA-Eur}}: {{Integrating}} Power System Flexibility into Sector-Coupled Energy Transition Pathways},
+  shorttitle = {{{REMIND-PyPSA-Eur}}},
+  author = {Odenweller, Adrian and Ueckerdt, Falko and Hampp, Johannes and Ramirez, Ivan and Schreyer, Felix and Hasse, Robin and M{\"u}{\ss}el, Jarusch and Gong, Chen Chris and Pietzcker, Robert Carl and Brown, Tom and Luderer, Gunnar},
+  year = 2026,
+  journal = {Progress in Energy},
+  issn = {2516-1083},
+  doi = {10.1088/2516-1083/ae3ffe},
+  urldate = {2026-02-19},
+  abstract = {The rapid expansion of low-cost renewable electricity combined with end-use electrification in transport, industry, and buildings offers a promising path to deep decarbonisation. However, aligning variable supply with demand requires strategies for daily and seasonal balancing. Existing models either lack the wide scope required for long-term transition pathways or the spatio-temporal detail to capture power system variability and flexibility. Here, we combine the complementary strengths of REMIND, a long-term integrated assessment model, and PyPSA-Eur, an hourly energy system model, through a bi-directional, price-based and iterative soft coupling. REMIND provides pathway variables such as sectoral electricity demand, installed capacities, and costs to PyPSA-Eur, which returns optimised operational variables such as capacity factors, storage requirements, and relative prices. After sufficient convergence, this integrated approach jointly optimises long-term investment and short-term operation. We demonstrate the coupling for two Germany-focused scenarios, with and without demand-side flexibility, reaching climate neutrality by 2045. Our results confirm that a sector-coupled energy system with nearly 100\% renewable electricity is technically possible and economically viable. Power system flexibility influences long-term pathways through price differentiation: supply-side market values vary by generation technology, while demand-side prices vary by end-use sector. Flexible electrolysers and smart-charging electric vehicles benefit from below-average prices, whereas less flexible heat pumps face almost twice the average price due to winter peak loads. Without demand-side flexibility, electricity prices increase across all end-users, though battery deployment partially compensates. By integrating hourly power system dynamics into multi-decadal energy transition pathways, our approach addresses the fundamental trade-off between the wide scope needed for climate policy analysis and the spatio-temporal detail needed for power system planning.},
+  langid = {english},
+  keywords = {Read},
+  file = {C:\Users\ivanra\Zotero\storage\U8F9STBE\Odenweller et al. - 2026 - REMIND-PyPSA-Eur Integrating power system flexibility into sector-coupled energy transition pathway.pdf}
+}
+
 
 @article{parzenPyPSAEarthNewGlobal2023,
   title = {{{PyPSA-Earth}}. {{A}} New Global Open Energy System Optimization Model Demonstrated in {{Africa}}},
@@ -289,7 +327,32 @@
    doi = {10.5334/jors.188}
 }
 
-@misc{PyPSAEurSec,
+@article{PyPSA-Eur,
+  title = {{{PyPSA-Eur}}: {{An}} Open Optimisation Model of the {{European}} Transmission System},
+  shorttitle = {{{PyPSA-Eur}}},
+  author = {H{\"o}rsch, Jonas and Hofmann, Fabian and Schlachtberger, David and Brown, Tom},
+  year = 2018,
+  month = nov,
+  journal = {Energy Strategy Reviews},
+  volume = {22},
+  pages = {207--215},
+  issn = {2211-467X},
+  doi = {10.1016/j.esr.2018.08.012},
+  urldate = {2025-01-17},
+  abstract = {PyPSA-Eur, the first open model dataset of the European power system at the transmission network level to cover the full ENTSO-E area, is presented. It contains 6001 lines (alternating current lines at and above 220\,kV voltage level and all high voltage direct current lines), 3657 substations, a new open database of conventional power plants, time series for electrical demand and variable renewable generator availability, and geographic potentials for the expansion of wind and solar power. The model is suitable both for operational studies and generation and transmission expansion planning studies. The continental scope and highly resolved spatial scale enables a proper description of the long-range smoothing effects for renewable power generation and their varying resource availability. The restriction to freely available and open data encourages the open exchange of model data developments and eases the comparison of model results. A further novelty of the dataset is the publication of the full, automated software pipeline to assemble the load-flow-ready model from the original datasets, which enables easy replacement and improvement of the individual parts. This paper focuses on the description of the network topology, the compilation of a European power plant database and a top-down load time-series regionalisation. It summarises the derivation of renewable wind and solar availability time-series from re-analysis weather datasets and the estimation of renewable capacity potentials restricted by land-use. Finally, validations of the dataset are presented, including a new methodology to compare geo-referenced network datasets to one another.},
+  keywords = {PyPSA,Read,Renewable power generation,Transmission network},
+  file = {C:\Users\ivanra\Zotero\storage\W9DTPNXS\Hörsch et al. - 2018 - PyPSA-Eur An open optimisation model of the European transmission system.pdf}
+}
+
+@misc{PyPSA-USA,
+  title={PyPSA-USA: A flexible open-source energy system model and optimization tool for the United States},
+  year={2025},
+  month={feb},
+  doi={10.2139/ssrn.5029120},
+  url={https://doi.org/10.2139/ssrn.5029120},
+}
+
+@article{PyPSAEurSec,
     author = "Fabian Neumann and Elisabeth Zeyen and Marta Victoria and Tom Brown",
     title = "The potential role of a hydrogen network in Europe",
     journal = "Joule",
